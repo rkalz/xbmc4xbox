@@ -1,0 +1,17 @@
+*.abc
+*.tga
+*.obj
+*.idb
+*.pdb
+*.ncb
+fonts.h
+*.rdf
+BuildLog.htm
+default.xbe
+xbmc.exe
+xbmc.ilk
+xbmc.map
+*.sbr
+*.pch
+*.lib
+Thumbs.db
