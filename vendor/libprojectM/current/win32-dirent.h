@@ -19,6 +19,8 @@ extern "C"
 
 typedef struct DIR DIR;
 
+static int errno;
+
 struct dirent
 {
     char *d_name;
@@ -28,6 +30,12 @@ DIR           *opendir(const char *);
 int           closedir(DIR *);
 struct dirent *readdir(DIR *);
 void          rewinddir(DIR *);
+int scandir(
+	const char* dir, 
+	struct dirent*** namelist, 
+	int(*filter)(const struct dirent*),
+	int(*compar)(const void*, const void*) );
+int alphasort(const void* lhs, const void* rhs);
 
 /*
 

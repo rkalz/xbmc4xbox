@@ -24,63 +24,83 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common.h"
+#include "Common.hpp"
 #include "fatal.h"
 
-#include "param_types.h"
-#include "expr_types.h"
-#include "init_cond_types.h"
-#include "init_cond.h"
+#include "Expr.hpp"
+#include "InitCond.hpp"
+#include "Param.hpp"
+#include <map>
+
 #include "wipemalloc.h"
-#include "splaytree_types.h"
-#include "splaytree.h"
-char init_cond_string_buffer[STRING_BUFFER_SIZE];
-int init_cond_string_buffer_index = 0;
+#include <cassert>
+#include <iostream>
+
+char InitCond::init_cond_string_buffer[STRING_BUFFER_SIZE];
+int InitCond::init_cond_string_buffer_index = 0;
+
+/* Creates a new initial condition */
+InitCond::InitCond( Param * _param, CValue _init_val ):param(_param), init_val(_init_val) {
 
 
-void init_cond_to_string(init_cond_t * init_cond);
+  //  std::cerr <<  "InitCond::InitCond: " << this->param->name << std::endl;
+ 
+  assert(param);
+  assert(param->engine_val);
+}
 
 /* Frees initial condition structure */
-void free_init_cond(init_cond_t * init_cond) {
-  free(init_cond);
-  init_cond = NULL;
+InitCond::~InitCond() {}
+
+void InitCond::evaluate() 
+{
+  evaluate(false);
 }
 
 /* Evaluate an initial conditon */
-void eval_init_cond(init_cond_t * init_cond) {
+void InitCond::evaluate(bool evalUser) {
 
-  if (init_cond == NULL)
-    return;
- 
-  /* Parameter is of boolean type, either a 1 or 0 value integer */
 
-  /* Set matrix flag to zero. This ensures
+
+   assert(this);
+   assert(param);
+
+if (param->flags & P_FLAG_USERDEF && !evalUser)
+	return;
+
+   /* Set matrix flag to zero. This ensures
      its constant value will be used rather than a matrix value 
   */
-  init_cond->param->matrix_flag = 0;
-  if (init_cond->param->type == P_TYPE_BOOL) {
-	 if (INIT_COND_DEBUG) printf("init_cond: %s = %d (TYPE BOOL)\n", init_cond->param->name, init_cond->init_val.bool_val); 
-	 *((int*)init_cond->param->engine_val) = init_cond->init_val.bool_val;
+param->matrix_flag = false;
+  
+  /* Parameter is of boolean type, either true/false */
+  
+  if (param->type == P_TYPE_BOOL) {
+
+    //        printf( "init_cond: %s = %d (TYPE BOOL)\n", param->name.c_str(), init_val.bool_val); 
+	//std::cerr << "[InitCond] param is a boolean of with name " 
+	//	<< param->name << std::endl;
+
+	assert(param->engine_val);
+
+	 *((bool*)param->engine_val) = init_val.bool_val;
+
      return;
   }
   
   /* Parameter is an integer type, just like C */
   
-  if (init_cond->param->type == P_TYPE_INT) {
-	 if (INIT_COND_DEBUG) printf("init_cond: %s = %d (TYPE INT)\n", init_cond->param->name, init_cond->init_val.int_val);
-	 *((int*)init_cond->param->engine_val) = init_cond->init_val.int_val;
+  if ( param->type == P_TYPE_INT) {
+ 	assert(param->engine_val);
+	 *((int*)param->engine_val) = init_val.int_val;
      return;
   }
 
   /* Parameter is of a float type, just like C */
 
-  if (init_cond->param->type == P_TYPE_DOUBLE) {
-	if (INIT_COND_DEBUG) {
-	    printf( "init_cond: %s = %f (TYPE DOUBLE) -> %f -> %X -> %X\n", init_cond->param->name, 
-	            init_cond->init_val.float_val, *((float *)init_cond->param->engine_val),
-	            init_cond->param, init_cond->param->engine_val );
-	  }
-	*((float*)init_cond->param->engine_val) = init_cond->init_val.float_val;
+  if (param->type == P_TYPE_DOUBLE) {
+	assert(param->engine_val);
+	*((float*)param->engine_val) = init_val.float_val;
     return;
   }
 
@@ -88,50 +108,27 @@ void eval_init_cond(init_cond_t * init_cond) {
   return;
 }
 
-/* Creates a new initial condition */
-init_cond_t * new_init_cond(param_t * param, value_t init_val) {
-
-  init_cond_t * init_cond;
-
-  init_cond = (init_cond_t*)wipemalloc(sizeof(init_cond_t));
-   
-  if (init_cond == NULL)
-    return NULL;
- 
-  init_cond->param = param;
-  init_cond->init_val = init_val;
-
-  if ( INIT_COND_DEBUG ) {
-    printf( "new_init_cond: %s -> %X -> %X\n", init_cond->param->name, init_cond->param, init_cond->param->engine_val );
-  }
-
-  return init_cond;
-}
-
 /* WIP */
-void init_cond_to_string(init_cond_t * init_cond) {
+void InitCond::init_cond_to_string() {
 	
 	int string_length;
 	char string[MAX_TOKEN_SIZE];
 	
-	if (init_cond == NULL)
-		return;
-
 	/* Create a string "param_name=val" */
-	switch (init_cond->param->type) {
+	switch (param->type) {
 		
 		case P_TYPE_BOOL:
-			sprintf(string, "%s=%d\n", init_cond->param->name, init_cond->init_val.bool_val);
+			sprintf(string, "%s=%d\n", param->name.c_str(), init_val.bool_val);
 			break; 
 		case P_TYPE_INT:
-			sprintf(string, "%s=%d\n", init_cond->param->name, init_cond->init_val.int_val);
+			sprintf(string, "%s=%d\n", param->name.c_str(), init_val.int_val);
 			break;
 		case P_TYPE_DOUBLE:
-			sprintf(string, "%s=%f\n", init_cond->param->name, init_cond->init_val.float_val);
+			sprintf(string, "%s=%f\n", param->name.c_str(), init_val.float_val);
 			break;
 		default:
 			return;
-	}		
+	}
 		
 	/* Compute the length of the string */
 	string_length = strlen(string);
@@ -140,26 +137,11 @@ void init_cond_to_string(init_cond_t * init_cond) {
 	if ((init_cond_string_buffer_index + string_length + 1)  > (STRING_BUFFER_SIZE - 1))
 		return;
 	
-	/* Copy the string into the initial condition string buffer */
-	
+	/* Copy the string into the initial condition string buffer */	
 	strncpy(init_cond_string_buffer + init_cond_string_buffer_index, string, string_length);
 	
 	/* Increment the string buffer, offset by one for the null terminator, which will be
 	   overwritten by the next call to this function */
 	init_cond_string_buffer_index+= string_length + 1;
-		
 }
 
-
-char * create_init_cond_string_buffer(splaytree_t * init_cond_tree) {
-
-	if (init_cond_tree == NULL)
-		return NULL;
-	
-	init_cond_string_buffer_index = 0;
-	
-	splay_traverse((void (*)(void*))init_cond_to_string, init_cond_tree);
-	
-	return init_cond_string_buffer;
-		
-}

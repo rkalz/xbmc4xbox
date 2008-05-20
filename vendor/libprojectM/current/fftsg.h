@@ -1,6 +1,6 @@
 /**
  * projectM -- Milkdrop-esque visualisation SDK
- * Copyright (C)2003-2004 projectM Team
+ * Copyright (C)2003-2007 projectM Team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,7 @@
  *
  * Wrapper for rdft() and friends
  *
+ * $Log$
  */
 
 #ifndef _FFTSG_H

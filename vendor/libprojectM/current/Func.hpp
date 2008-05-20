@@ -1,6 +1,6 @@
 /**
  * projectM -- Milkdrop-esque visualisation SDK
- * Copyright (C)2003-2004 projectM Team
+ * Copyright (C)2003-2007 projectM Team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,18 +18,46 @@
  * See 'LICENSE.txt' included within this release
  *
  */
+/**
+ * $Id$
+ *
+ * Function
+ *
+ * $Log$
+ */
 
 #ifndef _FUNC_H
 #define _FUNC_H
 
-/* Public Prototypes */
-func_t * create_func (char * name, float (*func_ptr)(float*), int num_args);
-int remove_func(func_t * func);
-func_t * find_func(char * name);
-int init_builtin_func_db();
-int destroy_builtin_func_db();
-int load_all_builtin_func();
-int load_builtin_func(char * name, float (*func_ptr)(float*), int num_args);
-void free_func(func_t * func);
+#include "Common.hpp"
+#include <string>
+
+/* Function Type */
+class Func {
+public:
+
+	/// Create a new function wrapper object
+    /// \param name a name to uniquely identify the function. 
+	/// \param func_ptr a pointer to a function of floating point arguments
+	/// \param num_args the number of floating point arguments this function requires
+    Func(const std::string & name, float (*func_ptr)(float*), int num_args );
+
+    /* Public Prototypes */
+    DLLEXPORT ~Func();
+
+	inline const std::string & getName() const {
+		return name;
+	}
+
+	inline int getNumArgs() const {
+		return num_args;
+	}
+
+    float (*func_ptr)(float*);
+private:	
+    std::string name;
+    int num_args;
+
+};
 
 #endif /** !_FUNC_H */

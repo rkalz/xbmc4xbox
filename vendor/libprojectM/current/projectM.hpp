@@ -1,6 +1,6 @@
 /*
  * projectM -- Milkdrop-esque visualisation SDK
- * Copyright (C)2003-2004 projectM Team
+ * Copyright (C)2003-2007 projectM Team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,18 +19,30 @@
  *
  */
 /**
- * $Id: projectM.h,v 1.1.1.1 2005/12/23 18:05:11 psperl Exp $
+ * $Id: projectM.hpp,v 1.1.1.1 2005/12/23 18:05:11 psperl Exp $
  *
  * Encapsulation of ProjectM engine
  *
+ * $Log$
  */
 
 #ifndef _PROJECTM_H
 #define _PROJECTM_H
 
+#ifdef WIN32
+#include "win32-dirent.h"
+#else
+#include <dirent.h>
+#endif /** WIN32 */
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <string>
 #include <stdlib.h>
+#ifndef WIN32
+#include <unistd.h>
+#endif
+#include <sys/types.h>
 
 #ifdef MACOS
 #include <MacWindows.h>
@@ -40,337 +52,266 @@
 #ifdef WIN32
 #include <windows.h>
 #endif /** WIN32 */
-#include <GL/gl.h>
-#include <GL/glu.h>
+
 #endif /** MACOS */
-#ifdef WIN32
+#ifdef WIN322
 #define inline
 #endif /** WIN32 */
-#ifndef WIN32
-#include <sys/time.h>
-#else
-#endif /** !WIN32 */
 
-#include "pbuffer.h"
+#include "dlldefs.h"
+#include "event.h"
+#include "fatal.h"
+#include "PresetFrameIO.hpp"
+#include "PCM.hpp"
+#include "pthread.h"
 
-//#include <dmalloc.h>
+#include <memory>
 
+class BeatDetect;
+class PCM;
+class Func;
+class Renderer;
+class Preset;
+class PresetIterator;
+class PresetChooser;
+class PresetLoader;
+class TimeKeeper;
+
+#include <memory>
 #ifdef WIN32
 #pragma warning (disable:4244)
 #pragma warning (disable:4305)
 #endif /** WIN32 */
 
-#ifdef MACOS
+#ifdef MACOS2
 #define inline
 #endif
 
 /** KEEP THIS UP TO DATE! */
-#define PROJECTM_VERSION "0.99"
-#define PROJECTM_TITLE "projectM 0.99"
+#define PROJECTM_VERSION "1.10.00"
+#define PROJECTM_TITLE "projectM 1.10.00"
 
-#ifdef MACOS
-#define kTVisualPluginName                      "\pprojectM"
-#define kTVisualPluginCreator           'hook'
+/** Interface types */
+typedef enum {
+    MENU_INTERFACE,
+    SHELL_INTERFACE,
+    EDITOR_INTERFACE,
+    DEFAULT_INTERFACE,
+    BROWSER_INTERFACE
+  } interface_t;
 
-#define kTVisualPluginMajorVersion      1
-#define kTVisualPluginMinorVersion      0
-#define kTVisualPluginReleaseStage      finalStage
-#define kTVisualPluginNonFinalRelease   0
-#endif
+/// A functor class that allows users of this library to specify random preset behavior
+class RandomizerFunctor {
 
-/** Per-platform path separators */
-#define WIN32_PATH_SEPARATOR '\\'
-#define UNIX_PATH_SEPARATOR '/'
-#ifdef WIN32
-#define PATH_SEPARATOR WIN32_PATH_SEPARATOR
-#else
-#define PATH_SEPARATOR UNIX_PATH_SEPARATOR
-#endif /** WIN32 */
+   public:
+	//RandomizerFunctor(); 
+	RandomizerFunctor(PresetChooser & chooser) ;
+	virtual ~RandomizerFunctor();
+   	virtual double operator() (int index);
+   private:
+	const PresetChooser & m_chooser;
+};
 
-/** External debug file */
-#ifdef DEBUG
-extern FILE *debugFile;
-#endif
 
-/** Thread state */
-typedef enum { GO, STOP } PMThreadState;
-
-typedef struct PROJECTM {
-
-    char *presetURL;
-    char *presetName;
-    char *fontURL;
-
-    int hasInit;
-
-    int noSwitch;
-    int pcmframes;
-    int freqframes;
-    int totalframes;
-
-    int showfps;
-    int showtitle;
-    int showpreset;
-    int showhelp;
-    int showstats;
-
-    int studio;
-
-    GLubyte *fbuffer;
-
-    
-
-#ifndef WIN32
-    /* The first ticks value of the application */
-    struct timeval startTime;
-#else
-    long startTime;
-#endif /** !WIN32 */
-    float Time;
-
-    /** Render target texture ID */
-    RenderTarget *renderTarget;
-
-    char disp[80];
-
-    float wave_o;
-
-    //int texsize=1024;   //size of texture to do actual graphics
-    int fvw;     //fullscreen dimensions
-    int fvh;
-    int wvw;      //windowed dimensions
-    int wvh;
-    int vw;           //runtime dimensions
-    int vh;
-    int fullscreen;
-    
-    int maxsamples; //size of PCM buffer
-    int numsamples; //size of new PCM info
-    float *pcmdataL;     //holder for most recent pcm data 
-    float *pcmdataR;     //holder for most recent pcm data 
-    
-    int avgtime;  //# frames per preset
-    
-    char *title;
-    int drawtitle;
+class projectM 
+{
+public:
+	static const int FLAG_NONE = 0;
+	static const int FLAG_DISABLE_PLAYLIST_LOAD = 1 << 0;
+	
+  DLLEXPORT projectM(std::string config_file, int flags = FLAG_NONE);
   
-    int correction;
+  DLLEXPORT projectM(int gx, int gy, int fps, int texsize, int width, int height,std::string preset_url,std::string title_fonturl, std::string title_menuurl);
+  
+  DLLEXPORT void projectM_resetGL( int width, int height );
+  DLLEXPORT void projectM_resetTextures();
+  DLLEXPORT void projectM_setTitle( std::string title );
+  DLLEXPORT void renderFrame();
+  DLLEXPORT unsigned initRenderToTexture(); 
+  DLLEXPORT void key_handler( projectMEvent event,
+		    projectMKeycode keycode, projectMModifier modifier );
+
+  DLLEXPORT virtual ~projectM();
+
+  
+  struct Settings {
+	int meshX;
+	int meshY;
+	int fps;
+	int textureSize;
+	int windowWidth;
+	int windowHeight;
+	std::string presetURL;
+	std::string titleFontURL;
+	std::string menuFontURL;		
+	int smoothPresetDuration;
+	int presetDuration;
+	float beatSensitivity;
+	bool aspectCorrection;
+	float easterEgg;
+	bool shuffleEnabled;
+  };
+
+
+  DLLEXPORT const Settings & settings() const {
+		return _settings;
+  }
+
+  /// Writes a settings configuration to the specified file
+  static bool writeConfig(const std::string & configFile, const Settings & settings);
+
+  
+  /// Sets preset iterator position to the passed in index
+  void selectPresetPosition(unsigned int index);
+
+  /// Plays a preset immediately  
+  void selectPreset(unsigned int index);
+
+  /// Removes a preset from the play list. If it is playing then it will continue as normal until next switch
+  void removePreset(unsigned int index);
+ 
+  /// Sets the randomization functor. If set to null, the traversal will move in order according to the playlist
+  void setRandomizer(RandomizerFunctor * functor);
+ 
+  /// Tell projectM to play a particular preset when it chooses to switch
+  /// If the preset is locked the queued item will be not switched to until the lock is released
+  /// Subsequent calls to this function effectively nullifies previous calls.
+  void queuePreset(unsigned int index);
+
+  /// Returns true if a preset is queued up to play next
+  bool isPresetQueued() const;
+
+  /// Removes entire playlist, The currently loaded preset will end up sticking until new presets are added
+  void clearPlaylist();
+
+  /// Turn on or off a lock that prevents projectM from switching to another preset
+  void setPresetLock(bool isLocked);
+
+  /// Returns true if the active preset is locked
+  bool isPresetLocked() const;
+
+  /// Returns index of currently active preset. In the case where the active
+  /// preset was removed from the playlist, this function will return the element
+  /// before active preset (thus the next in order preset is invariant with respect
+  /// to the removal)
+  bool selectedPresetIndex(unsigned int & index) const;
+
+  /// Add a preset url to the play list. Appended to bottom. Returns index of preset
+  unsigned int addPresetURL(const std::string & presetURL, const std::string & presetName, int rating);
+
+  /// Insert a preset url to the play list at the suggested index.
+  void insertPresetURL(unsigned int index, 
+			       const std::string & presetURL, const std::string & presetName, int rating);
+ 
+  /// Returns true if the selected preset position points to an actual preset in the
+  /// currently loaded playlist
+  bool presetPositionValid() const;
+  
+  /// Returns the url associated with a preset index
+  std::string getPresetURL(unsigned int index) const;
+
+  /// Returns the preset name associated with a preset index
+  std::string getPresetName ( unsigned int index ) const;
+
+  /// Returns the rating associated with a preset index
+  int getPresetRating (unsigned int index) const;
+  
+  void changePresetRating (unsigned int index, int rating);
+
+  /// Returns the size of the play list
+  unsigned int getPlaylistSize() const;
+
+  void evaluateSecondPreset();
+
+  inline void setShuffleEnabled(bool value)
+  {
+	  _settings.shuffleEnabled = value;
+			
+	/// idea@ call a virtualfunction shuffleChanged()
+  }
+
+  
+  inline bool isShuffleEnabled() const
+  {
+	return _settings.shuffleEnabled;
+  }
+  
+  /// Occurs when active preset has switched. Switched to index is returned
+  virtual void presetSwitchedEvent(bool isHardCut, unsigned int index) const {};
+  virtual void shuffleEnabledValueChanged(bool isEnabled) const {};
+
+  
+  inline const PCM * pcm() {
+	  return _pcm;
+  }
+  void *thread_func(void *vptr_args);
+
+private:
+
+  double sampledPresetDuration();
+  BeatDetect * beatDetect;
+  Renderer *renderer;
+  Settings _settings;
     
-    float vol;
+  int wvw;      //windowed dimensions
+  int wvh;
+     
+  /** Timing information */
+  int mspf;
+  int timed;
+  int timestart;  
+  int count;
+  float fpsstart;
+  
+  void switchPreset(std::auto_ptr<Preset> & targetPreset, PresetInputs & inputs, PresetOutputs & outputs);
+  void readConfig(const std::string & configFile);
+  void projectM_init(int gx, int gy, int fps, int texsize, int width, int height);
+  void projectM_reset();
+
+  void projectM_initengine();
+  void projectM_resetengine();
+  /// Initializes preset loading / management libraries
+  int initPresetTools();
+  
+  /// Deinitialize all preset related tools. Usually done before projectM cleanup
+  void destroyPresetTools();
+
+  void default_key_handler( projectMEvent event, projectMKeycode keycode );
+  void setupPresetInputs(PresetInputs *inputs);
+  /// The current position of the directory iterator
+  PresetIterator * m_presetPos;
+  
+  /// Required by the preset chooser. Manages a loaded preset directory
+  PresetLoader * m_presetLoader;
+  
+  /// Provides accessor functions to choose presets
+  PresetChooser * m_presetChooser;
+  
+  /// Currently loaded preset
+  std::auto_ptr<Preset> m_activePreset;
+  
+  /// Destination preset when smooth preset switching
+  std::auto_ptr<Preset> m_activePreset2;
     
-    //per pixel equation variables
-    float **gridx;  //grid containing interpolated mesh 
-    float **gridy;  
-    float **origtheta;  //grid containing interpolated mesh reference values
-    float **origrad;  
-    float **origx;  //original mesh 
-    float **origy;
-    float **origx2;  //original mesh 
-    float **origy2;
+  /// All readonly variables which are passed as inputs to presets
+  PresetInputs presetInputs;
+  PresetInputs presetInputs2;
+  /// A preset outputs container used and modified by the "current" preset
+  PresetOutputs presetOutputs;
+  
+  /// A preset outputs container used for smooth preset switching
+  PresetOutputs presetOutputs2;
+  
+  TimeKeeper *timeKeeper;
 
-    /** Timing information */
-    int mspf;      
-    int timed;
-    int timestart;
-    int nohard;    
-    int count;
-    float realfps,
-           fpsstart;
+  PCM * _pcm;
+  int m_flags;
+  
 
-    /** PCM data */
-    float vdataL[512];  //holders for FFT data (spectrum)
-    float vdataR[512];
+pthread_mutex_t mutex;
+pthread_cond_t  condition;
+pthread_t thread;
+  bool running;
 
-    /** Various toggles */
-    int doPerPixelEffects;
-    int doIterative;
-
-    /** ENGINE VARIABLES */
-    /** From engine_vars.h */
-    char preset_name[256];
-
-    /* PER FRAME CONSTANTS BEGIN */
-    float zoom;
-    float zoomexp;
-    float rot;
-    float warp;
-
-    float sx;
-    float sy;
-    float dx;
-    float dy;
-    float cx;
-    float cy;
-
-    int gy;
-    int gx;
-
-    float decay;
-
-    float wave_r;
-    float wave_g;
-    float wave_b;
-    float wave_x;
-    float wave_y;
-    float wave_mystery;
-
-    float ob_size;
-    float ob_r;
-    float ob_g;
-    float ob_b;
-    float ob_a;
-
-    float ib_size;
-    float ib_r;
-    float ib_g;
-    float ib_b;
-    float ib_a;
-
-    int meshx;
-    int meshy;
-
-    float mv_a ;
-    float mv_r ;
-    float mv_g ;
-    float mv_b ;
-    float mv_l;
-    float mv_x;
-    float mv_y;
-    float mv_dy;
-    float mv_dx;
-
-    float treb ;
-    float mid ;
-    float bass ;
-    float bass_old ;
-	float beat_sensitivity;
-    float treb_att ;
-    float mid_att ;
-    float bass_att ;
-    float progress ;
-    int frame ;
-
-        /* PER_FRAME CONSTANTS END */
-
-    /* PER_PIXEL CONSTANTS BEGIN */
-
-    float x_per_pixel;
-    float y_per_pixel;
-    float rad_per_pixel;
-    float ang_per_pixel;
-
-    /* PER_PIXEL CONSTANT END */
-
-
-    float fRating;
-    float fGammaAdj;
-    float fVideoEchoZoom;
-    float fVideoEchoAlpha;
-    
-    int nVideoEchoOrientation;
-    int nWaveMode;
-    int bAdditiveWaves;
-    int bWaveDots;
-    int bWaveThick;
-    int bModWaveAlphaByVolume;
-    int bMaximizeWaveColor;
-    int bTexWrap;
-    int bDarkenCenter;
-    int bRedBlueStereo;
-    int bBrighten;
-    int bDarken;
-    int bSolarize;
-    int bInvert;
-    int bMotionVectorsOn;
-    int fps; 
-    
-    float fWaveAlpha ;
-    float fWaveScale;
-    float fWaveSmoothing;
-    float fWaveParam;
-    float fModWaveAlphaStart;
-    float fModWaveAlphaEnd;
-    float fWarpAnimSpeed;
-    float fWarpScale;
-    float fShader;
-    
-    
-    /* Q VARIABLES START */
-
-    float q1;
-    float q2;
-    float q3;
-    float q4;
-    float q5;
-    float q6;
-    float q7;
-    float q8;
-
-
-    /* Q VARIABLES END */
-
-    float **zoom_mesh;
-    float **zoomexp_mesh;
-    float **rot_mesh;
-
-    float **sx_mesh;
-    float **sy_mesh;
-    float **dx_mesh;
-    float **dy_mesh;
-    float **cx_mesh;
-    float **cy_mesh;
-
-    float **x_mesh;
-    float **y_mesh;
-    float **rad_mesh;
-    float **theta_mesh;
-  } projectM_t;
-
-/** Functions */
-#ifdef __CPLUSPLUS
-extern "C" void projectM_init(projectM_t *pm);
-extern "C" void projectM_reset( projectM_t *pm );
-extern "C" void projectM_resetGL( projectM_t *pm, int width, int height );
-extern "C" void projectM_setTitle( projectM_t *pm, char *title );
-extern "C" void renderFrame(projectM_t *pm);
-#else
-extern  void projectM_init(projectM_t *pm);
-extern  void projectM_reset( projectM_t *pm );
-extern  void projectM_resetGL( projectM_t *pm, int width, int height );
-extern  void projectM_setTitle( projectM_t *pm, char *title );
-extern  void renderFrame(projectM_t *pm);
+};
 #endif
-
-void projectM_initengine(projectM_t *pm);
-void projectM_resetengine(projectM_t *pm);
-extern  void draw_help(projectM_t *pm);
-extern  void draw_fps(projectM_t *pm,float fps);
-extern  void draw_preset(projectM_t *pm);
-extern  void draw_title(projectM_t *pm);
-extern  void draw_stats(projectM_t *pm);
-
-extern void modulate_opacity_by_volume(projectM_t *pm);
-extern void maximize_colors(projectM_t *pm);
-extern void do_per_pixel_math(projectM_t *pm);
-extern void do_per_frame(projectM_t *pm);
-extern void render_texture_to_studio(projectM_t *pm);
-extern void darken_center(projectM_t *pm);
-
-extern void render_interpolation(projectM_t *pm);
-extern void render_texture_to_screen(projectM_t *pm);
-extern void render_texture_to_studio(projectM_t *pm);
-extern void draw_motion_vectors(projectM_t *pm);
-extern void draw_borders(projectM_t *pm);
-extern void draw_shapes(projectM_t *pm);
-extern void draw_waveform(projectM_t *pm);
-extern void draw_custom_waves(projectM_t *pm);
-
-extern void draw_title_to_screen(projectM_t *pm);
-extern void draw_title_to_texture(projectM_t *pm);
-extern void get_title(projectM_t *pm);
-
-extern void reset_per_pixel_matrices(projectM_t *pm);
-extern void init_per_pixel_matrices(projectM_t *pm);
-extern void rescale_per_pixel_matrices(projectM_t *pm);
-
-#endif /** !_PROJECTM_H */

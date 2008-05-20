@@ -1,6 +1,6 @@
 /**
  * projectM -- Milkdrop-esque visualisation SDK
- * Copyright (C)2003-2004 projectM Team
+ * Copyright (C)2003-2007 projectM Team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,21 +18,113 @@
  * See 'LICENSE.txt' included within this release
  *
  */
+/**
+ * $Id$
+ *
+ * Encapsulation of a custom shape
+ *
+ * $Log$
+ */
 
 #ifndef _CUSTOM_SHAPE_H
 #define _CUSTOM_SHAPE_H
 
 #define CUSTOM_SHAPE_DEBUG 0
+#include <map>
+#include "Param.hpp"
+#include "PerFrameEqn.hpp"
+#include "InitCond.hpp"
+#include <vector>
 
-#include "expr_types.h"
-#include "custom_shape_types.h"
-#include "preset_types.h"
+class Preset;
 
-void free_custom_shape(custom_shape_t * custom_shape);
-custom_shape_t * new_custom_shape(int id);
-custom_shape_t * find_custom_shape(int id, preset_t * preset, int create_flag);
-void load_unspecified_init_conds_shape(custom_shape_t * custom_shape);
-void evalCustomShapeInitConditions(preset_t *preset);
-custom_shape_t * nextCustomShape(preset_t *preset);
+
+class CustomShape {
+public:
+    /* Numerical id */
+    int id;
+    int per_frame_count;
+
+    /* Parameter tree associated with this custom shape */
+    std::map<std::string,Param*> param_tree;
+
+    /* Engine variables */
+    int sides;
+    bool thickOutline;
+    bool enabled;
+    bool additive;
+    bool textured;
+    
+    float tex_zoom;
+    float tex_ang;
+      
+    float x; /* x position for per point equations */
+    float y; /* y position for per point equations */
+    float radius;
+    float ang;
+    
+    float r; /* red color value */
+    float g; /* green color value */
+    float b; /* blue color value */
+    float a; /* alpha color value */
+     
+    float r2; /* red color value */
+    float g2; /* green color value */
+    float b2; /* blue color value */
+    float a2; /* alpha color value */
+    
+    float border_r; /* red color value */
+    float border_g; /* green color value */
+    float border_b; /* blue color value */
+    float border_a; /* alpha color value */
+    
+    /* stupid t variables */
+    float t1;
+    float t2;
+    float t3;
+    float t4;
+    float t5;
+    float t6;
+    float t7;
+    float t8;
+
+  /* stupider q variables */
+    float q1;
+    float q2;
+    float q3;
+    float q4;
+    float q5;
+    float q6;
+    float q7;
+    float q8;
+
+    // projectM exclusive parameter to load textures over a shape
+    std::string imageUrl;
+
+    /// Returns any image url (usually used for texture maps) associated with the custom shape
+    /// Will return empty string if none is set
+    inline const std::string & getImageUrl() const {
+		return imageUrl;
+    }
+
+    // Data structure to hold per frame  / per frame init equations
+    std::map<std::string,InitCond*>  init_cond_tree;
+    std::vector<PerFrameEqn*>  per_frame_eqn_tree;
+    std::map<std::string,InitCond*>  per_frame_init_eqn_tree;
+
+    std::map<std::string, Param*> text_properties_tree;
+
+
+    /// Allocate a new custom shape, including param associations, per point equations, and initial values.
+    /// \param id an integer id to associate with this custom wave. Future line parsing uses this as a reference key.
+    CustomShape( int id );
+
+    ~CustomShape();
+
+    void loadUnspecInitConds();
+    void evalInitConds();
+  };
+
 
 #endif /** !_CUSTOM_SHAPE_H */
+

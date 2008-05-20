@@ -1,6 +1,6 @@
 /**
  * projectM -- Milkdrop-esque visualisation SDK
- * Copyright (C)2003-2004 projectM Team
+ * Copyright (C)2003-2007 projectM Team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,7 @@
  * call memset( ..., 0, sizeof( ... ) ) on the allocated block for
  * safe initialization
  *
+ * $Log$
  */
 
 #ifndef _WIPEMALLOC_H
@@ -46,8 +47,10 @@
 #endif /** !MACOS */
 #include <stdio.h>
 
+#ifdef PANTS
 #if defined(WIN32) && !defined(inline)
 #define inline
+#endif
 #endif
 
 /** Safe memory allocator */

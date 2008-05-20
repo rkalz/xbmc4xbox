@@ -1,6 +1,6 @@
 /**
  * projectM -- Milkdrop-esque visualisation SDK
- * Copyright (C)2003-2004 projectM Team
+ * Copyright (C)2003-2007 projectM Team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,18 +18,43 @@
  * See 'LICENSE.txt' included within this release
  *
  */
+/**
+ * $Id$
+ *
+ * Initial condition
+ *
+ * $Log$
+ */
 
-#ifndef _INIT_COND_H
-#define _INIT_COND_H
+#ifndef _INIT_COND_HPP
+#define _INIT_COND_HPP
 
+
+//#define INIT_COND_DEBUG 2
 #define INIT_COND_DEBUG 0
 
-#include "param_types.h"
-#include "splaytree_types.h"
+#include "Param.hpp"
 
-void eval_init_cond(init_cond_t * init_cond);
-init_cond_t * new_init_cond(param_t * param, value_t init_val);
-void free_init_cond(init_cond_t * init_cond);
-char * create_init_cond_string_buffer(splaytree_t * init_cond_tree);
+class InitCond;
+class Param;
+#include <map>
+
+class InitCond {
+public:
+    Param *param;
+    CValue init_val;
+
+    static char init_cond_string_buffer[STRING_BUFFER_SIZE];
+    static int init_cond_string_buffer_index;
+
+    InitCond( Param * param, CValue init_val);
+    ~InitCond();
+    void evaluate();  //Wrapper around following declaration
+    void evaluate(bool evalUser);
+
+    void init_cond_to_string();
+    void write_init();
+  };
+
 
 #endif /** !_INIT_COND_H */

@@ -1,6 +1,6 @@
 /**
  * projectM -- Milkdrop-esque visualisation SDK
- * Copyright (C)2003-2004 projectM Team
+ * Copyright (C)2003-2007 projectM Team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,23 +18,30 @@
  * See 'LICENSE.txt' included within this release
  *
  */
+/**
+ * $Id$
+ *
+ * Expression evaluators
+ *
+ * $Log$
+ */
 
-/* eval.h: evaluation functions of expressions */
+/* Eval.hpp: evaluation functions of expressions */
+
 #ifndef _EVAL_H
 #define _EVAL_H
 
-#include "projectM.h"
-#include "func_types.h"
-#include "param_types.h"
+#include "projectM.hpp"
+#include "Func.hpp"
+#include "Param.hpp"
 
-//#define EVAL_DEBUG 0
+//#define EVAL_DEBUG 2
 //#define EVAL_DEBUG_DOUBLE 2
 
 #define VAL_T 1
 #define PREFUN_T 3
 #define TREE_T 4
 #define NONE_T 0
-
 
 #define CONSTANT_TERM_T 0
 #define PARAM_TERM_T 1
@@ -47,32 +54,40 @@
 #define INFIX_OR 5
 #define INFIX_AND 6
 
-float eval_gen_expr(gen_expr_t * gen_expr);
-inline gen_expr_t * opt_gen_expr(gen_expr_t * gen_expr, int ** param_list);
+class InfixOp;
 
-gen_expr_t * const_to_expr(float val);
-gen_expr_t * param_to_expr(struct PARAM_T * param);
-gen_expr_t * prefun_to_expr(float (*func_ptr)(), gen_expr_t ** expr_list, int num_args);
+class Eval {
+public:
+    static InfixOp *infix_add,
+                   *infix_minus,
+                   *infix_div,
+                   *infix_mult,
+                   *infix_or,
+                   *infix_and,
+                   *infix_mod,
+                   *infix_negative,
+                   *infix_positive;
 
-tree_expr_t * new_tree_expr(infix_op_t * infix_op, gen_expr_t * gen_expr, tree_expr_t * left, tree_expr_t * right);
-gen_expr_t * new_gen_expr(int type, void * item);
-val_expr_t * new_val_expr(int type, term_t term);
+    float eval_gen_expr(GenExpr * gen_expr);
+    inline GenExpr * opt_gen_expr(GenExpr * gen_expr, int ** param_list);
 
-int free_gen_expr(gen_expr_t * gen_expr);
-int free_prefun_expr(prefun_expr_t * prefun_expr);
-int free_tree_expr(tree_expr_t * tree_expr);
-int free_val_expr(val_expr_t * val_expr);
+    GenExpr * const_to_expr(float val);
+    GenExpr * param_to_expr(Param * param);
+    GenExpr * prefun_to_expr(float (*func_ptr)(), GenExpr ** expr_list, int num_args);
 
-infix_op_t * new_infix_op(int type, int precedence);
-int init_infix_ops();
-int destroy_infix_ops();
-void reset_engine_vars();
+    static TreeExpr * new_tree_expr(InfixOp * infix_op, GenExpr * gen_expr, TreeExpr * left, TreeExpr * right);
+    static GenExpr * new_gen_expr(int type, void * item);
+    static ValExpr * new_val_expr(int type, Term *term);
 
-gen_expr_t * clone_gen_expr(gen_expr_t * gen_expr);
-tree_expr_t * clone_tree_expr(tree_expr_t * tree_expr);
-val_expr_t * clone_val_expr(val_expr_t * val_expr);
-prefun_expr_t * clone_prefun_expr(prefun_expr_t * prefun_expr);
-
-
+    static InfixOp * new_infix_op(int type, int precedence);
+    static int init_infix_ops();
+    static int destroy_infix_ops();
+    void reset_engine_vars();
+    
+    GenExpr * clone_gen_expr(GenExpr * gen_expr);
+    TreeExpr * clone_tree_expr(TreeExpr * tree_expr);
+    ValExpr * clone_val_expr(ValExpr * val_expr);
+    PrefunExpr * clone_prefun_expr(PrefunExpr * prefun_expr);
+  };
 
 #endif /** !_EVAL_H */

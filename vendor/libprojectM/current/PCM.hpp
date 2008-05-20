@@ -1,6 +1,6 @@
 /**
  * projectM -- Milkdrop-esque visualisation SDK
- * Copyright (C)2003-2004 projectM Team
+ * Copyright (C)2003-2007 projectM Team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,24 +18,51 @@
  * See 'LICENSE.txt' included within this release
  *
  */
+/**
+ * $Id$
+ *
+ * Encapsulation of raw sound buffer. Used in beat detection
+ *
+ * $Log$
+ */
 
 #ifndef _PCM_H
 #define _PCM_H
 
-void initPCM(int maxsamples);
-#ifdef __CPlUSCPLUS
-extern "C" void addPCMfloat(float *PCMdata, int samples);
-extern "C" void addPCM16(short [2][512]);
-extern "C" void addPCM16Data(const short* pcm_data, short samples);
-extern "C" void addPCM8( unsigned char [2][512]);
-#else
-extern void addPCMfloat(float *PCMdata, int samples);
-extern void addPCM16(short [2][512]);
-extern void addPCM16Data(const short* pcm_data, short samples);
-extern void addPCM8( unsigned char [2][512]);
-#endif
-void getPCM(float *data, int samples, int channel, int freq, float smoothing, int derive);
-void freePCM();
-int getPCMnew(float *PCMdata, int channel, int freq, float smoothing, int derive,int reset);
+class PCM {
+public:
+    mutable float **PCMd;
+    mutable int start;
+
+    /** Use wave smoothing */
+    float waveSmoothing;
+
+    int *ip;
+    double *w;
+    mutable int newsamples;
+
+    mutable int numsamples; //size of new PCM info
+    float *pcmdataL;     //holder for most recent pcm data 
+    float *pcmdataR;     //holder for most recent pcm data 
+
+    /** PCM data */
+    mutable float vdataL[512];  //holders for FFT data (spectrum)
+    mutable float vdataR[512];
+
+    static int maxsamples;
+    PCM();
+    ~PCM();
+    void initPCM(int maxsamples);
+    void addPCMfloat(const float *PCMdata, int samples) const;
+    void addPCM16(short [2][512]) const;
+    void addPCM16Data(const short* pcm_data, short samples) const;
+    void addPCM8( unsigned char [2][1024]) const;
+	void addPCM8_512( const unsigned char [2][512]) const;
+    void getPCM(float *data, int samples, int channel, int freq, float smoothing, int derive) const;
+    void freePCM();
+    int getPCMnew(float *PCMdata, int channel, int freq, float smoothing, int derive,int reset) const;
+    
+
+  };
 
 #endif /** !_PCM_H */

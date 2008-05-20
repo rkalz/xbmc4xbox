@@ -19,15 +19,12 @@
  *
  */
 /**
- * $Id: event.h,v 1.1.1.1 2005/12/23 18:05:03 psperl Exp $
+ * $Id: event.h,v 1.2 2004/10/08 10:54:27 cvs Exp $
  *
  * projectM keycodes. Enables translation from various event schemes such as Win32, SDL
  * &c.
  *
  * $Log: event.h,v $
- * Revision 1.1.1.1  2005/12/23 18:05:03  psperl
- * Imported
- *
  */
 
 #ifndef _PROJECTM_EVENT_H
@@ -39,7 +36,6 @@ typedef enum {
     PROJECTM_KEYDOWN,
     PROJECTM_VIDEORESIZE,
     PROJECTM_VIDEOQUIT,
-    PROJECTM_NONE,
   } projectMEvent;
 
 typedef enum {

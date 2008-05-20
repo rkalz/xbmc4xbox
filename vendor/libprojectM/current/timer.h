@@ -1,6 +1,6 @@
 /**
  * projectM -- Milkdrop-esque visualisation SDK
- * Copyright (C)2003-2004 projectM Team
+ * Copyright (C)2003-2007 projectM Team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,9 +41,11 @@
 #ifndef WIN32
 #include <sys/time.h>
 unsigned int getTicks( struct timeval *start );
+struct timeval GetCurrentTime();
 #else
 #include <windows.h>
 unsigned int getTicks( long start );
+
 #endif /** !WIN32 */
 
 #endif /** _TIMER_H */

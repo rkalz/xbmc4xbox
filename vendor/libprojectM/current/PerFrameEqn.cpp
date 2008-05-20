@@ -24,92 +24,44 @@
 #include <string.h>
 
 #include "fatal.h"
-#include "common.h"
+#include "Common.hpp"
 
-#include "param.h"
-#include "per_frame_eqn_types.h"
-#include "per_frame_eqn.h"
+#include "Param.hpp"
+#include "PerFrameEqn.hpp"
 
-#include "expr_types.h"
-#include "eval.h"
+#include "Eval.hpp"
+#include "Expr.hpp"
 
 #include "wipemalloc.h"
+#include <cassert>
 
 /* Evaluate an equation */
-void eval_per_frame_eqn(per_frame_eqn_t * per_frame_eqn) {
-
-  if (per_frame_eqn == NULL)
-    return;
+void PerFrameEqn::evaluate() {
 
      if (PER_FRAME_EQN_DEBUG) { 
-		 printf("per_frame_%d=%s= ", per_frame_eqn->index, per_frame_eqn->param->name);
-		 fflush(stdout);
-	 }
+		 printf("per_frame_%d=%s= ", index, param->name.c_str());
+		 fflush(stdout); 
+     }
 	 
     //*((float*)per_frame_eqn->param->engine_val) = eval_gen_expr(per_frame_eqn->gen_expr);
-	set_param(per_frame_eqn->param, eval_gen_expr(per_frame_eqn->gen_expr));
-     if (PER_FRAME_EQN_DEBUG) printf(" = %.4f\n", *((float*)per_frame_eqn->param->engine_val)); 
+	assert(gen_expr);
+	assert(param);
+	param->set_param(gen_expr->eval_gen_expr(-1,-1));
+
+     if (PER_FRAME_EQN_DEBUG) printf(" = %.4f\n", *((float*)param->engine_val)); 
 		 
 }
 
-/*
-void eval_per_frame_init_eqn(per_frame_eqn_t * per_frame_eqn) {
 
-   float val;
-   init_cond_t * init_cond;
-   if (per_frame_eqn == NULL)
-     return;
+/* Frees perframe equation structure. Warning: assumes gen_expr pointer is not freed by anyone else! */
+PerFrameEqn::~PerFrameEqn() {
 
-     if (PER_FRAME_EQN_DEBUG) { 
-		 printf("per_frame_init: %s = ", per_frame_eqn->param->name);
-		 fflush(stdout);
-	 }
-	 		
-	
-    val = *((float*)per_frame_eqn->param->engine_val) = eval_gen_expr(per_frame_eqn->gen_expr);
-    if (PER_FRAME_EQN_DEBUG) printf(" = %f\n", *((float*)per_frame_eqn->param->engine_val)); 
-     
-	if (per_frame_eqn->param->flags & P_FLAG_QVAR) {
-		
-		per_frame_eqn->param->init_val.float_val = val;
-		if ((init_cond = new_init_cond(per_frame_eqn->param)) == NULL)
-			return;
-		
-		if ((list_append(init_cond_list, init_cond)) < 0) {
-			free_init_cond(init_cond);
-			return;
-		}
-    }
-}
-*/
+  delete gen_expr;
 
-/* Frees perframe equation structure */
-void free_per_frame_eqn(per_frame_eqn_t * per_frame_eqn) {
+  // param is freed in param_tree container of some other class
 
-	if (per_frame_eqn == NULL)
-	  return;
-	
-  free_gen_expr(per_frame_eqn->gen_expr);
-  free(per_frame_eqn);
-  per_frame_eqn = NULL;
 }
 
 /* Create a new per frame equation */
-per_frame_eqn_t * new_per_frame_eqn(int index, param_t * param, gen_expr_t * gen_expr) {
-
-  per_frame_eqn_t * per_frame_eqn;
-
-  per_frame_eqn = (per_frame_eqn_t*)wipemalloc(sizeof(per_frame_eqn_t));
-
-  if (per_frame_eqn == NULL)
-    return NULL;
-
-  per_frame_eqn->param = param;
-  per_frame_eqn->gen_expr = gen_expr;
-  per_frame_eqn->index = index;
-  /* Set per frame eqn name */
-  //  memset(per_frame_eqn->name, 0, MAX_TOKEN_SIZE);
-  //strncpy(per_frame_eqn->name, name, MAX_TOKEN_SIZE-1);
-  return per_frame_eqn;
-
-}
+PerFrameEqn::PerFrameEqn(int _index, Param * _param, GenExpr * _gen_expr) :
+	index(_index), param(_param), gen_expr(_gen_expr) {}

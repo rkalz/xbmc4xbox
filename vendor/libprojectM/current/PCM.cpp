@@ -27,46 +27,39 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "Common.hpp"
 #include "wipemalloc.h"
 #include "fftsg.h"
+#include "PCM.hpp"
+#include <cassert>
 
-
-
-float **PCMd;    //data structure to store PCM data  PCM[channels][maxsamples]
-int maxsamples;   //size of PCM buffer
-int start;        //where to add data next
-
-int *ip;          //working space for FFT routines
-double *w;        //lookup table for FFT routines
-int newsamples;          //how many new samples
-
-#ifdef DEBUG
-extern FILE *debugFile;
-#endif
+int PCM::maxsamples = 2048;
 
 //initPCM(int samples)
 //
 //Initializes the PCM buffer to
 // number of samples specified.
+#include <iostream>
+PCM::PCM() {
+    initPCM( 2048 );
+    std::cerr << "MAX SAMPLES:" << maxsamples << std::endl;
+  }
 
-void initPCM(int samples)
-{
+void PCM::initPCM(int samples) {
   int i; 
 
-#ifdef DEBUG
-    if ( debugFile != NULL ) {
-        fprintf( debugFile, "initPCM()\n" );
-        fflush( debugFile );
-      }
-#endif 
+    waveSmoothing = 0;
 
   //Allocate memory for PCM data buffer
+    assert(samples == 2048);
   PCMd = (float **)wipemalloc(2 * sizeof(float *));
   PCMd[0] = (float *)wipemalloc(samples * sizeof(float));
   PCMd[1] = (float *)wipemalloc(samples * sizeof(float));
   
-  maxsamples=samples;
+  //maxsamples=samples;
   newsamples=0;
+    numsamples = maxsamples;
 
   //Initialize buffers to 0
   for (i=0;i<samples;i++)
@@ -81,42 +74,68 @@ void initPCM(int samples)
   w=  (double *)wipemalloc(maxsamples*sizeof(double));
   ip= (int *)wipemalloc(maxsamples*sizeof(int));
   ip[0]=0;
+
+
+    /** PCM data */
+//    this->maxsamples = 2048;
+//    this->numsamples = 0;
+//    this->pcmdataL = NULL;
+//    this->pcmdataR = NULL;
+
+    /** Allocate PCM data structures */
+    pcmdataL=(float *)wipemalloc(this->maxsamples*sizeof(float));
+    pcmdataR=(float *)wipemalloc(this->maxsamples*sizeof(float));
+ 
 }
 
+PCM::~PCM() {
 
-extern "C" void addPCMfloat(float *PCMdata, int samples)
+	free(pcmdataL);
+	free(pcmdataR);
+	free(w);
+	free(ip);
+	
+	free(PCMd[0]);
+	free(PCMd[1]);
+	free(PCMd);
+
+}
+
+#include <iostream>
+
+void PCM::addPCMfloat(const float *PCMdata, int samples) const
 {
   int i,j;
 
+  for(i=0;i<samples;i++)
+    {
+      j=i+start;
 
-	 for(i=0;i<samples;i++)
-	   {
-	     j=i+start;
-
-           
-
-         if ( PCMdata[i] != 0 && PCMdata[i] != 0 ) {
-	   
-	    PCMd[0][j%maxsamples]=(float)PCMdata[i];
-	    PCMd[1][j%maxsamples]=(float)PCMdata[i];  
-	 
-          } else {
-             PCMd[0][j % maxsamples] =(float) 0;
-             PCMd[1][j % maxsamples] =(float) 0;
-          }
-	   }
-	  
- 
-	 // printf("Added %d samples %d %d %f\n",samples,start,(start+samples)%maxsamples,PCM[0][start+10]); 
-
- start+=samples;
- start=start%maxsamples;
-
+      if (PCMdata[i] != 0 ) {
+	
+	PCMd[0][j%maxsamples] = PCMdata[i];
+	PCMd[1][j%maxsamples] = PCMdata[i];
+	
+      }
+      else 
+	{
+	  PCMd[0][j % maxsamples] = 0;
+	  PCMd[1][j % maxsamples] = 0;
+	}
+    }
+  
+  start+=samples;
+  start=start%maxsamples;
+  
  newsamples+=samples;
  if (newsamples>maxsamples) newsamples=maxsamples;
+  numsamples = getPCMnew(pcmdataR,1,0,waveSmoothing,0,0);
+    getPCMnew(pcmdataL,0,0,waveSmoothing,0,1);
+    getPCM(vdataL,512,0,1,0,0);
+    getPCM(vdataR,512,1,1,0,0);
 }
 
-extern "C" void addPCM16Data(const short* pcm_data, short samples) {
+void PCM::addPCM16Data(const short* pcm_data, short samples) const {
    int i, j;
 
    for (i = 0; i < samples; ++i) {
@@ -129,14 +148,17 @@ extern "C" void addPCM16Data(const short* pcm_data, short samples) {
 
    newsamples+=samples;
    if (newsamples>maxsamples) newsamples=maxsamples;
+     numsamples = getPCMnew(pcmdataR,1,0,waveSmoothing,0,0);
+    getPCMnew(pcmdataL,0,0,waveSmoothing,0,1);
+    getPCM(vdataL,512,0,1,0,0);
+    getPCM(vdataR,512,1,1,0,0);
 }
 
 
-extern "C" void addPCM16(short PCMdata[2][512])
+void PCM::addPCM16(short PCMdata[2][512]) const
 {
   int i,j;
   int samples=512;
-
  
 	 for(i=0;i<samples;i++)
 	   {
@@ -149,6 +171,39 @@ extern "C" void addPCM16(short PCMdata[2][512])
              PCMd[1][j % maxsamples] = (float)0;
           }
 	   }
+ 
+	 // printf("Added %d samples %d %d %f\n",samples,start,(start+samples)%maxsamples,PCM[0][start+10]); 
+
+ start+=samples;
+ start=start%maxsamples;
+
+ newsamples+=samples;
+ if (newsamples>maxsamples) newsamples=maxsamples;
+
+    numsamples = getPCMnew(pcmdataR,1,0,waveSmoothing,0,0);
+    getPCMnew(pcmdataL,0,0,waveSmoothing,0,1);
+    getPCM(vdataL,512,0,1,0,0);
+    getPCM(vdataR,512,1,1,0,0);
+}
+
+
+void PCM::addPCM8( unsigned char PCMdata[2][1024]) const
+{
+  int i,j;
+  int samples=1024;
+
+ 
+	 for(i=0;i<samples;i++)
+	   {
+	     j=i+start;
+         if ( PCMdata[0][i] != 0 && PCMdata[1][i] != 0 ) {
+	         PCMd[0][j%maxsamples]=( (float)( PCMdata[0][i] - 128.0 ) / 64 );
+	         PCMd[1][j%maxsamples]=( (float)( PCMdata[1][i] - 128.0 ) / 64 );  
+          } else {
+             PCMd[0][j % maxsamples] = 0;
+             PCMd[1][j % maxsamples] = 0;
+          }
+	   }
        
  
 	 // printf("Added %d samples %d %d %f\n",samples,start,(start+samples)%maxsamples,PCM[0][start+10]); 
@@ -158,10 +213,13 @@ extern "C" void addPCM16(short PCMdata[2][512])
 
  newsamples+=samples;
  if (newsamples>maxsamples) newsamples=maxsamples;
+    numsamples = getPCMnew(pcmdataR,1,0,waveSmoothing,0,0);
+    getPCMnew(pcmdataL,0,0,waveSmoothing,0,1);
+    getPCM(vdataL,512,0,1,0,0);
+    getPCM(vdataR,512,1,1,0,0);
 }
 
-
-extern "C" void addPCM8( unsigned char PCMdata[2][512])
+void PCM::addPCM8_512( const unsigned char PCMdata[2][512]) const
 {
   int i,j;
   int samples=512;
@@ -187,6 +245,10 @@ extern "C" void addPCM8( unsigned char PCMdata[2][512])
 
  newsamples+=samples;
  if (newsamples>maxsamples) newsamples=maxsamples;
+    numsamples = getPCMnew(pcmdataR,1,0,waveSmoothing,0,0);
+    getPCMnew(pcmdataL,0,0,waveSmoothing,0,1);
+    getPCM(vdataL,512,0,1,0,0);
+    getPCM(vdataR,512,1,1,0,0);
 }
 
 
@@ -199,7 +261,7 @@ extern "C" void addPCM8( unsigned char PCMdata[2][512])
 
 //returned values are normalized from -1 to 1
 
-void getPCM(float *PCMdata, int samples, int channel, int freq, float smoothing, int derive)
+void PCM::getPCM(float *PCMdata, int samples, int channel, int freq, float smoothing, int derive) const
 {
    int i,index;
    
@@ -232,19 +294,13 @@ void getPCM(float *PCMdata, int samples, int channel, int freq, float smoothing,
    if (freq) 
 
      {
-       double temppcm[1024];     
-      
+       double temppcm[1024];
        for (int i=0;i<samples;i++)
 	 {temppcm[i]=(double)PCMdata[i];}
        rdft(samples, 1, temppcm, ip, w);
        for (int j=0;j<samples;j++)
 	 {PCMdata[j]=(float)temppcm[j];}
-      
-    
      }
-    
-
-   
 }
 
 //getPCMnew
@@ -253,7 +309,7 @@ void getPCM(float *PCMdata, int samples, int channel, int freq, float smoothing,
 //the actual return value is the number of samples, up to maxsamples.
 //the passed pointer, PCMData, must bee able to hold up to maxsamples
 
-int getPCMnew(float *PCMdata, int channel, int freq, float smoothing, int derive, int reset)
+int PCM::getPCMnew(float *PCMdata, int channel, int freq, float smoothing, int derive, int reset) const
 {
    int i,index;
    
@@ -262,7 +318,6 @@ int getPCMnew(float *PCMdata, int channel, int freq, float smoothing, int derive
    if (index<0) index=maxsamples+index;
 
    PCMdata[0]=PCMd[channel][index];
-   
    for(i=1;i<newsamples;i++)
      {
        index=start-1-i;
@@ -290,8 +345,7 @@ int getPCMnew(float *PCMdata, int channel, int freq, float smoothing, int derive
 }
 
 //Free stuff
-void freePCM()
-{
+void PCM::freePCM() {
   free(PCMd[0]);
   free(PCMd[1]);
   free(PCMd);

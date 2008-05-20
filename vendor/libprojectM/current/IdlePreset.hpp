@@ -1,31 +1,21 @@
-/**
- * projectM -- Milkdrop-esque visualisation SDK
- * Copyright (C)2003-2004 projectM Team
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * See 'LICENSE.txt' included within this release
- *
- */
+#ifndef IDLE_PRESET_HPP
+#define IDLE_PRESET_HPP
+#include <memory>
+#include "PresetFrameIO.hpp"
+#include "Preset.hpp"
 
-#ifndef _IDLE_PRESET_H
-#define _IDLE_PRESET_H
+/// A preset that does not depend on the file system to be loaded. This allows projectM to render
+/// something (ie. self indulgent project advertisting) even when no valid preset directory is found.
+class IdlePreset {
 
-#include "preset_types.h"
-
-#define IDLE_PRESET_STRING "[idlepreset]\n"
-
-preset_t * idle_preset;
-
-#endif /** !_IDLE_PRESET_H */
+  public:
+	/// Allocate a new idle preset instance 
+	/// \param presetInputs the preset inputs instance to associate with the preset
+	/// \param presetOutputs the preset output instance to associate with the preset
+	/// \returns a newly allocated auto pointer of an idle preset instance
+	static std::auto_ptr<Preset> allocate(PresetInputs & presetInputs, PresetOutputs & presetOutputs);
+  private:
+	static std::string presetText();
+	static const std::string IDLE_PRESET_NAME;
+};
+#endif
