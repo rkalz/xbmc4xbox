@@ -1,4 +1,0 @@
-#!/bin/sh
-
-export XBMC_PLATFORM_MODE=1
-exec @prefix@/xbmc/xbmc.bin -q
