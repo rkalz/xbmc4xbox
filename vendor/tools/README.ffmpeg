@@ -1,0 +1,8 @@
+Run update.ffmpeg.sh to get the latest version from SVN.
+
+Latest svn should be tagged as ffmpeg-xxx_libswscale-yyy where xxx and yyy
+represent the version number of ffmpeg and libswscale respectively.  svn should
+output these numbers.
+
+Read README.svn_load_dirs to figure out how to first merge into the vendor
+branch and then into our working copy.
