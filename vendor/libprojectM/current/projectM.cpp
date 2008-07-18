@@ -19,7 +19,7 @@
  *
  */
 #include "wipemalloc.h"
-#include "BuiltinFuncs.hpp"
+
 #include "fatal.h"
 #include "Common.hpp"
 #include "compare.h"
@@ -40,6 +40,7 @@
 //#include <xmms/plugin.h>
 #include <iostream>
 #include "projectM.hpp"
+#include "BuiltinFuncs.hpp"
 #include "BeatDetect.hpp"
 #include "Eval.hpp"
 #include "Param.hpp"
@@ -161,23 +162,54 @@ bool projectM::writeConfig(const std::string & configFile, const Settings & sett
 
 void projectM::readConfig (const std::string & configFile )
 {
-
+	std::cout << "configFile: " << configFile << std::endl;
+	
 	ConfigFile config ( configFile );
-
 	_settings.meshX = config.read<int> ( "Mesh X", 32 );
 	_settings.meshY = config.read<int> ( "Mesh Y", 24 );
-	_settings.textureSize = config.read<int> ( "Texsize", 512 );
+	_settings.textureSize = config.read<int> ( "Texture Size", 512 );
 	_settings.fps = config.read<int> ( "FPS", 35 );
 	_settings.windowWidth  = config.read<int> ( "Window Width", 512 );
 	_settings.windowHeight = config.read<int> ( "Window Height", 512 );
 	_settings.smoothPresetDuration =  config.read<int> 
 			( "Smooth Preset Duration", config.read<int>("Smooth Transition Duration", 10));
 	_settings.presetDuration = config.read<int> ( "Preset Duration", 15 );
+	
+	#ifdef LINUX
 	_settings.presetURL = config.read<string> ( "Preset Path", CMAKE_INSTALL_PREFIX "/share/projectM/presets" );
+	#endif
+	
+	#ifdef __APPLE__
+	/// @bug awful hardcoded hack- need to add intelligence to cmake wrt bundling - carm
+	_settings.presetURL = config.read<string> ( "Preset Path", "../Resources/presets" );
+	#endif
+		
+	#ifdef WIN32
+	_settings.presetURL = config.read<string> ( "Preset Path", CMAKE_INSTALL_PREFIX "/share/projectM/presets" );
+	#endif
+	
+	#ifdef __APPLE__
+	_settings.titleFontURL = config.read<string> 
+			( "Title Font",  "../Resources/fonts/Vera.tff");
+	_settings.menuFontURL = config.read<string> 
+			( "Menu Font", "../Resources/fonts/VeraMono.ttf");
+	#endif
+	
+	#ifdef LINUX
 	_settings.titleFontURL = config.read<string> 
 			( "Title Font", CMAKE_INSTALL_PREFIX  "/share/projectM/fonts/Vera.ttf" );
 	_settings.menuFontURL = config.read<string> 
-			( "Menu Font", CMAKE_INSTALL_PREFIX  "/share/projectM/fonts/VeraMono.ttf" );
+			( "Menu Font", CMAKE_INSTALL_PREFIX  "/share/projectM/fonts/VeraMono.ttf" );			
+	#endif
+	
+	#ifdef WIN32
+	_settings.titleFontURL = config.read<string> 
+			( "Title Font", CMAKE_INSTALL_PREFIX  "/share/projectM/fonts/Vera.ttf" );
+	_settings.menuFontURL = config.read<string> 
+			( "Menu Font", CMAKE_INSTALL_PREFIX  "/share/projectM/fonts/VeraMono.ttf" );			
+	#endif
+	
+	
 	_settings.shuffleEnabled = config.read<bool> ( "Shuffle Enabled", true);
 			
 	_settings.easterEgg = config.read<float> ( "Easter Egg Parameter", 0.0);
@@ -209,8 +241,8 @@ void *projectM::thread_func(void *vptr_args)
 {
    pthread_mutex_lock( &mutex );
   //  printf("in thread: %f\n", timeKeeper->PresetProgressB());
-  while (1)
-    {   
+  while (true)
+    {
       pthread_cond_wait( &condition, &mutex );
       if(!running)
 	{
@@ -218,7 +250,7 @@ void *projectM::thread_func(void *vptr_args)
 	  return NULL;
 	}
      evaluateSecondPreset();
-    }  
+    } 
 }
 #endif
 
@@ -376,8 +408,8 @@ void projectM::projectM_reset()
 
 	/** Default variable settings */
 
-	this->wvw = 512;
-	this->wvh = 512;      
+  //	this->wvw = 512;
+  //	this->wvh = 512;      
 
 	/** More other stuff */
 	this->mspf = 0;
@@ -415,7 +447,6 @@ void projectM::projectM_init ( int gx, int gy, int fps, int texsize, int width, 
 	/** We need to initialise this before the builtin param db otherwise bass/mid etc won't bind correctly */
 	assert ( !beatDetect );
 
-	std::cerr << "pcm new" << std::endl;
 	if (!_pcm)
 		_pcm = new PCM();
 	assert(pcm());
@@ -432,7 +463,7 @@ void projectM::projectM_init ( int gx, int gy, int fps, int texsize, int width, 
 	this->presetInputs2.gy = gy;
 
 	this->renderer = new Renderer ( width, height, gx, gy, texsize,  beatDetect, settings().presetURL, settings().titleFontURL, settings().menuFontURL );
-
+	
 	running = true;
 
 #ifdef USE_THREADS
@@ -440,11 +471,11 @@ void projectM::projectM_init ( int gx, int gy, int fps, int texsize, int width, 
 	pthread_cond_init(&condition, NULL);
 	if (pthread_create(&thread, NULL, thread_callback, this) != 0)
 	    { 	      
-	      printf("oops\n");
+		    
+	      std::cerr << "failed to allocate a thread! try building with option USE_THREADS turned off" << std::endl;;
 	      exit(1);
 	    }
 	pthread_mutex_lock( &mutex );
-	printf("got lock\n");
 #endif
 
 	renderer->setPresetName ( m_activePreset->presetName() );

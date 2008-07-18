@@ -6,8 +6,17 @@
 #include "BeatDetect.hpp"
 #include <string>
 
+#ifdef USE_GLES1
+#include <GLES/gl.h>
+#else
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#else
 #include <GL/gl.h>
 #include <GL/glu.h>
+#endif
+#endif
 
 #ifdef USE_FTGL
 #ifdef WIN32

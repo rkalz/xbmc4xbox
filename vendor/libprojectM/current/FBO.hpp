@@ -28,12 +28,17 @@
 #ifndef _RENDERTARGET_H
 #define _RENDERTARGET_H
 
-
+#ifdef USE_FBO
+#ifdef USE_NATIVE_GLEW
+#include "glew.h"
+#else
 #include <GL/glew.h>
+#endif
+#endif
 
-
-#if defined(MACOS)
-#include <gl.h>
+#ifdef MACOS
+#include <OpenGL/gl.h>
+#include <AGL/agl.h>
 #endif /** MACOS */
 
 #ifdef WIN32
@@ -41,8 +46,12 @@
 #endif /** WIN32 */
 
 #ifdef LINUX
+#ifdef USE_GLES1
+#include <GLES/gl.h>
+#else
 #include <GL/gl.h>
 #include <GL/glx.h>
+#endif
 #endif
 
 typedef enum { SCALE_NEAREST, SCALE_MAGNIFY, SCALE_MINIFY } TextureScale;
@@ -76,8 +85,10 @@ public:
 */
     /** Render target texture ID for non-pbuffer systems */
     GLuint textureID[3];
+#ifdef USE_FBO
     GLuint fbuffer[2]; 
     GLuint depthb[2];
+#endif
   };
 
 

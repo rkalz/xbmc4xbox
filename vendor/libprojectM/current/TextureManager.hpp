@@ -6,9 +6,19 @@
 #include <GL/gl.h>
 #endif
 #ifdef WIN32
-#include <GL/glew.h>
+#include "glew.h"
 #endif
+
+#ifdef __APPLE__
+#include <GL/gl.h>
+#endif
+
+#ifdef USE_DEVIL
+#include <IL/ilut.h>
+#else
 #include "SOIL.h"
+#endif
+
 #include <iostream>
 #include <string>
 #include <map>
