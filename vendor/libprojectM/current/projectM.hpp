@@ -45,9 +45,9 @@
 #include <sys/types.h>
 
 #ifdef MACOS
-#include <MacWindows.h>
-#include <gl.h>
-#include <glu.h>
+//#include <MacWindows.h>
+//#include <gl.h>
+//#include <glu.h>
 #else
 #ifdef WIN32
 #include <windows.h>
@@ -88,8 +88,8 @@ class TimeKeeper;
 #endif
 
 /** KEEP THIS UP TO DATE! */
-#define PROJECTM_VERSION "1.10.00"
-#define PROJECTM_TITLE "projectM 1.10.00"
+#define PROJECTM_VERSION "1.1.00"
+#define PROJECTM_TITLE "projectM 1.1.00"
 
 /** Interface types */
 typedef enum {
@@ -121,7 +121,7 @@ public:
 	
   DLLEXPORT projectM(std::string config_file, int flags = FLAG_NONE);
   
-  DLLEXPORT projectM(int gx, int gy, int fps, int texsize, int width, int height,std::string preset_url,std::string title_fonturl, std::string title_menuurl);
+  //DLLEXPORT projectM(int gx, int gy, int fps, int texsize, int width, int height,std::string preset_url,std::string title_fonturl, std::string title_menuurl);
   
   DLLEXPORT void projectM_resetGL( int width, int height );
   DLLEXPORT void projectM_resetTextures();

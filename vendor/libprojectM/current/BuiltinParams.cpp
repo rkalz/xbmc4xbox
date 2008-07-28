@@ -1,12 +1,11 @@
 
-
+#include "fatal.h"
 #include "BuiltinParams.hpp"
-#include "projectM.hpp"
 #include <cassert>
 #include "Algorithms.hpp"
-#include "InitCondUtils.hpp"
 #include <iostream>
 #include <algorithm>
+#include "InitCondUtils.hpp"
 
 
 using namespace Algorithms;
@@ -19,6 +18,7 @@ BuiltinParams::BuiltinParams(const PresetInputs & presetInputs, PresetOutputs & 
  int ret;
   if ((ret = init_builtin_param_db(presetInputs, presetOutputs)) != PROJECTM_SUCCESS)
   {
+	std::cout << "failed to allocate builtin parameter database with error " << ret << std::endl;;
     throw ret;
   }
 

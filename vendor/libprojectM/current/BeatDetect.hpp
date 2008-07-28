@@ -31,7 +31,6 @@
 #ifndef _BEAT_DETECT_H
 #define _BEAT_DETECT_H
 
-#include "projectM.hpp"
 #include "PCM.hpp"
 
 class BeatDetect
@@ -62,8 +61,8 @@ class BeatDetect
 		PCM *pcm;
 
 		/** Methods */
-		DLLEXPORT BeatDetect(PCM *pcm);
-		DLLEXPORT ~BeatDetect();
+		BeatDetect(PCM *pcm);
+		~BeatDetect();
 		void initBeatDetect();
 		void reset();
 		void detectFromSamples();

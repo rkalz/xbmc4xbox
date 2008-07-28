@@ -30,15 +30,14 @@
 #include "Common.hpp"
 #include "FBO.hpp"
 
-#ifdef MACOS
-#include <agl.h>
-#endif /** MACOS */
+
 
 RenderTarget::~RenderTarget() {
 
 
 	glDeleteTextures( 1, &this->textureID[0]);
 
+#ifdef USE_FBO
 	if (useFBO) 
          {
 		glDeleteTextures( 1, &this->textureID[1] );
@@ -51,11 +50,14 @@ RenderTarget::~RenderTarget() {
 		    glDeleteFramebuffersEXT(1, &this->fbuffer[1]);
 		  }
          }
+#endif
 
 }
 
 GLuint RenderTarget::initRenderToTexture()
 {
+#ifdef USE_FBO
+
   if (this->useFBO==1)
     {
       this->renderToTexture=1;
@@ -80,7 +82,8 @@ GLuint RenderTarget::initRenderToTexture()
       glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, this->textureID[2], 0 );
       return this->textureID[2];
     }
-  else return -1;
+#endif 
+return -1;
       
 }
 
@@ -89,12 +92,13 @@ RenderTarget::RenderTarget(int texsize, int width, int height) : useFBO(false) {
 
     int mindim = 0;
     int origtexsize = 0;
-    this->useFBO = true;
+  
     this->renderToTexture = 0;
 
     this->texsize = texsize;
 
-
+#ifdef USE_FBO
+    this->useFBO = true;
    if(this->useFBO)
     { 
       glewInit();
@@ -144,9 +148,12 @@ RenderTarget::RenderTarget(int texsize, int width, int height) : useFBO(false) {
 	    return;
 	  }	
 	}
-      else this->useFBO=0;      
+      
     }
 
+#else
+   this->useFBO=false;
+#endif
     /** Fallback pbuf;fer creation via teximage hack */
     /** Check the texture size against the viewport size */
     /** If the viewport is smaller, then we'll need to scale the texture size down */
@@ -155,21 +162,17 @@ RenderTarget::RenderTarget(int texsize, int width, int height) : useFBO(false) {
     origtexsize = this->texsize;
     this->texsize = nearestPower2( mindim, SCALE_MINIFY );      
 
-    /* Create the texture that will be bound to the render this */
-    if ( glIsTexture( this->textureID[0] ) ) {
-        if ( this->texsize != origtexsize ) 
-            glDeleteTextures( 1, &this->textureID[0] );
-      }
+  
 
-    if ( !glIsTexture( this->textureID[0] ) ) {
+ 
         glGenTextures(1, &this->textureID[0] );
 
         glBindTexture(GL_TEXTURE_2D, this->textureID[0] );
         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         glTexImage2D(GL_TEXTURE_2D,
 		    0,
@@ -179,9 +182,9 @@ RenderTarget::RenderTarget(int texsize, int width, int height) : useFBO(false) {
 		    GL_RGBA,
 		    GL_UNSIGNED_BYTE,
 		    NULL);
-      }
+      
 
-    this->useFBO=0;
+   
     return;
   }
 
@@ -192,23 +195,23 @@ RenderTarget::RenderTarget(int texsize, int width, int height) : useFBO(false) {
     this->texsize = nearestPower2( mindim, SCALE_MINIFY );      
 
     /* Create the texture that will be bound to the render this */
-    if ( glIsTexture( this->textureID[0] ) ) {
+    /*
 
         if ( this->texsize != origtexsize ) {
 
             glDeleteTextures( 1, &this->textureID[0] );
           }
-      }
+    */
 
-    if ( !glIsTexture( this->textureID[0] ) ) {
+   
         glGenTextures(1, &this->textureID[0] );
 
         glBindTexture(GL_TEXTURE_2D, this->textureID[0] );
         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         glTexImage2D(GL_TEXTURE_2D,
 		    0,
@@ -218,7 +221,7 @@ RenderTarget::RenderTarget(int texsize, int width, int height) : useFBO(false) {
 		    GL_RGBA,
 		    GL_UNSIGNED_BYTE,
 		    NULL);
-      }
+      
 
   }
 
@@ -227,18 +230,18 @@ RenderTarget::RenderTarget(int texsize, int width, int height) : useFBO(false) {
 /** Locks the pbuffer */
 void RenderTarget::lock() {
 
-
+#ifdef USE_FBO
   if(this->useFBO)
     { 
       glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, this->fbuffer[0]);     
     }
-  
+#endif
     }
 
 /** Unlocks the pbuffer */
 void RenderTarget::unlock() {
 
-
+#ifdef USE_FBO
   if(this->useFBO)
     {
       glBindTexture( GL_TEXTURE_2D, this->textureID[1] );
@@ -248,7 +251,7 @@ void RenderTarget::unlock() {
       glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
       return;
     }
-
+#endif
     /** Fallback texture path */
     
     glBindTexture( GL_TEXTURE_2D, this->textureID[0] );
