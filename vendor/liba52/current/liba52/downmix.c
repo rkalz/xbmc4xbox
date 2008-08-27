@@ -1,6 +1,6 @@
 /*
  * downmix.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of a52dec, a free ATSC A-52 stream decoder.
@@ -31,8 +31,8 @@
 
 #define CONVERT(acmod,output) (((output) << 3) + (acmod))
 
-int a52_downmix_init (int input, int flags, level_t * level,
-		      level_t clev, level_t slev)
+int a52_downmix_init (int input, int flags, sample_t * level,
+		      sample_t clev, sample_t slev)
 {
     static uint8_t table[11][8] = {
 	{A52_CHANNEL,	A52_DOLBY,	A52_STEREO,	A52_STEREO,
@@ -66,106 +66,94 @@ int a52_downmix_init (int input, int flags, level_t * level,
 
     output = table[output][input & 7];
 
-    if (output == A52_STEREO &&
-	(input == A52_DOLBY || (input == A52_3F && clev == LEVEL (LEVEL_3DB))))
+    if ((output == A52_STEREO) &&
+	((input == A52_DOLBY) || ((input == A52_3F) && (clev == LEVEL_3DB))))
 	output = A52_DOLBY;
 
-    if (flags & A52_ADJUST_LEVEL) {
-	level_t adjust;
-
+    if (flags & A52_ADJUST_LEVEL)
 	switch (CONVERT (input & 7, output)) {
 
 	case CONVERT (A52_3F, A52_MONO):
-	    adjust = DIV (LEVEL_3DB, LEVEL (1) + clev);
+	    *level *= LEVEL_3DB / (1 + clev);
 	    break;
 
 	case CONVERT (A52_STEREO, A52_MONO):
 	case CONVERT (A52_2F2R, A52_2F1R):
 	case CONVERT (A52_3F2R, A52_3F1R):
 	level_3db:
-	    adjust = LEVEL (LEVEL_3DB);
+	    *level *= LEVEL_3DB;
 	    break;
 
 	case CONVERT (A52_3F2R, A52_2F1R):
-	    if (clev < LEVEL (LEVEL_PLUS3DB - 1))
+	    if (clev < LEVEL_PLUS3DB - 1)
 		goto level_3db;
 	    /* break thru */
 	case CONVERT (A52_3F, A52_STEREO):
 	case CONVERT (A52_3F1R, A52_2F1R):
 	case CONVERT (A52_3F1R, A52_2F2R):
 	case CONVERT (A52_3F2R, A52_2F2R):
-	    adjust = DIV (1, LEVEL (1) + clev);
+	    *level /= 1 + clev;
 	    break;
 
 	case CONVERT (A52_2F1R, A52_MONO):
-	    adjust = DIV (LEVEL_PLUS3DB, LEVEL (2) + slev);
+	    *level *= LEVEL_PLUS3DB / (2 + slev);
 	    break;
 
 	case CONVERT (A52_2F1R, A52_STEREO):
 	case CONVERT (A52_3F1R, A52_3F):
-	    adjust = DIV (1, LEVEL (1) + MUL_C (slev, LEVEL_3DB));
+	    *level /= 1 + slev * LEVEL_3DB;
 	    break;
 
 	case CONVERT (A52_3F1R, A52_MONO):
-	    adjust = DIV (LEVEL_3DB, LEVEL (1) + clev + MUL_C (slev, 0.5));
+	    *level *= LEVEL_3DB / (1 + clev + 0.5 * slev);
 	    break;
 
 	case CONVERT (A52_3F1R, A52_STEREO):
-	    adjust = DIV (1, LEVEL (1) + clev + MUL_C (slev, LEVEL_3DB));
+	    *level /= 1 + clev + slev * LEVEL_3DB;
 	    break;
 
 	case CONVERT (A52_2F2R, A52_MONO):
-	    adjust = DIV (LEVEL_3DB, LEVEL (1) + slev);
+	    *level *= LEVEL_3DB / (1 + slev);
 	    break;
 
 	case CONVERT (A52_2F2R, A52_STEREO):
 	case CONVERT (A52_3F2R, A52_3F):
-	    adjust = DIV (1, LEVEL (1) + slev);
+	    *level /= 1 + slev;
 	    break;
 
 	case CONVERT (A52_3F2R, A52_MONO):
-	    adjust = DIV (LEVEL_3DB, LEVEL (1) + clev + slev);
+	    *level *= LEVEL_3DB / (1 + clev + slev);
 	    break;
 
 	case CONVERT (A52_3F2R, A52_STEREO):
-	    adjust = DIV (1, LEVEL (1) + clev + slev);
+	    *level /= 1 + clev + slev;
 	    break;
 
 	case CONVERT (A52_MONO, A52_DOLBY):
-	    adjust = LEVEL (LEVEL_PLUS3DB);
+	    *level *= LEVEL_PLUS3DB;
 	    break;
 
 	case CONVERT (A52_3F, A52_DOLBY):
 	case CONVERT (A52_2F1R, A52_DOLBY):
-	    adjust = LEVEL (1 / (1 + LEVEL_3DB));
+	    *level *= 1 / (1 + LEVEL_3DB);
 	    break;
 
 	case CONVERT (A52_3F1R, A52_DOLBY):
 	case CONVERT (A52_2F2R, A52_DOLBY):
-	    adjust = LEVEL (1 / (1 + 2 * LEVEL_3DB));
+	    *level *= 1 / (1 + 2 * LEVEL_3DB);
 	    break;
 
 	case CONVERT (A52_3F2R, A52_DOLBY):
-	    adjust = LEVEL (1 / (1 + 3 * LEVEL_3DB));
+	    *level *= 1 / (1 + 3 * LEVEL_3DB);
 	    break;
-
-	default:
-	    return output;
 	}
-
-	*level = MUL_L (*level, adjust);
-    }
 
     return output;
 }
 
-int a52_downmix_coeff (level_t * coeff, int acmod, int output, level_t level,
-		       level_t clev, level_t slev)
+int a52_downmix_coeff (sample_t * coeff, int acmod, int output, sample_t level,
+		       sample_t clev, sample_t slev)
 {
-    level_t level_3db;
-
-    level_3db = MUL_C (level, LEVEL_3DB);
-
     switch (CONVERT (acmod, output & A52_CHANNEL_MASK)) {
 
     case CONVERT (A52_CHANNEL, A52_CHANNEL):
@@ -181,138 +169,120 @@ int a52_downmix_coeff (level_t * coeff, int acmod, int output, level_t level,
 	return 0;
 
     case CONVERT (A52_CHANNEL, A52_MONO):
-	coeff[0] = coeff[1] = MUL_C (level, LEVEL_6DB);
+	coeff[0] = coeff[1] = level * LEVEL_6DB;
 	return 3;
 
     case CONVERT (A52_STEREO, A52_MONO):
-	coeff[0] = coeff[1] = level_3db;
+	coeff[0] = coeff[1] = level * LEVEL_3DB;
 	return 3;
 
     case CONVERT (A52_3F, A52_MONO):
-	coeff[0] = coeff[2] = level_3db;
-	coeff[1] = MUL_C (MUL_L (level_3db, clev), LEVEL_PLUS6DB);
+	coeff[0] = coeff[2] = level * LEVEL_3DB;
+	coeff[1] = level * clev * LEVEL_PLUS3DB;
 	return 7;
 
     case CONVERT (A52_2F1R, A52_MONO):
-	coeff[0] = coeff[1] = level_3db;
-	coeff[2] = MUL_L (level_3db, slev);
+	coeff[0] = coeff[1] = level * LEVEL_3DB;
+	coeff[2] = level * slev * LEVEL_3DB;
 	return 7;
 
     case CONVERT (A52_2F2R, A52_MONO):
-	coeff[0] = coeff[1] = level_3db;
-	coeff[2] = coeff[3] = MUL_L (level_3db, slev);
+	coeff[0] = coeff[1] = level * LEVEL_3DB;
+	coeff[2] = coeff[3] = level * slev * LEVEL_3DB;
 	return 15;
 
     case CONVERT (A52_3F1R, A52_MONO):
-	coeff[0] = coeff[2] = level_3db;
-	coeff[1] = MUL_C (MUL_L (level_3db, clev), LEVEL_PLUS6DB);
-	coeff[3] = MUL_L (level_3db, slev);
+	coeff[0] = coeff[2] = level * LEVEL_3DB;
+	coeff[1] = level * clev * LEVEL_PLUS3DB;
+	coeff[3] = level * slev * LEVEL_3DB;
 	return 15;
 
     case CONVERT (A52_3F2R, A52_MONO):
-	coeff[0] = coeff[2] = level_3db;
-	coeff[1] = MUL_C (MUL_L (level_3db, clev), LEVEL_PLUS6DB);
-	coeff[3] = coeff[4] = MUL_L (level_3db, slev);
+	coeff[0] = coeff[2] = level * LEVEL_3DB;
+	coeff[1] = level * clev * LEVEL_PLUS3DB;
+	coeff[3] = coeff[4] = level * slev * LEVEL_3DB;
 	return 31;
 
     case CONVERT (A52_MONO, A52_DOLBY):
-	coeff[0] = level_3db;
+	coeff[0] = level * LEVEL_3DB;
 	return 0;
 
     case CONVERT (A52_3F, A52_DOLBY):
-	coeff[0] = coeff[2] = coeff[3] = coeff[4] = level;
-	coeff[1] = level_3db;
-	return 7;
-
+	clev = LEVEL_3DB;
     case CONVERT (A52_3F, A52_STEREO):
     case CONVERT (A52_3F1R, A52_2F1R):
     case CONVERT (A52_3F2R, A52_2F2R):
 	coeff[0] = coeff[2] = coeff[3] = coeff[4] = level;
-	coeff[1] = MUL_L (level, clev);
+	coeff[1] = level * clev;
 	return 7;
 
     case CONVERT (A52_2F1R, A52_DOLBY):
-	coeff[0] = coeff[1] = level;
-	coeff[2] = level_3db;
-	return 7;
-
+	slev = 1;
     case CONVERT (A52_2F1R, A52_STEREO):
 	coeff[0] = coeff[1] = level;
-	coeff[2] = MUL_L (level_3db, slev);
+	coeff[2] = level * slev * LEVEL_3DB;
 	return 7;
 
     case CONVERT (A52_3F1R, A52_DOLBY):
-	coeff[0] = coeff[2] = level;
-	coeff[1] = coeff[3] = level_3db;
-	return 15;
-
+	clev = LEVEL_3DB;
+	slev = 1;
     case CONVERT (A52_3F1R, A52_STEREO):
 	coeff[0] = coeff[2] = level;
-	coeff[1] = MUL_L (level, clev);
-	coeff[3] = MUL_L (level_3db, slev);
+	coeff[1] = level * clev;
+	coeff[3] = level * slev * LEVEL_3DB;
 	return 15;
 
     case CONVERT (A52_2F2R, A52_DOLBY):
-	coeff[0] = coeff[1] = level;
-	coeff[2] = coeff[3] = level_3db;
-	return 15;
-
+	slev = LEVEL_3DB;
     case CONVERT (A52_2F2R, A52_STEREO):
 	coeff[0] = coeff[1] = level;
-	coeff[2] = coeff[3] = MUL_L (level, slev);
+	coeff[2] = coeff[3] = level * slev;
 	return 15;
 
     case CONVERT (A52_3F2R, A52_DOLBY):
-	coeff[0] = coeff[2] = level;
-	coeff[1] = coeff[3] = coeff[4] = level_3db;
-	return 31;
-
+	clev = LEVEL_3DB;
     case CONVERT (A52_3F2R, A52_2F1R):
-	coeff[0] = coeff[2] = level;
-	coeff[1] = MUL_L (level, clev);
-	coeff[3] = coeff[4] = level_3db;
-	return 31;
-
+	slev = LEVEL_3DB;
     case CONVERT (A52_3F2R, A52_STEREO):
 	coeff[0] = coeff[2] = level;
-	coeff[1] = MUL_L (level, clev);
-	coeff[3] = coeff[4] = MUL_L (level, slev);
+	coeff[1] = level * clev;
+	coeff[3] = coeff[4] = level * slev;
 	return 31;
 
     case CONVERT (A52_3F1R, A52_3F):
 	coeff[0] = coeff[1] = coeff[2] = level;
-	coeff[3] = MUL_L (level_3db, slev);
+	coeff[3] = level * slev * LEVEL_3DB;
 	return 13;
 
     case CONVERT (A52_3F2R, A52_3F):
 	coeff[0] = coeff[1] = coeff[2] = level;
-	coeff[3] = coeff[4] = MUL_L (level, slev);
+	coeff[3] = coeff[4] = level * slev;
 	return 29;
 
     case CONVERT (A52_2F2R, A52_2F1R):
 	coeff[0] = coeff[1] = level;
-	coeff[2] = coeff[3] = level_3db;
+	coeff[2] = coeff[3] = level * LEVEL_3DB;
 	return 12;
 
     case CONVERT (A52_3F2R, A52_3F1R):
 	coeff[0] = coeff[1] = coeff[2] = level;
-	coeff[3] = coeff[4] = level_3db;
+	coeff[3] = coeff[4] = level * LEVEL_3DB;
 	return 24;
 
     case CONVERT (A52_2F1R, A52_2F2R):
 	coeff[0] = coeff[1] = level;
-	coeff[2] = level_3db;
+	coeff[2] = level * LEVEL_3DB;
 	return 0;
 
     case CONVERT (A52_3F1R, A52_2F2R):
 	coeff[0] = coeff[2] = level;
-	coeff[1] = MUL_L (level, clev);
-	coeff[3] = level_3db;
+	coeff[1] = level * clev;
+	coeff[3] = level * LEVEL_3DB;
 	return 7;
 
     case CONVERT (A52_3F1R, A52_3F2R):
 	coeff[0] = coeff[1] = coeff[2] = level;
-	coeff[3] = level_3db;
+	coeff[3] = level * LEVEL_3DB;
 	return 0;
 
     case CONVERT (A52_CHANNEL, A52_CHANNEL1):
@@ -334,7 +304,7 @@ static void mix2to1 (sample_t * dest, sample_t * src, sample_t bias)
     int i;
 
     for (i = 0; i < 256; i++)
-	dest[i] += BIAS (src[i]);
+	dest[i] += src[i] + bias;
 }
 
 static void mix3to1 (sample_t * samples, sample_t bias)
@@ -342,7 +312,7 @@ static void mix3to1 (sample_t * samples, sample_t bias)
     int i;
 
     for (i = 0; i < 256; i++)
-	samples[i] += BIAS (samples[i + 256] + samples[i + 512]);
+	samples[i] += samples[i + 256] + samples[i + 512] + bias;
 }
 
 static void mix4to1 (sample_t * samples, sample_t bias)
@@ -350,8 +320,8 @@ static void mix4to1 (sample_t * samples, sample_t bias)
     int i;
 
     for (i = 0; i < 256; i++)
-	samples[i] += BIAS (samples[i + 256] + samples[i + 512] +
-			    samples[i + 768]);
+	samples[i] += (samples[i + 256] + samples[i + 512] +
+		       samples[i + 768] + bias);
 }
 
 static void mix5to1 (sample_t * samples, sample_t bias)
@@ -359,8 +329,8 @@ static void mix5to1 (sample_t * samples, sample_t bias)
     int i;
 
     for (i = 0; i < 256; i++)
-	samples[i] += BIAS (samples[i + 256] + samples[i + 512] +
-			    samples[i + 768] + samples[i + 1024]);
+	samples[i] += (samples[i + 256] + samples[i + 512] +
+		       samples[i + 768] + samples[i + 1024] + bias);
 }
 
 static void mix3to2 (sample_t * samples, sample_t bias)
@@ -369,7 +339,7 @@ static void mix3to2 (sample_t * samples, sample_t bias)
     sample_t common;
 
     for (i = 0; i < 256; i++) {
-	common = BIAS (samples[i + 256]);
+	common = samples[i + 256] + bias;
 	samples[i] += common;
 	samples[i + 256] = samples[i + 512] + common;
     }
@@ -381,7 +351,7 @@ static void mix21to2 (sample_t * left, sample_t * right, sample_t bias)
     sample_t common;
 
     for (i = 0; i < 256; i++) {
-	common = BIAS (right[i + 256]);
+	common = right[i + 256] + bias;
 	left[i] += common;
 	right[i] += common;
     }
@@ -394,8 +364,8 @@ static void mix21toS (sample_t * samples, sample_t bias)
 
     for (i = 0; i < 256; i++) {
 	surround = samples[i + 512];
-	samples[i] += BIAS (-surround);
-	samples[i + 256] += BIAS (surround);
+	samples[i] += bias - surround;
+	samples[i + 256] += bias + surround;
     }
 }
 
@@ -405,7 +375,7 @@ static void mix31to2 (sample_t * samples, sample_t bias)
     sample_t common;
 
     for (i = 0; i < 256; i++) {
-	common = BIAS (samples[i + 256] + samples[i + 768]);
+	common = samples[i + 256] + samples[i + 768] + bias;
 	samples[i] += common;
 	samples[i + 256] = samples[i + 512] + common;
     }
@@ -417,7 +387,7 @@ static void mix31toS (sample_t * samples, sample_t bias)
     sample_t common, surround;
 
     for (i = 0; i < 256; i++) {
-	common = BIAS (samples[i + 256]);
+	common = samples[i + 256] + bias;
 	surround = samples[i + 768];
 	samples[i] += common - surround;
 	samples[i + 256] = samples[i + 512] + common + surround;
@@ -431,8 +401,8 @@ static void mix22toS (sample_t * samples, sample_t bias)
 
     for (i = 0; i < 256; i++) {
 	surround = samples[i + 512] + samples[i + 768];
-	samples[i] += BIAS (-surround);
-	samples[i + 256] += BIAS (surround);
+	samples[i] += bias - surround;
+	samples[i + 256] += bias + surround;
     }
 }
 
@@ -442,7 +412,7 @@ static void mix32to2 (sample_t * samples, sample_t bias)
     sample_t common;
 
     for (i = 0; i < 256; i++) {
-	common = BIAS (samples[i + 256]);
+	common = samples[i + 256] + bias;
 	samples[i] += common + samples[i + 768];
 	samples[i + 256] = common + samples[i + 512] + samples[i + 1024];
     }
@@ -454,7 +424,7 @@ static void mix32toS (sample_t * samples, sample_t bias)
     sample_t common, surround;
 
     for (i = 0; i < 256; i++) {
-	common = BIAS (samples[i + 256]);
+	common = samples[i + 256] + bias;
 	surround = samples[i + 768] + samples[i + 1024];
 	samples[i] += common - surround;
 	samples[i + 256] = samples[i + 512] + common + surround;
@@ -466,7 +436,7 @@ static void move2to1 (sample_t * src, sample_t * dest, sample_t bias)
     int i;
 
     for (i = 0; i < 256; i++)
-	dest[i] = BIAS (src[i] + src[i + 256]);
+	dest[i] = src[i] + src[i + 256] + bias;
 }
 
 static void zero (sample_t * samples)
@@ -478,7 +448,7 @@ static void zero (sample_t * samples)
 }
 
 void a52_downmix (sample_t * samples, int acmod, int output, sample_t bias,
-		  level_t clev, level_t slev)
+		  sample_t clev, sample_t slev)
 {
     switch (CONVERT (acmod, output & A52_CHANNEL_MASK)) {
 
@@ -613,7 +583,7 @@ void a52_downmix (sample_t * samples, int acmod, int output, sample_t bias,
 	break;
 
     case CONVERT (A52_3F1R, A52_3F2R):
-	memcpy (samples + 1024, samples + 768, 256 * sizeof (sample_t));
+	memcpy (samples + 1027, samples + 768, 256 * sizeof (sample_t));
 	break;
     }
 }

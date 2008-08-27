@@ -1,5 +1,3 @@
-AM_CFLAGS = $(A52DEC_CFLAGS)
-
 noinst_PROGRAMS = compare
 compare_SOURCES = compare.c
 compare_LDADD = -lm

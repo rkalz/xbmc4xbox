@@ -1,6 +1,6 @@
 /*
  * audio_out_internal.h
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of a52dec, a free ATSC A-52 stream decoder.
@@ -21,28 +21,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef LIBA52_DOUBLE
-typedef float convert_t;
-#else
-typedef sample_t convert_t;
-#endif
-
-#ifdef LIBA52_FIXED
-#define CONVERT_LEVEL (1 << 26)
-#define CONVERT_BIAS 0
-#else
-#define CONVERT_LEVEL 1
-#define CONVERT_BIAS 384
-#endif
-
-void convert2s16_1 (convert_t * f, int16_t * s16);
-void convert2s16_2 (convert_t * f, int16_t * s16);
-void convert2s16_3 (convert_t * f, int16_t * s16);
-void convert2s16_4 (convert_t * f, int16_t * s16);
-void convert2s16_5 (convert_t * f, int16_t * s16);
+void float2s16_2 (float * f, int16_t * s16);
+void float2s16_4 (float * f, int16_t * s16);
+void float2s16_5 (float * f, int16_t * s16);
 int channels_multi (int flags);
-void convert2s16_multi (convert_t * f, int16_t * s16, int flags);
-void convert2s16_wav (convert_t * f, int16_t * s16, int flags);
+void float2s16_multi (float * f, int16_t * s16, int flags);
 void s16_swap (int16_t * s16, int channels);
 
 #ifdef WORDS_BIGENDIAN

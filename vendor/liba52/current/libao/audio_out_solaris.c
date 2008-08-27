@@ -1,6 +1,6 @@
 /*
  * audio_out_solaris.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of a52dec, a free ATSC A-52 stream decoder.
@@ -46,7 +46,7 @@ typedef struct solaris_instance_s {
 } solaris_instance_t;
 
 static int solaris_setup (ao_instance_t * _instance, int sample_rate,
-			  int * flags, level_t * level, sample_t * bias)
+			  int * flags, sample_t * level, sample_t * bias)
 {
     solaris_instance_t * instance = (solaris_instance_t *) _instance;
 
@@ -55,8 +55,8 @@ static int solaris_setup (ao_instance_t * _instance, int sample_rate,
     instance->sample_rate = sample_rate;
 
     *flags = instance->flags;
-    *level = CONVERT_LEVEL;
-    *bias = CONVERT_BIAS;
+    *level = 1;
+    *bias = 384;
 
     return 0;
 }
@@ -68,13 +68,13 @@ static int solaris_play (ao_instance_t * _instance, int flags,
     int16_t int16_samples[256*2];
 
 #ifdef LIBA52_DOUBLE
-    convert_t samples[256 * 2];
+    float samples[256 * 2];
     int i;
 
     for (i = 0; i < 256 * 2; i++)
 	samples[i] = _samples[i];
 #else
-    convert_t * samples = _samples;
+    float * samples = _samples;
 #endif
 
     if (instance->set_params) {
@@ -115,7 +115,7 @@ static int solaris_play (ao_instance_t * _instance, int flags,
     } else if (flags != instance->flags)
 	return 1;
 
-    convert2s16_2 (samples, int16_samples);
+    float2s16_2 (samples, int16_samples);
     write (instance->fd, int16_samples, 256 * sizeof (int16_t) * 2);
 
     return 0;

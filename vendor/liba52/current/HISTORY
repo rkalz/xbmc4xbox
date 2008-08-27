@@ -22,7 +22,3 @@ changes that affected the PCM output:
 2001/08/09 08:11:31 - implemented dynamic range compression
 
 2002/02/24 08:54:49 - window function computed at runtime, with more precision
-
-2003/01/28 06.57:37 - switched to integer q_* coefficients
-
-2003/01/28 07:39:35 - use level of 0.75 for dithering instead of 0.707

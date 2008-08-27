@@ -1,6 +1,6 @@
 /*
  * imdct.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * The ifft algorithms in this file have been largely inspired by Dan
@@ -30,7 +30,6 @@
 #include <stdio.h>
 #ifdef LIBA52_DJBFFT
 #include <fftc4.h>
-#include <fftc8.h>
 #endif
 #ifndef M_PI
 #define M_PI 3.1415926535897932384626433832795029
@@ -76,7 +75,7 @@ static void (* ifft64) (complex_t * buf);
 
 static inline void ifft2 (complex_t * buf)
 {
-    sample_t r, i;
+    double r, i;
 
     r = buf[0].real;
     i = buf[0].imag;
@@ -88,7 +87,7 @@ static inline void ifft2 (complex_t * buf)
 
 static inline void ifft4 (complex_t * buf)
 {
-    sample_t tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8;
+    double tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8;
 
     tmp1 = buf[0].real + buf[1].real;
     tmp2 = buf[3].real + buf[2].real;
@@ -109,37 +108,25 @@ static inline void ifft4 (complex_t * buf)
     buf[3].imag = tmp6 - tmp8;
 }
 
-/* basic radix-2 ifft butterfly */
-
-#define BUTTERFLY_0(t0,t1,W0,W1,d0,d1) do {	\
-    t0 = MUL (W1, d1) + MUL (W0, d0);		\
-    t1 = MUL (W0, d1) - MUL (W1, d0);		\
-} while (0)
-
-/* radix-2 ifft butterfly with bias */
-
-#define BUTTERFLY_B(t0,t1,W0,W1,d0,d1) do {	\
-    t0 = BIAS (MUL (d1, W1) + MUL (d0, W0));	\
-    t1 = BIAS (MUL (d1, W0) - MUL (d0, W1));	\
-} while (0)
-
 /* the basic split-radix ifft butterfly */
 
-#define BUTTERFLY(a0,a1,a2,a3,wr,wi) do {		\
-    BUTTERFLY_0 (tmp5, tmp6, wr, wi, a2.real, a2.imag);	\
-    BUTTERFLY_0 (tmp8, tmp7, wr, wi, a3.imag, a3.real);	\
-    tmp1 = tmp5 + tmp7;					\
-    tmp2 = tmp6 + tmp8;					\
-    tmp3 = tmp6 - tmp8;					\
-    tmp4 = tmp7 - tmp5;					\
-    a2.real = a0.real - tmp1;				\
-    a2.imag = a0.imag - tmp2;				\
-    a3.real = a1.real - tmp3;				\
-    a3.imag = a1.imag - tmp4;				\
-    a0.real += tmp1;					\
-    a0.imag += tmp2;					\
-    a1.real += tmp3;					\
-    a1.imag += tmp4;					\
+#define BUTTERFLY(a0,a1,a2,a3,wr,wi) do {	\
+    tmp5 = a2.real * wr + a2.imag * wi;		\
+    tmp6 = a2.imag * wr - a2.real * wi;		\
+    tmp7 = a3.real * wr - a3.imag * wi;		\
+    tmp8 = a3.imag * wr + a3.real * wi;		\
+    tmp1 = tmp5 + tmp7;				\
+    tmp2 = tmp6 + tmp8;				\
+    tmp3 = tmp6 - tmp8;				\
+    tmp4 = tmp7 - tmp5;				\
+    a2.real = a0.real - tmp1;			\
+    a2.imag = a0.imag - tmp2;			\
+    a3.real = a1.real - tmp3;			\
+    a3.imag = a1.imag - tmp4;			\
+    a0.real += tmp1;				\
+    a0.imag += tmp2;				\
+    a1.real += tmp3;				\
+    a1.imag += tmp4;				\
 } while (0)
 
 /* split-radix ifft butterfly, specialized for wr=1 wi=0 */
@@ -162,10 +149,10 @@ static inline void ifft4 (complex_t * buf)
 /* split-radix ifft butterfly, specialized for wr=wi */
 
 #define BUTTERFLY_HALF(a0,a1,a2,a3,w) do {	\
-    tmp5 = MUL (a2.real + a2.imag, w);		\
-    tmp6 = MUL (a2.imag - a2.real, w);		\
-    tmp7 = MUL (a3.real - a3.imag, w);		\
-    tmp8 = MUL (a3.imag + a3.real, w);		\
+    tmp5 = (a2.real + a2.imag) * w;		\
+    tmp6 = (a2.imag - a2.real) * w;		\
+    tmp7 = (a3.real - a3.imag) * w;		\
+    tmp8 = (a3.imag + a3.real) * w;		\
     tmp1 = tmp5 + tmp7;				\
     tmp2 = tmp6 + tmp8;				\
     tmp3 = tmp6 - tmp8;				\
@@ -182,7 +169,7 @@ static inline void ifft4 (complex_t * buf)
 
 static inline void ifft8 (complex_t * buf)
 {
-    sample_t tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8;
+    double tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8;
 
     ifft4 (buf);
     ifft2 (buf + 4);
@@ -196,7 +183,7 @@ static void ifft_pass (complex_t * buf, sample_t * weight, int n)
     complex_t * buf1;
     complex_t * buf2;
     complex_t * buf3;
-    sample_t tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8;
+    double tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8;
     int i;
 
     buf++;
@@ -209,8 +196,7 @@ static void ifft_pass (complex_t * buf, sample_t * weight, int n)
     i = n - 1;
 
     do {
-	BUTTERFLY (buf[0], buf1[0], buf2[0], buf3[0],
-		   weight[0], weight[2*i-n]);
+	BUTTERFLY (buf[0], buf1[0], buf2[0], buf3[0], weight[n], weight[2*i]);
 	buf++;
 	buf1++;
 	buf2++;
@@ -224,7 +210,7 @@ static void ifft16 (complex_t * buf)
     ifft8 (buf);
     ifft4 (buf + 8);
     ifft4 (buf + 12);
-    ifft_pass (buf, roots16, 4);
+    ifft_pass (buf, roots16 - 4, 4);
 }
 
 static void ifft32 (complex_t * buf)
@@ -232,7 +218,7 @@ static void ifft32 (complex_t * buf)
     ifft16 (buf);
     ifft8 (buf + 16);
     ifft8 (buf + 24);
-    ifft_pass (buf, roots32, 8);
+    ifft_pass (buf, roots32 - 8, 8);
 }
 
 static void ifft64_c (complex_t * buf)
@@ -240,7 +226,7 @@ static void ifft64_c (complex_t * buf)
     ifft32 (buf);
     ifft16 (buf + 32);
     ifft16 (buf + 48);
-    ifft_pass (buf, roots64, 16);
+    ifft_pass (buf, roots64 - 16, 16);
 }
 
 static void ifft128_c (complex_t * buf)
@@ -248,11 +234,11 @@ static void ifft128_c (complex_t * buf)
     ifft32 (buf);
     ifft16 (buf + 32);
     ifft16 (buf + 48);
-    ifft_pass (buf, roots64, 16);
+    ifft_pass (buf, roots64 - 16, 16);
 
     ifft32 (buf + 64);
     ifft32 (buf + 96);
-    ifft_pass (buf, roots128, 32);
+    ifft_pass (buf, roots128 - 32, 32);
 }
 
 void a52_imdct_512 (sample_t * data, sample_t * delay, sample_t bias)
@@ -266,7 +252,9 @@ void a52_imdct_512 (sample_t * data, sample_t * delay, sample_t bias)
 	k = fftorder[i];
 	t_r = pre1[i].real;
 	t_i = pre1[i].imag;
-	BUTTERFLY_0 (buf[i].real, buf[i].imag, t_r, t_i, data[k], data[255-k]);
+
+	buf[i].real = t_i * data[255-k] + t_r * data[k];
+	buf[i].imag = t_r * data[255-k] - t_i * data[k];
     }
 
     ifft128 (buf);
@@ -277,22 +265,27 @@ void a52_imdct_512 (sample_t * data, sample_t * delay, sample_t bias)
 	/* y[n] = z[n] * (xcos1[n] + j * xsin1[n]) ; */
 	t_r = post1[i].real;
 	t_i = post1[i].imag;
-	BUTTERFLY_0 (a_r, a_i, t_i, t_r, buf[i].imag, buf[i].real);
-	BUTTERFLY_0 (b_r, b_i, t_r, t_i, buf[127-i].imag, buf[127-i].real);
+
+	a_r = t_r * buf[i].real     + t_i * buf[i].imag;
+	a_i = t_i * buf[i].real     - t_r * buf[i].imag;
+	b_r = t_i * buf[127-i].real + t_r * buf[127-i].imag;
+	b_i = t_r * buf[127-i].real - t_i * buf[127-i].imag;
 
 	w_1 = window[2*i];
 	w_2 = window[255-2*i];
-	BUTTERFLY_B (data[255-2*i], data[2*i], w_2, w_1, a_r, delay[2*i]);
+	data[2*i]     = delay[2*i] * w_2 - a_r * w_1 + bias;
+	data[255-2*i] = delay[2*i] * w_1 + a_r * w_2 + bias;
 	delay[2*i] = a_i;
 
 	w_1 = window[2*i+1];
 	w_2 = window[254-2*i];
-	BUTTERFLY_B (data[2*i+1], data[254-2*i], w_1, w_2, b_r, delay[2*i+1]);
+	data[2*i+1]   = delay[2*i+1] * w_2 + b_r * w_1 + bias;
+	data[254-2*i] = delay[2*i+1] * w_1 - b_r * w_2 + bias;
 	delay[2*i+1] = b_i;
     }
 }
 
-void a52_imdct_256 (sample_t * data, sample_t * delay, sample_t bias)
+void a52_imdct_256(sample_t * data, sample_t * delay, sample_t bias)
 {
     int i, k;
     sample_t t_r, t_i, a_r, a_i, b_r, b_i, c_r, c_i, d_r, d_i, w_1, w_2;
@@ -304,8 +297,12 @@ void a52_imdct_256 (sample_t * data, sample_t * delay, sample_t bias)
 	k = fftorder[i];
 	t_r = pre2[i].real;
 	t_i = pre2[i].imag;
-	BUTTERFLY_0 (buf1[i].real, buf1[i].imag, t_r, t_i, data[k], data[254-k]);
-	BUTTERFLY_0 (buf2[i].real, buf2[i].imag, t_r, t_i, data[k+1], data[255-k]);
+
+	buf1[i].real = t_i * data[254-k] + t_r * data[k];
+	buf1[i].imag = t_r * data[254-k] - t_i * data[k];
+
+	buf2[i].real = t_i * data[255-k] + t_r * data[k+1];
+	buf2[i].imag = t_r * data[255-k] - t_i * data[k+1];
     }
 
     ifft64 (buf1);
@@ -317,29 +314,39 @@ void a52_imdct_256 (sample_t * data, sample_t * delay, sample_t bias)
 	/* y1[n] = z1[n] * (xcos2[n] + j * xs in2[n]) ; */ 
 	t_r = post2[i].real;
 	t_i = post2[i].imag;
-	BUTTERFLY_0 (a_r, a_i, t_i, t_r, buf1[i].imag, buf1[i].real);
-	BUTTERFLY_0 (b_r, b_i, t_r, t_i, buf1[63-i].imag, buf1[63-i].real);
-	BUTTERFLY_0 (c_r, c_i, t_i, t_r, buf2[i].imag, buf2[i].real);
-	BUTTERFLY_0 (d_r, d_i, t_r, t_i, buf2[63-i].imag, buf2[63-i].real);
+
+	a_r = t_r * buf1[i].real    + t_i * buf1[i].imag;
+	a_i = t_i * buf1[i].real    - t_r * buf1[i].imag;
+	b_r = t_i * buf1[63-i].real + t_r * buf1[63-i].imag;
+	b_i = t_r * buf1[63-i].real - t_i * buf1[63-i].imag;
+
+	c_r = t_r * buf2[i].real    + t_i * buf2[i].imag;
+	c_i = t_i * buf2[i].real    - t_r * buf2[i].imag;
+	d_r = t_i * buf2[63-i].real + t_r * buf2[63-i].imag;
+	d_i = t_r * buf2[63-i].real - t_i * buf2[63-i].imag;
 
 	w_1 = window[2*i];
 	w_2 = window[255-2*i];
-	BUTTERFLY_B (data[255-2*i], data[2*i], w_2, w_1, a_r, delay[2*i]);
+	data[2*i]     = delay[2*i] * w_2 - a_r * w_1 + bias;
+	data[255-2*i] = delay[2*i] * w_1 + a_r * w_2 + bias;
 	delay[2*i] = c_i;
 
 	w_1 = window[128+2*i];
 	w_2 = window[127-2*i];
-	BUTTERFLY_B (data[128+2*i], data[127-2*i], w_1, w_2, a_i, delay[127-2*i]);
+	data[128+2*i] = delay[127-2*i] * w_2 + a_i * w_1 + bias;
+	data[127-2*i] = delay[127-2*i] * w_1 - a_i * w_2 + bias;
 	delay[127-2*i] = c_r;
 
 	w_1 = window[2*i+1];
 	w_2 = window[254-2*i];
-	BUTTERFLY_B (data[254-2*i], data[2*i+1], w_2, w_1, b_i, delay[2*i+1]);
+	data[2*i+1]   = delay[2*i+1] * w_2 - b_i * w_1 + bias;
+	data[254-2*i] = delay[2*i+1] * w_1 + b_i * w_2 + bias;
 	delay[2*i+1] = d_r;
 
 	w_1 = window[129+2*i];
 	w_2 = window[126-2*i];
-	BUTTERFLY_B (data[129+2*i], data[126-2*i], w_1, w_2, b_r, delay[126-2*i]);
+	data[129+2*i] = delay[126-2*i] * w_2 + b_r * w_1 + bias;
+	data[126-2*i] = delay[126-2*i] * w_1 - b_r * w_2 + bias;
 	delay[126-2*i] = d_i;
     }
 }
@@ -359,70 +366,66 @@ void a52_imdct_init (uint32_t mm_accel)
 {
     int i, k;
     double sum;
-    double local_imdct_window[256];
 
     /* compute imdct window - kaiser-bessel derived window, alpha = 5.0 */
     sum = 0;
     for (i = 0; i < 256; i++) {
 	sum += besselI0 (i * (256 - i) * (5 * M_PI / 256) * (5 * M_PI / 256));
-	local_imdct_window[i] = sum;
+	a52_imdct_window[i] = sum;
     }
     sum++;
     for (i = 0; i < 256; i++)
-	a52_imdct_window[i] = SAMPLE (sqrt (local_imdct_window[i] / sum));
+	a52_imdct_window[i] = sqrt (a52_imdct_window[i] / sum);
 
     for (i = 0; i < 3; i++)
-	roots16[i] = SAMPLE (cos ((M_PI / 8) * (i + 1)));
+	roots16[i] = cos ((M_PI / 8) * (i + 1));
 
     for (i = 0; i < 7; i++)
-	roots32[i] = SAMPLE (cos ((M_PI / 16) * (i + 1)));
+	roots32[i] = cos ((M_PI / 16) * (i + 1));
 
     for (i = 0; i < 15; i++)
-	roots64[i] = SAMPLE (cos ((M_PI / 32) * (i + 1)));
+	roots64[i] = cos ((M_PI / 32) * (i + 1));
 
     for (i = 0; i < 31; i++)
-	roots128[i] = SAMPLE (cos ((M_PI / 64) * (i + 1)));
+	roots128[i] = cos ((M_PI / 64) * (i + 1));
 
     for (i = 0; i < 64; i++) {
 	k = fftorder[i] / 2 + 64;
-	pre1[i].real = SAMPLE (cos ((M_PI / 256) * (k - 0.25)));
-	pre1[i].imag = SAMPLE (sin ((M_PI / 256) * (k - 0.25)));
+	pre1[i].real = cos ((M_PI / 256) * (k - 0.25));
+	pre1[i].imag = sin ((M_PI / 256) * (k - 0.25));
     }
 
     for (i = 64; i < 128; i++) {
 	k = fftorder[i] / 2 + 64;
-	pre1[i].real = SAMPLE (-cos ((M_PI / 256) * (k - 0.25)));
-	pre1[i].imag = SAMPLE (-sin ((M_PI / 256) * (k - 0.25)));
+	pre1[i].real = -cos ((M_PI / 256) * (k - 0.25));
+	pre1[i].imag = -sin ((M_PI / 256) * (k - 0.25));
     }
 
     for (i = 0; i < 64; i++) {
-	post1[i].real = SAMPLE (cos ((M_PI / 256) * (i + 0.5)));
-	post1[i].imag = SAMPLE (sin ((M_PI / 256) * (i + 0.5)));
+	post1[i].real = cos ((M_PI / 256) * (i + 0.5));
+	post1[i].imag = sin ((M_PI / 256) * (i + 0.5));
     }
 
     for (i = 0; i < 64; i++) {
 	k = fftorder[i] / 4;
-	pre2[i].real = SAMPLE (cos ((M_PI / 128) * (k - 0.25)));
-	pre2[i].imag = SAMPLE (sin ((M_PI / 128) * (k - 0.25)));
+	pre2[i].real = cos ((M_PI / 128) * (k - 0.25));
+	pre2[i].imag = sin ((M_PI / 128) * (k - 0.25));
     }
 
     for (i = 0; i < 32; i++) {
-	post2[i].real = SAMPLE (cos ((M_PI / 128) * (i + 0.5)));
-	post2[i].imag = SAMPLE (sin ((M_PI / 128) * (i + 0.5)));
+	post2[i].real = cos ((M_PI / 128) * (i + 0.5));
+	post2[i].imag = sin ((M_PI / 128) * (i + 0.5));
     }
 
 #ifdef LIBA52_DJBFFT
     if (mm_accel & MM_ACCEL_DJBFFT) {
-#ifndef LIBA52_DOUBLE
+	fprintf (stderr, "Using djbfft for IMDCT transform\n");
 	ifft128 = (void (*) (complex_t *)) fftc4_un128;
 	ifft64 = (void (*) (complex_t *)) fftc4_un64;
-#else
-	ifft128 = (void (*) (complex_t *)) fftc8_un128;
-	ifft64 = (void (*) (complex_t *)) fftc8_un64;
-#endif
     } else
 #endif
     {
+	fprintf (stderr, "No accelerated IMDCT transform found\n");
 	ifft128 = ifft128_c;
 	ifft64 = ifft64_c;
     }

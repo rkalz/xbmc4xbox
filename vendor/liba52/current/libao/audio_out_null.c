@@ -1,6 +1,6 @@
 /*
  * audio_out_null.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of a52dec, a free ATSC A-52 stream decoder.
@@ -27,7 +27,6 @@
 
 #include "a52.h"
 #include "audio_out.h"
-#include "audio_out_internal.h"
 
 typedef struct null_instance_s {
     ao_instance_t ao;
@@ -35,13 +34,13 @@ typedef struct null_instance_s {
 } null_instance_t;
 
 static int null_setup (ao_instance_t * _instance, int sample_rate, int * flags,
-		       level_t * level, sample_t * bias)
+		       sample_t * level, sample_t * bias)
 {
     null_instance_t * instance = (null_instance_t *) _instance;
 
     *flags = instance->channels;
-    *level = CONVERT_LEVEL;
-    *bias = CONVERT_BIAS;
+    *level = 1;
+    *bias = 0;
 
     return 0;
 }

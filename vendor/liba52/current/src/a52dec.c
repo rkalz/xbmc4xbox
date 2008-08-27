@@ -1,6 +1,6 @@
 /*
  * a52dec.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of a52dec, a free ATSC A-52 stream decoder.
@@ -46,15 +46,13 @@ static uint8_t buffer[BUFFER_SIZE];
 static FILE * in_file;
 static int demux_track = 0;
 static int demux_pid = 0;
-static int demux_pes = 0;
 static int disable_accel = 0;
 static int disable_dynrng = 0;
 static int disable_adjust = 0;
-static float gain = 1;
+static sample_t gain = 1;
 static ao_open_t * output_open = NULL;
 static ao_instance_t * output;
 static a52_state_t * state;
-static int sigint = 0;
 
 #ifdef HAVE_GETTIMEOFDAY
 
@@ -62,9 +60,9 @@ static void print_fps (int final);
 
 static RETSIGTYPE signal_handler (int sig)
 {
-    sigint = 1;
+    print_fps (1);
     signal (sig, SIG_DFL);
-    return (RETSIGTYPE)0;
+    raise (sig);
 }
 
 static void print_fps (int final)
@@ -133,12 +131,10 @@ static void print_usage (char ** argv)
     ao_driver_t * drivers;
 
     fprintf (stderr, "usage: "
-	     "%s [-h] [-o <mode>] [-s [<track>]] [-t <pid>] [-c] [-r] [-a] \\\n"
+	     "%s [-o <mode>] [-s [<track>]] [-t <pid>] [-c] [-r] [-a] \\\n"
 	     "\t\t[-g <gain>] <file>\n"
-	     "\t-h\tdisplay help and available audio output modes\n"
 	     "\t-s\tuse program stream demultiplexer, track 0-7 or 0x80-0x87\n"
 	     "\t-t\tuse transport stream demultiplexer, pid 0x10-0x1ffe\n"
-	     "\t-T\tuse transport stream PES demultiplexer\n"
 	     "\t-c\tuse c implementation, disables all accelerations\n"
 	     "\t-r\tdisable dynamic range compression\n"
 	     "\t-a\tdisable level adjustment based on output mode\n"
@@ -160,7 +156,7 @@ static void handle_args (int argc, char ** argv)
     char * s;
 
     drivers = ao_drivers ();
-    while ((c = getopt (argc, argv, "hs::t:Tcrag:o:")) != -1)
+    while ((c = getopt (argc, argv, "s::t:crag:o:")) != -1)
 	switch (c) {
 	case 'o':
 	    for (i = 0; drivers[i].name != NULL; i++)
@@ -175,10 +171,10 @@ static void handle_args (int argc, char ** argv)
 	case 's':
 	    demux_track = 0x80;
 	    if (optarg != NULL) {
-		demux_track = strtol (optarg, &s, 0);
+		demux_track = strtol (optarg, &s, 16);
 		if (demux_track < 0x80)
 		    demux_track += 0x80;
-		if (demux_track < 0x80 || demux_track > 0x87 || *s) {
+		if ((demux_track < 0x80) || (demux_track > 0x87) || (*s)) {
 		    fprintf (stderr, "Invalid track number: %s\n", optarg);
 		    print_usage (argv);
 		}
@@ -186,15 +182,11 @@ static void handle_args (int argc, char ** argv)
 	    break;
 
 	case 't':
-	    demux_pid = strtol (optarg, &s, 0);
-	    if (demux_pid < 0x10 || demux_pid > 0x1ffe || *s) {
+	    demux_pid = strtol (optarg, &s, 16);
+	    if ((demux_pid < 0x10) || (demux_pid > 0x1ffe) || (*s)) {
 		fprintf (stderr, "Invalid pid: %s\n", optarg);
 		print_usage (argv);
 	    }
-	    break;
-
-	case 'T':
-	    demux_pes = 1;
 	    break;
 
 	case 'c':
@@ -211,7 +203,7 @@ static void handle_args (int argc, char ** argv)
 
 	case 'g':
 	    gain = strtod (optarg, &s);
-	    if (gain < -96 || gain > 96 || *s) {
+	    if ((gain < -96) || (gain > 96) || (*s)) {
 		fprintf (stderr, "Invalid gain: %s\n", optarg);
 		print_usage (argv);
 	    }
@@ -276,15 +268,14 @@ void a52_decode_data (uint8_t * start, uint8_t * end)
 		}
 		bufpos = buf + length;
 	    } else {
-		level_t level;
-		sample_t bias;
+		sample_t level, bias;
 		int i;
 
-		if (output->setup (output, sample_rate, &flags, &level, &bias))
+		if (ao_setup (output, sample_rate, &flags, &level, &bias))
 		    goto error;
 		if (!disable_adjust)
 		    flags |= A52_ADJUST_LEVEL;
-		level = (level_t) (level * gain);
+		level *= gain;
 		if (a52_frame (state, buf, &flags, &level, bias))
 		    goto error;
 		if (disable_dynrng)
@@ -292,7 +283,7 @@ void a52_decode_data (uint8_t * start, uint8_t * end)
 		for (i = 0; i < 6; i++) {
 		    if (a52_block (state))
 			goto error;
-		    if (output->play (output, flags, a52_samples (state)))
+		    if (ao_play (output, flags, a52_samples (state)))
 			goto error;
 		}
 		bufptr = buf;
@@ -426,36 +417,17 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		goto continue_header;
 	    }
 	}
-	if (demux_pid || demux_pes) {
-	    if (header[3] != 0xbd) {
-		fprintf (stderr, "bad stream id %x\n", header[3]);
-		exit (1);
-	    }
-	    NEEDBYTES (9);
-	    if ((header[6] & 0xc0) != 0x80) {	/* not mpeg2 */
-		fprintf (stderr, "bad multiplex - not mpeg2\n");
-		exit (1);
-	    }
-	    len = 9 + header[8];
-	    NEEDBYTES (len);
-	    DONEBYTES (len);
-	    bytes = 6 + (header[4] << 8) + header[5] - len;
-	    if (bytes > end - buf) {
-		a52_decode_data (buf, end);
-		state = DEMUX_DATA;
-		state_bytes = bytes - (end - buf);
-		return 0;
-	    } else if (bytes > 0) {
-		a52_decode_data (buf, buf + bytes);
-		buf += bytes;
-	    }
-	} else switch (header[3]) {
+	if (demux_pid && (header[3] != 0xbd)) {
+	    fprintf (stderr, "bad stream id %x\n", header[3]);
+	    exit (1);
+	}
+	switch (header[3]) {
 	case 0xb9:	/* program end code */
 	    /* DONEBYTES (4); */
 	    /* break;         */
 	    return 1;
 	case 0xba:	/* pack header */
-	    NEEDBYTES (5);
+	    NEEDBYTES (12);
 	    if ((header[4] & 0xc0) == 0x40) {	/* mpeg2 */
 		NEEDBYTES (14);
 		len = 14 + (header[13] & 7);
@@ -463,12 +435,11 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		DONEBYTES (len);
 		/* header points to the mpeg2 pack header */
 	    } else if ((header[4] & 0xf0) == 0x20) {	/* mpeg1 */
-		NEEDBYTES (12);
 		DONEBYTES (12);
 		/* header points to the mpeg1 pack header */
 	    } else {
 		fprintf (stderr, "weird pack header\n");
-		DONEBYTES (5);
+		exit (1);
 	    }
 	    break;
 	case 0xbd:	/* private stream 1 */
@@ -496,7 +467,7 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		NEEDBYTES (len);
 		/* header points to the mpeg1 pes header */
 	    }
-	    if ((header-1)[len] != demux_track) {
+	    if ((!demux_pid) && ((header-1)[len] != demux_track)) {
 		DONEBYTES (len);
 		bytes = 6 + (header[4] << 8) + header[5] - len;
 		if (bytes <= 0)
@@ -507,15 +478,15 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 	    NEEDBYTES (len);
 	    DONEBYTES (len);
 	    bytes = 6 + (header[4] << 8) + header[5] - len;
-	    if (bytes > end - buf) {
+	    if (demux_pid || (bytes > end - buf)) {
 		a52_decode_data (buf, end);
 		state = DEMUX_DATA;
 		state_bytes = bytes - (end - buf);
 		return 0;
-	    } else if (bytes > 0) {
-		a52_decode_data (buf, buf + bytes);
-		buf += bytes;
-	    }
+	    } else if (bytes <= 0)
+		continue;
+	    a52_decode_data (buf, buf + bytes);
+	    buf += bytes;
 	    break;
 	default:
 	    if (header[3] < 0xb9) {
@@ -546,26 +517,27 @@ static void ps_loop (void)
 	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
 	if (demux (buffer, end, 0))
 	    break;	/* hit program_end_code */
-    } while (end == buffer + BUFFER_SIZE && !sigint);
+    } while (end == buffer + BUFFER_SIZE);
 }
 
 static void ts_loop (void)
 {
+#define PACKETS (BUFFER_SIZE / 188)
     uint8_t * buf;
-    uint8_t * nextbuf;
     uint8_t * data;
     uint8_t * end;
+    int packets;
+    int i;
     int pid;
 
-    buf = buffer;
     do {
-	end = buf + fread (buf, 1, buffer + BUFFER_SIZE - buf, in_file);
-	buf = buffer;
-	for (; (nextbuf = buf + 188) <= end; buf = nextbuf) {
-	    if (*buf != 0x47) {
+	packets = fread (buffer, 188, PACKETS, in_file);
+	for (i = 0; i < packets; i++) {
+	    buf = buffer + i * 188;
+	    end = buf + 188;
+	    if (buf[0] != 0x47) {
 		fprintf (stderr, "bad sync byte\n");
-		nextbuf = buf + 1;
-		continue;
+		exit (1);
 	    }
 	    pid = ((buf[1] << 8) + buf[2]) & 0x1fff;
 	    if (pid != demux_pid)
@@ -573,18 +545,13 @@ static void ts_loop (void)
 	    data = buf + 4;
 	    if (buf[3] & 0x20) {	/* buf contains an adaptation field */
 		data = buf + 5 + buf[4];
-		if (data > nextbuf)
+		if (data > end)
 		    continue;
 	    }
 	    if (buf[3] & 0x10)
-		demux (data, nextbuf,
-		       (buf[1] & 0x40) ? DEMUX_PAYLOAD_START : 0);
+		demux (data, end, (buf[1] & 0x40) ? DEMUX_PAYLOAD_START : 0);
 	}
-	if (end != buffer + BUFFER_SIZE)
-	    break;
-	memcpy (buffer, buf, end - buf);
-	buf = buffer + (end - buf);
-    } while (!sigint);
+    } while (packets == PACKETS);
 }
 
 static void es_loop (void)
@@ -594,7 +561,7 @@ static void es_loop (void)
     do {
 	size = fread (buffer, 1, BUFFER_SIZE, in_file);
 	a52_decode_data (buffer, buffer + size);
-    } while (size == BUFFER_SIZE && !sigint);
+    } while (size == BUFFER_SIZE);
 }
 
 int main (int argc, char ** argv)
@@ -602,23 +569,17 @@ int main (int argc, char ** argv)
     uint32_t accel;
 
 #ifdef HAVE_IO_H
-    setmode (fileno (stdin), O_BINARY);
     setmode (fileno (stdout), O_BINARY);
 #endif
 
     fprintf (stderr, PACKAGE"-"VERSION
 	     " - by Michel Lespinasse <walken@zoy.org> and Aaron Holtzman\n");
 
-#ifdef LIBA52_FIXED
-    fprintf (stderr, "Fixed Point Version by "
-	     "Jeroen Dobbelaere <jeroen.dobbelaere@acunia.com>\n");
-#endif
-
     handle_args (argc, argv);
 
     accel = disable_accel ? 0 : MM_ACCEL_DJBFFT;
 
-    output = output_open ();
+    output = ao_open (output_open);
     if (output == NULL) {
 	fprintf (stderr, "Can not open output\n");
 	return 1;
@@ -632,14 +593,13 @@ int main (int argc, char ** argv)
 
     if (demux_pid)
 	ts_loop ();
-    else if (demux_track || demux_pes)
+    else if (demux_track)
 	ps_loop ();
     else
 	es_loop ();
 
     a52_free (state);
     print_fps (1);
-    if (output->close)
-	output->close (output);
+    ao_close (output);
     return 0;
 }

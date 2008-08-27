@@ -1,6 +1,6 @@
 /*
  * audio_out.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of a52dec, a free ATSC A-52 stream decoder.
@@ -43,7 +43,6 @@ extern ao_open_t ao_win_open;
 extern ao_open_t ao_windolby_open;
 extern ao_open_t ao_wav_open;
 extern ao_open_t ao_wavdolby_open;
-extern ao_open_t ao_wav6_open;
 extern ao_open_t ao_aif_open;
 extern ao_open_t ao_aifdolby_open;
 extern ao_open_t ao_peak_open;
@@ -76,7 +75,6 @@ static ao_driver_t audio_out_drivers[] = {
 #endif
     {"wav", ao_wav_open},
     {"wavdolby", ao_wavdolby_open},
-    {"wav6", ao_wav6_open},
     {"aif", ao_aif_open},
     {"aifdolby", ao_aifdolby_open},
     {"peak", ao_peak_open},

@@ -1,6 +1,6 @@
 /*
  * attributes.h
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of a52dec, a free ATSC A-52 stream decoder.
@@ -26,12 +26,4 @@
 #define ATTR_ALIGN(align) __attribute__ ((__aligned__ ((ATTRIBUTE_ALIGNED_MAX < align) ? ATTRIBUTE_ALIGNED_MAX : align)))
 #else
 #define ATTR_ALIGN(align)
-#endif
-
-#ifdef HAVE_BUILTIN_EXPECT
-#define likely(x) __builtin_expect ((x) != 0, 1)
-#define unlikely(x) __builtin_expect ((x) != 0, 0)
-#else
-#define likely(x) (x)
-#define unlikely(x) (x)
 #endif

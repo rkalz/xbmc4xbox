@@ -1,6 +1,6 @@
 /*
- * convert2s16.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * float2s16.c
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of a52dec, a free ATSC A-52 stream decoder.
@@ -26,31 +26,19 @@
 #include <inttypes.h>
 
 #include "a52.h"
-#include "audio_out_internal.h"
-
-#include <stdio.h>
+#include "audio_out.h"
 
 static inline int16_t convert (int32_t i)
 {
-#ifdef LIBA52_FIXED
-    i >>= 15;
-#else
-    i -= 0x43c00000;
-#endif
-    return (i > 32767) ? 32767 : ((i < -32768) ? -32768 : i);
+    if (i > 0x43c07fff)
+	return 32767;
+    else if (i < 0x43bf8000)
+	return -32768;
+    else
+	return i - 0x43c00000;
 }
 
-void convert2s16_1 (convert_t * _f, int16_t * s16)
-{
-    int i;
-    int32_t * f = (int32_t *) _f;
-
-    for (i = 0; i < 256; i++) {
-	s16[i] = convert (f[i]);
-    }
-}
-
-void convert2s16_2 (convert_t * _f, int16_t * s16)
+void float2s16_2 (float * _f, int16_t * s16)
 {
     int i;
     int32_t * f = (int32_t *) _f;
@@ -61,19 +49,7 @@ void convert2s16_2 (convert_t * _f, int16_t * s16)
     }
 }
 
-void convert2s16_3 (convert_t * _f, int16_t * s16)
-{
-    int i;
-    int32_t * f = (int32_t *) _f;
-
-    for (i = 0; i < 256; i++) {
-	s16[3*i] = convert (f[i]);
-	s16[3*i+1] = convert (f[i+256]);
-	s16[3*i+2] = convert (f[i+512]);
-    }
-}
-
-void convert2s16_4 (convert_t * _f, int16_t * s16)
+void float2s16_4 (float * _f, int16_t * s16)
 {
     int i;
     int32_t * f = (int32_t *) _f;
@@ -86,7 +62,7 @@ void convert2s16_4 (convert_t * _f, int16_t * s16)
     }
 }
 
-void convert2s16_5 (convert_t * _f, int16_t * s16)
+void float2s16_5 (float * _f, int16_t * s16)
 {
     int i;
     int32_t * f = (int32_t *) _f;
@@ -112,15 +88,13 @@ int channels_multi (int flags)
 	return 2;
 }
 
-void convert2s16_multi (convert_t * _f, int16_t * s16, int flags)
+void float2s16_multi (float * _f, int16_t * s16, int flags)
 {
     int i;
     int32_t * f = (int32_t *) _f;
 
     switch (flags) {
     case A52_MONO:
-    case A52_CHANNEL1:
-    case A52_CHANNEL2:
 	for (i = 0; i < 256; i++) {
 	    s16[5*i] = s16[5*i+1] = s16[5*i+2] = s16[5*i+3] = 0;
 	    s16[5*i+4] = convert (f[i]);
@@ -129,7 +103,7 @@ void convert2s16_multi (convert_t * _f, int16_t * s16, int flags)
     case A52_CHANNEL:
     case A52_STEREO:
     case A52_DOLBY:
-	convert2s16_2 (_f, s16);
+	float2s16_2 (_f, s16);
 	break;
     case A52_3F:
 	for (i = 0; i < 256; i++) {
@@ -140,14 +114,12 @@ void convert2s16_multi (convert_t * _f, int16_t * s16, int flags)
 	}
 	break;
     case A52_2F2R:
-	convert2s16_4 (_f, s16);
+	float2s16_4 (_f, s16);
 	break;
     case A52_3F2R:
-	convert2s16_5 (_f, s16);
+	float2s16_5 (_f, s16);
 	break;
     case A52_MONO | A52_LFE:
-    case A52_CHANNEL1 | A52_LFE:
-    case A52_CHANNEL2 | A52_LFE:
 	for (i = 0; i < 256; i++) {
 	    s16[6*i] = s16[6*i+1] = s16[6*i+2] = s16[6*i+3] = 0;
 	    s16[6*i+4] = convert (f[i+256]);
@@ -191,115 +163,6 @@ void convert2s16_multi (convert_t * _f, int16_t * s16, int flags)
 	    s16[6*i+3] = convert (f[i+1280]);
 	    s16[6*i+4] = convert (f[i+512]);
 	    s16[6*i+5] = convert (f[i]);
-	}
-	break;
-    }
-}
-
-void convert2s16_wav (convert_t * _f, int16_t * s16, int flags)
-{
-    int i;
-    int32_t * f = (int32_t *) _f;
-
-    switch (flags) {
-    case A52_MONO:
-    case A52_CHANNEL1:
-    case A52_CHANNEL2:
-	convert2s16_1 (_f, s16);
-	break;
-    case A52_CHANNEL:
-    case A52_STEREO:
-    case A52_DOLBY:
-	convert2s16_2 (_f, s16);
-	break;
-    case A52_3F:
-	for (i = 0; i < 256; i++) {
-	    s16[3*i] = convert (f[i]);
-	    s16[3*i+1] = convert (f[i+512]);
-	    s16[3*i+2] = convert (f[i+256]);
-	}
-	break;
-    case A52_2F1R:
-	convert2s16_3 (_f, s16);
-	break;
-    case A52_3F1R:
-	for (i = 0; i < 256; i++) {
-	    s16[4*i] = convert (f[i]);
-	    s16[4*i+1] = convert (f[i+512]);
-	    s16[4*i+2] = convert (f[i+256]);
-	    s16[4*i+3] = convert (f[i+768]);
-	}
-	break;
-    case A52_2F2R:
-	convert2s16_4 (_f, s16);
-	break;
-    case A52_3F2R:
-	for (i = 0; i < 256; i++) {
-	    s16[5*i] = convert (f[i]);
-	    s16[5*i+1] = convert (f[i+512]);
-	    s16[5*i+2] = convert (f[i+256]);
-	    s16[5*i+3] = convert (f[i+768]);
-	    s16[5*i+4] = convert (f[i+1024]);
-	}
-	break;
-    case A52_MONO | A52_LFE:
-    case A52_CHANNEL1 | A52_LFE:
-    case A52_CHANNEL2 | A52_LFE:
-	for (i = 0; i < 256; i++) {
-	    s16[2*i] = convert (f[i+256]);
-	    s16[2*i+1] = convert (f[i]);
-	}
-	break;
-    case A52_CHANNEL | A52_LFE:
-    case A52_STEREO | A52_LFE:
-    case A52_DOLBY | A52_LFE:
-	for (i = 0; i < 256; i++) {
-	    s16[3*i] = convert (f[i+256]);
-	    s16[3*i+1] = convert (f[i+512]);
-	    s16[3*i+2] = convert (f[i]);
-	}
-	break;
-    case A52_3F | A52_LFE:
-	for (i = 0; i < 256; i++) {
-	    s16[4*i] = convert (f[i+256]);
-	    s16[4*i+1] = convert (f[i+768]);
-	    s16[4*i+2] = convert (f[i+512]);
-	    s16[4*i+3] = convert (f[i]);
-	}
-	break;
-    case A52_2F1R | A52_LFE:
-	for (i = 0; i < 256; i++) {
-	    s16[4*i] = convert (f[i+256]);
-	    s16[4*i+1] = convert (f[i+512]);
-	    s16[4*i+2] = convert (f[i]);
-	    s16[4*i+3] = convert (f[i+768]);
-	}
-    case A52_3F1R | A52_LFE:
-	for (i = 0; i < 256; i++) {
-	    s16[5*i] = convert (f[i+256]);
-	    s16[5*i+1] = convert (f[i+768]);
-	    s16[5*i+2] = convert (f[i+512]);
-	    s16[5*i+3] = convert (f[i]);
-	    s16[5*i+4] = convert (f[i+1024]);
-	}
-	break;
-    case A52_2F2R | A52_LFE:
-	for (i = 0; i < 256; i++) {
-	    s16[5*i] = convert (f[i+256]);
-	    s16[5*i+1] = convert (f[i+512]);
-	    s16[5*i+2] = convert (f[i]);
-	    s16[5*i+3] = convert (f[i+768]);
-	    s16[5*i+4] = convert (f[i+1024]);
-	}
-	break;
-    case A52_3F2R | A52_LFE:
-	for (i = 0; i < 256; i++) {
-	    s16[6*i] = convert (f[i+256]);
-	    s16[6*i+1] = convert (f[i+768]);
-	    s16[6*i+2] = convert (f[i+512]);
-	    s16[6*i+3] = convert (f[i]);
-	    s16[6*i+4] = convert (f[i+1024]);
-	    s16[6*i+5] = convert (f[i+1280]);
 	}
 	break;
     }

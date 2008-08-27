@@ -1,6 +1,6 @@
 /*
  * audio_out_aif.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of a52dec, a free ATSC A-52 stream decoder.
@@ -43,12 +43,12 @@ typedef struct aif_instance_s {
 static uint8_t aif_header[] = {
     'F', 'O', 'R', 'M', 0xff, 0xff, 0xff, 0xfe, 'A', 'I', 'F', 'F',
     'C', 'O', 'M', 'M', 0, 0, 0, 18,
-    0, 2, 0x3f, 0xff, 0xff, 0xf4, 0, 16, 0x40, 0x0e, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 2, 0x3f, 0xff, 0xff, 0xf4, 0, 16, 0x40, 0x0e, -1, -1, 0, 0, 0, 0, 0, 0,
     'S', 'S', 'N', 'D', 0xff, 0xff, 0xff, 0xd8, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
 static int aif_setup (ao_instance_t * _instance, int sample_rate, int * flags,
-		      level_t * level, sample_t * bias)
+		      sample_t * level, sample_t * bias)
 {
     aif_instance_t * instance = (aif_instance_t *) _instance;
 
@@ -57,8 +57,8 @@ static int aif_setup (ao_instance_t * _instance, int sample_rate, int * flags,
     instance->sample_rate = sample_rate;
 
     *flags = instance->flags;
-    *level = CONVERT_LEVEL;
-    *bias = CONVERT_BIAS;
+    *level = 1;
+    *bias = 384;
 
     return 0;
 }
@@ -83,13 +83,13 @@ static int aif_play (ao_instance_t * _instance, int flags, sample_t * _samples)
     int16_t int16_samples[256*2];
 
 #ifdef LIBA52_DOUBLE
-    convert_t samples[256 * 2];
+    float samples[256 * 2];
     int i;
 
     for (i = 0; i < 256 * 2; i++)
 	samples[i] = _samples[i];
 #else
-    convert_t * samples = _samples;
+    float * samples = _samples;
 #endif
 
     if (instance->set_params) {
@@ -98,7 +98,7 @@ static int aif_play (ao_instance_t * _instance, int flags, sample_t * _samples)
 	fwrite (aif_header, sizeof (aif_header), 1, stdout);
     }
 
-    convert2s16_2 (samples, int16_samples);
+    float2s16_2 (samples, int16_samples);
     s16_BE (int16_samples, 2);
     fwrite (int16_samples, 256 * sizeof (int16_t) * 2, 1, stdout);
 
@@ -124,7 +124,7 @@ static ao_instance_t * aif_open (int flags)
 {
     aif_instance_t * instance;
 
-    instance = (aif_instance_t *) malloc (sizeof (aif_instance_t));
+    instance = malloc (sizeof (aif_instance_t));
     if (instance == NULL)
 	return NULL;
 
