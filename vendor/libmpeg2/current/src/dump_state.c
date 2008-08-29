@@ -29,6 +29,9 @@
 
 #include "mpeg2.h"
 
+void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
+		 int offset, int verbose);
+
 static struct {
     const mpeg2_sequence_t * ptr;
     mpeg2_sequence_t value;
@@ -209,22 +212,22 @@ static void pic_code_del (const mpeg2_picture_t * pic)
 void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 		 int offset, int verbose)
 {
-    static char * state_name[] = {
-	"BUFFER", "SEQUENCE", "SEQUENCE_REPEATED", "SEQUENCE_MODIFIED", "GOP",
+    static const char * state_name[] = {
+	"BUFFER", "SEQUENCE", "SEQUENCE_REPEATED","GOP",
 	"PICTURE", "SLICE_1ST", "PICTURE_2ND", "SLICE", "END",
-	"INVALID", "INVALID_END"
+	"INVALID", "INVALID_END", "SEQUENCE_MODIFIED"
     };
-    static char * profile[] = { "HP", "Spatial", "SNR", "MP", "SP" };
-    static char * level[] = { "HL", "H-14", "ML", "LL" };
-    static char * profile2[] = { "422@HL", NULL, NULL, "422@ML",
+    static const char * profile[] = { "HP", "Spatial", "SNR", "MP", "SP" };
+    static const char * level[] = { "HL", "H-14", "ML", "LL" };
+    static const char * profile2[] = { "422@HL", NULL, NULL, "422@ML",
 				 NULL, NULL, NULL, NULL, "MV@HL",
 				 "MV@H-14", NULL, "MV@ML", "MV@LL" };
-    static char * video_fmt[] = { "COMPONENT", "PAL", "NTSC", "SECAM", "MAC"};
-    static char coding_type[] = { '0', 'I', 'P', 'B', 'D', '5', '6', '7'};
-    static char * colour[] = { NULL, "BT.709", "UNSPECIFIED", NULL,
+    static const char * video_fmt[] = { "COMPONENT", "PAL", "NTSC", "SECAM", "MAC"};
+    static const char coding_type[] = { '0', 'I', 'P', 'B', 'D', '5', '6', '7'};
+    static const char * colour[] = { NULL, "BT.709", "UNSPECIFIED", NULL,
 			       "BT.470-2/M", "BT.470-2/B,G",
 			       "SMPTE170M", "SMPTE240M", "LINEAR" };
-    static char * colour3[] = { NULL, "BT.709", "UNSPEC_COLORS", NULL, NULL,
+    static const char * colour3[] = { NULL, "BT.709", "UNSPEC_COLORS", NULL, NULL,
 				"BT.470-2/B,G", "SMPTE170M", "SMPTE240M" };
     const mpeg2_sequence_t * seq = info->sequence;
     const mpeg2_gop_t * gop = info->gop;

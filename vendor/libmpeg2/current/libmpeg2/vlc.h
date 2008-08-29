@@ -21,6 +21,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef LIBMPEG2_VLC_H
+#define LIBMPEG2_VLC_H
+
 #define GETWORD(bit_buf,shift,bit_ptr)				\
 do {								\
     bit_buf |= ((bit_ptr[0] << 8) | bit_ptr[1]) << (shift);	\
@@ -427,3 +430,5 @@ static const MBAtab MBA_11 [] = {
     { 7,  7}, { 7,  7}, { 7,  7}, { 7,  7},
     { 7,  7}, { 7,  7}, { 7,  7}, { 7,  7}
 };
+
+#endif /* LIBMPEG2_VLC_H */

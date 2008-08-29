@@ -31,6 +31,7 @@
 #include <inttypes.h>
 
 #include "video_out.h"
+#include "vo_internal.h"
 
 typedef struct pgm_instance_s {
     vo_instance_t vo;

@@ -29,7 +29,7 @@
 #include "attributes.h"
 #include "mpeg2_internal.h"
 
-#ifdef ARCH_X86
+#if defined(ARCH_X86) || defined(ARCH_X86_64)
 static inline uint32_t arch_accel (uint32_t accel)
 {
     if (accel & (MPEG2_ACCEL_X86_3DNOW | MPEG2_ACCEL_X86_MMXEXT))
@@ -125,7 +125,7 @@ static inline uint32_t arch_accel (uint32_t accel)
 
     return accel;
 }
-#endif /* ARCH_X86 */
+#endif /* ARCH_X86 || ARCH_X86_64 */
 
 #if defined(ACCEL_DETECT) && (defined(ARCH_PPC) || defined(ARCH_SPARC))
 #include <signal.h>
@@ -162,10 +162,10 @@ static uint32_t arch_accel (uint32_t accel)
 
 	canjump = 1;
 
-#ifdef HAVE_ALTIVEC_H	/* gnu */
-#define VAND(a,b,c) "vand " #a "," #b "," #c "\n\t"
-#else			/* apple */
+#if defined(__APPLE_CC__)	/* apple */
 #define VAND(a,b,c) "vand v" #a ",v" #b ",v" #c "\n\t"
+#else				/* gnu */
+#define VAND(a,b,c) "vand " #a "," #b "," #c "\n\t"
 #endif
 	asm volatile ("mtspr 256, %0\n\t"
 		      VAND (0, 0, 0)
@@ -190,7 +190,7 @@ static uint32_t arch_accel (uint32_t accel)
 	accel |= MPEG2_ACCEL_SPARC_VIS;
 
 #ifdef ACCEL_DETECT
-    if (accel & (MPEG2_ACCEL_SPARC_VIS2 | MPEG2_ACCEL_DETECT) ==
+    if ((accel & (MPEG2_ACCEL_SPARC_VIS2 | MPEG2_ACCEL_DETECT)) ==
 	MPEG2_ACCEL_DETECT) {
 	static RETSIGTYPE (* oldsig) (int);
 
@@ -253,7 +253,7 @@ static inline uint32_t arch_accel (uint32_t accel)
 
 uint32_t mpeg2_detect_accel (uint32_t accel)
 {
-#if defined (ARCH_X86) || defined (ARCH_PPC) || defined (ARCH_ALPHA) || defined (ARCH_SPARC)
+#if defined (ARCH_X86) || defined (ARCH_X86_64) || defined (ARCH_PPC) || defined (ARCH_ALPHA) || defined (ARCH_SPARC)
     accel = arch_accel (accel);
 #endif
     return accel;

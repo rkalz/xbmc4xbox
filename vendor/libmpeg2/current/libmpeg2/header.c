@@ -239,7 +239,7 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
     sequence->vbv_buffer_size |= buffer[4] << 21;
 
     sequence->frame_period =
-	sequence->frame_period * ((buffer[5]&31)+1) / (((buffer[5]>>2)&3)+1);
+	sequence->frame_period * ((buffer[5]&31)+1) / (((buffer[5]>>5)&3)+1);
 
     mpeg2dec->ext_state = SEQ_DISPLAY_EXT;
 
@@ -408,13 +408,13 @@ int mpeg2_guess_aspect (const mpeg2_sequence_t * sequence,
     return (height == 576) ? 1 : 2;
 }
 
-static void copy_matrix (mpeg2dec_t * mpeg2dec, int index)
+static void copy_matrix (mpeg2dec_t * mpeg2dec, int idx)
 {
-    if (memcmp (mpeg2dec->quantizer_matrix[index],
-		mpeg2dec->new_quantizer_matrix[index], 64)) {
-	memcpy (mpeg2dec->quantizer_matrix[index],
-		mpeg2dec->new_quantizer_matrix[index], 64);
-	mpeg2dec->scaled[index] = -1;
+    if (memcmp (mpeg2dec->quantizer_matrix[idx],
+		mpeg2dec->new_quantizer_matrix[idx], 64)) {
+	memcpy (mpeg2dec->quantizer_matrix[idx],
+		mpeg2dec->new_quantizer_matrix[idx], 64);
+	mpeg2dec->scaled[idx] = -1;
     }
 }
 
@@ -466,7 +466,7 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
     if (mpeg2dec->sequence.width != (unsigned)-1) {
 	/*
 	 * According to 6.1.1.6, repeat sequence headers should be
-	 * identical to the original. However some encoders dont
+	 * identical to the original. However some encoders do not
 	 * respect that and change various fields (including bitrate
 	 * and aspect ratio) in the repeat sequence headers. So we
 	 * choose to be as conservative as possible and only restart
@@ -585,7 +585,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 
     /* XXXXXX decode extra_information_picture as well */
 
-    mpeg2dec->q_scale_type = 0;
+    decoder->q_scale_type = 0;
     decoder->intra_dc_precision = 7;
     decoder->frame_pred_frame_dct = 1;
     decoder->concealment_motion_vectors = 0;
@@ -622,6 +622,7 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
 	if (!(mpeg2dec->sequence.flags & SEQ_FLAG_PROGRESSIVE_SEQUENCE)) {
 	    picture->nb_fields = (buffer[3] & 2) ? 3 : 2;
 	    flags |= (buffer[3] & 128) ? PIC_FLAG_TOP_FIELD_FIRST : 0;
+	    flags |= (buffer[3] &   2) ? PIC_FLAG_REPEAT_FIRST_FIELD : 0;
 	} else
 	    picture->nb_fields = (buffer[3]&2) ? ((buffer[3]&128) ? 6 : 4) : 2;
 	break;
@@ -631,7 +632,7 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
     decoder->top_field_first = buffer[3] >> 7;
     decoder->frame_pred_frame_dct = (buffer[3] >> 6) & 1;
     decoder->concealment_motion_vectors = (buffer[3] >> 5) & 1;
-    mpeg2dec->q_scale_type = buffer[3] & 16;
+    decoder->q_scale_type = buffer[3] & 16;
     decoder->intra_vlc_format = (buffer[3] >> 3) & 1;
     decoder->scan = (buffer[3] & 4) ? mpeg2_scan_alt : mpeg2_scan_norm;
     if (!(buffer[4] & 0x80))
@@ -856,7 +857,7 @@ int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec)
     return 0;
 }
 
-static void prescale (mpeg2dec_t * mpeg2dec, int index)
+static void prescale (mpeg2dec_t * mpeg2dec, int idx)
 {
     static int non_linear_scale [] = {
 	 0,  1,  2,  3,  4,  5,   6,   7,
@@ -867,13 +868,13 @@ static void prescale (mpeg2dec_t * mpeg2dec, int index)
     int i, j, k;
     mpeg2_decoder_t * decoder = &(mpeg2dec->decoder);
 
-    if (mpeg2dec->scaled[index] != mpeg2dec->q_scale_type) {
-	mpeg2dec->scaled[index] = mpeg2dec->q_scale_type;
+    if (mpeg2dec->scaled[idx] != decoder->q_scale_type) {
+	mpeg2dec->scaled[idx] = decoder->q_scale_type;
 	for (i = 0; i < 32; i++) {
-	    k = mpeg2dec->q_scale_type ? non_linear_scale[i] : (i << 1);
+	    k = decoder->q_scale_type ? non_linear_scale[i] : (i << 1);
 	    for (j = 0; j < 64; j++)
-		decoder->quantizer_prescale[index][i][j] =
-		    k * mpeg2dec->quantizer_matrix[index][j];
+		decoder->quantizer_prescale[idx][i][j] =
+		    k * mpeg2dec->quantizer_matrix[idx][j];
 	}
     }
 }

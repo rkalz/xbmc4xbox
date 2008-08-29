@@ -1,4 +1,4 @@
-#basedir ../../mpeg2dec-streams
+#basedir ../../streams
 
 teracom/teracom_vlc4		# OK - test all VLC tables
 att/att_mismatch		# OK - IDCT accuracy

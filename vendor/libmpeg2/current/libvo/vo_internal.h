@@ -1,5 +1,5 @@
 /*
- * hw_bes.h
+ * vo_internal.h
  * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
@@ -21,30 +21,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef __LINUX_HW_BES_H
-#define __LINUX_HW_BES_H
+extern vo_open_t vo_xv_open;
+extern vo_open_t vo_xv2_open;
+extern vo_open_t vo_x11_open;
+extern vo_open_t vo_dxrgb_open;
+extern vo_open_t vo_dx_open;
+extern vo_open_t vo_sdl_open;
+extern vo_open_t vo_null_open;
+extern vo_open_t vo_nullslice_open;
+extern vo_open_t vo_nullskip_open;
+extern vo_open_t vo_nullrgb16_open;
+extern vo_open_t vo_nullrgb32_open;
+extern vo_open_t vo_pgm_open;
+extern vo_open_t vo_pgmpipe_open;
+extern vo_open_t vo_md5_open;
 
-typedef struct {
-    uint32_t card_type;
-    uint32_t ram_size;
-    uint32_t src_width;
-    uint32_t src_height;
-    uint32_t dest_width;
-    uint32_t dest_height;
-    uint32_t x_org;
-    uint32_t y_org;
-    uint8_t  colkey_on;
-    uint8_t  colkey_red;
-    uint8_t  colkey_green;
-    uint8_t  colkey_blue;
-} mga_vid_config_t;
-
-#define MGA_VID_CONFIG    _IOR('J', 1, mga_vid_config_t)
-#define MGA_VID_ON        _IO ('J', 2)
-#define MGA_VID_OFF       _IO ('J', 3)
-#define MGA_VID_FSEL _IOR('J', 4, int)
-
-#define MGA_G200 0x1234
-#define MGA_G400 0x5678
-
-#endif
