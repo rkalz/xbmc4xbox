@@ -1,0 +1,19 @@
+
+DIRS=libid3tag
+SYSDIR=../../../system
+SO=libid3tag-@ARCH@.so
+LIB=$(SYSDIR)/$(SO)
+CLEAN_FILES=libid3tag/compat.c libid3tag/frametype.c
+
+.PHONY: compile
+
+$(LIB): libid3tag/.libs/libid3tag.so
+	$(CXX) -shared -fPIC -O3 -o $@ libid3tag/.libs/*.o \
+		`cat ../../cores/DllLoader/exports/wrapper.def` \
+		../../cores/DllLoader/exports/wrapper.o
+
+libid3tag/.libs/libid3tag.so: compile
+	$(MAKE) -C libid3tag
+
+include ../../../Makefile.include
+
