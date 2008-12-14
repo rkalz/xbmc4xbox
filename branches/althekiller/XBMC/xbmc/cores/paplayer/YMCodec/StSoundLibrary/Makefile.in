@@ -1,0 +1,11 @@
+CFLAGS +=-D_LINUX -fPIC
+OBJS=Depacker.o digidrum.o XBMCYM.o Ym2149Ex.o Ymload.o YmMusic.o YmUserInterface.o LZH/LZHXLIB.o
+
+LIB=../../../../../system/players/paplayer/stsoundlibrary-@ARCH@.so
+
+include ../../../../../Makefile.include
+
+lib: $(LIB)
+
+$(LIB): $(OBJS)
+	gcc -fPIC -shared -o $@ $(OBJS) `cat ../../../DllLoader/exports/wrapper.def` ../../../DllLoader/exports/wrapper.o
