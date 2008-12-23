@@ -22,7 +22,7 @@
 
 #include "parser.h"
 
-AVCodecParser *av_first_parser = NULL;
+static AVCodecParser *av_first_parser = NULL;
 
 AVCodecParser* av_parser_next(AVCodecParser *p){
     if(p) return p->next;
@@ -274,6 +274,7 @@ int ff_combine_frame(ParseContext *pc, int next, const uint8_t **buf, int *buf_s
     /* store overread bytes */
     for(;next < 0; next++){
         pc->state = (pc->state<<8) | pc->buffer[pc->last_index + next];
+        pc->state64 = (pc->state64<<8) | pc->buffer[pc->last_index + next];
         pc->overread++;
     }
 
@@ -291,7 +292,7 @@ void ff_parse_close(AVCodecParserContext *s)
 {
     ParseContext *pc = s->priv_data;
 
-    av_free(pc->buffer);
+    av_freep(&pc->buffer);
 }
 
 void ff_parse1_close(AVCodecParserContext *s)

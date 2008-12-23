@@ -440,6 +440,8 @@ static int find_smallest_bounding_rectangle(AVSubtitle *s)
 
 #ifdef DEBUG
 #undef fprintf
+#undef perror
+#undef exit
 static void ppm_save(const char *filename, uint8_t *bitmap, int w, int h,
                      uint32_t *rgba_palette)
 {
@@ -506,5 +508,5 @@ AVCodec dvdsub_decoder = {
     NULL,
     NULL,
     dvdsub_decode,
-    .long_name = "DVD subtitles",
+    .long_name = NULL_IF_CONFIG_SMALL("DVD subtitles"),
 };
