@@ -1,6 +1,5 @@
 /*
- * simple math operations
- * Copyright (c) 2006 Michael Niedermayer <michaelni@gmx.at> et al
+ * XVID MPEG-4 VIDEO CODEC
  *
  * This file is part of FFmpeg.
  *
@@ -19,25 +18,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_I386_MATHOPS_H
-#define AVCODEC_I386_MATHOPS_H
+/*!
+ * @file idct_xvid.h
+ * header for Xvid IDCT functions
+ */
 
-#define MULL(ra, rb, shift) \
-        ({ int rt, dummy; __asm__ (\
-            "imull %3               \n\t"\
-            "shrdl %4, %%edx, %%eax \n\t"\
-            : "=a"(rt), "=d"(dummy)\
-            : "a" ((int)ra), "rm" ((int)rb), "i"(shift));\
-         rt; })
+#ifndef AVCODEC_X86_IDCT_XVID_H
+#define AVCODEC_X86_IDCT_XVID_H
 
-#define MULH(ra, rb) \
-    ({ int rt, dummy;\
-     __asm__ ("imull %3\n\t" : "=d"(rt), "=a"(dummy): "a" ((int)ra), "rm" ((int)rb));\
-     rt; })
+#include <stdint.h>
 
-#define MUL64(ra, rb) \
-    ({ int64_t rt;\
-     __asm__ ("imull %2\n\t" : "=A"(rt) : "a" ((int)ra), "g" ((int)rb));\
-     rt; })
+void ff_idct_xvid_mmx(short *block);
+void ff_idct_xvid_mmx2(short *block);
+void ff_idct_xvid_sse2(short *block);
+void ff_idct_xvid_sse2_put(uint8_t *dest, int line_size, short *block);
+void ff_idct_xvid_sse2_add(uint8_t *dest, int line_size, short *block);
 
-#endif /* AVCODEC_I386_MATHOPS_H */
+#endif /* AVCODEC_X86_IDCT_XVID_H */

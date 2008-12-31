@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2008 Mans Rullgard <mans@mansr.com>
+ * vp3dsp MMX function declarations
+ * Copyright (c) 2007 Aurelien Jacobs <aurel@gnuage.org>
  *
  * This file is part of FFmpeg.
  *
@@ -18,30 +19,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "config.h"
+#ifndef AVCODEC_X86_VP3DSP_MMX_H
+#define AVCODEC_X86_VP3DSP_MMX_H
 
-        .macro require8, val=1
-        .eabi_attribute 24, \val
-        .endm
+#include <stdint.h>
+#include "libavcodec/dsputil.h"
 
-        .macro preserve8, val=1
-        .eabi_attribute 25, \val
-        .endm
+void ff_vp3_idct_mmx(int16_t *data);
+void ff_vp3_idct_put_mmx(uint8_t *dest, int line_size, DCTELEM *block);
+void ff_vp3_idct_add_mmx(uint8_t *dest, int line_size, DCTELEM *block);
 
-        .macro function name, export=0
-.if \export
-        .global \name
-.endif
-        .type   \name, %function
-        .func   \name
-\name:
-        .endm
+void ff_vp3_v_loop_filter_mmx2(uint8_t *src, int stride, int *bounding_values);
+void ff_vp3_h_loop_filter_mmx2(uint8_t *src, int stride, int *bounding_values);
 
-        .macro movrel rd, val
-#if defined(HAVE_ARMV6T2) && !defined(CONFIG_SHARED)
-        movw            \rd, #:lower16:\val
-        movt            \rd, #:upper16:\val
-#else
-        ldr             \rd, =\val
-#endif
-        .endm
+#endif /* AVCODEC_X86_VP3DSP_MMX_H */

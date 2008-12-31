@@ -1,5 +1,6 @@
 /*
- * XVID MPEG-4 VIDEO CODEC
+ * CCITT Fax Group 3 and 4 decompression
+ * Copyright (c) 2008 Konstantin Shishkov
  *
  * This file is part of FFmpeg.
  *
@@ -18,20 +19,27 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-/*!
- * @file idct_xvid.h
- * header for Xvid IDCT functions
+/**
+ * CCITT Fax Group 3 and 4 decompression
+ * @file faxcompr.h
+ * @author Konstantin Shishkov
  */
+#ifndef AVCODEC_FAXCOMPR_H
+#define AVCODEC_FAXCOMPR_H
 
-#ifndef AVCODEC_I386_IDCT_XVID_H
-#define AVCODEC_I386_IDCT_XVID_H
+#include "avcodec.h"
+#include "tiff.h"
 
-#include <stdint.h>
+/**
+ * initialize upacker code
+ */
+void ff_ccitt_unpack_init();
 
-void ff_idct_xvid_mmx(short *block);
-void ff_idct_xvid_mmx2(short *block);
-void ff_idct_xvid_sse2(short *block);
-void ff_idct_xvid_sse2_put(uint8_t *dest, int line_size, short *block);
-void ff_idct_xvid_sse2_add(uint8_t *dest, int line_size, short *block);
+/**
+ * unpack data compressed with CCITT Group 3 1/2-D or Group 4 method
+ */
+int ff_ccitt_unpack(AVCodecContext *avctx,
+                       const uint8_t *src, int srcsize,
+                       uint8_t *dst, int height, int stride, enum TiffCompr compr);
 
-#endif /* AVCODEC_I386_IDCT_XVID_H */
+#endif /* AVCODEC_FAXCOMPR_H */
