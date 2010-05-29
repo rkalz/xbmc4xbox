@@ -35,13 +35,11 @@ Global
 		Debug (Win32) Win32 = Debug (Win32) Win32
 		Debug (Win32) Xbox = Debug (Win32) Xbox
 		Debug No Memory Tracking Xbox = Debug No Memory Tracking Xbox
-		Debug Xbox No Memory Tracking = Debug Xbox No Memory Tracking
 		Profile = Profile
 		Profile_FastCap = Profile_FastCap
 		Release = Release
 		Release (Win32) Win32 = Release (Win32) Win32
 		Release (Win32) Xbox = Release (Win32) Xbox
-		Release Xbox  Debugging = Release Xbox  Debugging
 		Release_LTCG = Release_LTCG
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
@@ -53,7 +51,6 @@ Global
 		{31103E92-4EE8-4F94-B67A-092C7CEFDB3D}.Debug (Win32) Xbox.Build.0 = Debug Xbox No Memory Tracking|Xbox
 		{31103E92-4EE8-4F94-B67A-092C7CEFDB3D}.Debug No Memory Tracking Xbox.ActiveCfg = Debug Xbox No Memory Tracking|Xbox
 		{31103E92-4EE8-4F94-B67A-092C7CEFDB3D}.Debug No Memory Tracking Xbox.Build.0 = Debug Xbox No Memory Tracking|Xbox
-		{31103E92-4EE8-4F94-B67A-092C7CEFDB3D}.Debug Xbox No Memory Tracking.ActiveCfg = Debug Xbox No Memory Tracking|Xbox
 		{31103E92-4EE8-4F94-B67A-092C7CEFDB3D}.Profile.ActiveCfg = Profile|Xbox
 		{31103E92-4EE8-4F94-B67A-092C7CEFDB3D}.Profile.Build.0 = Profile|Xbox
 		{31103E92-4EE8-4F94-B67A-092C7CEFDB3D}.Profile_FastCap.ActiveCfg = Profile_FastCap|Xbox
@@ -64,7 +61,6 @@ Global
 		{31103E92-4EE8-4F94-B67A-092C7CEFDB3D}.Release (Win32) Win32.Build.0 = Release|Xbox
 		{31103E92-4EE8-4F94-B67A-092C7CEFDB3D}.Release (Win32) Xbox.ActiveCfg = Release|Xbox
 		{31103E92-4EE8-4F94-B67A-092C7CEFDB3D}.Release (Win32) Xbox.Build.0 = Release|Xbox
-		{31103E92-4EE8-4F94-B67A-092C7CEFDB3D}.Release Xbox  Debugging.ActiveCfg = Release|Xbox
 		{31103E92-4EE8-4F94-B67A-092C7CEFDB3D}.Release_LTCG.ActiveCfg = Release_LTCG|Xbox
 		{31103E92-4EE8-4F94-B67A-092C7CEFDB3D}.Release_LTCG.Build.0 = Release_LTCG|Xbox
 		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Debug.ActiveCfg = Debug|Xbox
@@ -75,7 +71,6 @@ Global
 		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Debug (Win32) Xbox.Build.0 = Debug|Xbox
 		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Debug No Memory Tracking Xbox.ActiveCfg = Debug|Xbox
 		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Debug No Memory Tracking Xbox.Build.0 = Debug|Xbox
-		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Debug Xbox No Memory Tracking.ActiveCfg = Debug|Xbox
 		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Profile.ActiveCfg = Profile|Xbox
 		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Profile.Build.0 = Profile|Xbox
 		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Profile_FastCap.ActiveCfg = Profile_FastCap|Xbox
@@ -86,7 +81,6 @@ Global
 		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Release (Win32) Win32.Build.0 = Release|Xbox
 		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Release (Win32) Xbox.ActiveCfg = Release|Xbox
 		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Release (Win32) Xbox.Build.0 = Release|Xbox
-		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Release Xbox  Debugging.ActiveCfg = Release|Xbox
 		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Release_LTCG.ActiveCfg = Release_LTCG|Xbox
 		{D33D36E6-6E4B-4C1B-A820-A12C94CB1411}.Release_LTCG.Build.0 = Release_LTCG|Xbox
 		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Debug.ActiveCfg = Debug|Xbox
@@ -97,8 +91,6 @@ Global
 		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Debug (Win32) Xbox.Build.0 = Debug|Xbox
 		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Debug No Memory Tracking Xbox.ActiveCfg = Debug|Xbox
 		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Debug No Memory Tracking Xbox.Build.0 = Debug|Xbox
-		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Debug Xbox No Memory Tracking.ActiveCfg = Debug|Xbox
-		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Debug Xbox No Memory Tracking.Build.0 = Debug|Xbox
 		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Profile.ActiveCfg = Profile|Xbox
 		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Profile.Build.0 = Profile|Xbox
 		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Profile_FastCap.ActiveCfg = Profile_FastCap|Xbox
@@ -109,8 +101,6 @@ Global
 		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Release (Win32) Win32.Build.0 = Release|Xbox
 		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Release (Win32) Xbox.ActiveCfg = Release|Xbox
 		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Release (Win32) Xbox.Build.0 = Release|Xbox
-		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Release Xbox  Debugging.ActiveCfg = Release|Xbox
-		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Release Xbox  Debugging.Build.0 = Release|Xbox
 		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Release_LTCG.ActiveCfg = Release_LTCG|Xbox
 		{9B28366B-79F0-4361-B5C5-4608DFA8CF17}.Release_LTCG.Build.0 = Release_LTCG|Xbox
 		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Debug.ActiveCfg = Debug|Xbox
@@ -121,8 +111,6 @@ Global
 		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Debug (Win32) Xbox.Build.0 = Debug|Xbox
 		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Debug No Memory Tracking Xbox.ActiveCfg = Debug|Xbox
 		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Debug No Memory Tracking Xbox.Build.0 = Debug|Xbox
-		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Debug Xbox No Memory Tracking.ActiveCfg = Debug|Xbox
-		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Debug Xbox No Memory Tracking.Build.0 = Debug|Xbox
 		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Profile.ActiveCfg = Profile|Xbox
 		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Profile.Build.0 = Profile|Xbox
 		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Profile_FastCap.ActiveCfg = Profile_FastCap|Xbox
@@ -133,8 +121,6 @@ Global
 		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Release (Win32) Win32.Build.0 = Release|Xbox
 		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Release (Win32) Xbox.ActiveCfg = Release|Xbox
 		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Release (Win32) Xbox.Build.0 = Release|Xbox
-		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Release Xbox  Debugging.ActiveCfg = Release|Xbox
-		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Release Xbox  Debugging.Build.0 = Release|Xbox
 		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Release_LTCG.ActiveCfg = Release_LTCG|Xbox
 		{5AAA4F63-3B62-4C93-9BFE-76A42A935262}.Release_LTCG.Build.0 = Release_LTCG|Xbox
 		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Debug.ActiveCfg = Debug|Xbox
@@ -145,8 +131,6 @@ Global
 		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Debug (Win32) Xbox.Build.0 = Debug|Xbox
 		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Debug No Memory Tracking Xbox.ActiveCfg = Debug|Xbox
 		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Debug No Memory Tracking Xbox.Build.0 = Debug|Xbox
-		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Debug Xbox No Memory Tracking.ActiveCfg = Debug|Xbox
-		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Debug Xbox No Memory Tracking.Build.0 = Debug|Xbox
 		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Profile.ActiveCfg = Profile|Xbox
 		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Profile.Build.0 = Profile|Xbox
 		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Profile_FastCap.ActiveCfg = Profile_FastCap|Xbox
@@ -155,10 +139,8 @@ Global
 		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Release.Build.0 = Release|Xbox
 		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Release (Win32) Win32.ActiveCfg = Release (Win32)|Win32
 		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Release (Win32) Win32.Build.0 = Release (Win32)|Win32
-		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Release (Win32) Xbox.ActiveCfg = Release (Win32)|Xbox
-		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Release (Win32) Xbox.Build.0 = Release (Win32)|Xbox
-		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Release Xbox  Debugging.ActiveCfg = Release|Xbox
-		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Release Xbox  Debugging.Build.0 = Release|Xbox
+		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Release (Win32) Xbox.ActiveCfg = Release|Xbox
+		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Release (Win32) Xbox.Build.0 = Release|Xbox
 		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Release_LTCG.ActiveCfg = Release_LTCG|Xbox
 		{FE0A91C0-E30A-47CD-8A92-A508C9292452}.Release_LTCG.Build.0 = Release_LTCG|Xbox
 		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Debug.ActiveCfg = Debug|Xbox
@@ -169,8 +151,6 @@ Global
 		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Debug (Win32) Xbox.Build.0 = Debug|Xbox
 		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Debug No Memory Tracking Xbox.ActiveCfg = Debug|Xbox
 		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Debug No Memory Tracking Xbox.Build.0 = Debug|Xbox
-		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Debug Xbox No Memory Tracking.ActiveCfg = Debug|Xbox
-		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Debug Xbox No Memory Tracking.Build.0 = Debug|Xbox
 		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Profile.ActiveCfg = Release|Xbox
 		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Profile.Build.0 = Release|Xbox
 		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Profile_FastCap.ActiveCfg = Release|Xbox
@@ -181,8 +161,6 @@ Global
 		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Release (Win32) Win32.Build.0 = Release|Xbox
 		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Release (Win32) Xbox.ActiveCfg = Release|Xbox
 		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Release (Win32) Xbox.Build.0 = Release|Xbox
-		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Release Xbox  Debugging.ActiveCfg = Release|Xbox
-		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Release Xbox  Debugging.Build.0 = Release|Xbox
 		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Release_LTCG.ActiveCfg = Release|Xbox
 		{870DE8D3-B710-4CEF-9C73-36B37A9AF8A3}.Release_LTCG.Build.0 = Release|Xbox
 	EndGlobalSection

@@ -219,7 +219,7 @@
 				FavorSizeOrSpeed="2"
 				OmitFramePointers="TRUE"
 				OptimizeForProcessor="2"
-				AdditionalIncludeDirectories="./xbmc;./xbmc/cores/dvdplayer/;./guilib;./guilib/common;&quot;$(XDK)\Samples\Xbox\Common\Include&quot;;xbmc/lib/libUPnP/Platinum/Source/Devices/MediaServer;xbmc/lib/libUPnP/Platinum/Source/Devices/MediaRenderer;xbmc/lib/libUPnP/Platinum/Source/Devices/MediaConnect;xbmc/lib/libUPnP/Platinum/Source/Core;xbmc/lib/libUPnP/Platinum/Source/Platinum;xbmc/lib/libUPnP/Neptune/Source/Core;xbmc/lib/libUPnP/Neptune/Source/System/Xbox;./xbmc/lib/boost;./xbmc/lib/libRTMP;;./xbmc/utils;&quot;./lib/libcurl-mingw32\include&quot;;./xbmc/xbox"
+				AdditionalIncludeDirectories="./xbmc;./xbmc/cores/dvdplayer/Codecs/ffmpeg;./xbmc/cores/dvdplayer/;./guilib;./guilib/common;&quot;$(XDK)\Samples\Xbox\Common\Include&quot;;xbmc/lib/libUPnP/Platinum/Source/Devices/MediaServer;xbmc/lib/libUPnP/Platinum/Source/Devices/MediaRenderer;xbmc/lib/libUPnP/Platinum/Source/Devices/MediaConnect;xbmc/lib/libUPnP/Platinum/Source/Core;xbmc/lib/libUPnP/Platinum/Source/Platinum;xbmc/lib/libUPnP/Neptune/Source/Core;xbmc/lib/libUPnP/Neptune/Source/System/Xbox;./xbmc/lib/boost;./xbmc/lib/libRTMP;./xbmc/utils;&quot;./lib/libcurl-mingw32\include&quot;;./xbmc/xbox"
 				PreprocessorDefinitions="_XBOX;NDEBUG;HAVE_MSWINDOWS;NOMINMAX"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
@@ -439,12 +439,12 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 			<Filter
 				Name="Settings"
 				Filter="">
-                <File
-                    RelativePath=".\xbmc\AdvancedSettings.cpp"> 
- 	            </File> 
- 	            <File 
-  	                RelativePath=".\xbmc\AdvancedSettings.h"> 
- 	            </File> 
+				<File
+					RelativePath=".\xbmc\AdvancedSettings.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\AdvancedSettings.h">
+				</File>
 				<File
 					RelativePath=".\xbmc\GUIDialogPluginSettings.cpp">
 				</File>
@@ -1112,13 +1112,13 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\ThumbnailCache.cpp">
 				</File>
 				<File
-					RelativePath=".\xbmc\utils\Trainer.cpp">
-				</File>
-				<File
 					RelativePath=".\xbmc\utils\TimeUtils.cpp">
 				</File>
 				<File
 					RelativePath=".\xbmc\utils\TimeUtils.h">
+				</File>
+				<File
+					RelativePath=".\xbmc\utils\Trainer.cpp">
 				</File>
 				<File
 					RelativePath=".\xbmc\utils\TuxBoxUtil.cpp">
@@ -1549,24 +1549,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\FileSystem\cdioSupport.cpp">
 				</File>
 				<File
-					RelativePath=".\xbmc\FileSystem\MythDirectory.cpp">
-				</File>
-				<File
-					RelativePath=".\xbmc\FileSystem\MythDirectory.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\FileSystem\MythFile.cpp">
-				</File>
-				<File
-					RelativePath=".\xbmc\FileSystem\MythFile.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\FileSystem\MythSession.cpp">
-				</File>
-				<File
-					RelativePath=".\xbmc\FileSystem\MythSession.h">
-				</File>
-				<File
 					RelativePath=".\xbmc\FileSystem\DAAPDirectory.cpp">
 				</File>
 				<File
@@ -1810,6 +1792,24 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\FileSystem\MusicSearchDirectory.h">
 				</File>
 				<File
+					RelativePath=".\xbmc\FileSystem\MythDirectory.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\FileSystem\MythDirectory.h">
+				</File>
+				<File
+					RelativePath=".\xbmc\FileSystem\MythFile.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\FileSystem\MythFile.h">
+				</File>
+				<File
+					RelativePath=".\xbmc\FileSystem\MythSession.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\FileSystem\MythSession.h">
+				</File>
+				<File
 					RelativePath=".\xbmc\FileSystem\NptXbmcFile.cpp">
 				</File>
 				<File
@@ -2038,16 +2038,16 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 						RelativePath=".\xbmc\FileSystem\MusicDatabaseDirectory\DirectoryNodeRoot.h">
 					</File>
 					<File
-						RelativePath=".\xbmc\FileSystem\MusicDatabaseDirectory\DirectoryNodeSong.cpp">
-					</File>
-					<File
-						RelativePath=".\xbmc\FileSystem\MusicDatabaseDirectory\DirectoryNodeSong.h">
-					</File>
-					<File
 						RelativePath=".\xbmc\FileSystem\MusicDatabaseDirectory\DirectoryNodeSingles.cpp">
 					</File>
 					<File
 						RelativePath=".\xbmc\FileSystem\MusicDatabaseDirectory\DirectoryNodeSingles.h">
+					</File>
+					<File
+						RelativePath=".\xbmc\FileSystem\MusicDatabaseDirectory\DirectoryNodeSong.cpp">
+					</File>
+					<File
+						RelativePath=".\xbmc\FileSystem\MusicDatabaseDirectory\DirectoryNodeSong.h">
 					</File>
 					<File
 						RelativePath=".\xbmc\FileSystem\MusicDatabaseDirectory\DirectoryNodeSongTop100.cpp">
@@ -3428,13 +3428,13 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\cores\dvdplayer\DVDStreamInfo.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\cores\dvdplayer\IDVDPlayer.h">
-				</File>
-				<File
 					RelativePath=".\xbmc\cores\dvdplayer\Edl.cpp">
 				</File>
 				<File
 					RelativePath=".\xbmc\cores\dvdplayer\Edl.h">
+				</File>
+				<File
+					RelativePath=".\xbmc\cores\dvdplayer\IDVDPlayer.h">
 				</File>
 				<Filter
 					Name="DVDCodecs"
@@ -4334,91 +4334,25 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 				Name="ffmpeg"
 				Filter="">
 				<File
-					RelativePath=".\xbmc\cores\ffmpeg\adler32.h">
+					RelativePath=".\xbmc\cores\dvdplayer\Codecs\ffmpeg\libavcodec\avcodec.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\cores\ffmpeg\avcodec.h">
+					RelativePath=".\xbmc\cores\dvdplayer\Codecs\ffmpeg\libavutil\avutil.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\cores\ffmpeg\avformat.h">
+					RelativePath=".\xbmc\cores\dvdplayer\Codecs\ffmpeg\libavutil\common.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\cores\ffmpeg\avio.h">
+					RelativePath=".\xbmc\cores\dvdplayer\Codecs\DllAvCodec.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\cores\ffmpeg\avutil.h">
+					RelativePath=".\xbmc\cores\dvdplayer\Codecs\DllAvFormat.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\cores\ffmpeg\common.h">
+					RelativePath=".\xbmc\cores\dvdplayer\Codecs\DllPostProc.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\cores\ffmpeg\DllAvCodec.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\DllAvFormat.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\DllPostProc.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\DllSwScale.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\ffmpeg.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\fifo.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\integer.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\intfloat_readwrite.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\inttypes.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\log.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\lzo.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\mathematics.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\mem.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\opt.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\postprocess.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\random.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\rational.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\rgb2rgb.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\rtp.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\rtsp.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\rtspcodes.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\stdint.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\cores\ffmpeg\swscale.h">
+					RelativePath=".\xbmc\cores\dvdplayer\Codecs\DllSwScale.h">
 				</File>
 			</Filter>
 			<Filter

@@ -141,8 +141,9 @@ to get the desired audio language.
 
 NOTE: To see the supported input formats, use @code{ffmpeg -formats}.
 
-* You can extract images from a video:
+* You can extract images from a video, or create a video from many images:
 
+For extracting images from a video:
 @example
 ffmpeg -i foo.avi -r 1 -s WxH -f image2 foo-%03d.jpeg
 @end example
@@ -151,14 +152,19 @@ This will extract one video frame per second from the video and will
 output them in files named @file{foo-001.jpeg}, @file{foo-002.jpeg},
 etc. Images will be rescaled to fit the new WxH values.
 
+If you want to extract just a limited number of frames, you can use the
+above command in combination with the -vframes or -t option, or in
+combination with -ss to start extracting from a certain point in time.
+
+For creating a video from many images:
+@example
+ffmpeg -f image2 -i foo-%03d.jpeg -r 12 -s WxH foo.avi
+@end example
+
 The syntax @code{foo-%03d.jpeg} specifies to use a decimal number
 composed of three digits padded with zeroes to express the sequence
 number. It is the same syntax supported by the C printf function, but
 only formats accepting a normal integer are suitable.
-
-If you want to extract just a limited number of frames, you can use the
-above command in combination with the -vframes or -t option, or in
-combination with -ss to start extracting from a certain point in time.
 
 * You can put many streams of the same type in the output:
 
@@ -216,36 +222,12 @@ specified for the inputs.
 @c man end
 
 @c man begin OPTIONS
+
+@include fftools-common-opts.texi
+
 @section Main options
 
 @table @option
-@item -L
-Show license.
-
-@item -h
-Show help.
-
-@item -version
-Show version.
-
-@item -formats
-Show available formats, codecs, bitstream filters, protocols, and frame size and frame rate abbreviations.
-
-The fields preceding the format and codec names have the following meanings:
-@table @samp
-@item D
-Decoding available
-@item E
-Encoding available
-@item V/A/S
-Video/audio/subtitle codec
-@item S
-Codec supports slices
-@item D
-Codec supports direct rendering
-@item T
-Codec can handle input truncated at random locations instead of only at frame boundaries
-@end table
 
 @item -f @var{fmt}
 Force format.
@@ -276,29 +258,16 @@ The offset is added to the timestamps of the input files.
 Specifying a positive offset means that the corresponding
 streams are delayed by 'offset' seconds.
 
-@item -title @var{string}
-Set the title.
-
 @item -timestamp @var{time}
 Set the timestamp.
 
-@item -author @var{string}
-Set the author.
+@item -metadata @var{key}=@var{value}
+Set a metadata key/value pair.
 
-@item -copyright @var{string}
-Set the copyright.
-
-@item -comment @var{string}
-Set the comment.
-
-@item -album @var{string}
-Set the album.
-
-@item -track @var{number}
-Set the track.
-
-@item -year @var{number}
-Set the year.
+For example, for setting the title in the output file:
+@example
+ffmpeg -i in.avi -metadata title="my title" out.flv
+@end example
 
 @item -v @var{number}
 Set the logging verbosity level.
@@ -354,6 +323,8 @@ The following abbreviations are recognized:
 352x288
 @item 4cif
 704x576
+@item 16cif
+1408x1152
 @item qqvga
 160x120
 @item qvga
@@ -476,6 +447,9 @@ stream.
 @item -newvideo
 Add a new video stream to the current output stream.
 
+@item -vlang @var{code}
+Set the ISO 639 language code (3 letters) of the current video stream.
+
 @end table
 
 @section Advanced Video Options
@@ -485,7 +459,7 @@ Add a new video stream to the current output stream.
 Set pixel format. Use 'list' as parameter to show all the supported
 pixel formats.
 @item -sws_flags @var{flags}
-Set SwScaler flags (only available when compiled with swscale support).
+Set SwScaler flags.
 @item -g @var{gop_size}
 Set the group of pictures size.
 @item -intra
@@ -660,9 +634,6 @@ Calculate PSNR of compressed frames.
 Dump video coding statistics to @file{vstats_HHMMSS.log}.
 @item -vstats_file @var{file}
 Dump video coding statistics to @var{file}.
-@item -vhook @var{module}
-Insert video processing @var{module}. @var{module} contains the module
-name and its parameters separated by spaces.
 @item -top @var{n}
 top=1/bottom=0/auto=-1 field first
 @item -dc @var{precision}
@@ -687,6 +658,8 @@ Set the number of audio frames to record.
 Set the audio sampling frequency (default = 44100 Hz).
 @item -ab @var{bitrate}
 Set the audio bitrate in bit/s (default = 64k).
+@item -aq @var{q}
+Set the audio quality (codec-specific, VBR).
 @item -ac @var{channels}
 Set the number of audio channels (default = 1).
 @item -an
@@ -728,6 +701,8 @@ Force subtitle codec ('copy' to copy stream).
 Add a new subtitle stream to the current output stream.
 @item -slang @var{code}
 Set the ISO 639 language code (3 letters) of the current subtitle stream.
+@item -sn
+Disable subtitle recording.
 @item -sbsf @var{bitstream_filter}
 Bitstream filters available are "mov2textsub", "text2movsub".
 @example
@@ -759,7 +734,10 @@ Set meta data information of @var{outfile} from @var{infile}.
 @item -debug
 Print specific debug info.
 @item -benchmark
-Add timings for benchmarking.
+Show benchmarking information at the end of an encode.
+Shows CPU time used and maximum memory consumption.
+Maximum memory consumption is not supported on all systems,
+it will usually display as 0 if not supported.
 @item -dump
 Dump each input packet.
 @item -hex
@@ -767,7 +745,7 @@ When dumping packets, also dump the payload.
 @item -bitexact
 Only use bit exact algorithms (for codec testing).
 @item -ps @var{size}
-Set packet size in bits.
+Set RTP payload size in bytes.
 @item -re
 Read input at native frame rate. Mainly used to simulate a grab device.
 @item -loop_input
@@ -779,8 +757,15 @@ Repeatedly loop output for formats that support looping such as animated GIF
 @item -threads @var{count}
 Thread count.
 @item -vsync @var{parameter}
-Video sync method. Video will be stretched/squeezed to match the timestamps,
-it is done by duplicating and dropping frames. With -map you can select from
+Video sync method.
+0   Each frame is passed with its timestamp from the demuxer to the muxer
+1   Frames will be duplicated and dropped to achieve exactly the requested
+    constant framerate.
+2   Frames are passed through with their timestamp or dropped so as to prevent
+    2 frames from having the same timestamp
+-1  Chooses between 1 and 2 depending on muxer capabilities. This is the default method.
+
+With -map you can select from
 which stream the timestamps should be taken. You can leave either video or
 audio unchanged and sync the remaining stream(s) to the unchanged one.
 @item -async @var{samples_per_second}
@@ -808,18 +793,22 @@ awkward to specify on the command line. Lines starting with the hash
 ('#') character are ignored and are used to provide comments. Check
 the @file{ffpresets} directory in the FFmpeg source tree for examples.
 
-Preset files are specified with the @code{vpre}, @code{apre} and
-@code{spre} options. The options specified in a preset file are
+Preset files are specified with the @code{vpre}, @code{apre},
+@code{spre}, and @code{fpre} options. The @code{fpre} option takes the
+filename of the preset instead of a preset name as input and can be
+used for any kind of codec. For the @code{vpre}, @code{apre}, and
+@code{spre} options, the options specified in a preset file are
 applied to the currently selected codec of the same type as the preset
 option.
 
-The argument passed to the preset options identifies the preset file
-to use according to the following rules.
+The argument passed to the @code{vpre}, @code{apre}, and @code{spre}
+preset options identifies the preset file to use according to the
+following rules:
 
 First ffmpeg searches for a file named @var{arg}.ffpreset in the
-directories @file{$HOME/.ffmpeg}, and in the datadir defined at
-configuration time (usually @file{PREFIX/share/ffmpeg}) in that
-order. For example, if the argument is @code{libx264-max}, it will
+directories @file{$FFMPEG_DATADIR} (if set), and @file{$HOME/.ffmpeg}, and in
+the datadir defined at configuration time (usually @file{PREFIX/share/ffmpeg})
+in that order. For example, if the argument is @code{libx264-max}, it will
 search for the file @file{libx264-max.ffpreset}.
 
 If no such file is found, then ffmpeg will search for a file named
@@ -829,12 +818,7 @@ the preset file options will be applied. For example, if you select
 the video codec with @code{-vcodec libx264} and use @code{-vpre max},
 then it will search for the file @file{libx264-max.ffpreset}.
 
-Finally, if the above rules failed and the argument specifies an
-absolute pathname, ffmpeg will search for that filename. This way you
-can specify the absolute and complete filename of the preset file, for
-example @file{./ffpresets/libx264-max.ffpreset}.
-
-@node FFmpeg formula evaluator
+@anchor{FFmpeg formula evaluator}
 @section FFmpeg formula evaluator
 
 When evaluating a rate control string, FFmpeg uses an internal formula
@@ -925,7 +909,7 @@ to standard output.
 
 FFmpeg also handles many protocols specified with an URL syntax.
 
-Use 'ffmpeg -formats' to see a list of the supported protocols.
+Use 'ffmpeg -protocols' to see a list of the supported protocols.
 
 The protocol @code{http:} is currently used only to communicate with
 FFserver (see the FFserver documentation). When FFmpeg will be a

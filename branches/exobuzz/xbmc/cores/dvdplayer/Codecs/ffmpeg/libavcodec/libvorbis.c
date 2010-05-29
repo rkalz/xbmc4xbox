@@ -19,7 +19,7 @@
  */
 
 /**
- * @file libavcodec/libvorbis.c
+ * @file
  * Ogg Vorbis codec support via libvorbisenc.
  * @author Mark Hills <mark@pogo.org.uk>
  */
@@ -90,7 +90,7 @@ static av_cold int oggvorbis_encode_init(AVCodecContext *avccontext) {
 
     vorbis_info_init(&context->vi) ;
     if(oggvorbis_init_encoder(&context->vi, avccontext) < 0) {
-        av_log(avccontext, AV_LOG_ERROR, "oggvorbis_encode_init: init_encoder failed") ;
+        av_log(avccontext, AV_LOG_ERROR, "oggvorbis_encode_init: init_encoder failed\n") ;
         return -1 ;
     }
     vorbis_analysis_init(&context->vd, &context->vi) ;
@@ -217,13 +217,13 @@ static av_cold int oggvorbis_encode_close(AVCodecContext *avccontext) {
 
 AVCodec libvorbis_encoder = {
     "libvorbis",
-    CODEC_TYPE_AUDIO,
+    AVMEDIA_TYPE_AUDIO,
     CODEC_ID_VORBIS,
     sizeof(OggVorbisContext),
     oggvorbis_encode_init,
     oggvorbis_encode_frame,
     oggvorbis_encode_close,
     .capabilities= CODEC_CAP_DELAY,
-    .sample_fmts = (enum SampleFormat[]){SAMPLE_FMT_S16,SAMPLE_FMT_NONE},
+    .sample_fmts = (const enum SampleFormat[]){SAMPLE_FMT_S16,SAMPLE_FMT_NONE},
     .long_name= NULL_IF_CONFIG_SMALL("libvorbis Vorbis"),
 } ;
