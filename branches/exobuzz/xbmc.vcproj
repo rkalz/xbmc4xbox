@@ -4011,6 +4011,12 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\cores\paplayer\NSFCodec.h">
 				</File>
 				<File
+					RelativePath=".\xbmc\cores\paplayer\OggCallback.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\cores\paplayer\OggCallback.h">
+				</File>
+				<File
 					RelativePath=".\xbmc\cores\paplayer\OGGcodec.cpp">
 				</File>
 				<File
