@@ -29,19 +29,13 @@ make distclean
 --enable-filter=buffer \
 \
 --disable-decoders \
---enable-decoder=aac,ac3,dca,flv,h263,h264,mp1,mp2,mp3,mpegvideo,mpeg1video,mpeg2video,mpeg4,svq1,svq3,vp5,vp6,vp6a,vp6f,vorbis,wmv1,wmv2,wmv3 \
+--enable-decoder=aac,ac3,dca,dvbsub,dvdsub,flv,h263,h264,mp1,mp2,mp3,mpegvideo,mpeg1video,mpeg2video,mpeg4,svq1,svq3,vp5,vp6,vp6a,vp6f,vorbis,wmv1,wmv2,wmv3 \
 \
 --disable-demuxers \
 --enable-demuxer=aac,ac3,dts,asf,avi,flv,h263,h264,ogg,matroska,mp1,mp2,mp3,mpegps,mpegts,mpegtsraw,mpegvideo,mov \
 \
 --disable-protocols \
---enable-protocol=file \
---enable-protocol=pipe \
---enable-protocol=gopher \
---enable-protocol=mmst \
---enable-protocol=rtp \
---enable-protocol=tcp \
---enable-protocol=udp \
+--enable-protocol=file,pipe,gopher,mmst,rtp,tcp,udp \
 \
 --disable-bsfs \
 --disable-indevs \
@@ -59,7 +53,6 @@ make distclean
 --disable-armvfp \
 --disable-iwmmxt \
 --disable-neon \
---disable-altivec \
 --disable-vis \
 
 make -j3
