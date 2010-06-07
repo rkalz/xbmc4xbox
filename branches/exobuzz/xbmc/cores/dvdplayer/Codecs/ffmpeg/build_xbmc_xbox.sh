@@ -13,7 +13,6 @@ make distclean
 --enable-small \
 --enable-zlib \
 --disable-debug \
---disable-network \
 \
 --disable-doc \
 --disable-ffmpeg \
@@ -37,6 +36,12 @@ make distclean
 \
 --disable-protocols \
 --enable-protocol=file \
+--enable-protocol=pipe \
+--enable-protocol=gopher \
+--enable-protocol=mmst \
+--enable-protocol=rtp \
+--enable-protocol=tcp \
+--enable-protocol=udp \
 \
 --disable-bsfs \
 --disable-indevs \
@@ -57,7 +62,7 @@ make distclean
 --disable-altivec \
 --disable-vis \
 
-make -j2
+make -j3
 mkdir .libs
 cp lib*/*.dll .libs/
 mv .libs/swscale-0.dll .libs/swscale-0.6.1.dll

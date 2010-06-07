@@ -20,8 +20,9 @@ extern "C" {
 #pragma warning(disable:4244)
 #endif
 
-#include "Codecs/ffmpeg/libavcodec/avcodec.h"
-#include "Codecs/ffmpeg/libavcodec/audioconvert.h"
+#include "libavcodec/avcodec.h"
+#include "libavcodec/audioconvert.h"
+#include "libavutil/crc.h"
 }
 
 class DllAvCodecInterface
@@ -133,6 +134,7 @@ public:
   virtual void av_packet_free(AVPacket *pkt) { ::av_free_packet(pkt); )
   virtual void av_destruct_packet_nofree(AVPacket *pkt) { ::av_destruct_packet_nofree(pkt); }
   virtual int av_dup_packet(AVPacket *pkt) { return ::av_dup_packet(pkt); }
+  virtual int av_init_packet(AVPacket *pkt) { return ::av_init_packet(pkt); }
 
   // DLL faking.
   virtual bool ResolveExports() { return true; }
@@ -263,6 +265,8 @@ public:
   virtual void av_free(void *ptr)=0;
   virtual void av_freep(void *ptr)=0;
   virtual int64_t av_rescale_rnd(int64_t a, int64_t b, int64_t c, enum AVRounding)=0;
+  virtual const AVCRC* av_crc_get_table(AVCRCId crc_id)=0;
+  virtual uint32_t av_crc(const AVCRC *ctx, uint32_t crc, const uint8_t *buffer, size_t length)=0;
 };
 
 #if (defined USE_EXTERNAL_FFMPEG)
@@ -280,7 +284,9 @@ public:
    virtual void av_free(void *ptr) { ::av_free(ptr); }
    virtual void av_freep(void *ptr) { ::av_freep(ptr); }
    virtual int64_t av_rescale_rnd(int64_t a, int64_t b, int64_t c, enum AVRounding d) { return ::av_rescale_rnd(a, b, c, d); }
-   
+   virtual const AVCRC* av_crc_get_table(AVCRCId crc_id) { return ::av_crc_get_table(crc_id); }
+   virtual uint32_t av_crc(const AVCRC *ctx, uint32_t crc, const uint8_t *buffer, size_t length) { return ::av_crc(ctx, crc, buffer); }
+
    // DLL faking.
    virtual bool ResolveExports() { return true; }
    virtual bool Load() {
@@ -305,6 +311,9 @@ class DllAvUtilBase : public DllDynamic, DllAvUtilInterface
   DEFINE_METHOD1(void, av_free, (void *p1))
   DEFINE_METHOD1(void, av_freep, (void *p1))
   DEFINE_METHOD4(int64_t, av_rescale_rnd, (int64_t p1, int64_t p2, int64_t p3, enum AVRounding p4));
+  DEFINE_METHOD1(const AVCRC*, av_crc_get_table, (AVCRCId p1))
+  DEFINE_METHOD4(uint32_t, av_crc, (const AVCRC *p1, uint32_t p2, const uint8_t *p3, size_t p4));
+
   public:
   BEGIN_METHOD_RESOLVE()
     RESOLVE_METHOD(av_log_set_callback)
@@ -314,6 +323,8 @@ class DllAvUtilBase : public DllDynamic, DllAvUtilInterface
     RESOLVE_METHOD(av_free)
     RESOLVE_METHOD(av_freep)
     RESOLVE_METHOD(av_rescale_rnd)
+    RESOLVE_METHOD(av_crc_get_table)
+    RESOLVE_METHOD(av_crc)
   END_METHOD_RESOLVE()
 };
 
