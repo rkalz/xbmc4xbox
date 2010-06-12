@@ -76,6 +76,13 @@ extern const uint8_t ff_ivi_direct_scan_4x4[16];
 
 
 /**
+ *  Declare inverse transform function types
+ */
+typedef void (InvTransformPtr)(const int32_t *in, int16_t *out, uint32_t pitch, const uint8_t *flags);
+typedef void (DCTransformPtr) (const int32_t *in, int16_t *out, uint32_t pitch, int blk_size);
+
+
+/**
  *  run-value (RLE) table descriptor
  */
 typedef struct {
@@ -146,22 +153,20 @@ typedef struct {
 
     IVIHuffTab      blk_vlc;        ///< vlc table for decoding block data
 
-    uint16_t        *dequant_intra; ///< ptr to dequant tables for intra blocks
-    uint16_t        *dequant_inter; ///< ptr dequant tables for inter blocks
     int             num_corr;       ///< number of correction entries
     uint8_t         corr[61*2];     ///< rvmap correction pairs
     int             rvmap_sel;      ///< rvmap table selector
     RVMapDesc       *rv_map;        ///< ptr to the RLE table for this band
     int             num_tiles;      ///< number of tiles in this band
     IVITile         *tiles;         ///< array of tile descriptors
-    void (*inv_transform)(const int32_t *in, int16_t *out, uint32_t pitch, const uint8_t *flags); ///< inverse transform function pointer
-    void (*dc_transform) (const int32_t *in, int16_t *out, uint32_t pitch, int blk_size);   ///< dc transform function pointer, it may be NULL
+    InvTransformPtr *inv_transform;
+    DCTransformPtr  *dc_transform;
     int             is_2d_trans;    ///< 1 indicates that the two-dimensional inverse transform is used
     int32_t         checksum;       ///< for debug purposes
     int             checksum_present;
     int             bufsize;        ///< band buffer size in bytes
-    const uint8_t   *intra_base;    ///< quantization matrix for intra blocks
-    const uint8_t   *inter_base;    ///< quantization matrix for inter blocks
+    const uint16_t  *intra_base;    ///< quantization matrix for intra blocks
+    const uint16_t  *inter_base;    ///< quantization matrix for inter blocks
     const uint8_t   *intra_scale;   ///< quantization coefficient for intra blocks
     const uint8_t   *inter_scale;   ///< quantization coefficient for inter blocks
 } IVIBandDesc;

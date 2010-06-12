@@ -152,6 +152,7 @@ void avcodec_register_all(void)
     REGISTER_ENCDEC  (PCX, pcx);
     REGISTER_ENCDEC  (PGM, pgm);
     REGISTER_ENCDEC  (PGMYUV, pgmyuv);
+    REGISTER_DECODER (PICTOR, pictor);
     REGISTER_ENCDEC  (PNG, png);
     REGISTER_ENCDEC  (PPM, ppm);
     REGISTER_DECODER (PTX, ptx);
@@ -246,7 +247,7 @@ void avcodec_register_all(void)
     REGISTER_ENCDEC  (NELLYMOSER, nellymoser);
     REGISTER_DECODER (QCELP, qcelp);
     REGISTER_DECODER (QDM2, qdm2);
-    REGISTER_DECODER (RA_144, ra_144);
+    REGISTER_ENCDEC  (RA_144, ra_144);
     REGISTER_DECODER (RA_288, ra_288);
     REGISTER_DECODER (SHORTEN, shorten);
     REGISTER_DECODER (SIPR, sipr);
@@ -349,7 +350,7 @@ void avcodec_register_all(void)
     REGISTER_DECODER (LIBSPEEX, libspeex);
     REGISTER_ENCODER (LIBTHEORA, libtheora);
     REGISTER_ENCODER (LIBVORBIS, libvorbis);
-    REGISTER_DECODER (LIBVPX, libvpx);
+    REGISTER_ENCDEC  (LIBVPX, libvpx);
     REGISTER_ENCODER (LIBX264, libx264);
     REGISTER_ENCODER (LIBXVID, libxvid);
 

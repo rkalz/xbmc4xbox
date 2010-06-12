@@ -152,6 +152,7 @@ Codecs:
   libschroedinger*                      David Conrad
   libspeexdec.c                         Justin Ruggles
   libtheoraenc.c                        David Conrad
+  libvorbis.c                           David Conrad
   libx264.c                             Mans Rullgard, Jason Garrett-Glaser
   loco.c                                Kostya Shishkov
   lzo.h, lzo.c                          Reimar Doeffinger
@@ -292,6 +293,7 @@ Muxers/Demuxers:
   oggdec.c, oggdec.h                    David Conrad
   oggenc.c                              Baptiste Coudurier
   oggparse*.c                           David Conrad
+  oma.c                                 Maxim Poliakovski
   psxstr.c                              Mike Melanson
   pva.c                                 Ivo van Poorten
   r3d.c                                 Baptiste Coudurier
@@ -329,7 +331,6 @@ Alpha                                   Mans Rullgard, Falk Hueffner
 ARM                                     Mans Rullgard
 AVR32                                   Mans Rullgard
 MIPS                                    Mans Rullgard
-BeOS                                    Francois Revol
 Mac OS X / PowerPC                      Romain Dolbeau, Guillaume Poirier
 Amiga / PowerPC                         Colin Ward
 Linux / PowerPC                         Luca Barbato
