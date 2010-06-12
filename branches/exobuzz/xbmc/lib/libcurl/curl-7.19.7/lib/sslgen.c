@@ -32,6 +32,7 @@
    Curl_ossl_ - prefix for OpenSSL ones
    Curl_gtls_ - prefix for GnuTLS ones
    Curl_nss_ - prefix for NSS ones
+   Curl_polarssl_ - prefix for PolarSSL ones
 
    Note that this source code uses curlssl_* functions, and they are all
    defines/macros #defined by the lib-specific header files.
@@ -56,6 +57,7 @@
 #include "gtls.h"   /* GnuTLS versions */
 #include "nssg.h"   /* NSS versions */
 #include "qssl.h"   /* QSOSSL versions */
+#include "polarssl.h" /* PolarSSL versions */
 #include "sendf.h"
 #include "rawstr.h"
 #include "url.h"

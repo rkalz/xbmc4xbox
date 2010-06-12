@@ -891,6 +891,9 @@
 /* if GnuTLS is enabled */
 #undef USE_GNUTLS
 
+/* if PolarSSL is enabled */
+#undef USE_POLARSSL
+
 /* if libSSH2 is in use */
 #undef USE_LIBSSH2
 

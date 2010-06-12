@@ -9,9 +9,8 @@
 /*                          HEADER FILES                            */
 /* ---------------------------------------------------------------- */
 
-/* for using yaSSL libraries now */
-#define USE_SSLEAY
-#define USE_OPENSSL
+/* use polarssl library */
+#define USE_POLARSSL
 #define HAVE_ZLIB_H
 #define HAVE_LIBZ
 #define CURL_DISABLE_LDAP

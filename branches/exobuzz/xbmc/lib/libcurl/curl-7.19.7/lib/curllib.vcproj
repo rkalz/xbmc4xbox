@@ -18,12 +18,17 @@
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			CharacterSet="2"
+			WholeProgramOptimization="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
+				Optimization="1"
+				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\..\zlib\;&quot;..\..\yassl-1.9.8\include&quot;;.;..\include"
+				FavorSizeOrSpeed="2"
+				OmitFramePointers="TRUE"
+				OptimizeForProcessor="2"
+				AdditionalIncludeDirectories="..\..\..\zlib\;..\..\..\polarssl\include;.;..\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;BUILDING_LIBCURL"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -43,6 +48,7 @@
 				OutputFile="DLL-Release/libcurl.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
+				IgnoreDefaultLibraryNames="libc"
 				ImportLibrary="DLL-Release/libcurl_imp.lib"
 				TargetMachine="1"/>
 			<Tool
@@ -1753,6 +1759,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\polarssl.c">
+			</File>
+			<File
 				RelativePath="progress.c">
 				<FileConfiguration
 					Name="DLL Release|Win32">
@@ -2750,6 +2759,9 @@
 			</File>
 			<File
 				RelativePath="parsedate.h">
+			</File>
+			<File
+				RelativePath=".\polarssl.h">
 			</File>
 			<File
 				RelativePath="progress.h">
