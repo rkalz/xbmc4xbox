@@ -20,7 +20,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: curlbuild.h.dist,v 1.28 2009-05-12 01:57:54 yangtse Exp $
+ * $Id: curlbuild.h.dist,v 1.29 2009-10-27 16:56:20 yangtse Exp $
  ***************************************************************************/
 
 /* ================================================================ */
@@ -68,7 +68,7 @@
  *
  * For any given platform/compiler curl_off_t must be typedef'ed to a
  * 64-bit wide signed integral data type. The width of this data type
- * must remain constant and independant of any possible large file
+ * must remain constant and independent of any possible large file
  * support settings.
  *
  * As an exception to the above, curl_off_t shall be typedef'ed to a
@@ -76,7 +76,7 @@
  *
  * As a general rule, curl_off_t shall not be mapped to off_t. This
  * rule shall only be violated if off_t is the only 64-bit data type
- * available and the size of off_t is independant of large file support
+ * available and the size of off_t is independent of large file support
  * settings. Keep your build on the safe side avoiding an off_t gating.
  * If you have a 64-bit off_t then take for sure that another 64-bit
  * data type exists, dig deeper and you will find it.
@@ -528,7 +528,7 @@
 /* ===================================== */
 
 #elif defined(__GNUC__)
-#  if defined(__i386__) || defined(__ppc__) || defined(__powerpc__)
+#  if defined(__i386__) || defined(__ppc__)
 #    define CURL_SIZEOF_LONG           4
 #    define CURL_TYPEOF_CURL_OFF_T     long long
 #    define CURL_FORMAT_CURL_OFF_T     "lld"
@@ -537,7 +537,7 @@
 #    define CURL_SIZEOF_CURL_OFF_T     8
 #    define CURL_SUFFIX_CURL_OFF_T     LL
 #    define CURL_SUFFIX_CURL_OFF_TU    ULL
-#  elif defined(__x86_64__) || defined(__ppc64__) || defined(__powerpc64__)
+#  elif defined(__x86_64__) || defined(__ppc64__)
 #    define CURL_SIZEOF_LONG           8
 #    define CURL_TYPEOF_CURL_OFF_T     long
 #    define CURL_FORMAT_CURL_OFF_T     "ld"
