@@ -16,8 +16,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Xbox"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			CharacterSet="2">
 			<Tool
@@ -78,8 +78,8 @@
 		</Configuration>
 		<Configuration
 			Name="Profile|Xbox"
-			OutputDirectory="Profile"
-			IntermediateDirectory="Profile"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="2">
 			<Tool
@@ -160,8 +160,8 @@
 		</Configuration>
 		<Configuration
 			Name="Profile_FastCap|Xbox"
-			OutputDirectory="Profile_FastCap"
-			IntermediateDirectory="Profile_FastCap"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="2">
 			<Tool
@@ -243,8 +243,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Xbox"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			CharacterSet="2">
 			<Tool
@@ -321,8 +321,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release_LTCG|Xbox"
-			OutputDirectory="Release_LTCG"
-			IntermediateDirectory="Release_LTCG"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			CharacterSet="2"
 			WholeProgramOptimization="TRUE">
