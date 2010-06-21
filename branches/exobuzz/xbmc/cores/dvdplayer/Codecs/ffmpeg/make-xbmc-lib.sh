@@ -66,17 +66,17 @@ xbmc_make ()
 {
   echo "Making..."
   make -j2
-  [ ! -d $1 ] && mkdir -p $1
   [ ! -d .libs ] && mkdir .libs
+  cp lib*/*.dll .libs/
+  mv .libs/swscale-0.dll .libs/swscale-0.6.1.dll
   if [ "$1" != "" ]; then
-    "Copying libraries to $1 ..."
-    cp lib*/*.dll .libs/
-    mv .libs/swscale-0.dll .libs/swscale-0.6.1.dll
-    cp .libs/avcodec-52.dll $1
-    cp .libs/avformat-52.dll $1
-    cp .libs/avutil-50.dll $1
-    cp .libs/postproc-51.dll $1
-    cp .libs/swscale-0.6.1.dll $1
+    echo "Copying libraries to $1 ..."
+    [ ! -d "$1" ] && mkdir -p "$1"
+    cp .libs/avcodec-52.dll "$1"
+    cp .libs/avformat-52.dll "$1"
+    cp .libs/avutil-50.dll "$1"
+    cp .libs/postproc-51.dll "$1"
+    cp .libs/swscale-0.6.1.dll "$1"
   fi
 }
 
@@ -102,19 +102,19 @@ xbmc_all ()
 	xbmc_make ../../../../../system/players/dvdplayer/full
 }
 
-case $1
+case "$1"
 in
   clean)
     xbmc_clean
   ;;
   configure)
-    xbmc_configure $2
+    xbmc_configure "$2"
   ;;
   make)
-    xbmc_make $2
+    xbmc_make "$2"
   ;;
   all)
-    xbmc_all $2
+    xbmc_all "$2"
   ;;
   *)
     echo "$0 clean|configure [additional parameters]|make [install dir]|all"
