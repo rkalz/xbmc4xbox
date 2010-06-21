@@ -57,7 +57,7 @@ xbmc_configure ()
   --disable-iwmmxt \
   --disable-neon \
   --disable-vis"
-  echo "--extra-cflags=\"$CFLAGS\" $PARAMS"
+  echo "--extra-cflags=\"$CFLAGS\" $PARAMS $1"
   ./configure --extra-cflags="$CFLAGS" $PARAMS $1
 }
 
