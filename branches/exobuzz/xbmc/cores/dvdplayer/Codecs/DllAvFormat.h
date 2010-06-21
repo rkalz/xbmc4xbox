@@ -16,6 +16,8 @@ extern "C" {
 #include "libavformat/riff.h"
 }
 
+#include "settings.h"
+
 typedef int64_t offset_t;
 
 class DllAvFormatInterface
@@ -138,7 +140,8 @@ public:
 
 class DllAvFormat : public DllDynamic, DllAvFormatInterface
 {
-  DECLARE_DLL_WRAPPER(DllAvFormat, Q:\\system\\players\\dvdplayer\\avformat-52.dll)
+public:
+  DllAvFormat() : DllDynamic( g_settings.GetFFmpegDllFolder() + "avformat-52.dll") {}
 
   LOAD_SYMBOLS()
 

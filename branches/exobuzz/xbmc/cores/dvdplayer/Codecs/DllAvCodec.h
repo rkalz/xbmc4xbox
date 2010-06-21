@@ -25,6 +25,8 @@ extern "C" {
 #include "libavutil/crc.h"
 }
 
+#include "settings.h"
+
 class DllAvCodecInterface
 {
 public:
@@ -147,7 +149,8 @@ public:
 #else
 class DllAvCodec : public DllDynamic, DllAvCodecInterface
 {
-  DECLARE_DLL_WRAPPER(DllAvCodec, Q:\\system\\players\\dvdplayer\\avcodec-52.dll)
+public:
+  DllAvCodec() : DllDynamic( g_settings.GetFFmpegDllFolder() + "avcodec-52.dll") {}
 #ifndef _LINUX
   DEFINE_FUNC_ALIGNED1(void, __cdecl, avcodec_flush_buffers, AVCodecContext*)
   DEFINE_FUNC_ALIGNED2(int, __cdecl, avcodec_open_dont_call, AVCodecContext*, AVCodec *)
@@ -300,7 +303,8 @@ public:
 
 class DllAvUtilBase : public DllDynamic, DllAvUtilInterface
 {
-  DECLARE_DLL_WRAPPER(DllAvUtilBase, Q:\\system\\players\\dvdplayer\\avutil-50.dll)
+public:
+  DllAvUtilBase() : DllDynamic( g_settings.GetFFmpegDllFolder() + "avutil-50.dll") {}
 
   LOAD_SYMBOLS()
 
