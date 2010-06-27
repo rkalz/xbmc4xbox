@@ -17,7 +17,8 @@
  *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with librtmp see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ *  Boston, MA  02110-1301, USA.
  *  http://www.gnu.org/copyleft/lgpl.html
  */
 
@@ -35,10 +36,11 @@
 #define HMAC_finish(ctx, dig, dlen)	dlen = SHA256_DIGEST_LENGTH; sha2_hmac_finish(&ctx, dig)
 
 typedef arc4_context *	RC4_handle;
-#define RC4_setup(h)	*h = malloc(sizeof(arc4_context))
+#define RC4_alloc(h)	*h = malloc(sizeof(arc4_context))
 #define RC4_setkey(h,l,k)	arc4_setup(h,k,l)
 #define RC4_encrypt(h,l,d)	arc4_crypt(h,l,(unsigned char *)d,(unsigned char *)d)
 #define RC4_encrypt2(h,l,s,d)	arc4_crypt(h,l,(unsigned char *)s,(unsigned char *)d)
+#define RC4_free(h)	free(h)
 
 #elif defined(USE_GNUTLS)
 #include <gcrypt.h>
@@ -51,10 +53,11 @@ typedef arc4_context *	RC4_handle;
 #define HMAC_finish(ctx, dig, dlen)	dlen = SHA256_DIGEST_LENGTH; memcpy(dig, gcry_md_read(ctx, 0), dlen); gcry_md_close(ctx)
 
 typedef gcry_cipher_hd_t	RC4_handle;
-#define	RC4_setup(h)	gcry_cipher_open(h, GCRY_CIPHER_ARCFOUR, GCRY_CIPHER_MODE_STREAM, 0)
+#define	RC4_alloc(h)	gcry_cipher_open(h, GCRY_CIPHER_ARCFOUR, GCRY_CIPHER_MODE_STREAM, 0)
 #define RC4_setkey(h,l,k)	gcry_cipher_setkey(h,k,l)
 #define RC4_encrypt(h,l,d)	gcry_cipher_encrypt(h,(void *)d,l,NULL,0)
 #define RC4_encrypt2(h,l,s,d)	gcry_cipher_encrypt(h,(void *)d,l,(void *)s,l)
+#define RC4_free(h)	gcry_cipher_close(h)
 
 #else	/* USE_OPENSSL */
 #include <openssl/sha.h>
@@ -68,10 +71,11 @@ typedef gcry_cipher_hd_t	RC4_handle;
 #define HMAC_finish(ctx, dig, dlen)	HMAC_Final(&ctx, dig, &dlen); HMAC_CTX_cleanup(&ctx)
 
 typedef RC4_KEY *	RC4_handle;
-#define RC4_setup(h)	*h = malloc(sizeof(RC4_KEY))
+#define RC4_alloc(h)	*h = malloc(sizeof(RC4_KEY))
 #define RC4_setkey(h,l,k)	RC4_set_key(h,l,k)
 #define RC4_encrypt(h,l,d)	RC4(h,l,(uint8_t *)d,(uint8_t *)d)
 #define RC4_encrypt2(h,l,s,d)	RC4(h,l,(uint8_t *)s,(uint8_t *)d)
+#define RC4_free(h)	free(h)
 #endif
 
 #define FP10
@@ -112,8 +116,8 @@ static void InitRC4Encryption
   unsigned int digestLen = 0;
   HMAC_CTX ctx;
 
-  RC4_setup(rc4keyIn);
-  RC4_setup(rc4keyOut);
+  RC4_alloc(rc4keyIn);
+  RC4_alloc(rc4keyOut);
 
   HMAC_setup(ctx, secretKey, 128);
   HMAC_crunch(ctx, pubKeyIn, 128);
@@ -283,7 +287,7 @@ CalculateDigest(unsigned int digestPos, uint8_t *handshakeMessage,
   HMACsha256(message, messageLen, key, keyLen, digest);
 }
 
-static bool
+static int
 VerifyDigest(unsigned int digestPos, uint8_t *handshakeMessage, const uint8_t *key,
 	     size_t keyLen)
 {
@@ -354,13 +358,13 @@ static void rtmpe8_sig(uint8_t *in, uint8_t *out, int keyid)
   out[7] = v1;
 }
 
-static bool
-HandShake(RTMP * r, bool FP9HandShake)
+static int
+HandShake(RTMP * r, int FP9HandShake)
 {
   int i, offalg = 0;
   int dhposClient = 0;
   int digestPosClient = 0;
-  bool encrypted = r->Link.protocol & RTMP_FEATURE_ENC;
+  int encrypted = r->Link.protocol & RTMP_FEATURE_ENC;
 
   RC4_handle keyIn = 0;
   RC4_handle keyOut = 0;
@@ -374,9 +378,9 @@ HandShake(RTMP * r, bool FP9HandShake)
   getoff *getdh = NULL, *getdig = NULL;
 
   if (encrypted || r->Link.SWFSize)
-    FP9HandShake = true;
+    FP9HandShake = TRUE;
   else
-    FP9HandShake = false;
+    FP9HandShake = FALSE;
 
   r->Link.rc4keyIn = r->Link.rc4keyOut = 0;
 
@@ -436,7 +440,7 @@ HandShake(RTMP * r, bool FP9HandShake)
 	    {
 	      RTMP_Log(RTMP_LOGERROR, "%s: Couldn't initialize Diffie-Hellmann!",
 		  __FUNCTION__);
-	      return false;
+	      return FALSE;
 	    }
 
 	  dhposClient = getdh(clientsig, RTMP_SIG_SIZE);
@@ -446,13 +450,13 @@ HandShake(RTMP * r, bool FP9HandShake)
 	    {
 	      RTMP_Log(RTMP_LOGERROR, "%s: Couldn't generate Diffie-Hellmann public key!",
 		  __FUNCTION__);
-	      return false;
+	      return FALSE;
 	    }
 
 	  if (!DHGetPublicKey(r->Link.dh, &clientsig[dhposClient], 128))
 	    {
 	      RTMP_Log(RTMP_LOGERROR, "%s: Couldn't write public key!", __FUNCTION__);
-	      return false;
+	      return FALSE;
 	    }
 	}
 
@@ -474,10 +478,10 @@ HandShake(RTMP * r, bool FP9HandShake)
 #endif
 
   if (!WriteN(r, (char *)clientsig-1, RTMP_SIG_SIZE + 1))
-    return false;
+    return FALSE;
 
   if (ReadN(r, (char *)&type, 1) != 1)	/* 0x03 or 0x06 */
-    return false;
+    return FALSE;
 
   RTMP_Log(RTMP_LOGDEBUG, "%s: Type Answer   : %02X", __FUNCTION__, type);
 
@@ -486,7 +490,7 @@ HandShake(RTMP * r, bool FP9HandShake)
 	__FUNCTION__, clientsig[-1], type);
 
   if (ReadN(r, (char *)serversig, RTMP_SIG_SIZE) != RTMP_SIG_SIZE)
-    return false;
+    return FALSE;
 
   /* decode server response */
   memcpy(&uptime, serversig, 4);
@@ -497,7 +501,7 @@ HandShake(RTMP * r, bool FP9HandShake)
       serversig[5], serversig[6], serversig[7]);
 
   if (FP9HandShake && type == 3 && !serversig[4])
-    FP9HandShake = false;
+    FP9HandShake = FALSE;
 
 #ifdef _DEBUG
   RTMP_Log(RTMP_LOGDEBUG, "Server signature:");
@@ -523,7 +527,7 @@ HandShake(RTMP * r, bool FP9HandShake)
 	  if (!VerifyDigest(digestPosServer, serversig, GenuineFMSKey, 36))
 	    {
 	      RTMP_Log(RTMP_LOGERROR, "Couldn't verify the server digest");	/* continuing anyway will probably fail */
-	      return false;
+	      return FALSE;
 	    }
 	}
 
@@ -557,7 +561,7 @@ HandShake(RTMP * r, bool FP9HandShake)
 	  if (len < 0)
 	    {
 	      RTMP_Log(RTMP_LOGDEBUG, "%s: Wrong secret key position!", __FUNCTION__);
-	      return false;
+	      return FALSE;
 	    }
 
 	  RTMP_Log(RTMP_LOGDEBUG, "%s: Secret key: ", __FUNCTION__);
@@ -630,11 +634,11 @@ HandShake(RTMP * r, bool FP9HandShake)
   RTMP_LogHex(RTMP_LOGDEBUG, reply, RTMP_SIG_SIZE);
 #endif
   if (!WriteN(r, (char *)reply, RTMP_SIG_SIZE))
-    return false;
+    return FALSE;
 
   /* 2nd part of handshake */
   if (ReadN(r, (char *)serversig, RTMP_SIG_SIZE) != RTMP_SIG_SIZE)
-    return false;
+    return FALSE;
 
 #ifdef _DEBUG
   RTMP_Log(RTMP_LOGDEBUG, "%s: 2nd handshake: ", __FUNCTION__);
@@ -694,7 +698,7 @@ HandShake(RTMP * r, bool FP9HandShake)
 	   SHA256_DIGEST_LENGTH) != 0)
 	{
 	  RTMP_Log(RTMP_LOGWARNING, "%s: Server not genuine Adobe!", __FUNCTION__);
-	  return false;
+	  return FALSE;
 	}
       else
 	{
@@ -731,10 +735,10 @@ HandShake(RTMP * r, bool FP9HandShake)
     }
 
   RTMP_Log(RTMP_LOGDEBUG, "%s: Handshaking finished....", __FUNCTION__);
-  return true;
+  return TRUE;
 }
 
-static bool
+static int
 SHandShake(RTMP * r)
 {
   int i, offalg = 0;
@@ -742,8 +746,8 @@ SHandShake(RTMP * r)
   int digestPosServer = 0;
   RC4_handle keyIn = 0;
   RC4_handle keyOut = 0;
-  bool FP9HandShake = false;
-  bool encrypted;
+  int FP9HandShake = FALSE;
+  int encrypted;
   int32_t *ip;
 
   uint8_t clientsig[RTMP_SIG_SIZE];
@@ -753,23 +757,23 @@ SHandShake(RTMP * r)
   getoff *getdh = NULL, *getdig = NULL;
 
   if (ReadN(r, (char *)&type, 1) != 1)	/* 0x03 or 0x06 */
-    return false;
+    return FALSE;
 
   if (ReadN(r, (char *)clientsig, RTMP_SIG_SIZE) != RTMP_SIG_SIZE)
-    return false;
+    return FALSE;
 
   RTMP_Log(RTMP_LOGDEBUG, "%s: Type Requested : %02X", __FUNCTION__, type);
   RTMP_LogHex(RTMP_LOGDEBUG2, clientsig, RTMP_SIG_SIZE);
 
   if (type == 3)
     {
-      encrypted = false;
+      encrypted = FALSE;
     }
   else if (type == 6 || type == 8)
     {
       offalg = 1;
-      encrypted = true;
-      FP9HandShake = true;
+      encrypted = TRUE;
+      FP9HandShake = TRUE;
       r->Link.protocol |= RTMP_FEATURE_ENC;
       /* use FP10 if client is capable */
       if (clientsig[4] == 128)
@@ -779,11 +783,11 @@ SHandShake(RTMP * r)
     {
       RTMP_Log(RTMP_LOGERROR, "%s: Unknown version %02x",
 	  __FUNCTION__, type);
-      return false;
+      return FALSE;
     }
 
   if (!FP9HandShake && clientsig[4])
-    FP9HandShake = true;
+    FP9HandShake = TRUE;
 
   serversig[-1] = type;
 
@@ -828,7 +832,7 @@ SHandShake(RTMP * r)
 	    {
 	      RTMP_Log(RTMP_LOGERROR, "%s: Couldn't initialize Diffie-Hellmann!",
 		  __FUNCTION__);
-	      return false;
+	      return FALSE;
 	    }
 
 	  dhposServer = getdh(serversig, RTMP_SIG_SIZE);
@@ -838,14 +842,14 @@ SHandShake(RTMP * r)
 	    {
 	      RTMP_Log(RTMP_LOGERROR, "%s: Couldn't generate Diffie-Hellmann public key!",
 		  __FUNCTION__);
-	      return false;
+	      return FALSE;
 	    }
 
 	  if (!DHGetPublicKey
 	      (r->Link.dh, (uint8_t *) &serversig[dhposServer], 128))
 	    {
 	      RTMP_Log(RTMP_LOGERROR, "%s: Couldn't write public key!", __FUNCTION__);
-	      return false;
+	      return FALSE;
 	    }
 	}
 
@@ -865,7 +869,7 @@ SHandShake(RTMP * r)
   RTMP_LogHex(RTMP_LOGDEBUG2, serversig, RTMP_SIG_SIZE);
 
   if (!WriteN(r, (char *)serversig-1, RTMP_SIG_SIZE + 1))
-    return false;
+    return FALSE;
 
   /* decode client response */
   memcpy(&uptime, clientsig, 4);
@@ -895,7 +899,7 @@ SHandShake(RTMP * r)
 	  if (!VerifyDigest(digestPosClient, clientsig, GenuineFPKey, 30))
 	    {
 	      RTMP_Log(RTMP_LOGERROR, "Couldn't verify the client digest");	/* continuing anyway will probably fail */
-	      return false;
+	      return FALSE;
 	    }
 	}
 
@@ -931,7 +935,7 @@ SHandShake(RTMP * r)
 	  if (len < 0)
 	    {
 	      RTMP_Log(RTMP_LOGDEBUG, "%s: Wrong secret key position!", __FUNCTION__);
-	      return false;
+	      return FALSE;
 	    }
 
 	  RTMP_Log(RTMP_LOGDEBUG, "%s: Secret key: ", __FUNCTION__);
@@ -994,11 +998,11 @@ SHandShake(RTMP * r)
   RTMP_LogHex(RTMP_LOGDEBUG2, clientsig, RTMP_SIG_SIZE);
 
   if (!WriteN(r, (char *)clientsig, RTMP_SIG_SIZE))
-    return false;
+    return FALSE;
 
   /* 2nd part of handshake */
   if (ReadN(r, (char *)clientsig, RTMP_SIG_SIZE) != RTMP_SIG_SIZE)
-    return false;
+    return FALSE;
 
   RTMP_Log(RTMP_LOGDEBUG2, "%s: 2nd handshake: ", __FUNCTION__);
   RTMP_LogHex(RTMP_LOGDEBUG2, clientsig, RTMP_SIG_SIZE);
@@ -1049,7 +1053,7 @@ SHandShake(RTMP * r)
 	   SHA256_DIGEST_LENGTH) != 0)
 	{
 	  RTMP_Log(RTMP_LOGWARNING, "%s: Client not genuine Adobe!", __FUNCTION__);
-	  return false;
+	  return FALSE;
 	}
       else
 	{
@@ -1085,5 +1089,5 @@ SHandShake(RTMP * r)
     }
 
   RTMP_Log(RTMP_LOGDEBUG, "%s: Handshaking finished....", __FUNCTION__);
-  return true;
+  return TRUE;
 }

@@ -15,7 +15,8 @@
  *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with librtmp see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ *  Boston, MA  02110-1301, USA.
  *  http://www.gnu.org/copyleft/lgpl.html
  */
 
@@ -186,7 +187,7 @@ HTTP_get(struct HTTP_ctx *http, const char *url, HTTP_read_callback *cb)
   }
 
   sb.sb_size = 0;
-  sb.sb_timedout = false;
+  sb.sb_timedout = FALSE;
   if (RTMPSockBuf_Fill(&sb) < 1)
     {
       ret = HTTPRES_LOST_CONNECTION;
