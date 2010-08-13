@@ -26,7 +26,7 @@
  */
 
 /**
- * @file libavcodec/mjpegdec.c
+ * @file
  * MJPEG decoder.
  */
 
@@ -1027,7 +1027,7 @@ static int mjpeg_decode_app(MJpegDecodeContext *s)
         return -1;
 
     id = (get_bits(&s->gb, 16) << 16) | get_bits(&s->gb, 16);
-    id = be2me_32(id);
+    id = av_be2ne32(id);
     len -= 6;
 
     if(s->avctx->debug & FF_DEBUG_STARTCODE){
@@ -1134,7 +1134,7 @@ static int mjpeg_decode_app(MJpegDecodeContext *s)
     if ((s->start_code == APP1) && (len > (0x28 - 8)))
     {
         id = (get_bits(&s->gb, 16) << 16) | get_bits(&s->gb, 16);
-        id = be2me_32(id);
+        id = av_be2ne32(id);
         len -= 4;
         if (id == AV_RL32("mjpg")) /* Apple MJPEG-A */
         {
@@ -1533,7 +1533,7 @@ av_cold int ff_mjpeg_decode_end(AVCodecContext *avctx)
 
 AVCodec mjpeg_decoder = {
     "mjpeg",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_MJPEG,
     sizeof(MJpegDecodeContext),
     ff_mjpeg_decode_init,
@@ -1542,12 +1542,13 @@ AVCodec mjpeg_decoder = {
     ff_mjpeg_decode_frame,
     CODEC_CAP_DR1,
     NULL,
+    .max_lowres = 8,
     .long_name = NULL_IF_CONFIG_SMALL("MJPEG (Motion JPEG)"),
 };
 
 AVCodec thp_decoder = {
     "thp",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_THP,
     sizeof(MJpegDecodeContext),
     ff_mjpeg_decode_init,
@@ -1556,5 +1557,6 @@ AVCodec thp_decoder = {
     ff_mjpeg_decode_frame,
     CODEC_CAP_DR1,
     NULL,
+    .max_lowres = 3,
     .long_name = NULL_IF_CONFIG_SMALL("Nintendo Gamecube THP video"),
 };

@@ -21,7 +21,7 @@
  */
 
 /**
- * @file libavcodec/libgsm.c
+ * @file
  * Interface to libgsm for gsm encoding/decoding
  */
 
@@ -54,7 +54,7 @@ static av_cold int libgsm_init(AVCodecContext *avctx) {
         if (avctx->sample_rate != 8000) {
             av_log(avctx, AV_LOG_ERROR, "Sample rate 8000Hz required for GSM, got %dHz\n",
                 avctx->sample_rate);
-            if(avctx->strict_std_compliance > FF_COMPLIANCE_INOFFICIAL)
+            if(avctx->strict_std_compliance > FF_COMPLIANCE_UNOFFICIAL)
                 return -1;
         }
         if (avctx->bit_rate != 13000 /* Official */ &&
@@ -62,7 +62,7 @@ static av_cold int libgsm_init(AVCodecContext *avctx) {
             avctx->bit_rate != 0 /* Unknown; a.o. mov does not set bitrate when decoding */ ) {
             av_log(avctx, AV_LOG_ERROR, "Bitrate 13000bps required for GSM, got %dbps\n",
                 avctx->bit_rate);
-            if(avctx->strict_std_compliance > FF_COMPLIANCE_INOFFICIAL)
+            if(avctx->strict_std_compliance > FF_COMPLIANCE_UNOFFICIAL)
                 return -1;
         }
     }
@@ -114,7 +114,7 @@ static int libgsm_encode_frame(AVCodecContext *avctx,
 
 AVCodec libgsm_encoder = {
     "libgsm",
-    CODEC_TYPE_AUDIO,
+    AVMEDIA_TYPE_AUDIO,
     CODEC_ID_GSM,
     0,
     libgsm_init,
@@ -126,7 +126,7 @@ AVCodec libgsm_encoder = {
 
 AVCodec libgsm_ms_encoder = {
     "libgsm_ms",
-    CODEC_TYPE_AUDIO,
+    AVMEDIA_TYPE_AUDIO,
     CODEC_ID_GSM_MS,
     0,
     libgsm_init,
@@ -158,7 +158,7 @@ static int libgsm_decode_frame(AVCodecContext *avctx,
 
 AVCodec libgsm_decoder = {
     "libgsm",
-    CODEC_TYPE_AUDIO,
+    AVMEDIA_TYPE_AUDIO,
     CODEC_ID_GSM,
     0,
     libgsm_init,
@@ -170,7 +170,7 @@ AVCodec libgsm_decoder = {
 
 AVCodec libgsm_ms_decoder = {
     "libgsm_ms",
-    CODEC_TYPE_AUDIO,
+    AVMEDIA_TYPE_AUDIO,
     CODEC_ID_GSM_MS,
     0,
     libgsm_init,

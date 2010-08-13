@@ -32,6 +32,10 @@ void ff_simple_idct_add_neon(uint8_t *dest, int line_size, DCTELEM *data);
 void ff_vp3_idct_neon(DCTELEM *data);
 void ff_vp3_idct_put_neon(uint8_t *dest, int line_size, DCTELEM *data);
 void ff_vp3_idct_add_neon(uint8_t *dest, int line_size, DCTELEM *data);
+void ff_vp3_idct_dc_add_neon(uint8_t *dest, int line_size, const DCTELEM *data);
+
+void ff_clear_block_neon(DCTELEM *block);
+void ff_clear_blocks_neon(DCTELEM *blocks);
 
 void ff_put_pixels16_neon(uint8_t *, const uint8_t *, int, int);
 void ff_put_pixels16_x2_neon(uint8_t *, const uint8_t *, int, int);
@@ -164,10 +168,10 @@ void ff_float_to_int16_interleave_neon(int16_t *, const float **, long, int);
 
 void ff_vorbis_inverse_coupling_neon(float *mag, float *ang, int blocksize);
 
-int32_t ff_scalarproduct_int16_neon(int16_t *v1, int16_t *v2, int len,
+int32_t ff_scalarproduct_int16_neon(const int16_t *v1, const int16_t *v2, int len,
                                     int shift);
-int32_t ff_scalarproduct_and_madd_int16_neon(int16_t *v1, int16_t *v2,
-                                             int16_t *v3, int len, int mul);
+int32_t ff_scalarproduct_and_madd_int16_neon(int16_t *v1, const int16_t *v2,
+                                             const int16_t *v3, int len, int mul);
 
 void ff_dsputil_init_neon(DSPContext *c, AVCodecContext *avctx)
 {
@@ -187,6 +191,9 @@ void ff_dsputil_init_neon(DSPContext *c, AVCodecContext *avctx)
             c->idct_permutation_type = FF_TRANSPOSE_IDCT_PERM;
         }
     }
+
+    c->clear_block  = ff_clear_block_neon;
+    c->clear_blocks = ff_clear_blocks_neon;
 
     c->put_pixels_tab[0][0] = ff_put_pixels16_neon;
     c->put_pixels_tab[0][1] = ff_put_pixels16_x2_neon;
@@ -294,6 +301,7 @@ void ff_dsputil_init_neon(DSPContext *c, AVCodecContext *avctx)
     if (CONFIG_VP3_DECODER) {
         c->vp3_v_loop_filter = ff_vp3_v_loop_filter_neon;
         c->vp3_h_loop_filter = ff_vp3_h_loop_filter_neon;
+        c->vp3_idct_dc_add   = ff_vp3_idct_dc_add_neon;
     }
 
     c->vector_fmul                = ff_vector_fmul_neon;

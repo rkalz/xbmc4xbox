@@ -24,7 +24,7 @@
  */
 
 /**
- * @file libavcodec/huffyuv.c
+ * @file
  * huffyuv codec for libavcodec.
  */
 
@@ -193,7 +193,7 @@ static int read_len_table(uint8_t *dst, GetBitContext *gb){
     return 0;
 }
 
-static int generate_bits_table(uint32_t *dst, uint8_t *len_table){
+static int generate_bits_table(uint32_t *dst, const uint8_t *len_table){
     int len, index;
     uint32_t bits=0;
 
@@ -231,11 +231,12 @@ static void heap_sift(HeapElem *h, int root, int size)
     }
 }
 
-static void generate_len_table(uint8_t *dst, uint64_t *stats, int size){
-    HeapElem h[size];
-    int up[2*size];
-    int len[2*size];
+static void generate_len_table(uint8_t *dst, const uint64_t *stats){
+    HeapElem h[256];
+    int up[2*256];
+    int len[2*256];
     int offset, i, next;
+    int size = 256;
 
     for(offset=1; ; offset<<=1){
         for(i=0; i<size; i++){
@@ -338,7 +339,7 @@ static void generate_joint_tables(HYuvContext *s){
     }
 }
 
-static int read_huffman_tables(HYuvContext *s, uint8_t *src, int length){
+static int read_huffman_tables(HYuvContext *s, const uint8_t *src, int length){
     GetBitContext gb;
     int i;
 
@@ -452,6 +453,9 @@ s->bgr32=1;
     if(s->version==2){
         int method, interlace;
 
+        if (avctx->extradata_size < 4)
+            return -1;
+
         method= ((uint8_t*)avctx->extradata)[0];
         s->decorrelate= method&64 ? 1 : 0;
         s->predictor= method&63;
@@ -462,7 +466,7 @@ s->bgr32=1;
         s->interlaced= (interlace==1) ? 1 : (interlace==2) ? 0 : s->interlaced;
         s->context= ((uint8_t*)avctx->extradata)[2] & 0x40 ? 1 : 0;
 
-        if(read_huffman_tables(s, ((uint8_t*)avctx->extradata)+4, avctx->extradata_size) < 0)
+        if(read_huffman_tables(s, ((uint8_t*)avctx->extradata)+4, avctx->extradata_size-4) < 0)
             return -1;
     }else{
         switch(avctx->bits_per_coded_sample&7){
@@ -526,7 +530,7 @@ s->bgr32=1;
 #endif /* CONFIG_HUFFYUV_DECODER || CONFIG_FFVHUFF_DECODER */
 
 #if CONFIG_HUFFYUV_ENCODER || CONFIG_FFVHUFF_ENCODER
-static int store_table(HYuvContext *s, uint8_t *len, uint8_t *buf){
+static int store_table(HYuvContext *s, const uint8_t *len, uint8_t *buf){
     int i;
     int index= 0;
 
@@ -643,7 +647,7 @@ static av_cold int encode_init(AVCodecContext *avctx)
     }
 
     for(i=0; i<3; i++){
-        generate_len_table(s->len[i], s->stats[i], 256);
+        generate_len_table(s->len[i], s->stats[i]);
 
         if(generate_bits_table(s->bits[i], s->len[i])<0){
             return -1;
@@ -1221,7 +1225,7 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
 
     if(s->context){
         for(i=0; i<3; i++){
-            generate_len_table(s->len[i], s->stats[i], 256);
+            generate_len_table(s->len[i], s->stats[i]);
             if(generate_bits_table(s->bits[i], s->len[i])<0)
                 return -1;
             size+= store_table(s, s->len[i], &buf[size]);
@@ -1414,7 +1418,7 @@ static av_cold int encode_end(AVCodecContext *avctx)
 #if CONFIG_HUFFYUV_DECODER
 AVCodec huffyuv_decoder = {
     "huffyuv",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_HUFFYUV,
     sizeof(HYuvContext),
     decode_init,
@@ -1430,7 +1434,7 @@ AVCodec huffyuv_decoder = {
 #if CONFIG_FFVHUFF_DECODER
 AVCodec ffvhuff_decoder = {
     "ffvhuff",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_FFVHUFF,
     sizeof(HYuvContext),
     decode_init,
@@ -1446,7 +1450,7 @@ AVCodec ffvhuff_decoder = {
 #if CONFIG_HUFFYUV_ENCODER
 AVCodec huffyuv_encoder = {
     "huffyuv",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_HUFFYUV,
     sizeof(HYuvContext),
     encode_init,
@@ -1460,7 +1464,7 @@ AVCodec huffyuv_encoder = {
 #if CONFIG_FFVHUFF_ENCODER
 AVCodec ffvhuff_encoder = {
     "ffvhuff",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_FFVHUFF,
     sizeof(HYuvContext),
     encode_init,

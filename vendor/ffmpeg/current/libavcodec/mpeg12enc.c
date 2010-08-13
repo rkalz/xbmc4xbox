@@ -21,7 +21,7 @@
  */
 
 /**
- * @file libavcodec/mpeg12enc.c
+ * @file
  * MPEG1/2 encoder
  */
 
@@ -119,7 +119,7 @@ static int find_frame_rate_index(MpegEncContext *s){
     for(i=1;i<14;i++) {
         int64_t n0= 1001LL/ff_frame_rate_tab[i].den*ff_frame_rate_tab[i].num*s->avctx->time_base.num;
         int64_t n1= 1001LL*s->avctx->time_base.den;
-        if(s->avctx->strict_std_compliance > FF_COMPLIANCE_INOFFICIAL && i>=9) break;
+        if(s->avctx->strict_std_compliance > FF_COMPLIANCE_UNOFFICIAL && i>=9) break;
 
         d = FFABS(n0 - n1);
         if(d < dmin){
@@ -932,7 +932,7 @@ static void mpeg1_encode_block(MpegEncContext *s,
 
 AVCodec mpeg1video_encoder = {
     "mpeg1video",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_MPEG1VIDEO,
     sizeof(MpegEncContext),
     encode_init,
@@ -946,7 +946,7 @@ AVCodec mpeg1video_encoder = {
 
 AVCodec mpeg2video_encoder = {
     "mpeg2video",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_MPEG2VIDEO,
     sizeof(MpegEncContext),
     encode_init,

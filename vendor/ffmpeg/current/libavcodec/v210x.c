@@ -67,12 +67,12 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
     pic->key_frame= 1;
 
     for(;;){
-        uint32_t v= be2me_32(*src++);
+        uint32_t v= av_be2ne32(*src++);
         *udst++= (v>>16) & 0xFFC0;
         *ydst++= (v>>6 ) & 0xFFC0;
         *vdst++= (v<<4 ) & 0xFFC0;
 
-        v= be2me_32(*src++);
+        v= av_be2ne32(*src++);
         *ydst++= (v>>16) & 0xFFC0;
 
         if(ydst >= yend){
@@ -87,7 +87,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
         *udst++= (v>>6 ) & 0xFFC0;
         *ydst++= (v<<4 ) & 0xFFC0;
 
-        v= be2me_32(*src++);
+        v= av_be2ne32(*src++);
         *vdst++= (v>>16) & 0xFFC0;
         *ydst++= (v>>6 ) & 0xFFC0;
 
@@ -102,7 +102,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
 
         *udst++= (v<<4 ) & 0xFFC0;
 
-        v= be2me_32(*src++);
+        v= av_be2ne32(*src++);
         *ydst++= (v>>16) & 0xFFC0;
         *vdst++= (v>>6 ) & 0xFFC0;
         *ydst++= (v<<4 ) & 0xFFC0;
@@ -134,7 +134,7 @@ static av_cold int decode_close(AVCodecContext *avctx)
 
 AVCodec v210x_decoder = {
     "v210x",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_V210X,
     0,
     decode_init,

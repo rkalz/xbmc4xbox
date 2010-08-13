@@ -25,18 +25,13 @@
 #include "cbrt_tablegen.h"
 #include "tableprint.h"
 
-void tableinit(void)
+int main(void)
 {
     cbrt_tableinit();
-}
 
-const struct tabledef tables[] = {
-    {
-        "static const uint32_t cbrt_tab[1<<13]",
-        write_uint32_array,
-        cbrt_tab,
-        1 << 13,
-        0
-    },
-    { NULL }
-};
+    write_fileheader();
+
+    WRITE_ARRAY("static const", uint32_t, cbrt_tab);
+
+    return 0;
+}

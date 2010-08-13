@@ -109,7 +109,7 @@ static int sdp_get_address(char *dest_addr, int size, int *ttl, const char *url)
     const char *p;
     char proto[32];
 
-    ff_url_split(proto, sizeof(proto), NULL, 0, dest_addr, size, &port, NULL, 0, url);
+    av_url_split(proto, sizeof(proto), NULL, 0, dest_addr, size, &port, NULL, 0, url);
 
     *ttl = 0;
 
@@ -148,6 +148,19 @@ static char *extradata2psets(AVCodecContext *c)
         av_log(c, AV_LOG_ERROR, "Too much extradata!\n");
 
         return NULL;
+    }
+    if (c->extradata[0] == 1) {
+        uint8_t *dummy_p;
+        int dummy_int;
+        AVBitStreamFilterContext *bsfc= av_bitstream_filter_init("h264_mp4toannexb");
+
+        if (!bsfc) {
+            av_log(c, AV_LOG_ERROR, "Cannot open the h264_mp4toannexb BSF!\n");
+
+            return NULL;
+        }
+        av_bitstream_filter_filter(bsfc, c, NULL, &dummy_p, &dummy_int, NULL, 0, 0);
+        av_bitstream_filter_close(bsfc);
     }
 
     psets = av_mallocz(MAX_PSET_SIZE);
@@ -201,7 +214,7 @@ static char *extradata2config(AVCodecContext *c)
         return NULL;
     }
     memcpy(config, "; config=", 9);
-    ff_data_to_hex(config + 9, c->extradata, c->extradata_size);
+    ff_data_to_hex(config + 9, c->extradata, c->extradata_size, 0);
     config[9 + c->extradata_size * 2] = 0;
 
     return config;
@@ -294,20 +307,20 @@ static char *sdp_write_media_attributes(char *buff, int size, AVCodecContext *c,
     return buff;
 }
 
-static void sdp_write_media(char *buff, int size, AVCodecContext *c, const char *dest_addr, int port, int ttl)
+void ff_sdp_write_media(char *buff, int size, AVCodecContext *c, const char *dest_addr, int port, int ttl)
 {
     const char *type;
     int payload_type;
 
     payload_type = ff_rtp_get_payload_type(c);
     if (payload_type < 0) {
-        payload_type = RTP_PT_PRIVATE + (c->codec_type == CODEC_TYPE_AUDIO);
+        payload_type = RTP_PT_PRIVATE + (c->codec_type == AVMEDIA_TYPE_AUDIO);
     }
 
     switch (c->codec_type) {
-        case CODEC_TYPE_VIDEO   : type = "video"      ; break;
-        case CODEC_TYPE_AUDIO   : type = "audio"      ; break;
-        case CODEC_TYPE_SUBTITLE: type = "text"       ; break;
+        case AVMEDIA_TYPE_VIDEO   : type = "video"      ; break;
+        case AVMEDIA_TYPE_AUDIO   : type = "audio"      ; break;
+        case AVMEDIA_TYPE_SUBTITLE: type = "text"       ; break;
         default                 : type = "application"; break;
     }
 
@@ -352,7 +365,7 @@ int avf_sdp_create(AVFormatContext *ac[], int n_files, char *buff, int size)
             resolve_destination(dst, sizeof(dst));
         }
         for (j = 0; j < ac[i]->nb_streams; j++) {
-            sdp_write_media(buff, size,
+            ff_sdp_write_media(buff, size,
                                   ac[i]->streams[j]->codec, dst[0] ? dst : NULL,
                                   (port > 0) ? port + j * 2 : 0, ttl);
             if (port <= 0) {
@@ -368,5 +381,10 @@ int avf_sdp_create(AVFormatContext *ac[], int n_files, char *buff, int size)
 int avf_sdp_create(AVFormatContext *ac[], int n_files, char *buff, int size)
 {
     return AVERROR(ENOSYS);
+}
+
+void ff_sdp_write_media(char *buff, int size, AVCodecContext *c,
+                        const char *dest_addr, int port, int ttl)
+{
 }
 #endif

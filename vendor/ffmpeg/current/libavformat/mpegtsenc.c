@@ -23,6 +23,7 @@
 #include "libavutil/crc.h"
 #include "libavcodec/mpegvideo.h"
 #include "avformat.h"
+#include "internal.h"
 #include "mpegts.h"
 #include "adts.h"
 
@@ -73,7 +74,7 @@ static void mpegts_write_section(MpegTSSection *s, uint8_t *buf, int len)
     unsigned char *q;
     int first, b, len1, left;
 
-    crc = bswap_32(av_crc(av_crc_get_table(AV_CRC_32_IEEE), -1, buf, len - 4));
+    crc = av_bswap32(av_crc(av_crc_get_table(AV_CRC_32_IEEE), -1, buf, len - 4));
     buf[len - 4] = (crc >> 24) & 0xff;
     buf[len - 3] = (crc >> 16) & 0xff;
     buf[len - 2] = (crc >> 8) & 0xff;
@@ -255,7 +256,7 @@ static void mpegts_write_pmt(AVFormatContext *s, MpegTSService *service)
 
         /* write optional descriptors here */
         switch(st->codec->codec_type) {
-        case CODEC_TYPE_AUDIO:
+        case AVMEDIA_TYPE_AUDIO:
             if (lang && strlen(lang->value) == 3) {
                 *q++ = 0x0a; /* ISO 639 language descriptor */
                 *q++ = 4;
@@ -265,7 +266,7 @@ static void mpegts_write_pmt(AVFormatContext *s, MpegTSService *service)
                 *q++ = 0; /* undefined type */
             }
             break;
-        case CODEC_TYPE_SUBTITLE:
+        case AVMEDIA_TYPE_SUBTITLE:
             {
                 const char *language;
                 language = lang && strlen(lang->value)==3 ? lang->value : "eng";
@@ -279,7 +280,7 @@ static void mpegts_write_pmt(AVFormatContext *s, MpegTSService *service)
                 put16(&q, 1); /* ancillary page id */
             }
             break;
-        case CODEC_TYPE_VIDEO:
+        case AVMEDIA_TYPE_VIDEO:
             if (stream_type == STREAM_TYPE_VIDEO_DIRAC) {
                 *q++ = 0x05; /*MPEG-2 registration descriptor*/
                 *q++ = 4;
@@ -386,8 +387,9 @@ static int mpegts_write_header(AVFormatContext *s)
     MpegTSService *service;
     AVStream *st, *pcr_st = NULL;
     AVMetadataTag *title;
-    int i;
+    int i, j;
     const char *service_name;
+    int *pids;
 
     ts->tsid = DEFAULT_TSID;
     ts->onid = DEFAULT_ONID;
@@ -410,6 +412,10 @@ static int mpegts_write_header(AVFormatContext *s)
     ts->sdt.write_packet = section_write_packet;
     ts->sdt.opaque = s;
 
+    pids = av_malloc(s->nb_streams * sizeof(*pids));
+    if (!pids)
+        return AVERROR(ENOMEM);
+
     /* assign pids to each stream */
     for(i = 0;i < s->nb_streams; i++) {
         st = s->streams[i];
@@ -418,13 +424,32 @@ static int mpegts_write_header(AVFormatContext *s)
             goto fail;
         st->priv_data = ts_st;
         ts_st->service = service;
-        ts_st->pid = DEFAULT_START_PID + i;
+        /* MPEG pid values < 16 are reserved. Applications which set st->id in
+         * this range are assigned a calculated pid. */
+        if (st->id < 16) {
+            ts_st->pid = DEFAULT_START_PID + i;
+        } else if (st->id < 0x1FFF) {
+            ts_st->pid = st->id;
+        } else {
+            av_log(s, AV_LOG_ERROR, "Invalid stream id %d, must be less than 8191\n", st->id);
+            goto fail;
+        }
+        if (ts_st->pid == service->pmt.pid) {
+            av_log(s, AV_LOG_ERROR, "Duplicate stream id %d\n", ts_st->pid);
+            goto fail;
+        }
+        for (j = 0; j < i; j++)
+            if (pids[j] == ts_st->pid) {
+                av_log(s, AV_LOG_ERROR, "Duplicate stream id %d\n", ts_st->pid);
+                goto fail;
+            }
+        pids[i] = ts_st->pid;
         ts_st->payload_pts = AV_NOPTS_VALUE;
         ts_st->payload_dts = AV_NOPTS_VALUE;
         ts_st->first_pts_check = 1;
         ts_st->cc = 15;
         /* update PCR pid by using the first video stream */
-        if (st->codec->codec_type == CODEC_TYPE_VIDEO &&
+        if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO &&
             service->pcr_pid == 0x1fff) {
             service->pcr_pid = ts_st->pid;
             pcr_st = st;
@@ -433,12 +458,14 @@ static int mpegts_write_header(AVFormatContext *s)
             st->codec->extradata_size > 0) {
             ts_st->adts = av_mallocz(sizeof(*ts_st->adts));
             if (!ts_st->adts)
-                return AVERROR_NOMEM;
+                return AVERROR(ENOMEM);
             if (ff_adts_decode_extradata(s, ts_st->adts, st->codec->extradata,
                                          st->codec->extradata_size) < 0)
                 return -1;
         }
     }
+
+    av_free(pids);
 
     /* if no video stream, use the first stream as PCR */
     if (service->pcr_pid == 0x1fff && s->nb_streams > 0) {
@@ -462,7 +489,7 @@ static int mpegts_write_header(AVFormatContext *s)
         /* Arbitrary values, PAT/PMT could be written on key frames */
         ts->sdt_packet_period = 200;
         ts->pat_packet_period = 40;
-        if (pcr_st->codec->codec_type == CODEC_TYPE_AUDIO) {
+        if (pcr_st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
             if (!pcr_st->codec->frame_size) {
                 av_log(s, AV_LOG_WARNING, "frame size not set\n");
                 service->pcr_packet_period =
@@ -483,18 +510,21 @@ static int mpegts_write_header(AVFormatContext *s)
     ts->pat_packet_count = ts->pat_packet_period-1;
     ts->sdt_packet_count = ts->sdt_packet_period-1;
 
-    av_log(s, AV_LOG_INFO,
-           "muxrate %d bps, pcr every %d pkts, "
+    if (ts->mux_rate == 1)
+        av_log(s, AV_LOG_INFO, "muxrate VBR, ");
+    else
+        av_log(s, AV_LOG_INFO, "muxrate %d, ", ts->mux_rate);
+    av_log(s, AV_LOG_INFO, "pcr every %d pkts, "
            "sdt every %d, pat/pmt every %d pkts\n",
-           ts->mux_rate, service->pcr_packet_period,
+           service->pcr_packet_period,
            ts->sdt_packet_period, ts->pat_packet_period);
-
 
     put_flush_packet(s->pb);
 
     return 0;
 
  fail:
+    av_free(pids);
     for(i = 0;i < s->nb_streams; i++) {
         st = s->streams[i];
         av_free(st->priv_data);
@@ -661,18 +691,18 @@ static void mpegts_write_pes(AVFormatContext *s, AVStream *st,
             *q++ = 0x00;
             *q++ = 0x01;
             private_code = 0;
-            if (st->codec->codec_type == CODEC_TYPE_VIDEO) {
+            if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
                 if (st->codec->codec_id == CODEC_ID_DIRAC) {
                     *q++ = 0xfd;
                 } else
                     *q++ = 0xe0;
-            } else if (st->codec->codec_type == CODEC_TYPE_AUDIO &&
+            } else if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO &&
                        (st->codec->codec_id == CODEC_ID_MP2 ||
                         st->codec->codec_id == CODEC_ID_MP3)) {
                 *q++ = 0xc0;
             } else {
                 *q++ = 0xbd;
-                if (st->codec->codec_type == CODEC_TYPE_SUBTITLE) {
+                if (st->codec->codec_type == AVMEDIA_TYPE_SUBTITLE) {
                     private_code = 0x20;
                 }
             }
@@ -686,7 +716,7 @@ static void mpegts_write_pes(AVFormatContext *s, AVStream *st,
                 header_len += 5;
                 flags |= 0x40;
             }
-            if (st->codec->codec_type == CODEC_TYPE_VIDEO &&
+            if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO &&
                 st->codec->codec_id == CODEC_ID_DIRAC) {
                 /* set PES_extension_flag */
                 pes_extension = 1;
@@ -708,7 +738,7 @@ static void mpegts_write_pes(AVFormatContext *s, AVStream *st,
             *q++ = len;
             val = 0x80;
             /* data alignment indicator is required for subtitle data */
-            if (st->codec->codec_type == CODEC_TYPE_SUBTITLE)
+            if (st->codec->codec_type == AVMEDIA_TYPE_SUBTITLE)
                 val |= 0x04;
             *q++ = val;
             *q++ = flags;
@@ -836,7 +866,7 @@ static int mpegts_write_packet(AVFormatContext *s, AVPacket *pkt)
                 return -1;
             data = av_malloc(new_size);
             if (!data)
-                return AVERROR_NOMEM;
+                return AVERROR(ENOMEM);
             ff_adts_write_frame_header(adts, data, pkt->size, adts->pce_size);
             if (adts->pce_size) {
                 memcpy(data+ADTS_HEADER_SIZE, adts->pce_data, adts->pce_size);
@@ -848,7 +878,7 @@ static int mpegts_write_packet(AVFormatContext *s, AVPacket *pkt)
         }
     }
 
-    if (st->codec->codec_type != CODEC_TYPE_AUDIO) {
+    if (st->codec->codec_type != AVMEDIA_TYPE_AUDIO) {
         // for video and subtitle, write a single pes packet
         mpegts_write_pes(s, st, buf, size, pts, dts);
         av_free(data);

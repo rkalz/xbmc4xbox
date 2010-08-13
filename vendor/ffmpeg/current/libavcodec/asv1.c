@@ -20,7 +20,7 @@
  */
 
 /**
- * @file libavcodec/asv1.c
+ * @file
  * ASUS V1/V2 codec.
  */
 
@@ -588,8 +588,8 @@ static av_cold int encode_init(AVCodecContext *avctx){
 
     avctx->extradata= av_mallocz(8);
     avctx->extradata_size=8;
-    ((uint32_t*)avctx->extradata)[0]= le2me_32(a->inv_qscale);
-    ((uint32_t*)avctx->extradata)[1]= le2me_32(AV_RL32("ASUS"));
+    ((uint32_t*)avctx->extradata)[0]= av_le2ne32(a->inv_qscale);
+    ((uint32_t*)avctx->extradata)[1]= av_le2ne32(AV_RL32("ASUS"));
 
     for(i=0; i<64; i++){
         int q= 32*scale*ff_mpeg1_default_intra_matrix[i];
@@ -615,7 +615,7 @@ static av_cold int decode_end(AVCodecContext *avctx){
 
 AVCodec asv1_decoder = {
     "asv1",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_ASV1,
     sizeof(ASV1Context),
     decode_init,
@@ -628,7 +628,7 @@ AVCodec asv1_decoder = {
 
 AVCodec asv2_decoder = {
     "asv2",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_ASV2,
     sizeof(ASV1Context),
     decode_init,
@@ -642,7 +642,7 @@ AVCodec asv2_decoder = {
 #if CONFIG_ASV1_ENCODER
 AVCodec asv1_encoder = {
     "asv1",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_ASV1,
     sizeof(ASV1Context),
     encode_init,
@@ -656,7 +656,7 @@ AVCodec asv1_encoder = {
 #if CONFIG_ASV2_ENCODER
 AVCodec asv2_encoder = {
     "asv2",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_ASV2,
     sizeof(ASV1Context),
     encode_init,

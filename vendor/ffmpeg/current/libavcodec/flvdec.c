@@ -119,7 +119,7 @@ int ff_flv_decode_picture_header(MpegEncContext *s)
 
 AVCodec flv_decoder = {
     "flv",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_FLV1,
     sizeof(MpegEncContext),
     ff_h263_decode_init,
@@ -127,6 +127,7 @@ AVCodec flv_decoder = {
     ff_h263_decode_end,
     ff_h263_decode_frame,
     CODEC_CAP_DRAW_HORIZ_BAND | CODEC_CAP_DR1,
+    .max_lowres= 3,
     .long_name= NULL_IF_CONFIG_SMALL("Flash Video (FLV) / Sorenson Spark / Sorenson H.263"),
     .pix_fmts= ff_pixfmt_list_420,
 };

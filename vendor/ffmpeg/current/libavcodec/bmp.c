@@ -290,7 +290,7 @@ static int bmp_decode_frame(AVCodecContext *avctx,
                 uint16_t *dst = (uint16_t *) ptr;
 
                 for(j = 0; j < avctx->width; j++)
-                    *dst++ = le2me_16(*src++);
+                    *dst++ = av_le2ne16(*src++);
 
                 buf += n;
                 ptr += linesize;
@@ -337,7 +337,7 @@ static av_cold int bmp_decode_end(AVCodecContext *avctx)
 
 AVCodec bmp_decoder = {
     "bmp",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_BMP,
     sizeof(BMPContext),
     bmp_decode_init,
@@ -345,5 +345,6 @@ AVCodec bmp_decoder = {
     bmp_decode_end,
     bmp_decode_frame,
     CODEC_CAP_DR1,
+    .max_lowres = 5,
     .long_name = NULL_IF_CONFIG_SMALL("BMP image"),
 };

@@ -26,48 +26,27 @@
 #include "avformat.h"
 #include "rtp.h"
 
-/** Structure listing useful vars to parse RTP packet payload*/
-typedef struct rtp_payload_data
-{
-    int sizelength;
-    int indexlength;
-    int indexdeltalength;
-    int profile_level_id;
-    int streamtype;
-    int objecttype;
-    char *mode;
-
-    /** mpeg 4 AU headers */
-    struct AUHeaders {
-        int size;
-        int index;
-        int cts_flag;
-        int cts;
-        int dts_flag;
-        int dts;
-        int rap_flag;
-        int streamstate;
-    } *au_headers;
-    int nb_au_headers;
-    int au_headers_length_bytes;
-    int cur_au_index;
-} RTPPayloadData;
-
 typedef struct PayloadContext PayloadContext;
 typedef struct RTPDynamicProtocolHandler_s RTPDynamicProtocolHandler;
 
 #define RTP_MIN_PACKET_LENGTH 12
 #define RTP_MAX_PACKET_LENGTH 1500 /* XXX: suppress this define */
 
+#define RTP_NOTS_VALUE ((uint32_t)-1)
+
 typedef struct RTPDemuxContext RTPDemuxContext;
-RTPDemuxContext *rtp_parse_open(AVFormatContext *s1, AVStream *st, URLContext *rtpc, int payload_type, RTPPayloadData *rtp_payload_data);
+RTPDemuxContext *rtp_parse_open(AVFormatContext *s1, AVStream *st, URLContext *rtpc, int payload_type);
 void rtp_parse_set_dynamic_protocol(RTPDemuxContext *s, PayloadContext *ctx,
                                     RTPDynamicProtocolHandler *handler);
 int rtp_parse_packet(RTPDemuxContext *s, AVPacket *pkt,
                      const uint8_t *buf, int len);
 void rtp_parse_close(RTPDemuxContext *s);
-
+#if (LIBAVFORMAT_VERSION_MAJOR <= 53)
 int rtp_get_local_port(URLContext *h);
+#endif
+int rtp_get_local_rtp_port(URLContext *h);
+int rtp_get_local_rtcp_port(URLContext *h);
+
 int rtp_set_remote_url(URLContext *h, const char *uri);
 #if (LIBAVFORMAT_VERSION_MAJOR <= 52)
 void rtp_get_file_handles(URLContext *h, int *prtp_fd, int *prtcp_fd);
@@ -132,7 +111,7 @@ typedef int (*DynamicPayloadPacketHandlerProc) (AVFormatContext *ctx,
 struct RTPDynamicProtocolHandler_s {
     // fields from AVRtpDynamicPayloadType_s
     const char enc_name[50];    /* XXX: still why 50 ? ;-) */
-    enum CodecType codec_type;
+    enum AVMediaType codec_type;
     enum CodecID codec_id;
 
     // may be null
@@ -140,7 +119,7 @@ struct RTPDynamicProtocolHandler_s {
                              int st_index,
                              PayloadContext *priv_data,
                              const char *line); ///< Parse the a= line from the sdp field
-    PayloadContext *(*open) (); ///< allocate any data needed by the rtp parsing for this dynamic data.
+    PayloadContext *(*open) (void); ///< allocate any data needed by the rtp parsing for this dynamic data.
     void (*close)(PayloadContext *protocol_data); ///< free any data needed by the rtp parsing for this dynamic data.
     DynamicPayloadPacketHandlerProc parse_packet; ///< parse handler for this dynamic packet.
 
@@ -157,6 +136,7 @@ struct RTPDemuxContext {
     uint32_t timestamp;
     uint32_t base_timestamp;
     uint32_t cur_timestamp;
+    int64_t  range_start_offset;
     int max_payload_size;
     struct MpegTSContext *ts;   /* only used for MP2T payloads */
     int read_buf_index;
@@ -169,6 +149,7 @@ struct RTPDemuxContext {
 
     /* rtcp sender statistics receive */
     int64_t last_rtcp_ntp_time;    // TODO: move into statistics
+    int64_t first_rtcp_ntp_time;   // TODO: move into statistics
     uint32_t last_rtcp_timestamp;  // TODO: move into statistics
 
     /* rtcp sender statistics */
@@ -180,9 +161,6 @@ struct RTPDemuxContext {
     uint8_t buf[RTP_MAX_PACKET_LENGTH];
     uint8_t *buf_ptr;
 
-    /* special infos for au headers parsing */
-    RTPPayloadData *rtp_payload_data; // TODO: Move into dynamic payload handlers
-
     /* dynamic payload stuff */
     DynamicPayloadPacketHandlerProc parse_packet;     ///< This is also copied from the dynamic protocol handler structure
     PayloadContext *dynamic_protocol_context;        ///< This is a copy from the values setup from the sdp parsing, in rtsp.c don't free me.
@@ -193,6 +171,11 @@ extern RTPDynamicProtocolHandler *RTPFirstDynamicPayloadHandler;
 void ff_register_dynamic_payload_handler(RTPDynamicProtocolHandler *handler);
 
 int ff_rtsp_next_attr_and_value(const char **p, char *attr, int attr_size, char *value, int value_size); ///< from rtsp.c, but used by rtp dynamic protocol handlers.
+
+int ff_parse_fmtp(AVStream *stream, PayloadContext *data, const char *p,
+                  int (*parse_fmtp)(AVStream *stream,
+                                    PayloadContext *data,
+                                    char *attr, char *value));
 
 void av_register_rtp_dynamic_payload_handlers(void);
 

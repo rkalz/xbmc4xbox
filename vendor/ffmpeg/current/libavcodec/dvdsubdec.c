@@ -20,8 +20,8 @@
  */
 #include "avcodec.h"
 #include "get_bits.h"
-#include "colorspace.h"
 #include "dsputil.h"
+#include "libavutil/colorspace.h"
 
 //#define DEBUG
 
@@ -488,7 +488,7 @@ static int dvdsub_decode(AVCodecContext *avctx,
 
 AVCodec dvdsub_decoder = {
     "dvdsub",
-    CODEC_TYPE_SUBTITLE,
+    AVMEDIA_TYPE_SUBTITLE,
     CODEC_ID_DVD_SUBTITLE,
     0,
     NULL,

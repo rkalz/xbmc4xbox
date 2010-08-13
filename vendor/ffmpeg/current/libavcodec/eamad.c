@@ -20,7 +20,7 @@
  */
 
 /**
- * @file libavcodec/eamad.c
+ * @file
  * Electronic Arts Madcow Video Decoder
  * by Peter Ross <pross@xvid.org>
  *
@@ -53,7 +53,7 @@ static void bswap16_buf(uint16_t *dst, const uint16_t *src, int count)
 {
     int i;
     for (i=0; i<count; i++)
-        dst[i] = bswap_16(src[i]);
+        dst[i] = av_bswap16(src[i]);
 }
 
 static av_cold int decode_init(AVCodecContext *avctx)
@@ -307,7 +307,7 @@ static av_cold int decode_end(AVCodecContext *avctx)
 
 AVCodec eamad_decoder = {
     "eamad",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_MAD,
     sizeof(MadContext),
     decode_init,

@@ -26,12 +26,31 @@
 #include <io.h>
 #endif
 #include <unistd.h>
-#include <sys/time.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 #include "os_support.h"
 
 
 /* standard file protocol */
+
+static int file_read(URLContext *h, unsigned char *buf, int size)
+{
+    int fd = (intptr_t) h->priv_data;
+    return read(fd, buf, size);
+}
+
+static int file_write(URLContext *h, const unsigned char *buf, int size)
+{
+    int fd = (intptr_t) h->priv_data;
+    return write(fd, buf, size);
+}
+
+static int file_get_handle(URLContext *h)
+{
+    return (intptr_t) h->priv_data;
+}
+
+#if CONFIG_FILE_PROTOCOL
 
 static int file_open(URLContext *h, const char *filename, int flags)
 {
@@ -52,29 +71,20 @@ static int file_open(URLContext *h, const char *filename, int flags)
 #endif
     fd = open(filename, access, 0666);
     if (fd == -1)
-        return AVERROR(ENOENT);
+        return AVERROR(errno);
     h->priv_data = (void *) (intptr_t) fd;
     return 0;
-}
-
-static int file_read(URLContext *h, unsigned char *buf, int size)
-{
-    int fd = (intptr_t) h->priv_data;
-    return read(fd, buf, size);
-}
-
-static int file_write(URLContext *h, unsigned char *buf, int size)
-{
-    int fd = (intptr_t) h->priv_data;
-    return write(fd, buf, size);
 }
 
 /* XXX: use llseek */
 static int64_t file_seek(URLContext *h, int64_t pos, int whence)
 {
     int fd = (intptr_t) h->priv_data;
-    if (whence != SEEK_SET && whence != SEEK_CUR && whence != SEEK_END)
-        return AVERROR_NOTSUPP;
+    if (whence == AVSEEK_SIZE) {
+        struct stat st;
+        int ret = fstat(fd, &st);
+        return ret < 0 ? AVERROR(errno) : st.st_size;
+    }
     return lseek(fd, pos, whence);
 }
 
@@ -82,11 +92,6 @@ static int file_close(URLContext *h)
 {
     int fd = (intptr_t) h->priv_data;
     return close(fd);
-}
-
-static int file_get_handle(URLContext *h)
-{
-    return (intptr_t) h->priv_data;
 }
 
 URLProtocol file_protocol = {
@@ -99,7 +104,9 @@ URLProtocol file_protocol = {
     .url_get_file_handle = file_get_handle,
 };
 
-/* pipe protocol */
+#endif /* CONFIG_FILE_PROTOCOL */
+
+#if CONFIG_PIPE_PROTOCOL
 
 static int pipe_open(URLContext *h, const char *filename, int flags)
 {
@@ -130,3 +137,5 @@ URLProtocol pipe_protocol = {
     file_write,
     .url_get_file_handle = file_get_handle,
 };
+
+#endif /* CONFIG_PIPE_PROTOCOL */

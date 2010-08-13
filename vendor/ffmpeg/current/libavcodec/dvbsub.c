@@ -20,7 +20,7 @@
  */
 #include "avcodec.h"
 #include "bytestream.h"
-#include "colorspace.h"
+#include "libavutil/colorspace.h"
 
 typedef struct DVBSubtitleContext {
     int hide_state;
@@ -404,7 +404,7 @@ static int dvbsub_encode(AVCodecContext *avctx,
 
 AVCodec dvbsub_encoder = {
     "dvbsub",
-    CODEC_TYPE_SUBTITLE,
+    AVMEDIA_TYPE_SUBTITLE,
     CODEC_ID_DVB_SUBTITLE,
     sizeof(DVBSubtitleContext),
     NULL,

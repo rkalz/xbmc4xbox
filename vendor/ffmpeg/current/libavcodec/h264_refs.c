@@ -20,7 +20,7 @@
  */
 
 /**
- * @file libavcodec/h264_refs.c
+ * @file
  * H.264 / AVC / MPEG4 part10  reference picture handling.
  * @author Michael Niedermayer <michaelni@gmx.at>
  */
@@ -323,12 +323,6 @@ void ff_h264_fill_mbaff_ref_list(H264Context *h){
             }
         }
     }
-    for(j=0; j<h->ref_count[1]; j++){
-        for(i=0; i<h->ref_count[0]; i++)
-            h->implicit_weight[j][16+2*i] = h->implicit_weight[j][16+2*i+1] = h->implicit_weight[j][i];
-        memcpy(h->implicit_weight[16+2*j],   h->implicit_weight[j], sizeof(*h->implicit_weight));
-        memcpy(h->implicit_weight[16+2*j+1], h->implicit_weight[j], sizeof(*h->implicit_weight));
-    }
 }
 
 /**
@@ -476,6 +470,25 @@ static void print_long_term(H264Context *h) {
             if (pic) {
                 av_log(h->s.avctx, AV_LOG_DEBUG, "%d fn:%d poc:%d %p\n", i, pic->frame_num, pic->poc, pic->data[0]);
             }
+        }
+    }
+}
+
+void ff_generate_sliding_window_mmcos(H264Context *h) {
+    MpegEncContext * const s = &h->s;
+    assert(h->long_ref_count + h->short_ref_count <= h->sps.ref_frame_count);
+
+    h->mmco_index= 0;
+    if(h->short_ref_count && h->long_ref_count + h->short_ref_count == h->sps.ref_frame_count &&
+            !(FIELD_PICTURE && !s->first_field && s->current_picture_ptr->reference)) {
+        h->mmco[0].opcode= MMCO_SHORT2UNUSED;
+        h->mmco[0].short_pic_num= h->short_ref[ h->short_ref_count - 1 ]->frame_num;
+        h->mmco_index= 1;
+        if (FIELD_PICTURE) {
+            h->mmco[0].short_pic_num *= 2;
+            h->mmco[1].opcode= MMCO_SHORT2UNUSED;
+            h->mmco[1].short_pic_num= h->mmco[0].short_pic_num + 1;
+            h->mmco_index= 2;
         }
     }
 }
@@ -679,20 +692,7 @@ int ff_h264_decode_ref_pic_marking(H264Context *h, GetBitContext *gb){
             }
             h->mmco_index= i;
         }else{
-            assert(h->long_ref_count + h->short_ref_count <= h->sps.ref_frame_count);
-
-            if(h->short_ref_count && h->long_ref_count + h->short_ref_count == h->sps.ref_frame_count &&
-                    !(FIELD_PICTURE && !s->first_field && s->current_picture_ptr->reference)) {
-                h->mmco[0].opcode= MMCO_SHORT2UNUSED;
-                h->mmco[0].short_pic_num= h->short_ref[ h->short_ref_count - 1 ]->frame_num;
-                h->mmco_index= 1;
-                if (FIELD_PICTURE) {
-                    h->mmco[0].short_pic_num *= 2;
-                    h->mmco[1].opcode= MMCO_SHORT2UNUSED;
-                    h->mmco[1].short_pic_num= h->mmco[0].short_pic_num + 1;
-                    h->mmco_index= 2;
-                }
-            }
+            ff_generate_sliding_window_mmcos(h);
         }
     }
 

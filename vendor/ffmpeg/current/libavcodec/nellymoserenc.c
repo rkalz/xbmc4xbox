@@ -22,7 +22,7 @@
  */
 
 /**
- * @file libavcodec/nellymoserenc.c
+ * @file
  * Nellymoser encoder
  * by Bartlomiej Wolowiec
  *
@@ -270,7 +270,7 @@ static void get_exponent_dynamic(NellyMoserEncodeContext *s, float *cand, int *i
 }
 
 /**
- * Encodes NELLY_SAMPLES samples. It assumes, that samples contains 3 * NELLY_BUF_LEN values
+ * Encode NELLY_SAMPLES samples. It assumes, that samples contains 3 * NELLY_BUF_LEN values
  *  @param s               encoder context
  *  @param output          output buffer
  *  @param output_size     size of output buffer
@@ -384,7 +384,7 @@ static int encode_frame(AVCodecContext *avctx, uint8_t *frame, int buf_size, voi
 
 AVCodec nellymoser_encoder = {
     .name = "nellymoser",
-    .type = CODEC_TYPE_AUDIO,
+    .type = AVMEDIA_TYPE_AUDIO,
     .id = CODEC_ID_NELLYMOSER,
     .priv_data_size = sizeof(NellyMoserEncodeContext),
     .init = encode_init,

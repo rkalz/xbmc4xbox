@@ -20,7 +20,7 @@
  */
 
 /**
- * @file libavformat/mtv.c
+ * @file
  * MTV demuxer.
  */
 
@@ -123,12 +123,11 @@ static int mtv_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return AVERROR(ENOMEM);
 
     av_set_pts_info(st, 64, 1, mtv->video_fps);
-    st->codec->codec_type      = CODEC_TYPE_VIDEO;
+    st->codec->codec_type      = AVMEDIA_TYPE_VIDEO;
     st->codec->codec_id        = CODEC_ID_RAWVIDEO;
-    st->codec->codec_tag       = MKTAG('R', 'G', 'B', mtv->img_bpp);
+    st->codec->pix_fmt         = PIX_FMT_RGB565;
     st->codec->width           = mtv->img_width;
     st->codec->height          = mtv->img_height;
-    st->codec->bits_per_coded_sample = mtv->img_bpp;
     st->codec->sample_rate     = mtv->video_fps;
     st->codec->extradata       = av_strdup("BottomUp");
     st->codec->extradata_size  = 9;
@@ -140,7 +139,7 @@ static int mtv_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return AVERROR(ENOMEM);
 
     av_set_pts_info(st, 64, 1, AUDIO_SAMPLING_RATE);
-    st->codec->codec_type      = CODEC_TYPE_AUDIO;
+    st->codec->codec_type      = AVMEDIA_TYPE_AUDIO;
     st->codec->codec_id        = CODEC_ID_MP3;
     st->codec->bit_rate        = mtv->audio_br;
     st->need_parsing           = AVSTREAM_PARSE_FULL;
@@ -189,7 +188,7 @@ static int mtv_read_packet(AVFormatContext *s, AVPacket *pkt)
          */
 
         for(i=0;i<mtv->img_segment_size/2;i++)
-            *((uint16_t *)pkt->data+i) = bswap_16(*((uint16_t *)pkt->data+i));
+            *((uint16_t *)pkt->data+i) = av_bswap16(*((uint16_t *)pkt->data+i));
 #endif
         pkt->stream_index = VIDEO_SID;
     }

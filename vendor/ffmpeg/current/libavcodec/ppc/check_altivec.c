@@ -18,8 +18,8 @@
 
 
 /**
- * @file libavcodec/ppc/check_altivec.c
- * Checks for AltiVec presence.
+ * @file
+ * Check for AltiVec presence.
  */
 
 #ifdef __APPLE__

@@ -36,14 +36,14 @@ static int flac_read_header(AVFormatContext *s,
     AVStream *st = av_new_stream(s, 0);
     if (!st)
         return AVERROR(ENOMEM);
-    st->codec->codec_type = CODEC_TYPE_AUDIO;
+    st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codec->codec_id = CODEC_ID_FLAC;
     st->need_parsing = AVSTREAM_PARSE_FULL;
     /* the parameters will be extracted from the compressed bitstream */
 
     /* skip ID3v2 header if found */
     ret = get_buffer(s->pb, buf, ID3v2_HEADER_SIZE);
-    if (ret == ID3v2_HEADER_SIZE && ff_id3v2_match(buf)) {
+    if (ret == ID3v2_HEADER_SIZE && ff_id3v2_match(buf, ID3v2_DEFAULT_MAGIC)) {
         int len = ff_id3v2_tag_len(buf);
         url_fseek(s->pb, len - ID3v2_HEADER_SIZE, SEEK_CUR);
     } else {
@@ -67,7 +67,7 @@ static int flac_read_header(AVFormatContext *s,
         case FLAC_METADATA_TYPE_VORBIS_COMMENT:
             buffer = av_mallocz(metadata_size + FF_INPUT_BUFFER_PADDING_SIZE);
             if (!buffer) {
-                return AVERROR_NOMEM;
+                return AVERROR(ENOMEM);
             }
             if (get_buffer(s->pb, buffer, metadata_size) != metadata_size) {
                 av_freep(&buffer);
@@ -130,7 +130,7 @@ static int flac_probe(AVProbeData *p)
     uint8_t *bufptr = p->buf;
     uint8_t *end    = p->buf + p->buf_size;
 
-    if(ff_id3v2_match(bufptr))
+    if(ff_id3v2_match(bufptr, ID3v2_DEFAULT_MAGIC))
         bufptr += ff_id3v2_tag_len(bufptr);
 
     if(bufptr > end-4 || memcmp(bufptr, "fLaC", 4)) return 0;

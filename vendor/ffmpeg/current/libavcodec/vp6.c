@@ -1,5 +1,5 @@
 /**
- * @file libavcodec/vp6.c
+ * @file
  * VP6 compatible video decoder
  *
  * Copyright (C) 2006  Aurelien Jacobs <aurel@gnuage.org>
@@ -36,6 +36,7 @@
 #include "vp56data.h"
 #include "vp6data.h"
 
+#define VP6_MAX_HUFF_SIZE 12
 
 static void vp6_parse_coeff(VP56Context *s);
 static void vp6_parse_coeff_huffman(VP56Context *s);
@@ -215,7 +216,7 @@ static int vp6_huff_cmp(const void *va, const void *vb)
 static void vp6_build_huff_tree(VP56Context *s, uint8_t coeff_model[],
                                 const uint8_t *map, unsigned size, VLC *vlc)
 {
-    Node nodes[2*size], *tmp = &nodes[size];
+    Node nodes[2*VP6_MAX_HUFF_SIZE], *tmp = &nodes[size];
     int a, b, i;
 
     /* first compute probabilities from model */
@@ -481,19 +482,6 @@ static void vp6_parse_coeff(VP56Context *s)
     }
 }
 
-static int vp6_adjust(int v, int t)
-{
-    int V = v, s = v >> 31;
-    V ^= s;
-    V -= s;
-    if (V-t-1 >= (unsigned)(t-1))
-        return v;
-    V = 2*t - V;
-    V += s;
-    V ^= s;
-    return V;
-}
-
 static int vp6_block_variance(uint8_t *src, int stride)
 {
     int sum = 0, square_sum = 0;
@@ -592,7 +580,6 @@ static av_cold int vp6_decode_init(AVCodecContext *avctx)
                      avctx->codec->id == CODEC_ID_VP6A);
     s->vp56_coord_div = vp6_coord_div;
     s->parse_vector_adjustment = vp6_parse_vector_adjustment;
-    s->adjust = vp6_adjust;
     s->filter = vp6_filter;
     s->default_models_init = vp6_default_models_init;
     s->parse_vector_models = vp6_parse_vector_models;
@@ -621,7 +608,7 @@ static av_cold int vp6_decode_free(AVCodecContext *avctx)
 
 AVCodec vp6_decoder = {
     "vp6",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_VP6,
     sizeof(VP56Context),
     vp6_decode_init,
@@ -635,7 +622,7 @@ AVCodec vp6_decoder = {
 /* flash version, not flipped upside-down */
 AVCodec vp6f_decoder = {
     "vp6f",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_VP6F,
     sizeof(VP56Context),
     vp6_decode_init,
@@ -649,7 +636,7 @@ AVCodec vp6f_decoder = {
 /* flash version, not flipped upside-down, with alpha channel */
 AVCodec vp6a_decoder = {
     "vp6a",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_VP6A,
     sizeof(VP56Context),
     vp6_decode_init,

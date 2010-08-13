@@ -435,7 +435,7 @@ int mpeg4_decode_video_packet_header(MpegEncContext *s)
 /**
  * gets the average motion vector for a GMC MB.
  * @param n either 0 for the x component or 1 for y
- * @returns the average MV for a GMC MB
+ * @return the average MV for a GMC MB
  */
 static inline int get_amv(MpegEncContext *s, int n){
     int x, y, mb_v, sum, dx, dy, shift;
@@ -2236,7 +2236,7 @@ static av_cold int decode_init(AVCodecContext *avctx)
 
 AVCodec mpeg4_decoder = {
     "mpeg4",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_MPEG4,
     sizeof(MpegEncContext),
     decode_init,
@@ -2245,6 +2245,7 @@ AVCodec mpeg4_decoder = {
     ff_h263_decode_frame,
     CODEC_CAP_DRAW_HORIZ_BAND | CODEC_CAP_DR1 | CODEC_CAP_TRUNCATED | CODEC_CAP_DELAY,
     .flush= ff_mpeg_flush,
+    .max_lowres= 3,
     .long_name= NULL_IF_CONFIG_SMALL("MPEG-4 part 2"),
     .pix_fmts= ff_hwaccel_pixfmt_list_420,
 };
@@ -2253,7 +2254,7 @@ AVCodec mpeg4_decoder = {
 #if CONFIG_MPEG4_VDPAU_DECODER
 AVCodec mpeg4_vdpau_decoder = {
     "mpeg4_vdpau",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_MPEG4,
     sizeof(MpegEncContext),
     decode_init,

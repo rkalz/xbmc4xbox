@@ -158,7 +158,7 @@ static int smacker_read_header(AVFormatContext *s, AVFormatParameters *ap)
     st->codec->width = smk->width;
     st->codec->height = smk->height;
     st->codec->pix_fmt = PIX_FMT_PAL8;
-    st->codec->codec_type = CODEC_TYPE_VIDEO;
+    st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     st->codec->codec_id = CODEC_ID_SMACKVIDEO;
     st->codec->codec_tag = smk->magic;
     /* Smacker uses 100000 as internal timebase */
@@ -176,7 +176,7 @@ static int smacker_read_header(AVFormatContext *s, AVFormatParameters *ap)
         if(smk->rates[i] & 0xFFFFFF){
             ast[i] = av_new_stream(s, 0);
             smk->indexes[i] = ast[i]->index;
-            ast[i]->codec->codec_type = CODEC_TYPE_AUDIO;
+            ast[i]->codec->codec_type = AVMEDIA_TYPE_AUDIO;
             if (smk->rates[i] & SMK_AUD_BINKAUD) {
                 ast[i]->codec->codec_id = CODEC_ID_BINKAUDIO_RDFT;
             } else if (smk->rates[i] & SMK_AUD_USEDCT) {
@@ -213,10 +213,10 @@ static int smacker_read_header(AVFormatContext *s, AVFormatParameters *ap)
         av_free(smk->frm_flags);
         return AVERROR(EIO);
     }
-    ((int32_t*)st->codec->extradata)[0] = le2me_32(smk->mmap_size);
-    ((int32_t*)st->codec->extradata)[1] = le2me_32(smk->mclr_size);
-    ((int32_t*)st->codec->extradata)[2] = le2me_32(smk->full_size);
-    ((int32_t*)st->codec->extradata)[3] = le2me_32(smk->type_size);
+    ((int32_t*)st->codec->extradata)[0] = av_le2ne32(smk->mmap_size);
+    ((int32_t*)st->codec->extradata)[1] = av_le2ne32(smk->mclr_size);
+    ((int32_t*)st->codec->extradata)[2] = av_le2ne32(smk->full_size);
+    ((int32_t*)st->codec->extradata)[3] = av_le2ne32(smk->type_size);
 
     smk->curstream = -1;
     smk->nextpos = url_ftell(pb);
@@ -236,7 +236,7 @@ static int smacker_read_packet(AVFormatContext *s, AVPacket *pkt)
     int pos;
 
     if (url_feof(s->pb) || smk->cur_frame >= smk->frames)
-        return AVERROR(EIO);
+        return AVERROR_EOF;
 
     /* if we demuxed all streams, pass another frame */
     if(smk->curstream < 0) {

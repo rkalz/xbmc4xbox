@@ -20,7 +20,7 @@
  */
 
 /**
-* @file libavcodec/libopenjpeg.c
+* @file
 * JPEG 2000 decoder using libopenjpeg
 */
 
@@ -185,7 +185,7 @@ static av_cold int libopenjpeg_decode_close(AVCodecContext *avctx)
 
 AVCodec libopenjpeg_decoder = {
     "libopenjpeg",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_JPEG2000,
     sizeof(LibOpenJPEGContext),
     libopenjpeg_decode_init,
@@ -193,5 +193,6 @@ AVCodec libopenjpeg_decoder = {
     libopenjpeg_decode_close,
     libopenjpeg_decode_frame,
     CODEC_CAP_DR1,
+    .max_lowres = 5,
     .long_name = NULL_IF_CONFIG_SMALL("OpenJPEG based JPEG 2000 decoder"),
 } ;

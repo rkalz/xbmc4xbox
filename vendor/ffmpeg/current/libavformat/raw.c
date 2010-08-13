@@ -74,14 +74,14 @@ static int raw_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
         id = s->iformat->value;
         if (id == CODEC_ID_RAWVIDEO) {
-            st->codec->codec_type = CODEC_TYPE_VIDEO;
+            st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
         } else {
-            st->codec->codec_type = CODEC_TYPE_AUDIO;
+            st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
         }
         st->codec->codec_id = id;
 
         switch(st->codec->codec_type) {
-        case CODEC_TYPE_AUDIO:
+        case AVMEDIA_TYPE_AUDIO:
             st->codec->sample_rate = ap->sample_rate;
             if(ap->channels) st->codec->channels = ap->channels;
             else             st->codec->channels = 1;
@@ -90,7 +90,7 @@ static int raw_read_header(AVFormatContext *s, AVFormatParameters *ap)
             st->codec->block_align = st->codec->bits_per_coded_sample*st->codec->channels/8;
             av_set_pts_info(st, 64, 1, st->codec->sample_rate);
             break;
-        case CODEC_TYPE_VIDEO:
+        case AVMEDIA_TYPE_VIDEO:
             if(ap->time_base.num)
                 av_set_pts_info(st, 64, ap->time_base.num, ap->time_base.den);
             else
@@ -253,7 +253,7 @@ static int audio_read_header(AVFormatContext *s,
     AVStream *st = av_new_stream(s, 0);
     if (!st)
         return AVERROR(ENOMEM);
-    st->codec->codec_type = CODEC_TYPE_AUDIO;
+    st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codec->codec_id = s->iformat->value;
     st->need_parsing = AVSTREAM_PARSE_FULL;
     /* the parameters will be extracted from the compressed bitstream */
@@ -271,7 +271,7 @@ static int video_read_header(AVFormatContext *s,
     if (!st)
         return AVERROR(ENOMEM);
 
-    st->codec->codec_type = CODEC_TYPE_VIDEO;
+    st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
     st->codec->codec_id = s->iformat->value;
     st->need_parsing = AVSTREAM_PARSE_FULL;
 
@@ -283,6 +283,7 @@ static int video_read_header(AVFormatContext *s,
                 st->codec->codec_id == CODEC_ID_MPEG4 ||
                 st->codec->codec_id == CODEC_ID_DIRAC ||
                 st->codec->codec_id == CODEC_ID_DNXHD ||
+                st->codec->codec_id == CODEC_ID_VC1   ||
                 st->codec->codec_id == CODEC_ID_H264) {
         st->codec->time_base= (AVRational){1,25};
     }
@@ -456,6 +457,7 @@ static int h263_probe(AVProbeData *p)
     int invalid_psc=0;
     int res_change=0;
     int src_fmt, last_src_fmt=-1;
+    int last_gn=0;
 
     for(i=0; i<p->buf_size; i++){
         code = (code<<8) + p->buf[i];
@@ -468,9 +470,16 @@ static int h263_probe(AVProbeData *p)
 
             if((code&0x300)==0x200 && src_fmt){
                 valid_psc++;
+                last_gn=0;
             }else
                 invalid_psc++;
             last_src_fmt= src_fmt;
+        } else if((code & 0xffff800000) == 0x800000) {
+            int gn= (code>>(23-5)) & 0x1F;
+            if(gn<last_gn){
+                invalid_psc++;
+            }else
+                last_gn= gn;
         }
     }
 //av_log(NULL, AV_LOG_ERROR, "h263_probe: psc:%d invalid:%d res_change:%d\n", valid_psc, invalid_psc, res_change);
@@ -663,7 +672,7 @@ static int adts_aac_probe(AVProbeData *p)
     uint8_t *buf;
     uint8_t *end = buf0 + p->buf_size - 7;
 
-    if (ff_id3v2_match(buf0)) {
+    if (ff_id3v2_match(buf0, ID3v2_DEFAULT_MAGIC)) {
         buf0 += ff_id3v2_tag_len(buf0);
     }
     buf = buf0;
@@ -700,12 +709,12 @@ static int adts_aac_read_header(AVFormatContext *s,
     if (!st)
         return AVERROR(ENOMEM);
 
-    st->codec->codec_type = CODEC_TYPE_AUDIO;
+    st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
     st->codec->codec_id = s->iformat->value;
     st->need_parsing = AVSTREAM_PARSE_FULL;
 
     ff_id3v1_read(s);
-    ff_id3v2_read(s);
+    ff_id3v2_read(s, ID3v2_DEFAULT_MAGIC);
 
     return 0;
 }

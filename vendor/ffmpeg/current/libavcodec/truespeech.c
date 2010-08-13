@@ -24,7 +24,7 @@
 
 #include "truespeech_data.h"
 /**
- * @file libavcodec/truespeech.c
+ * @file
  * TrueSpeech decoder.
  */
 
@@ -347,6 +347,11 @@ static int truespeech_decode_frame(AVCodecContext *avctx,
     if (!buf_size)
         return 0;
 
+    if (buf_size < 32) {
+        av_log(avctx, AV_LOG_ERROR,
+               "Too small input buffer (%d bytes), need at least 32 bytes\n", buf_size);
+        return -1;
+    }
     iterations = FFMIN(buf_size / 32, *data_size / 480);
     for(j = 0; j < iterations; j++) {
         truespeech_read_frame(c, buf + consumed);
@@ -378,7 +383,7 @@ static int truespeech_decode_frame(AVCodecContext *avctx,
 
 AVCodec truespeech_decoder = {
     "truespeech",
-    CODEC_TYPE_AUDIO,
+    AVMEDIA_TYPE_AUDIO,
     CODEC_ID_TRUESPEECH,
     sizeof(TSContext),
     truespeech_decode_init,

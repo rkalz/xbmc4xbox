@@ -25,7 +25,7 @@
 #include "avutil.h"
 
 /**
- * Describes the class of an AVClass context structure. That is an
+ * Describe the class of an AVClass context structure. That is an
  * arbitrary struct of which the first field is a pointer to an
  * AVClass struct (e.g. AVCodecContext, AVFormatContext etc.).
  */
@@ -48,6 +48,28 @@ typedef struct {
      * @see av_set_default_options()
      */
     const struct AVOption *option;
+
+    /**
+     * LIBAVUTIL_VERSION with which this structure was created.
+     * This is used to allow fields to be added without requiring major
+     * version bumps everywhere.
+     */
+
+    int version;
+
+    /**
+     * Offset in the structure where log_level_offset is stored.
+     * 0 means there is no such variable
+     */
+    int log_level_offset_offset;
+
+    /**
+     * Offset in the structure where a pointer to the parent context for loging is stored.
+     * for example a decoder that uses eval.c could pass its AVCodecContext to eval as such
+     * parent context. And a av_log() implementation could then display the parent context
+     * can be NULL of course
+     */
+    int parent_log_context_offset;
 } AVClass;
 
 /* av_log API */
@@ -87,7 +109,7 @@ typedef struct {
 #define AV_LOG_DEBUG    48
 
 /**
- * Sends the specified message to the log if the level is less than or equal
+ * Send the specified message to the log if the level is less than or equal
  * to the current av_log_level. By default, all logging messages are sent to
  * stderr. This behavior can be altered by setting a different av_vlog callback
  * function.
@@ -101,15 +123,16 @@ typedef struct {
  * @see av_vlog
  */
 #ifdef __GNUC__
-void av_log(void*, int level, const char *fmt, ...) __attribute__ ((__format__ (__printf__, 3, 4)));
+void av_log(void *avcl, int level, const char *fmt, ...) __attribute__ ((__format__ (__printf__, 3, 4)));
 #else
-void av_log(void*, int level, const char *fmt, ...);
+void av_log(void *avcl, int level, const char *fmt, ...);
 #endif
 
-void av_vlog(void*, int level, const char *fmt, va_list);
+void av_vlog(void *avcl, int level, const char *fmt, va_list);
 int av_log_get_level(void);
 void av_log_set_level(int);
 void av_log_set_callback(void (*)(void*, int, const char*, va_list));
 void av_log_default_callback(void* ptr, int level, const char* fmt, va_list vl);
+const char* av_default_item_name(void* ctx);
 
 #endif /* AVUTIL_LOG_H */

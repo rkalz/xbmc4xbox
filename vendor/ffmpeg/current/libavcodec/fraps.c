@@ -21,9 +21,9 @@
  */
 
 /**
- * @file libavcodec/fraps.c
+ * @file
  * Lossless Fraps 'FPS1' decoder
- * @author Roine Gustafsson <roine at users sf net>
+ * @author Roine Gustafsson (roine at users sf net)
  * @author Konstantin Shishkov
  *
  * Codec algorithm for version 0 is taken from Transcode <www.transcoding.org>
@@ -118,15 +118,6 @@ static int fraps2_decode_plane(FrapsContext *s, uint8_t *dst, int stride, int w,
     return 0;
 }
 
-/**
- * decode a frame
- * @param avctx codec context
- * @param data output AVFrame
- * @param data_size size of output data or 0 if no picture is returned
- * @param buf input data frame
- * @param buf_size size of input data frame
- * @return number of consumed bytes on success or negative if decode fails
- */
 static int decode_frame(AVCodecContext *avctx,
                         void *data, int *data_size,
                         AVPacket *avpkt)
@@ -366,7 +357,7 @@ static av_cold int decode_end(AVCodecContext *avctx)
 
 AVCodec fraps_decoder = {
     "fraps",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_FRAPS,
     sizeof(FrapsContext),
     decode_init,

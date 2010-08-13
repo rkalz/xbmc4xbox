@@ -20,7 +20,7 @@
  */
 
 /**
- * @file libavcodec/mjpegbdec.c
+ * @file
  * Apple MJPEG-B decoder.
  */
 
@@ -147,7 +147,7 @@ read_header:
 
 AVCodec mjpegb_decoder = {
     "mjpegb",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_MJPEGB,
     sizeof(MJpegDecodeContext),
     ff_mjpeg_decode_init,
@@ -156,5 +156,6 @@ AVCodec mjpegb_decoder = {
     mjpegb_decode_frame,
     CODEC_CAP_DR1,
     NULL,
+    .max_lowres = 3,
     .long_name = NULL_IF_CONFIG_SMALL("Apple MJPEG-B"),
 };

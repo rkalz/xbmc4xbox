@@ -19,13 +19,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include <stdio.h>
+#include <string.h>
 #include "pixfmt.h"
 #include "pixdesc.h"
 
 #include "intreadwrite.h"
 
-void read_line(uint16_t *dst, const uint8_t *data[4], const int linesize[4],
-               const AVPixFmtDescriptor *desc, int x, int y, int c, int w, int read_pal_component)
+void av_read_image_line(uint16_t *dst, const uint8_t *data[4], const int linesize[4],
+                        const AVPixFmtDescriptor *desc, int x, int y, int c, int w, int read_pal_component)
 {
     AVComponentDescriptor comp= desc->comp[c];
     int plane= comp.plane;
@@ -65,8 +67,8 @@ void read_line(uint16_t *dst, const uint8_t *data[4], const int linesize[4],
     }
 }
 
-void write_line(const uint16_t *src, uint8_t *data[4], const int linesize[4],
-                const AVPixFmtDescriptor *desc, int x, int y, int c, int w)
+void av_write_image_line(const uint16_t *src, uint8_t *data[4], const int linesize[4],
+                         const AVPixFmtDescriptor *desc, int x, int y, int c, int w)
 {
     AVComponentDescriptor comp = desc->comp[c];
     int plane = comp.plane;
@@ -778,6 +780,14 @@ const AVPixFmtDescriptor av_pix_fmt_descriptors[PIX_FMT_NB] = {
         .log2_chroma_w = 1,
         .log2_chroma_h = 1,
         .flags = PIX_FMT_HWACCEL,
+    },
+    [PIX_FMT_Y400A] = {
+        .name = "y400a",
+        .nb_components= 2,
+        .comp = {
+            {0,1,1,0,7},        /* Y */
+            {0,1,2,0,7},        /* A */
+        },
     },
 };
 

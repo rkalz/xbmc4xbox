@@ -21,7 +21,7 @@
  */
 
 /**
- * @file libavcodec/rv10.c
+ * @file
  * RV10/RV20 decoder
  */
 
@@ -708,7 +708,7 @@ static int rv10_decode_frame(AVCodecContext *avctx,
 
 AVCodec rv10_decoder = {
     "rv10",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_RV10,
     sizeof(MpegEncContext),
     rv10_decode_init,
@@ -716,13 +716,14 @@ AVCodec rv10_decoder = {
     rv10_decode_end,
     rv10_decode_frame,
     CODEC_CAP_DR1,
+    .max_lowres = 3,
     .long_name = NULL_IF_CONFIG_SMALL("RealVideo 1.0"),
     .pix_fmts= ff_pixfmt_list_420,
 };
 
 AVCodec rv20_decoder = {
     "rv20",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_RV20,
     sizeof(MpegEncContext),
     rv10_decode_init,
@@ -731,6 +732,7 @@ AVCodec rv20_decoder = {
     rv10_decode_frame,
     CODEC_CAP_DR1 | CODEC_CAP_DELAY,
     .flush= ff_mpeg_flush,
+    .max_lowres = 3,
     .long_name = NULL_IF_CONFIG_SMALL("RealVideo 2.0"),
     .pix_fmts= ff_pixfmt_list_420,
 };

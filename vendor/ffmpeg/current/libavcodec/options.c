@@ -20,7 +20,7 @@
  */
 
 /**
- * @file libavcodec/options.c
+ * @file
  * Options definition for AVCodecContext.
  */
 
@@ -117,8 +117,8 @@ static const AVOption options[]={
 {"delay", NULL, OFFSET(delay), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX},
 {"qcomp", "video quantizer scale compression (VBR)", OFFSET(qcompress), FF_OPT_TYPE_FLOAT, 0.5, -FLT_MAX, FLT_MAX, V|E},
 {"qblur", "video quantizer scale blur (VBR)", OFFSET(qblur), FF_OPT_TYPE_FLOAT, 0.5, 0, FLT_MAX, V|E},
-{"qmin", "min video quantizer scale (VBR)", OFFSET(qmin), FF_OPT_TYPE_INT, 2, 1, 51, V|E},
-{"qmax", "max video quantizer scale (VBR)", OFFSET(qmax), FF_OPT_TYPE_INT, 31, 1, 51, V|E},
+{"qmin", "min video quantizer scale (VBR)", OFFSET(qmin), FF_OPT_TYPE_INT, 2, 0, 63, V|E},
+{"qmax", "max video quantizer scale (VBR)", OFFSET(qmax), FF_OPT_TYPE_INT, 31, 0, 63, V|E},
 {"qdiff", "max difference between the quantizer scale (VBR)", OFFSET(max_qdiff), FF_OPT_TYPE_INT, 3, INT_MIN, INT_MAX, V|E},
 {"bf", "use 'frames' B frames", OFFSET(max_b_frames), FF_OPT_TYPE_INT, DEFAULT, 0, FF_MAX_B_FRAMES, V|E},
 {"b_qfactor", "qp factor between p and b frames", OFFSET(b_quant_factor), FF_OPT_TYPE_FLOAT, 1.25, -FLT_MAX, FLT_MAX, V|E},
@@ -160,7 +160,10 @@ static const AVOption options[]={
 {"very", "strictly conform to a older more strict version of the spec or reference software", 0, FF_OPT_TYPE_CONST, FF_COMPLIANCE_VERY_STRICT, INT_MIN, INT_MAX, V|D|E, "strict"},
 {"strict", "strictly conform to all the things in the spec no matter what consequences", 0, FF_OPT_TYPE_CONST, FF_COMPLIANCE_STRICT, INT_MIN, INT_MAX, V|D|E, "strict"},
 {"normal", NULL, 0, FF_OPT_TYPE_CONST, FF_COMPLIANCE_NORMAL, INT_MIN, INT_MAX, V|D|E, "strict"},
-{"inofficial", "allow unofficial extensions", 0, FF_OPT_TYPE_CONST, FF_COMPLIANCE_INOFFICIAL, INT_MIN, INT_MAX, V|D|E, "strict"},
+#if LIBAVCODEC_VERSION_MAJOR < 53
+{"inofficial", "allow unofficial extensions (deprecated - use unofficial)", 0, FF_OPT_TYPE_CONST, FF_COMPLIANCE_UNOFFICIAL, INT_MIN, INT_MAX, V|D|E, "strict"},
+#endif
+{"unofficial", "allow unofficial extensions", 0, FF_OPT_TYPE_CONST, FF_COMPLIANCE_UNOFFICIAL, INT_MIN, INT_MAX, V|D|E, "strict"},
 {"experimental", "allow non standardized experimental things", 0, FF_OPT_TYPE_CONST, FF_COMPLIANCE_EXPERIMENTAL, INT_MIN, INT_MAX, V|D|E, "strict"},
 {"b_qoffset", "qp offset between P and B frames", OFFSET(b_quant_offset), FF_OPT_TYPE_FLOAT, 1.25, -FLT_MAX, FLT_MAX, V|E},
 {"er", "set error detection aggressivity", OFFSET(error_recognition), FF_OPT_TYPE_INT, FF_ER_CAREFUL, INT_MIN, INT_MAX, A|V|D, "er"},
@@ -307,7 +310,7 @@ static const AVOption options[]={
 {"nr", "noise reduction", OFFSET(noise_reduction), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|E},
 {"rc_init_occupancy", "number of bits which should be loaded into the rc buffer before decoding starts", OFFSET(rc_initial_buffer_occupancy), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|E},
 {"inter_threshold", NULL, OFFSET(inter_threshold), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|E},
-{"flags2", NULL, OFFSET(flags2), FF_OPT_TYPE_FLAGS, CODEC_FLAG2_FASTPSKIP|CODEC_FLAG2_BIT_RESERVOIR, 0, UINT_MAX, V|A|E|D, "flags2"},
+{"flags2", NULL, OFFSET(flags2), FF_OPT_TYPE_FLAGS, CODEC_FLAG2_FASTPSKIP|CODEC_FLAG2_BIT_RESERVOIR|CODEC_FLAG2_PSY|CODEC_FLAG2_MBTREE, 0, UINT_MAX, V|A|E|D, "flags2"},
 {"error", NULL, OFFSET(error_rate), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|E},
 {"antialias", "MP3 antialias algorithm", OFFSET(antialias_algo), FF_OPT_TYPE_INT, DEFAULT, INT_MIN, INT_MAX, V|D, "aa"},
 {"auto", NULL, 0, FF_OPT_TYPE_CONST, FF_AA_AUTO, INT_MIN, INT_MAX, V|D, "aa"},
@@ -348,7 +351,7 @@ static const AVOption options[]={
 {"bidir"           , NULL, 0, FF_OPT_TYPE_CONST, AVDISCARD_BIDIR  , INT_MIN, INT_MAX, V|D, "avdiscard"},
 {"nokey"           , NULL, 0, FF_OPT_TYPE_CONST, AVDISCARD_NONKEY , INT_MIN, INT_MAX, V|D, "avdiscard"},
 {"all"             , NULL, 0, FF_OPT_TYPE_CONST, AVDISCARD_ALL    , INT_MIN, INT_MAX, V|D, "avdiscard"},
-{"bidir_refine", "refine the two motion vectors used in bidirectional macroblocks", OFFSET(bidir_refine), FF_OPT_TYPE_INT, DEFAULT, 0, 4, V|E},
+{"bidir_refine", "refine the two motion vectors used in bidirectional macroblocks", OFFSET(bidir_refine), FF_OPT_TYPE_INT, 1, 0, 4, V|E},
 {"brd_scale", "downscales frames for dynamic B-frame decision", OFFSET(brd_scale), FF_OPT_TYPE_INT, DEFAULT, 0, 10, V|E},
 {"crf", "enables constant quality mode, and selects the quality (x264)", OFFSET(crf), FF_OPT_TYPE_FLOAT, DEFAULT, 0, 51, V|E},
 {"cqp", "constant quantization parameter rate control method", OFFSET(cqp), FF_OPT_TYPE_INT, -1, INT_MIN, INT_MAX, V|E},
@@ -379,7 +382,9 @@ static const AVOption options[]={
 {"ivlc", "intra vlc table", 0, FF_OPT_TYPE_CONST, CODEC_FLAG2_INTRA_VLC, INT_MIN, INT_MAX, V|E, "flags2"},
 {"b_sensitivity", "adjusts sensitivity of b_frame_strategy 1", OFFSET(b_sensitivity), FF_OPT_TYPE_INT, 40, 1, INT_MAX, V|E},
 {"compression_level", NULL, OFFSET(compression_level), FF_OPT_TYPE_INT, FF_COMPRESSION_DEFAULT, INT_MIN, INT_MAX, V|A|E},
+#if LIBAVCODEC_VERSION_MAJOR < 53
 {"use_lpc", "sets whether to use LPC mode (FLAC)", OFFSET(use_lpc), FF_OPT_TYPE_INT, -1, INT_MIN, INT_MAX, A|E},
+#endif
 {"lpc_coeff_precision", "LPC coefficient precision (FLAC)", OFFSET(lpc_coeff_precision), FF_OPT_TYPE_INT, DEFAULT, 0, INT_MAX, A|E},
 {"min_prediction_order", NULL, OFFSET(min_prediction_order), FF_OPT_TYPE_INT, -1, INT_MIN, INT_MAX, A|E},
 {"max_prediction_order", NULL, OFFSET(max_prediction_order), FF_OPT_TYPE_INT, -1, INT_MIN, INT_MAX, A|E},
@@ -404,6 +409,22 @@ static const AVOption options[]={
 {"colorspace", NULL, OFFSET(colorspace), FF_OPT_TYPE_INT, AVCOL_SPC_UNSPECIFIED, 1, AVCOL_SPC_NB-1, V|E|D},
 {"color_range", NULL, OFFSET(color_range), FF_OPT_TYPE_INT, AVCOL_RANGE_UNSPECIFIED, 0, AVCOL_RANGE_NB-1, V|E|D},
 {"chroma_sample_location", NULL, OFFSET(chroma_sample_location), FF_OPT_TYPE_INT, AVCHROMA_LOC_UNSPECIFIED, 0, AVCHROMA_LOC_NB-1, V|E|D},
+{"psy", "use psycho visual optimization", 0, FF_OPT_TYPE_CONST, CODEC_FLAG2_PSY, INT_MIN, INT_MAX, V|E, "flags2"},
+{"psy_rd", "specify psycho visual strength", OFFSET(psy_rd), FF_OPT_TYPE_FLOAT, 1.0, 0, FLT_MAX, V|E},
+{"psy_trellis", "specify psycho visual trellis", OFFSET(psy_trellis), FF_OPT_TYPE_FLOAT, 0, 0, FLT_MAX, V|E},
+{"aq_mode", "specify aq method", OFFSET(aq_mode), FF_OPT_TYPE_INT, 1, 0, INT_MAX, V|E},
+{"aq_strength", "specify aq strength", OFFSET(aq_strength), FF_OPT_TYPE_FLOAT, 1.0, 0, FLT_MAX, V|E},
+{"rc_lookahead", "specify number of frames to look ahead for frametype", OFFSET(rc_lookahead), FF_OPT_TYPE_INT, 40, 0, INT_MAX, V|E},
+{"ssim", "ssim will be calculated during encoding", 0, FF_OPT_TYPE_CONST, CODEC_FLAG2_SSIM, INT_MIN, INT_MAX, V|E, "flags2"},
+{"intra_refresh", "use periodic insertion of intra blocks instead of keyframes", 0, FF_OPT_TYPE_CONST, CODEC_FLAG2_INTRA_REFRESH, INT_MIN, INT_MAX, V|E, "flags2"},
+{"crf_max", "in crf mode, prevents vbv from lowering quality beyond this point", OFFSET(crf_max), FF_OPT_TYPE_FLOAT, DEFAULT, 0, 51, V|E},
+{"log_level_offset", "set the log level offset", OFFSET(log_level_offset), FF_OPT_TYPE_INT, 0, INT_MIN, INT_MAX },
+{"lpc_type", "specify LPC algorithm", OFFSET(lpc_type), FF_OPT_TYPE_INT, AV_LPC_TYPE_DEFAULT, AV_LPC_TYPE_DEFAULT, AV_LPC_TYPE_NB-1, A|E},
+{"none",     NULL, 0, FF_OPT_TYPE_CONST, AV_LPC_TYPE_NONE,     INT_MIN, INT_MAX, A|E, "lpc_type"},
+{"fixed",    NULL, 0, FF_OPT_TYPE_CONST, AV_LPC_TYPE_FIXED,    INT_MIN, INT_MAX, A|E, "lpc_type"},
+{"levinson", NULL, 0, FF_OPT_TYPE_CONST, AV_LPC_TYPE_LEVINSON, INT_MIN, INT_MAX, A|E, "lpc_type"},
+{"cholesky", NULL, 0, FF_OPT_TYPE_CONST, AV_LPC_TYPE_CHOLESKY, INT_MIN, INT_MAX, A|E, "lpc_type"},
+{"lpc_passes", "number of passes to use for Cholesky factorization during LPC analysis", OFFSET(lpc_passes), FF_OPT_TYPE_INT, -1, INT_MIN, INT_MAX, A|E},
 {NULL},
 };
 
@@ -414,20 +435,20 @@ static const AVOption options[]={
 #undef D
 #undef DEFAULT
 
-static const AVClass av_codec_context_class = { "AVCodecContext", context_to_name, options };
+static const AVClass av_codec_context_class = { "AVCodecContext", context_to_name, options, LIBAVUTIL_VERSION_INT, OFFSET(log_level_offset) };
 
-void avcodec_get_context_defaults2(AVCodecContext *s, enum CodecType codec_type){
+void avcodec_get_context_defaults2(AVCodecContext *s, enum AVMediaType codec_type){
     int flags=0;
     memset(s, 0, sizeof(AVCodecContext));
 
     s->av_class= &av_codec_context_class;
 
     s->codec_type = codec_type;
-    if(codec_type == CODEC_TYPE_AUDIO)
+    if(codec_type == AVMEDIA_TYPE_AUDIO)
         flags= AV_OPT_FLAG_AUDIO_PARAM;
-    else if(codec_type == CODEC_TYPE_VIDEO)
+    else if(codec_type == AVMEDIA_TYPE_VIDEO)
         flags= AV_OPT_FLAG_VIDEO_PARAM;
-    else if(codec_type == CODEC_TYPE_SUBTITLE)
+    else if(codec_type == AVMEDIA_TYPE_SUBTITLE)
         flags= AV_OPT_FLAG_SUBTITLE_PARAM;
     av_opt_set_defaults2(s, flags, flags);
 
@@ -446,7 +467,7 @@ void avcodec_get_context_defaults2(AVCodecContext *s, enum CodecType codec_type)
     s->reordered_opaque= AV_NOPTS_VALUE;
 }
 
-AVCodecContext *avcodec_alloc_context2(enum CodecType codec_type){
+AVCodecContext *avcodec_alloc_context2(enum AVMediaType codec_type){
     AVCodecContext *avctx= av_malloc(sizeof(AVCodecContext));
 
     if(avctx==NULL) return NULL;
@@ -457,10 +478,67 @@ AVCodecContext *avcodec_alloc_context2(enum CodecType codec_type){
 }
 
 void avcodec_get_context_defaults(AVCodecContext *s){
-    avcodec_get_context_defaults2(s, CODEC_TYPE_UNKNOWN);
+    avcodec_get_context_defaults2(s, AVMEDIA_TYPE_UNKNOWN);
 }
 
 AVCodecContext *avcodec_alloc_context(void){
-    return avcodec_alloc_context2(CODEC_TYPE_UNKNOWN);
+    return avcodec_alloc_context2(AVMEDIA_TYPE_UNKNOWN);
 }
 
+int avcodec_copy_context(AVCodecContext *dest, const AVCodecContext *src)
+{
+    if (dest->codec) { // check that the dest context is uninitialized
+        av_log(dest, AV_LOG_ERROR,
+               "Tried to copy AVCodecContext %p into already-initialized %p\n",
+               src, dest);
+        return AVERROR(EINVAL);
+    }
+    memcpy(dest, src, sizeof(*dest));
+
+    /* set values specific to opened codecs back to their default state */
+    dest->priv_data       = NULL;
+    dest->codec           = NULL;
+    dest->palctrl         = NULL;
+    dest->slice_offset    = NULL;
+    dest->internal_buffer = NULL;
+    dest->hwaccel         = NULL;
+    dest->thread_opaque   = NULL;
+
+    /* reallocate values that should be allocated separately */
+    dest->rc_eq           = NULL;
+    dest->extradata       = NULL;
+    dest->intra_matrix    = NULL;
+    dest->inter_matrix    = NULL;
+    dest->rc_override     = NULL;
+    if (src->rc_eq) {
+        dest->rc_eq = av_strdup(src->rc_eq);
+        if (!dest->rc_eq)
+            return AVERROR(ENOMEM);
+    }
+
+#define alloc_and_copy_or_fail(obj, size, pad) \
+    if (src->obj && size > 0) { \
+        dest->obj = av_malloc(size + pad); \
+        if (!dest->obj) \
+            goto fail; \
+        memcpy(dest->obj, src->obj, size); \
+        if (pad) \
+            memset(((uint8_t *) dest->obj) + size, 0, pad); \
+    }
+    alloc_and_copy_or_fail(extradata,    src->extradata_size,
+                           FF_INPUT_BUFFER_PADDING_SIZE);
+    alloc_and_copy_or_fail(intra_matrix, 64 * sizeof(int16_t), 0);
+    alloc_and_copy_or_fail(inter_matrix, 64 * sizeof(int16_t), 0);
+    alloc_and_copy_or_fail(rc_override,  src->rc_override_count * sizeof(*src->rc_override), 0);
+#undef alloc_and_copy_or_fail
+
+    return 0;
+
+fail:
+    av_freep(&dest->rc_override);
+    av_freep(&dest->intra_matrix);
+    av_freep(&dest->inter_matrix);
+    av_freep(&dest->extradata);
+    av_freep(&dest->rc_eq);
+    return AVERROR(ENOMEM);
+}

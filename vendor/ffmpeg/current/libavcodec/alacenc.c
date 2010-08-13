@@ -20,7 +20,6 @@
  */
 
 #include "avcodec.h"
-#include "get_bits.h"
 #include "put_bits.h"
 #include "dsputil.h"
 #include "lpc.h"
@@ -146,7 +145,8 @@ static void calc_predictor_params(AlacEncodeContext *s, int ch)
                                       s->avctx->frame_size,
                                       s->min_prediction_order,
                                       s->max_prediction_order,
-                                      ALAC_MAX_LPC_PRECISION, coefs, shift, 1,
+                                      ALAC_MAX_LPC_PRECISION, coefs, shift,
+                                      AV_LPC_TYPE_LEVINSON, 0,
                                       ORDER_METHOD_EST, ALAC_MAX_LPC_SHIFT, 1);
 
         s->lpc[ch].lpc_order = opt_order;
@@ -521,12 +521,13 @@ static av_cold int alac_encode_close(AVCodecContext *avctx)
 
 AVCodec alac_encoder = {
     "alac",
-    CODEC_TYPE_AUDIO,
+    AVMEDIA_TYPE_AUDIO,
     CODEC_ID_ALAC,
     sizeof(AlacEncodeContext),
     alac_encode_init,
     alac_encode_frame,
     alac_encode_close,
     .capabilities = CODEC_CAP_SMALL_LAST_FRAME,
+    .sample_fmts = (const enum SampleFormat[]){ SAMPLE_FMT_S16, SAMPLE_FMT_NONE},
     .long_name = NULL_IF_CONFIG_SMALL("ALAC (Apple Lossless Audio Codec)"),
 };

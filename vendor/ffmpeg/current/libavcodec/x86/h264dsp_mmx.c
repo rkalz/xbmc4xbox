@@ -19,6 +19,7 @@
  */
 
 #include "dsputil_mmx.h"
+#include "libavcodec/h264pred.h"
 
 DECLARE_ALIGNED(8, static const uint64_t, ff_pb_3_1  ) = 0x0103010301030103ULL;
 DECLARE_ALIGNED(8, static const uint64_t, ff_pb_7_3  ) = 0x0307030703070307ULL;
@@ -964,8 +965,8 @@ static av_noinline void OPNAME ## h264_qpel4_h_lowpass_ ## MMX(uint8_t *dst, uin
 \
     __asm__ volatile(\
         "pxor %%mm7, %%mm7          \n\t"\
-        "movq %5, %%mm4             \n\t"\
-        "movq %6, %%mm5             \n\t"\
+        "movq "MANGLE(ff_pw_5) ", %%mm4\n\t"\
+        "movq "MANGLE(ff_pw_16)", %%mm5\n\t"\
         "1:                         \n\t"\
         "movd  -1(%0), %%mm1        \n\t"\
         "movd    (%0), %%mm2        \n\t"\
@@ -995,7 +996,7 @@ static av_noinline void OPNAME ## h264_qpel4_h_lowpass_ ## MMX(uint8_t *dst, uin
         "decl %2                    \n\t"\
         " jnz 1b                    \n\t"\
         : "+a"(src), "+c"(dst), "+g"(h)\
-        : "d"((x86_reg)srcStride), "S"((x86_reg)dstStride), "m"(ff_pw_5), "m"(ff_pw_16)\
+        : "d"((x86_reg)srcStride), "S"((x86_reg)dstStride)\
         : "memory"\
     );\
 }\
@@ -1138,7 +1139,7 @@ static av_noinline void OPNAME ## h264_qpel8_h_lowpass_ ## MMX(uint8_t *dst, uin
     int h=8;\
     __asm__ volatile(\
         "pxor %%mm7, %%mm7          \n\t"\
-        "movq %5, %%mm6             \n\t"\
+        "movq "MANGLE(ff_pw_5)", %%mm6\n\t"\
         "1:                         \n\t"\
         "movq    (%0), %%mm0        \n\t"\
         "movq   1(%0), %%mm2        \n\t"\
@@ -1172,7 +1173,7 @@ static av_noinline void OPNAME ## h264_qpel8_h_lowpass_ ## MMX(uint8_t *dst, uin
         "punpcklbw %%mm7, %%mm5     \n\t"\
         "paddw %%mm3, %%mm2         \n\t"\
         "paddw %%mm5, %%mm4         \n\t"\
-        "movq %6, %%mm5             \n\t"\
+        "movq "MANGLE(ff_pw_16)", %%mm5\n\t"\
         "paddw %%mm5, %%mm2         \n\t"\
         "paddw %%mm5, %%mm4         \n\t"\
         "paddw %%mm2, %%mm0         \n\t"\
@@ -1186,7 +1187,7 @@ static av_noinline void OPNAME ## h264_qpel8_h_lowpass_ ## MMX(uint8_t *dst, uin
         "decl %2                    \n\t"\
         " jnz 1b                    \n\t"\
         : "+a"(src), "+c"(dst), "+g"(h)\
-        : "d"((x86_reg)srcStride), "S"((x86_reg)dstStride), "m"(ff_pw_5), "m"(ff_pw_16)\
+        : "d"((x86_reg)srcStride), "S"((x86_reg)dstStride)\
         : "memory"\
     );\
 }\
@@ -1640,7 +1641,7 @@ static av_noinline void OPNAME ## h264_qpel8_h_lowpass_ ## MMX(uint8_t *dst, uin
     int h=8;\
     __asm__ volatile(\
         "pxor %%xmm7, %%xmm7        \n\t"\
-        "movdqa %5, %%xmm6          \n\t"\
+        "movdqa "MANGLE(ff_pw_5)", %%xmm6\n\t"\
         "1:                         \n\t"\
         "lddqu   -2(%0), %%xmm1     \n\t"\
         "movdqa  %%xmm1, %%xmm0     \n\t"\
@@ -1660,7 +1661,7 @@ static av_noinline void OPNAME ## h264_qpel8_h_lowpass_ ## MMX(uint8_t *dst, uin
         "paddw   %%xmm4, %%xmm1     \n\t"\
         "psllw   $2,     %%xmm2     \n\t"\
         "psubw   %%xmm1, %%xmm2     \n\t"\
-        "paddw   %6,     %%xmm0     \n\t"\
+        "paddw   "MANGLE(ff_pw_16)", %%xmm0\n\t"\
         "pmullw  %%xmm6, %%xmm2     \n\t"\
         "paddw   %%xmm0, %%xmm2     \n\t"\
         "psraw   $5,     %%xmm2     \n\t"\
@@ -1671,8 +1672,7 @@ static av_noinline void OPNAME ## h264_qpel8_h_lowpass_ ## MMX(uint8_t *dst, uin
         "decl %2                    \n\t"\
         " jnz 1b                    \n\t"\
         : "+a"(src), "+c"(dst), "+g"(h)\
-        : "D"((x86_reg)srcStride), "S"((x86_reg)dstStride),\
-          "m"(ff_pw_5), "m"(ff_pw_16)\
+        : "D"((x86_reg)srcStride), "S"((x86_reg)dstStride)\
         : "memory"\
     );\
 }\
@@ -2323,3 +2323,85 @@ H264_WEIGHT( 4, 8)
 H264_WEIGHT( 4, 4)
 H264_WEIGHT( 4, 2)
 
+void ff_pred16x16_vertical_mmx     (uint8_t *src, int stride);
+void ff_pred16x16_vertical_sse     (uint8_t *src, int stride);
+void ff_pred16x16_horizontal_mmx   (uint8_t *src, int stride);
+void ff_pred16x16_horizontal_mmxext(uint8_t *src, int stride);
+void ff_pred16x16_horizontal_ssse3 (uint8_t *src, int stride);
+void ff_pred16x16_dc_mmxext        (uint8_t *src, int stride);
+void ff_pred16x16_dc_sse2          (uint8_t *src, int stride);
+void ff_pred16x16_dc_ssse3         (uint8_t *src, int stride);
+void ff_pred16x16_tm_vp8_mmx       (uint8_t *src, int stride);
+void ff_pred16x16_tm_vp8_mmxext    (uint8_t *src, int stride);
+void ff_pred16x16_tm_vp8_sse2      (uint8_t *src, int stride);
+void ff_pred8x8_dc_rv40_mmxext     (uint8_t *src, int stride);
+void ff_pred8x8_vertical_mmx       (uint8_t *src, int stride);
+void ff_pred8x8_horizontal_mmx     (uint8_t *src, int stride);
+void ff_pred8x8_horizontal_mmxext  (uint8_t *src, int stride);
+void ff_pred8x8_horizontal_ssse3   (uint8_t *src, int stride);
+void ff_pred8x8_tm_vp8_mmx         (uint8_t *src, int stride);
+void ff_pred8x8_tm_vp8_mmxext      (uint8_t *src, int stride);
+void ff_pred8x8_tm_vp8_sse2        (uint8_t *src, int stride);
+void ff_pred8x8_tm_vp8_ssse3       (uint8_t *src, int stride);
+void ff_pred4x4_dc_mmxext          (uint8_t *src, const uint8_t *topright, int stride);
+void ff_pred4x4_tm_vp8_mmx         (uint8_t *src, const uint8_t *topright, int stride);
+void ff_pred4x4_tm_vp8_mmxext      (uint8_t *src, const uint8_t *topright, int stride);
+void ff_pred4x4_tm_vp8_ssse3       (uint8_t *src, const uint8_t *topright, int stride);
+void ff_pred4x4_vertical_vp8_mmxext(uint8_t *src, const uint8_t *topright, int stride);
+
+#if CONFIG_H264DSP
+void ff_h264_pred_init_x86(H264PredContext *h, int codec_id)
+{
+    mm_flags = mm_support();
+
+#if HAVE_YASM
+    if (mm_flags & FF_MM_MMX) {
+        h->pred16x16[VERT_PRED8x8] = ff_pred16x16_vertical_mmx;
+        h->pred16x16[HOR_PRED8x8 ] = ff_pred16x16_horizontal_mmx;
+        h->pred8x8  [VERT_PRED8x8] = ff_pred8x8_vertical_mmx;
+        h->pred8x8  [HOR_PRED8x8 ] = ff_pred8x8_horizontal_mmx;
+        if (codec_id == CODEC_ID_VP8) {
+            h->pred16x16[PLANE_PRED8x8] = ff_pred16x16_tm_vp8_mmx;
+            h->pred8x8  [PLANE_PRED8x8] = ff_pred8x8_tm_vp8_mmx;
+            h->pred4x4  [TM_VP8_PRED  ] = ff_pred4x4_tm_vp8_mmx;
+        }
+    }
+
+    if (mm_flags & FF_MM_MMX2) {
+        h->pred16x16[HOR_PRED8x8 ] = ff_pred16x16_horizontal_mmxext;
+        h->pred16x16[DC_PRED8x8  ] = ff_pred16x16_dc_mmxext;
+        h->pred8x8  [HOR_PRED8x8 ] = ff_pred8x8_horizontal_mmxext;
+        h->pred4x4  [DC_PRED     ] = ff_pred4x4_dc_mmxext;
+        if (codec_id == CODEC_ID_VP8) {
+            h->pred16x16[PLANE_PRED8x8] = ff_pred16x16_tm_vp8_mmxext;
+            h->pred8x8  [DC_PRED8x8   ] = ff_pred8x8_dc_rv40_mmxext;
+            h->pred8x8  [PLANE_PRED8x8] = ff_pred8x8_tm_vp8_mmxext;
+            h->pred4x4  [TM_VP8_PRED  ] = ff_pred4x4_tm_vp8_mmxext;
+            h->pred4x4  [VERT_PRED    ] = ff_pred4x4_vertical_vp8_mmxext;
+        }
+    }
+
+    if (mm_flags & FF_MM_SSE) {
+        h->pred16x16[VERT_PRED8x8] = ff_pred16x16_vertical_sse;
+    }
+
+    if (mm_flags & FF_MM_SSE2) {
+        h->pred16x16[DC_PRED8x8  ] = ff_pred16x16_dc_sse2;
+        if (codec_id == CODEC_ID_VP8) {
+            h->pred16x16[PLANE_PRED8x8] = ff_pred16x16_tm_vp8_sse2;
+            h->pred8x8  [PLANE_PRED8x8] = ff_pred8x8_tm_vp8_sse2;
+        }
+    }
+
+    if (mm_flags & FF_MM_SSSE3) {
+        h->pred16x16[HOR_PRED8x8 ] = ff_pred16x16_horizontal_ssse3;
+        h->pred16x16[DC_PRED8x8  ] = ff_pred16x16_dc_ssse3;
+        h->pred8x8  [HOR_PRED8x8 ] = ff_pred8x8_horizontal_ssse3;
+        if (codec_id == CODEC_ID_VP8) {
+            h->pred8x8  [PLANE_PRED8x8] = ff_pred8x8_tm_vp8_ssse3;
+            h->pred4x4  [TM_VP8_PRED  ] = ff_pred4x4_tm_vp8_ssse3;
+        }
+    }
+#endif
+}
+#endif
