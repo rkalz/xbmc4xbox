@@ -13,7 +13,7 @@ xbmc_clean ()
 xbmc_configure ()
 {
   echo "Configuring ..."
-  CFLAGS="-D_XBOX -fno-common -mtune=pentium3 -msse -mfpmath=sse -pipe -Wno-unused"
+  CFLAGS="-D_XBOX -fno-common -mtune=pentium3 -msse -mfpmath=sse -pipe"
   PARAMS=" \
   --cpu=pentium3 \
   --enable-gpl \
@@ -90,10 +90,10 @@ xbmc_all ()
   xbmc_configure "\
     --disable-decoders \
     --enable-decoder=mpeg4,msmpeg4v1,msmpeg4v2,msmpeg4v3 \
-    --enable-decoder=vp5,vp6,vp6a,vp6f \
+    --enable-decoder=vp6,vp6a,vp6f \
     --enable-decoder=mp1,mp2,mp3,mpegvideo,mpeg1video,mpeg2video \
     --enable-decoder=wmav1,wmav2,wmapro,wmv1,wmv2,wmv3 \
-    --enable-decoder=aac,ac3,dca,dvbsub,dvdsub,flv,h263,h264,rtp,svq1,svq3,vorbis \
+    --enable-decoder=aac,ac3,dca,dvbsub,dvdsub,flv,h263,h264,rtp,vorbis \
     \
     --disable-demuxers \
     --enable-demuxer=mp1,mp2,mp3,mpegps,mpegts,mpegtsraw,mpegvideo \

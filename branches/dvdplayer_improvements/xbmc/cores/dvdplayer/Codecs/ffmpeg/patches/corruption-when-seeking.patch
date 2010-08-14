@@ -1,0 +1,45 @@
+commit 71423a63f70512612331fe4f84f27639fb206105
+Author: michael <michael@9553f0bf-9b14-0410-a0b8-cfaf0461ba5b>
+Date:   Mon May 25 18:28:26 2009 +0000
+
+    Workaround broken AVI files from DC-XZ6.
+    Fixes issue897.
+    
+    
+    git-svn-id: file:///var/local/repositories/ffmpeg/trunk@18942 9553f0bf-9b14-0410-a0b8-cfaf0461ba5b
+
+diff --git b/libavformat/avidec.c a/libavformat/avidec.c
+index 10f9417..671a27b 100644
+--- b/libavformat/avidec.c
++++ a/libavformat/avidec.c
+@@ -955,30 +955,19 @@ static int guess_ni_flag(AVFormatContext *s){
+     int i;
+     int64_t last_start=0;
+     int64_t first_end= INT64_MAX;
+-    int64_t oldpos= url_ftell(s->pb);
+ 
+     for(i=0; i<s->nb_streams; i++){
+         AVStream *st = s->streams[i];
+         int n= st->nb_index_entries;
+-        unsigned int size;
+ 
+         if(n <= 0)
+             continue;
+ 
+-        if(n >= 2){
+-            int64_t pos= st->index_entries[0].pos;
+-            url_fseek(s->pb, pos + 4, SEEK_SET);
+-            size= get_le32(s->pb);
+-            if(pos + size > st->index_entries[1].pos)
+-                last_start= INT64_MAX;
+-        }
+-
+         if(st->index_entries[0].pos > last_start)
+             last_start= st->index_entries[0].pos;
+         if(st->index_entries[n-1].pos < first_end)
+             first_end= st->index_entries[n-1].pos;
+     }
+-    url_fseek(s->pb, oldpos, SEEK_SET);
+     return last_start > first_end;
+ }
+ 

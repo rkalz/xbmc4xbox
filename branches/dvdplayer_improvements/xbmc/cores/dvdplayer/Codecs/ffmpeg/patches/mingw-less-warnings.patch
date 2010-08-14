@@ -1,0 +1,19 @@
+--- a/configure
++++ b/configure
+@@ -2768,7 +2768,6 @@
+ check_cflags -Wwrite-strings
+ check_cflags -Wtype-limits
+ check_cflags -Wundef
+-check_cflags -Wmissing-prototypes
+ enabled extra_warnings && check_cflags -Winline
+ 
+ # add some linker flags
+@@ -2827,7 +2826,7 @@
+ elif enabled gcc; then
+     check_cflags -fno-tree-vectorize
+     check_cflags -Werror=implicit-function-declaration
+-    check_cflags -Werror=missing-prototypes
++    check_cflags -Wno-unused
+ elif enabled clang; then
+     check_cflags -Qunused-arguments
+ elif enabled armcc; then

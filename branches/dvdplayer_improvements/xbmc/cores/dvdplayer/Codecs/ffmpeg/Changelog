@@ -11,6 +11,18 @@ version <next>:
 - CODEC_CAP_EXPERIMENTAL added
 - Demuxer for On2's IVF format
 - Pictor/PC Paint decoder
+- HE-AAC v2 decoder
+- libfaad2 wrapper removed
+- DTS-ES extension (XCh) decoding support
+- native VP8 decoder
+- RTSP tunneling over HTTP
+- RTP depacketization of SVQ3
+- -strict inofficial replaced by -strict unofficial
+- ffplay -exitonkeydown and -exitonmousedown options added
+- native GSM / GSM MS decoder
+- RTP depacketization of QDM2
+- ANSI/ASCII art playback system
+- Lego Mindstorms RSO de/muxer
 
 
 

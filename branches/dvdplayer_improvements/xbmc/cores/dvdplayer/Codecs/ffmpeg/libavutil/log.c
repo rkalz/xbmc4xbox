@@ -34,7 +34,7 @@ static
 #endif
 int av_log_level = AV_LOG_INFO;
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32CE__)
 #include <windows.h>
 static const uint8_t color[] = {12,12,12,14,7,7,7};
 static int16_t background, attr_orig;
@@ -51,7 +51,7 @@ static int use_color=-1;
 #undef fprintf
 static void colored_fputs(int level, const char *str){
     if(use_color<0){
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32CE__)
         CONSOLE_SCREEN_BUFFER_INFO con_info;
         con = GetStdHandle(STD_ERROR_HANDLE);
         use_color = (con != INVALID_HANDLE_VALUE) && !getenv("NO_COLOR");
@@ -94,10 +94,10 @@ void av_log_default_callback(void* ptr, int level, const char* fmt, va_list vl)
         if(avc->version >= (50<<16 | 15<<8 | 3) && avc->parent_log_context_offset){
             AVClass** parent= *(AVClass***)(((uint8_t*)ptr) + avc->parent_log_context_offset);
             if(parent && *parent){
-                snprintf(line, sizeof(line), "[%s @ %p]", (*parent)->item_name(parent), parent);
+                snprintf(line, sizeof(line), "[%s @ %p] ", (*parent)->item_name(parent), parent);
             }
         }
-        snprintf(line + strlen(line), sizeof(line) - strlen(line), "[%s @ %p]", avc->item_name(ptr), ptr);
+        snprintf(line + strlen(line), sizeof(line) - strlen(line), "[%s @ %p] ", avc->item_name(ptr), ptr);
     }
 
     vsnprintf(line + strlen(line), sizeof(line) - strlen(line), fmt, vl);

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-revision=0.5
+revision=0.6
 
 test -n "$3" && revision=$revision-$3
 
