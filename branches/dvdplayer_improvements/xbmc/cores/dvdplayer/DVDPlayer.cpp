@@ -257,7 +257,8 @@ CDVDPlayer::CDVDPlayer(IPlayerCallback& callback)
   m_errorCount = 0;
   m_playSpeed = DVD_PLAYSPEED_NORMAL;
   m_caching = CACHESTATE_DONE;
-
+  m_subLastPts = DVD_NOPTS_VALUE;
+  
 #ifdef DVDDEBUG_MESSAGE_TRACKER
   g_dvdMessageTracker.Init();
 #endif
@@ -1552,7 +1553,7 @@ void CDVDPlayer::OnExit()
     }
     if (m_CurrentSubtitle.id >= 0)
     {
-      CLog::Log(LOGNOTICE, "DVDPlayer: closing video stream");
+      CLog::Log(LOGNOTICE, "DVDPlayer: closing subtitle stream");
       CloseSubtitleStream(!m_bAbortRequest);
     }
     // destroy the demuxer
@@ -2987,6 +2988,12 @@ bool CDVDPlayer::GetCurrentSubtitle(CStdString& strSubtitle)
   if (m_pInputStream && m_pInputStream->IsStreamType(DVDSTREAM_TYPE_DVD))
     return false;
 
+  // In case our video stalled, we must stall the subs too
+  if (m_dvdPlayerVideo.IsStalled())
+    pts = m_subLastPts;
+  else
+    m_subLastPts = pts;
+    
   return m_dvdPlayerSubtitle.GetCurrentSubtitle(strSubtitle, pts - m_dvdPlayerVideo.GetSubtitleDelay());
 }
 
@@ -3286,7 +3293,10 @@ bool CDVDPlayer::GetStreamDetails(CStreamDetails &details)
   {
     bool result=CDVDFileInfo::DemuxerToStreamDetails(m_pDemuxer, details);
     if (result) // this is more correct (dvds in particular)
+    {
       GetVideoAspectRatio(((CStreamDetailVideo*)details.GetNthStream(CStreamDetail::VIDEO,0))->m_fAspect);
+      ((CStreamDetailVideo*)details.GetNthStream(CStreamDetail::VIDEO,0))->m_iDuration = GetTotalTime()/60;
+    }
     return result;
   }
   else
