@@ -25,6 +25,7 @@ extern "C" {
 #include "libavutil/crc.h"
 }
 
+#include "utils/SingleLock.h"
 #include "settings.h"
 
 class DllAvCodecInterface
@@ -66,6 +67,7 @@ public:
                                      void * const out[6], const int out_stride[6],
                                const void * const  in[6], const int  in_stride[6], int len)=0;
   virtual int av_dup_packet(AVPacket *pkt)=0;
+  virtual int av_init_packet(AVPacket *pkt)=0;
   virtual void av_destruct_packet_nofree(AVPacket *pkt)=0;
   virtual void av_free_packet(AVPacket *pkt)=0;
 };
@@ -198,6 +200,7 @@ public:
                                                      void * const p2[6], const int p3[6],
                                                const void * const p4[6], const int p5[6], int p6))
   DEFINE_METHOD1(int, av_dup_packet, (AVPacket *p1))
+  DEFINE_METHOD1(int, av_init_packet, (AVPacket *p1))
   DEFINE_METHOD1(void, av_destruct_packet_nofree, (AVPacket *p1))
   DEFINE_METHOD1(void, av_free_packet,        (AVPacket *p1))
   BEGIN_METHOD_RESOLVE()
@@ -232,6 +235,7 @@ public:
     RESOLVE_METHOD(av_dup_packet)
     RESOLVE_METHOD(av_destruct_packet_nofree)
     RESOLVE_METHOD(av_free_packet)
+    RESOLVE_METHOD(av_init_packet)
   END_METHOD_RESOLVE()
 public:
     static CCriticalSection m_critSection;
@@ -317,7 +321,6 @@ public:
   DEFINE_METHOD4(int64_t, av_rescale_rnd, (int64_t p1, int64_t p2, int64_t p3, enum AVRounding p4));
   DEFINE_METHOD1(const AVCRC*, av_crc_get_table, (AVCRCId p1))
   DEFINE_METHOD4(uint32_t, av_crc, (const AVCRC *p1, uint32_t p2, const uint8_t *p3, size_t p4));
-
   public:
   BEGIN_METHOD_RESOLVE()
     RESOLVE_METHOD(av_log_set_callback)

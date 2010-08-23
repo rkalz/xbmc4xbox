@@ -32,6 +32,7 @@ xbmc_configure ()
   --disable-ffserver \
   \
   --disable-muxers \
+  --enable-muxer=spdif \
   --disable-encoders \
   --disable-devices \
   --disable-bsfs \
