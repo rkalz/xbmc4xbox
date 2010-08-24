@@ -32,11 +32,6 @@
 #define RENDER_HQ_RGB_SHADER   2
 #define RENDER_HQ_RGB_SHADERV2   3
 
-// Post-processing options.
-#define VIDEO_POSTPROCESS_DISABLED   0
-#define VIDEO_POSTPROCESS_SD_CONTENT 1
-#define VIDEO_POSTPROCESS_ALWAYS     2
-
 // Subtitle colours
 #define SUBTITLE_COLOR_START  0
 #define SUBTITLE_COLOR_END    7

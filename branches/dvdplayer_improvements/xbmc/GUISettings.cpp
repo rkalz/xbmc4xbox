@@ -418,7 +418,6 @@ void CGUISettings::Initialize()
   AddInt(7, "videoplayer.flicker", 13100, 1, 0, 1, 5, SPIN_CONTROL_INT_PLUS, -1, TEXT_OFF);
   AddBool(8, "videoplayer.soften", 215, false);
   AddFloat(9, "videoplayer.errorinaspect", 22021, 3.0f, 0.0f, 1.0f, 20.0f);
-  AddInt(10, "videoplayer.postprocess", 16400, VIDEO_POSTPROCESS_DISABLED, VIDEO_POSTPROCESS_DISABLED, 1, VIDEO_POSTPROCESS_ALWAYS, SPIN_CONTROL_TEXT);
   AddSeparator(11, "videoplayer.sep2");
   AddInt(12, "videoplayer.defaultplayer", 22030, PLAYER_MPLAYER, PLAYER_MPLAYER, 1, PLAYER_DVDPLAYER, SPIN_CONTROL_TEXT);
   AddBool(13, "videoplayer.allcodecs", 22025, false);
