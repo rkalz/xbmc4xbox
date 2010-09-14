@@ -1071,12 +1071,11 @@ void CControlSocket::ParseCommand()
 						if (isalpha(iter->dir[0]) && iter->dir[1] == ':')
 						{
 							char drive = tolower(iter->dir[0]);
-							if (drive >= 'f' && drive < 'q')
-							{
-								// extended partitions and memory units - check if the drive is available
-								if (!CIoSupport::DriveExists(drive) && !g_memoryUnitManager.IsDriveValid(drive))
-									continue;
-							}
+
+							// extended partitions and memory units - check if the drive is available
+							if (!CIoSupport::DriveExists(drive) && !g_memoryUnitManager.IsDriveValid(drive))
+								continue;
+
 							// don't show x, y, z in the listing as users shouldn't really be
 							// stuffing around with these drives (power users can always go
 							// to these folders by specifying the path directly)
@@ -1589,7 +1588,7 @@ void CControlSocket::ParseCommand()
 				CStdString result;
 				int error = m_pOwner->m_pPermissions->GetFileName(m_status.user, args, m_CurrentDir, FOP_CREATENEW, result);
 #if defined(_XBOX)
-				if (g_advancedSettings.m_bAutoFatxLimit)
+				if (g_guiSettings.GetBool("services.ftpautofatx"))
 					CUtil::GetFatXQualifiedPath(result);
 #endif
 				if (error)
@@ -1613,7 +1612,7 @@ void CControlSocket::ParseCommand()
 				CStdString result, logical;
 				int error = m_pOwner->m_pPermissions->GetDirName(m_status.user, args, m_CurrentDir, DOP_CREATE, result, logical);
 #if defined(_XBOX)
-				if (g_advancedSettings.m_bAutoFatxLimit)
+				if (g_guiSettings.GetBool("services.ftpautofatx"))
 					CUtil::GetFatXQualifiedPath(result);
 #endif       
 				if (error)

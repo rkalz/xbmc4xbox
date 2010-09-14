@@ -51,6 +51,12 @@ public:
   wchar_t* GetCreditsLine(int i);
 
   CStdString GetDirFromRes(RESOLUTION res);
+  /*! \brief Translate a resolution string
+   \param res the string to translate
+   \param def the default to use if res is invalid
+   \return the translated resolution
+   */
+  static RESOLUTION TranslateResolution(const CStdString &res, RESOLUTION def);
   CStdString GetBaseDir();
   double GetMinVersion();
   double GetVersion(){ return m_Version;};
@@ -75,6 +81,7 @@ public:
 protected:
   void LoadIncludes();
   bool LoadStartupWindows(const TiXmlElement *startup);
+  bool IsWide(RESOLUTION res) const;
 
   wchar_t credits[6][CREDIT_LINE_LENGTH];  // credits info
   int m_iNumCreditLines;  // number of credit lines

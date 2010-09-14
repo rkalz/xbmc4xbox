@@ -45,7 +45,18 @@
 			<randomize>true</randomize>
 			<fadetime>1000</fadetime>
 			<visible>Window.IsVisible(VideoFiles)</visible>
-			<visible>[IsEmpty(Fanart.Image) + IsEmpty(listitem.property(fanart_image))] | Skin.HasSetting(VideoFilesFanart)</visible>
+			<visible>[IsEmpty(Fanart.Image) + IsEmpty(listitem.property(fanart_image))] | [Skin.HasSetting(VideoFilesFanart) + !Control.IsVisible(508)]</visible>
+		</control>
+		<control type="multiimage">
+			<posx>0</posx>
+			<posy>0</posy>
+			<width>1280</width>
+			<height>720</height>
+			<imagepath fallback="special://skin/backgrounds/videos.jpg" background="true">$INFO[Skin.String(Home_Custom_Back_Video_Folder)]</imagepath>
+			<timeperimage>10000</timeperimage>
+			<randomize>true</randomize>
+			<fadetime>1000</fadetime>
+			<visible>Window.IsVisible(VideoPlaylist) | Window.IsVisible(VideosSettings) | Window.IsVisible(VideoLibrary) + ![Container.Content(Movies) | Container.Content(TVShows) | Container.Content(Seasons) | Container.Content(Episodes)]</visible>
 		</control>
 		<control type="multiimage">
 			<posx>0</posx>
@@ -57,7 +68,7 @@
 			<randomize>true</randomize>
 			<fadetime>1000</fadetime>
 			<visible>Container.Content(Movies)</visible>
-			<visible>[IsEmpty(Fanart.Image) + IsEmpty(listitem.property(fanart_image))] | Skin.HasSetting(VideoLibraryMovieFanart)</visible>
+			<visible>[IsEmpty(Fanart.Image) + IsEmpty(listitem.property(fanart_image))] | [Skin.HasSetting(VideoLibraryMovieFanart) + ![Control.IsVisible(508) | Control.IsVisible(520)]]</visible>
 		</control>
 		<control type="multiimage"> 
 			<posx>0</posx>
@@ -190,7 +201,7 @@
 			<texture>black-back.png</texture>
 			<animation effect="fade" time="400">Visible</animation>
 			<animation effect="fade" time="200">Hidden</animation>
-			<visible>Window.IsActive(MovieInformation) | Window.IsActive(MusicInformation) | Window.IsActive(SongInformation) | Window.IsActive(FileBrowser) | Window.IsActive(ScriptsDebugInfo) | Window.IsActive(PluginSettings) | Window.IsActive(ContentSettings) | Window.IsActive(SelectDialog) | Window.IsActive(FileStackingDialog) | Window.IsActive(MediaSource) | Window.IsActive(PictureInfo) | Window.IsActive(PlayerControls) | Window.IsActive(VirtualKeyboard) | Window.IsActive(NumericInput) | Window.IsActive(ProfileSettings) | Window.IsActive(LockSettings) | Window.IsActive(SmartPlaylistEditor) | Window.IsActive(SmartPlaylistRule) | Window.IsActive(script-Apple_Movie_Trailers-settings.xml) | Window.IsActive(script-Apple_Movie_Trailers-chooser.xml) | Window.IsActive(script-Apple_Movie_Trailers-search.xml) | Window.IsActive(script-Apple_Movie_Trailers-showtimes.xml) | Window.IsActive(script-XBMC_Lyrics-settings.xml) | Window.IsActive(script-RSS_Editor-rssEditor.xml) | Window.IsActive(script-RSS_Editor-setEditor.xml)</visible>
+			<visible>Window.IsActive(MovieInformation) | Window.IsActive(MusicInformation) | Window.IsActive(SongInformation) | Window.IsActive(FileBrowser) | Window.IsActive(TextViewer) | Window.IsActive(PluginSettings) | Window.IsActive(ContentSettings) | Window.IsActive(SelectDialog) | Window.IsActive(FileStackingDialog) | Window.IsActive(MediaSource) | Window.IsActive(PictureInfo) | Window.IsActive(PlayerControls) | Window.IsActive(VirtualKeyboard) | Window.IsActive(NumericInput) | Window.IsActive(ProfileSettings) | Window.IsActive(LockSettings) | Window.IsActive(SmartPlaylistEditor) | Window.IsActive(SmartPlaylistRule) | Window.IsActive(script-Apple_Movie_Trailers-settings.xml) | Window.IsActive(script-Apple_Movie_Trailers-chooser.xml) | Window.IsActive(script-Apple_Movie_Trailers-search.xml) | Window.IsActive(script-Apple_Movie_Trailers-showtimes.xml) | Window.IsActive(script-XBMC_Lyrics-settings.xml) | Window.IsActive(script-RSS_Editor-rssEditor.xml) | Window.IsActive(script-RSS_Editor-setEditor.xml)</visible>
 		</control>
 	</include>
 	<include name="WindowTitleCommons">
@@ -268,10 +279,43 @@
 		<textoffsetx>20</textoffsetx>
 		<align>center</align>
 		<aligny>center</aligny>
-		<font>font13_title</font>
+		<font>font18_title</font>
 		<texturefocus border="5">button-focus.png</texturefocus>
 		<texturenofocus border="5">button-nofocus.png</texturenofocus>
 		<pulseonselect>false</pulseonselect>
+	</include>
+	<include name="ButtonSMSDialogsCommonValues">
+		<height>30</height>
+		<width>82</width>
+		<textoffsetx>20</textoffsetx>
+		<align>center</align>
+		<aligny>center</aligny>
+		<font>font11caps</font>
+		<texturefocus border="5">button-focus.png</texturefocus>
+		<texturenofocus border="5">button-nofocus.png</texturenofocus>
+		<pulseonselect>false</pulseonselect>
+	</include>
+	<include name="SideBladeRight">
+		<control type="image">
+			<posx>26r</posx>
+			<posy>0</posy>
+			<width>846</width>
+			<height>720</height>
+			<texture flipx="true">HomeBlade.png</texture>
+			<animation effect="slide" start="26,0" end="0,0" time="300" tween="quadratic" easing="out">WindowOpen</animation>
+			<animation effect="slide" start="0,0" end="26,0" time="200" delay="200" tween="quadratic" easing="out">WindowClose</animation>
+		</control>
+	</include>
+	<include name="SideBladeLeft">
+		<control type="image">
+			<posx>-820</posx>
+			<posy>0</posy>
+			<width>846</width>
+			<height>720</height>
+			<texture>HomeBlade.png</texture>
+			<animation effect="slide" start="-26,0" end="0,0" time="300" tween="quadratic" easing="out">WindowOpen</animation>
+			<animation effect="slide" start="0,0" end="-26,0" time="200" delay="200" tween="quadratic" easing="out">WindowClose</animation>
+		</control>
 	</include>
 	<include name="CommonPageCount">
 		<control type="label">

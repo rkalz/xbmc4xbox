@@ -196,7 +196,7 @@ static double pts_itod(int64_t pts)
 
 int CDVDVideoCodecFFmpeg::Decode(BYTE* pData, int iSize, double dts, double pts)
 {
-  int iGotPicture = 0, len = 0, result = 0;
+  int iGotPicture = 0, len = 0;
 
   if (!m_pCodecContext)
     return VC_ERROR;
@@ -246,19 +246,25 @@ int CDVDVideoCodecFFmpeg::Decode(BYTE* pData, int iSize, double dts, double pts)
     }
 
     // convert the picture
-    struct SwsContext *context = m_dllSwScale.sws_getContext(m_pCodecContext->width, m_pCodecContext->height, 
-			m_pCodecContext->pix_fmt, m_pCodecContext->width, m_pCodecContext->height, 
-			PIX_FMT_YUV420P, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+    struct SwsContext *context = m_dllSwScale.sws_getContext(m_pCodecContext->width, m_pCodecContext->height,
+                                         m_pCodecContext->pix_fmt, m_pCodecContext->width, m_pCodecContext->height,
+                                         PIX_FMT_YUV420P, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+
+    if(context == NULL)
+    {
+      CLog::Log(LOGERROR, "CDVDVideoCodecFFmpeg::Decode - unable to obtain sws context for w:%i, h:%i, pixfmt: %i", m_pCodecContext->width, m_pCodecContext->height, m_pCodecContext->pix_fmt);
+      return VC_ERROR;
+    }
 
     m_dllSwScale.sws_scale(context
                           , m_pFrame->data
                           , m_pFrame->linesize
-                          , 0 
+                          , 0
                           , m_pCodecContext->height
                           , m_pConvertFrame->data
                           , m_pConvertFrame->linesize);
 
-    m_dllSwScale.sws_freeContext(context); 
+    m_dllSwScale.sws_freeContext(context);
   }
   else
   {
@@ -271,7 +277,11 @@ int CDVDVideoCodecFFmpeg::Decode(BYTE* pData, int iSize, double dts, double pts)
     }
   }
 
-  result = VC_PICTURE | VC_BUFFER;
+  int result = VC_PICTURE | VC_BUFFER;
+
+  if(result & VC_FLUSHED)
+    Reset();
+
   return result;
 }
 
@@ -287,7 +297,7 @@ void CDVDVideoCodecFFmpeg::Reset()
   }
 }
 
-bool CDVDVideoCodecFFmpeg::GetPicture(DVDVideoPicture* pDvdVideoPicture)
+bool CDVDVideoCodecFFmpeg::GetPictureCommon(DVDVideoPicture* pDvdVideoPicture)
 {
   GetVideoAspect(m_pCodecContext, pDvdVideoPicture->iDisplayWidth, pDvdVideoPicture->iDisplayHeight);
 
@@ -305,23 +315,20 @@ bool CDVDVideoCodecFFmpeg::GetPicture(DVDVideoPicture* pDvdVideoPicture)
 
   pDvdVideoPicture->pts = DVD_NOPTS_VALUE;
 
-  // if we have a converted frame, use that
-  AVFrame *frame = m_pFrame;
-
-  if (!frame)
+  if (!m_pFrame)
     return false;
 
-  pDvdVideoPicture->iRepeatPicture = 0.5 * frame->repeat_pict;
+  pDvdVideoPicture->iRepeatPicture = 0.5 * m_pFrame->repeat_pict;
   pDvdVideoPicture->iFlags = DVP_FLAG_ALLOCATED;
-  pDvdVideoPicture->iFlags |= frame->interlaced_frame ? DVP_FLAG_INTERLACED : 0;
-  pDvdVideoPicture->iFlags |= frame->top_field_first ? DVP_FLAG_TOP_FIELD_FIRST: 0;
+  pDvdVideoPicture->iFlags |= m_pFrame->interlaced_frame ? DVP_FLAG_INTERLACED : 0;
+  pDvdVideoPicture->iFlags |= m_pFrame->top_field_first ? DVP_FLAG_TOP_FIELD_FIRST: 0;
   if(m_pCodecContext->pix_fmt == PIX_FMT_YUVJ420P)
     pDvdVideoPicture->color_range = 1;
 
-  pDvdVideoPicture->qscale_table = frame->qscale_table;
-  pDvdVideoPicture->qscale_stride = frame->qstride;
+  pDvdVideoPicture->qscale_table = m_pFrame->qscale_table;
+  pDvdVideoPicture->qscale_stride = m_pFrame->qstride;
 
-  switch (frame->qscale_type) {
+  switch (m_pFrame->qscale_type) {
   case FF_QSCALE_TYPE_MPEG1:
     pDvdVideoPicture->qscale_type = DVP_QSCALE_MPEG1;
     break;
@@ -337,10 +344,18 @@ bool CDVDVideoCodecFFmpeg::GetPicture(DVDVideoPicture* pDvdVideoPicture)
 
   pDvdVideoPicture->dts = m_dts;
   m_dts = DVD_NOPTS_VALUE;
-  if (frame->reordered_opaque)
-    pDvdVideoPicture->pts = pts_itod(frame->reordered_opaque);
+  if (m_pFrame->reordered_opaque)
+    pDvdVideoPicture->pts = pts_itod(m_pFrame->reordered_opaque);
   else
     pDvdVideoPicture->pts = DVD_NOPTS_VALUE;
+
+  return true;
+}
+
+bool CDVDVideoCodecFFmpeg::GetPicture(DVDVideoPicture* pDvdVideoPicture)
+{
+  if(!GetPictureCommon(pDvdVideoPicture))
+    return false;
 
   if(m_pConvertFrame)
   {
@@ -352,23 +367,12 @@ bool CDVDVideoCodecFFmpeg::GetPicture(DVDVideoPicture* pDvdVideoPicture)
   else
   {
     for (int i = 0; i < 4; i++)
-      pDvdVideoPicture->data[i]      = frame->data[i];
+      pDvdVideoPicture->data[i]      = m_pFrame->data[i];
     for (int i = 0; i < 4; i++)
-      pDvdVideoPicture->iLineSize[i] = frame->linesize[i];
+      pDvdVideoPicture->iLineSize[i] = m_pFrame->linesize[i];
   }
-  pDvdVideoPicture->iRepeatPicture = 0.5 * frame->repeat_pict;
-  pDvdVideoPicture->iFlags = DVP_FLAG_ALLOCATED;    
-  pDvdVideoPicture->iFlags |= frame->interlaced_frame ? DVP_FLAG_INTERLACED : 0;
-  pDvdVideoPicture->iFlags |= frame->top_field_first ? DVP_FLAG_TOP_FIELD_FIRST: 0;
+
   pDvdVideoPicture->iFlags |= pDvdVideoPicture->data[0] ? 0 : DVP_FLAG_DROPPED;
-  if(m_pCodecContext->pix_fmt == PIX_FMT_YUVJ420P)
-    pDvdVideoPicture->color_range = 1;
-
-  if(frame->reordered_opaque)
-    pDvdVideoPicture->pts = pts_itod(frame->reordered_opaque);
-  else
-    pDvdVideoPicture->pts = DVD_NOPTS_VALUE;
-
   pDvdVideoPicture->format = DVDVideoPicture::FMT_YUV420P;
 
   return true;

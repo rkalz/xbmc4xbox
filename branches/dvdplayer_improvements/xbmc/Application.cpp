@@ -165,6 +165,7 @@
 #include "GUIDialogContentSettings.h"
 #include "GUIDialogVideoScan.h"
 #include "GUIDialogBusy.h"
+#include "GUIDialogTextViewer.h"
 
 #include "GUIDialogKeyboard.h"
 #include "GUIDialogYesNo.h"
@@ -892,16 +893,20 @@ HRESULT CApplication::Create(HWND hWnd)
   CIoSupport::ReadPartitionTable();
   if (CIoSupport::HasPartitionTable())
   {
-    // Mount up to Partition15 (drive O:) if they are available.
-    for (int i=EXTEND_PARTITION_BEGIN; i <= EXTEND_PARTITION_END; i++)
+    // Mount up to Partition15 if they are available.
+    for (int i=EXTEND_PARTITION_BEGIN; i <= (EXTEND_PARTITION_BEGIN+EXTEND_PARTITIONS_LIMIT-1); i++)
     {
       char szDevice[32];
       if (CIoSupport::PartitionExists(i))
       {
         char cDriveLetter = 'A' + i - 1;
+        
+        char extendDriveLetter = CIoSupport::GetExtendedPartitionDriveLetter(cDriveLetter-EXTEND_DRIVE_BEGIN);
+        CLog::Log(LOGNOTICE, "  map extended drive %c:", extendDriveLetter);
+		
         sprintf(szDevice, "Harddisk0\\Partition%u", i);
 
-        CIoSupport::RemapDriveLetter(cDriveLetter, szDevice);
+        CIoSupport::RemapDriveLetter(extendDriveLetter, szDevice);
       }
     }
   }
@@ -1279,6 +1284,7 @@ HRESULT CApplication::Initialize()
   g_windowManager.Add(new CGUIDialogBusy);      // window id = 138
   g_windowManager.Add(new CGUIDialogPictureInfo);      // window id = 139
   g_windowManager.Add(new CGUIDialogPluginSettings);      // window id = 140
+  g_windowManager.Add(new CGUIDialogTextViewer);              // window id = 147
 
   g_windowManager.Add(new CGUIDialogLockSettings); // window id = 131
 
@@ -1954,7 +1960,7 @@ void CApplication::LoadSkin(const CStdString& strSkin)
   g_audioManager.Load();
 
   CGUIDialogFullScreenInfo* pDialog = NULL;
-  RESOLUTION res;
+  RESOLUTION res = INVALID;
   CStdString strPath = g_SkinInfo.GetSkinPath("DialogFullScreenInfo.xml", &res);
   if (CFile::Exists(strPath))
     pDialog = new CGUIDialogFullScreenInfo;
@@ -2707,7 +2713,7 @@ bool CApplication::OnAction(CAction &action)
       // only unmute if volume is to be increased, otherwise leave muted
       if (action.id == ACTION_VOLUME_DOWN)
         return true;
-      Mute();
+      SetVolume(1);
       return true;
     }
     if (action.id == ACTION_VOLUME_UP)
@@ -3408,6 +3414,7 @@ HRESULT CApplication::Cleanup()
     g_windowManager.Delete(WINDOW_DIALOG_PICTURE_INFO);
     g_windowManager.Delete(WINDOW_DIALOG_PLUGIN_SETTINGS);
     g_windowManager.Delete(WINDOW_DIALOG_SLIDER);
+    g_windowManager.Delete(WINDOW_DIALOG_TEXT_VIEWER);
 
     g_windowManager.Delete(WINDOW_STARTUP);
     g_windowManager.Delete(WINDOW_LOGIN_SCREEN);
@@ -3738,12 +3745,9 @@ bool CApplication::PlayFile(const CFileItem& item, bool bRestart)
 
   if (item.IsPlugin())
   { // we modify the item so that it becomes a real URL
-    CFileItem item_new;
+    CFileItem item_new(item);
     if (DIRECTORY::CPluginDirectory::GetPluginResult(item.m_strPath, item_new))
-    {
-      item_new.SetProperty("original_listitem_url", item.HasProperty("original_listitem_url") ? item.GetProperty("original_listitem_url") : item.m_strPath);
       return PlayFile(item_new, false);
-    }
     return false;
   }
 
@@ -4348,12 +4352,13 @@ void CApplication::StopPlaying()
       m_pCdgParser->Stop();
 #endif
 
-    // turn off visualisation window when stopping
-    if (iWin == WINDOW_VISUALISATION)
-      g_windowManager.PreviousWindow();
-
     if (m_pPlayer)
       m_pPlayer->CloseFile();
+
+    // turn off visualisation window when stopping
+    if (iWin == WINDOW_VISUALISATION
+    ||  iWin == WINDOW_FULLSCREEN_VIDEO)
+      g_windowManager.PreviousWindow();
 
     g_partyModeManager.Disable();
   }
@@ -4886,6 +4891,14 @@ bool CApplication::OnMessage(CGUIMessage& message)
           return true;
         }
       }
+      
+      // In case playback ended due to user eg. skipping over the end, clear
+      // our resume bookmark here
+      if (message.GetMessage() == GUI_MSG_PLAYBACK_ENDED && m_progressTrackingPlayCountUpdate && g_advancedSettings.m_videoIgnoreAtEnd > 0)
+      {
+        // Delete the bookmark
+        m_progressTrackingVideoResumeBookmark.timeInSeconds = -1.0f;
+      }
 
       // reset our spindown
       m_bNetworkSpinDown = false;
@@ -5115,10 +5128,10 @@ void CApplication::ProcessSlow()
 
   // check for any idle myth sessions
   CMythSession::CheckIdle();
-
+#ifdef HAS_FILESYSTEM
   // check for any idle htsp sessions
   HTSP::CHTSPDirectorySession::CheckIdle();
-
+#endif
 #ifdef HAS_TIME_SERVER
   // check for any needed sntp update
   if(m_psntpClient && m_psntpClient->UpdateNeeded())
@@ -5236,10 +5249,13 @@ void CApplication::Mute(void)
 {
   if (g_stSettings.m_bMute)
   { // muted - unmute.
-    // check so we don't get stuck in some muted state
+    // In case our premutevolume is 0, return to 100% volume
     if( g_stSettings.m_iPreMuteVolumeLevel == 0 )
-      g_stSettings.m_iPreMuteVolumeLevel = 1;
-    SetVolume(g_stSettings.m_iPreMuteVolumeLevel);
+      SetVolume(100);
+    else
+      SetVolume(g_stSettings.m_iPreMuteVolumeLevel);
+
+    g_stSettings.m_iPreMuteVolumeLevel = 0;
   }
   else
   { // mute
@@ -5644,12 +5660,30 @@ void CApplication::StartFtpEmergencyRecoveryMode()
   pUser->AddDirectory("D:\\", XBFILE_READ | XBDIR_LIST | XBDIR_SUBDIRS);
   pUser->AddDirectory("E:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
   pUser->AddDirectory("Q:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
-  //Add. also Drive F/G
+  //Add existing extended partitions
   if (CIoSupport::DriveExists('F')){
     pUser->AddDirectory("F:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
   }
   if (CIoSupport::DriveExists('G')){
     pUser->AddDirectory("G:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
+  }
+  if (CIoSupport::DriveExists('R')){
+    pUser->AddDirectory("R:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
+  }
+  if (CIoSupport::DriveExists('S')){
+    pUser->AddDirectory("S:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
+  }
+  if (CIoSupport::DriveExists('V')){
+    pUser->AddDirectory("V:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
+  }
+  if (CIoSupport::DriveExists('W')){
+    pUser->AddDirectory("W:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
+  }
+  if (CIoSupport::DriveExists('A')){
+    pUser->AddDirectory("A:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
+  }
+  if (CIoSupport::DriveExists('B')){
+    pUser->AddDirectory("B:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
   }
   pUser->CommitChanges();
 #endif

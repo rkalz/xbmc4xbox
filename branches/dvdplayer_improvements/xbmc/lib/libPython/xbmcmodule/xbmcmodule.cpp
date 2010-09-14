@@ -29,9 +29,7 @@
 #include <ConIo.h>
 #include "infotagvideo.h"
 #include "infotagmusic.h"
-#ifdef HAS_WEB_SERVER
 #include "lib/libGoAhead/XBMChttp.h"
-#endif
 #include "utils/GUIInfoManager.h"
 #include "GUIWindowManager.h"
 #include "GUIAudioManager.h"
@@ -288,7 +286,6 @@ namespace PYXBMC
         return NULL;
     }
     ret=pXbmcHttpShim->xbmcExternalCall(cLine);
-
     return PyString_FromString(ret.c_str());
   }
 
@@ -658,7 +655,7 @@ namespace PYXBMC
     if (!PyXBMCGetUnicodeString(strText, pObjectText, 1)) return NULL;
 
     CStdString strFilename;
-    strFilename = CUtil::MakeLegalPath(strText);
+    strFilename = CUtil::MakeLegalPath(strText, LEGAL_FATX);
     return Py_BuildValue((char*)"s", strFilename.c_str());
   }
 

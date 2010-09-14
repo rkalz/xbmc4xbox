@@ -82,7 +82,7 @@ void CGUIDialogProfileSettings::OnWindowLoaded()
 {
   CGUIDialogSettings::OnWindowLoaded();
   CGUIImage *pImage = (CGUIImage*)GetControl(2);
-  m_strDefaultImage = pImage->GetFileName();
+  m_strDefaultImage = pImage ? pImage->GetFileName() : "";
 }
 
 void CGUIDialogProfileSettings::SetupPage()
@@ -91,10 +91,8 @@ void CGUIDialogProfileSettings::SetupPage()
   SET_CONTROL_LABEL(1000,m_strName);
   SET_CONTROL_LABEL(1001,m_strDirectory);
   CGUIImage *pImage = (CGUIImage*)GetControl(2);
-  if (!m_strThumb.IsEmpty())
-    pImage->SetFileName(m_strThumb);
-  else
-    pImage->SetFileName(m_strDefaultImage);
+  if (pImage)
+    pImage->SetFileName(!m_strThumb.IsEmpty() ? m_strThumb : m_strDefaultImage);
 }
 
 void CGUIDialogProfileSettings::CreateSettings()
@@ -208,26 +206,26 @@ void CGUIDialogProfileSettings::OnSettingChanged(SettingInfo &setting)
         !strThumb.Equals("thumb://Current"))
     {
       m_bNeedSave = true;
-      CGUIImage *pImage = (CGUIImage*)GetControl(2);
       CFileItem item(strThumb);
       item.m_strPath = strThumb;
       m_strThumb = item.GetCachedProfileThumb();
       if (CFile::Exists(m_strThumb))
         CFile::Delete(m_strThumb);
 
-      pImage->SetFileName("");
-      pImage->SetInvalid();
-
       if (!strThumb.Equals("thumb://None"))
       {
         CPicture pic;
         pic.CreateThumbnail(strThumb, m_strThumb);
-        pImage->SetFileName(m_strThumb);
       }
       else
-      {
         m_strThumb.clear();
-        pImage->SetFileName(m_strDefaultImage);
+
+      CGUIImage *pImage = (CGUIImage*)GetControl(2);
+      if (pImage)
+      {
+        pImage->SetFileName("");
+        pImage->SetInvalid();
+        pImage->SetFileName(!m_strThumb.IsEmpty() ? m_strThumb : m_strDefaultImage);
       }
     }
   }
@@ -353,7 +351,7 @@ bool CGUIDialogProfileSettings::ShowForProfile(unsigned int iProfile, bool bDeta
       // check for old profile settings
       CProfile profile;
       g_settings.m_vecProfiles.push_back(profile);
-      bool bExists = CFile::Exists(CUtil::AddFileToFolder("special:://masterprofile/",
+      bool bExists = CFile::Exists(CUtil::AddFileToFolder("special://masterprofile/",
                                                           dialog->m_strDirectory+"/guisettings.xml"));
 
       if (bExists)
@@ -373,12 +371,9 @@ bool CGUIDialogProfileSettings::ShowForProfile(unsigned int iProfile, bool bDeta
         {
           // create some new settings
           CGUISettings localSettings;
-          localSettings.Initialize();
           CStdString path = CUtil::AddFileToFolder("special://masterprofile/", dialog->m_strDirectory);
           path = CUtil::AddFileToFolder(path, "guisettings.xml");
-          CSettings settings;
-          settings.Initialize();
-          settings.SaveSettings(path, &localSettings);
+          g_settings.SaveSettings(path, &localSettings);
         }
       }
 

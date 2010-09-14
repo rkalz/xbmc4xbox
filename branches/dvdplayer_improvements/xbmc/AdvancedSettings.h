@@ -176,6 +176,8 @@ class CAdvancedSettings
     bool m_bVideoLibraryMyMoviesCategoriesToGenres;
     bool m_bVideoLibraryImportWatchedState;
 
+    bool m_bVideoScannerIgnoreErrors;
+
     bool m_bUseEvilB;
     std::vector<CStdString> m_vecTokens; // cleaning strings tied to language
     //TuxBox
@@ -214,7 +216,6 @@ class CAdvancedSettings
     bool m_bNavVKeyboard; // if true we navigate the virtual keyboard using cursor keys
     
     bool m_bPythonVerbose;
-    bool m_bAutoFatxLimit;
     int m_bgInfoLoaderMaxThreads;
 };
 

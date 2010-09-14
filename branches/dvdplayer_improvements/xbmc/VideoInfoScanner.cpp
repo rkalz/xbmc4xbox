@@ -34,6 +34,8 @@
 #include "FileSystem/File.h"
 #include "GUIDialogProgress.h"
 #include "Settings.h"
+#include "GUIDialogYesNo.h"
+#include "GUIDialogOK.h"
 #include "AdvancedSettings.h"
 #include "FileItem.h"
 #include "utils/TimeUtils.h"
@@ -199,7 +201,7 @@ namespace VIDEO
       CStdString fastHash = GetFastHash(strDirectory);
       if (m_database.GetPathHash(strDirectory, dbHash) && !fastHash.IsEmpty() && fastHash == dbHash)
       { // fast hashes match - no need to process anything
-        CLog::Log(LOGDEBUG, "VideoInfoScanner: Skipping dir '%s' due to no change", strDirectory.c_str());
+        CLog::Log(LOGDEBUG, "VideoInfoScanner: Skipping dir '%s' due to no change (fasthash)", strDirectory.c_str());
         hash = fastHash;
         bSkip = true;
       }
@@ -218,8 +220,14 @@ namespace VIDEO
             CLog::Log(LOGDEBUG, "VideoInfoScanner: Rescanning dir '%s' due to change (%s != %s)", strDirectory.c_str(), dbHash.c_str(), hash.c_str());
         }
         else
-        { // they're the same
-          CLog::Log(LOGDEBUG, "VideoInfoScanner: Skipping dir '%s' due to no change", strDirectory.c_str());
+        { // they're the same or the hash is empty (dir empty/dir not retrievable)
+          if (hash.IsEmpty() && !dbHash.IsEmpty())
+          {
+            CLog::Log(LOGDEBUG, "VideoInfoScanner: Skipping dir '%s' as it's empty or doesn't exist - adding to clean list", strDirectory.c_str());
+            m_pathsToClean.push_back(m_database.GetPathId(strDirectory));
+          }
+          else
+            CLog::Log(LOGDEBUG, "VideoInfoScanner: Skipping dir '%s' due to no change", strDirectory.c_str());
           bSkip = true;
           if (m_pObserver)
             m_pObserver->OnDirectoryScanned(strDirectory);
@@ -266,14 +274,14 @@ namespace VIDEO
         strPath = "special://xbmc/system/scrapers/video/" + m_info.strPath;
       if (!strPath.IsEmpty() && parser.Load(strPath) && parser.HasFunction("GetSettings"))
       {
-        m_info.settings.LoadSettingsXML("special://xbmc/system/scrapers/video/" + m_info.strPath);
-        m_info.settings.SaveFromDefault();
+        if (m_info.settings.LoadSettingsXML("special://xbmc/system/scrapers/video/" + m_info.strPath))
+          m_info.settings.SaveFromDefault();
       }
     }
 
     if (!bSkip)
     {
-      if (RetrieveVideoInfo(items, settings.parent_name, m_info))
+      if (RetrieveVideoInfo(items, settings.parent_name_root, m_info))
       {
         if (!m_bStop && (m_info.strContent.Equals("movies") || m_info.strContent.Equals("musicvideos")))
         {
@@ -382,8 +390,12 @@ namespace VIDEO
         CScraperParser parser;
         if (parser.Load("special://xbmc/system/scrapers/video/"+info2.strPath) && parser.HasFunction("GetSettings"))
         {
-          info2.settings.LoadSettingsXML("special://xbmc/system/scrapers/video/" + info2.strPath);
-          info2.settings.SaveFromDefault();
+          if (info2.settings.LoadSettingsXML("special://xbmc/system/scrapers/video/" + info2.strPath))
+            info2.settings.SaveFromDefault();
+          else if (!DownloadFailed(pDlgProgress))
+            return false;
+          else
+            continue;
         }
       }
 
@@ -600,11 +612,13 @@ namespace VIDEO
               Return = true;
             }
           }
-          else if (returncode == -1)
+          else if (returncode == -1 || !DownloadFailed(pDlgProgress))
           {
             m_bStop = true;
             return false;
           }
+          else
+            continue;
         }
       }
       pURL = NULL;
@@ -975,8 +989,8 @@ namespace VIDEO
     // get & save fanart image
     if (!pItem->CacheLocalFanart() || bRefresh)
     {
-      if (!movieDetails.m_fanart.m_xml.IsEmpty() && !movieDetails.m_fanart.DownloadImage(pItem->GetCachedFanart()))
-        CLog::Log(LOGERROR, "VideoInfoScanner: Failed to download fanart %s to %s", movieDetails.m_fanart.GetImageURL().c_str(), pItem->GetCachedFanart().c_str());
+      if (!movieDetails.m_fanart.m_xml.IsEmpty() && !movieDetails.m_fanart.GetImageURL().IsEmpty() && !movieDetails.m_fanart.DownloadImage(pItem->GetCachedFanart()))
+        CLog::Log(LOGWARNING, "VideoInfoScanner: Failed to download fanart %s to %s", movieDetails.m_fanart.GetImageURL().c_str(), pItem->GetCachedFanart().c_str());
     }
 
     CStdString strUserThumb = pItem->GetUserVideoThumb();
@@ -1027,6 +1041,7 @@ namespace VIDEO
       }
     }
     else
+    if (!strUserThumb.IsEmpty())
     {
       CPicture picture;
       picture.CacheThumb(strUserThumb, strThumb);
@@ -1196,9 +1211,9 @@ namespace VIDEO
         CFileItem item2(*item);
         CURL url(item->m_strPath);
         CStdString strPath;
-        CUtil::GetDirectory(url.GetHostName(),strPath);
-        CUtil::AddFileToFolder(strPath,CUtil::GetFileName(item->m_strPath),item2.m_strPath);
-        return GetnfoFile(&item2,bGrabAny);
+        CUtil::GetDirectory(url.GetHostName(), strPath);
+        CUtil::AddFileToFolder(strPath, CUtil::GetFileName(item->m_strPath),item2.m_strPath);
+        return GetnfoFile(&item2, bGrabAny);
       }
 
       // grab the folder path
@@ -1215,17 +1230,6 @@ namespace VIDEO
           return nfoFile;
       }
 
-      // already an .nfo file?
-      if ( strcmpi(strExtension.c_str(), ".nfo") == 0 )
-        nfoFile = item->m_strPath;
-      // no, create .nfo file
-      else
-        nfoFile = CUtil::ReplaceExtension(item->m_strPath, ".nfo");
-
-      // test file existence
-      if (!nfoFile.IsEmpty() && !CFile::Exists(nfoFile))
-        nfoFile.Empty();
-
       // try looking for .nfo file for a stacked item
       if (item->IsStack())
       {
@@ -1234,15 +1238,28 @@ namespace VIDEO
         CStdString firstFile = dir.GetFirstStackedFile(item->m_strPath);
         CFileItem item2;
         item2.m_strPath = firstFile;
-        nfoFile = GetnfoFile(&item2,bGrabAny);
+        nfoFile = GetnfoFile(&item2, bGrabAny);
         // else try .nfo file matching stacked title
         if (nfoFile.IsEmpty())
         {
           CStdString stackedTitlePath = dir.GetStackedTitlePath(item->m_strPath);
           item2.m_strPath = stackedTitlePath;
-          nfoFile = GetnfoFile(&item2,bGrabAny);
+          nfoFile = GetnfoFile(&item2, bGrabAny);
         }
       }
+      else
+      {
+         // already an .nfo file?
+        if ( strcmpi(strExtension.c_str(), ".nfo") == 0 )
+          nfoFile = item->m_strPath;
+        // no, create .nfo file
+        else
+          nfoFile = CUtil::ReplaceExtension(item->m_strPath, ".nfo");
+      }
+
+      // test file existence
+      if (!nfoFile.IsEmpty() && !CFile::Exists(nfoFile))
+        nfoFile.Empty();
 
       if (nfoFile.IsEmpty()) // final attempt - strip off any cd1 folders
       {
@@ -1251,19 +1268,20 @@ namespace VIDEO
         if (strPath.Mid(strPath.size()-3).Equals("cd1"))
         {
           strPath = strPath.Mid(0,strPath.size()-3);
-          CUtil::AddFileToFolder(strPath,CUtil::GetFileName(item->m_strPath),item2.m_strPath);
-          return GetnfoFile(&item2,bGrabAny);
+          CUtil::AddFileToFolder(strPath, CUtil::GetFileName(item->m_strPath),item2.m_strPath);
+          return GetnfoFile(&item2, bGrabAny);
         }
       }
     }
-    if (item->m_bIsFolder || (bGrabAny && nfoFile.IsEmpty()))
+    // folders (or stacked dvds) can take any nfo file if there's a unique one
+    if (item->m_bIsFolder || item->IsDVDFile(false, true) || (bGrabAny && nfoFile.IsEmpty()))
     {
       // see if there is a unique nfo file in this folder, and if so, use that
       CFileItemList items;
       CDirectory dir;
       CStdString strPath = item->m_strPath;
       if (!item->m_bIsFolder)
-        CUtil::GetDirectory(item->m_strPath,strPath);
+        CUtil::GetDirectory(item->m_strPath, strPath);
       if (dir.GetDirectory(strPath, items, ".nfo") && items.Size())
       {
         int numNFO = -1;
@@ -1507,5 +1525,18 @@ namespace VIDEO
       CLog::Log(LOGDEBUG, "VideoInfoScanner: No NFO file found. Using title search for '%s'", pItem->m_strPath.c_str());
 
     return result;
+  }
+
+  bool CVideoInfoScanner::DownloadFailed(CGUIDialogProgress* pDialog)
+  {
+    if (g_advancedSettings.m_bVideoScannerIgnoreErrors)
+      return true;
+
+    if (pDialog)
+    {
+      CGUIDialogOK::ShowAndGetInput(20448,20449,20022,20022);
+      return false;
+    }
+    return CGUIDialogYesNo::ShowAndGetInput(20448,20449,20450,20022);
   }
 }

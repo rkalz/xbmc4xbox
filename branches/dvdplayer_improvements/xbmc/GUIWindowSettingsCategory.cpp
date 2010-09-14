@@ -58,9 +58,7 @@
 #include "GUIWindowPrograms.h"
 #include "MediaManager.h"
 #include "xbox/network.h"
-#ifdef HAS_WEB_SERVER
 #include "lib/libGoAhead/WebServer.h"
-#endif
 #include "GUIControlGroupList.h"
 #include "XBTimeZone.h"
 #include "VideoDatabase.h"
@@ -933,7 +931,7 @@ void CGUIWindowSettingsCategory::UpdateSettings()
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
       if (pControl) pControl->SetEnabled(g_guiSettings.GetInt("harddisk.remoteplayspindown") != SPIN_DOWN_NONE);
     }
-    else if (strSetting.Equals("services.ftpserveruser") || strSetting.Equals("services.ftpserverpassword"))
+    else if (strSetting.Equals("services.ftpserveruser") || strSetting.Equals("services.ftpserverpassword") || strSetting.Equals("services.ftpautofatx"))
     {
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
       pControl->SetEnabled(g_guiSettings.GetBool("services.ftpserver"));
@@ -2390,7 +2388,7 @@ void CGUIWindowSettingsCategory::FillInSkinFonts(CSetting *pSetting)
 
   m_strNewSkinFontSet.Empty();
 
-  RESOLUTION res;
+  RESOLUTION res = INVALID;
   CStdString strPath = g_SkinInfo.GetSkinPath("Font.xml", &res);
 
   TiXmlDocument xmlDoc;

@@ -451,6 +451,16 @@ int CGUIInfoManager::TranslateSingleString(const CStdString &strCondition)
     CStdString str = strTest.Mid(8, strTest.GetLength() - 9);
     return AddMultiInfo(GUIInfo(bNegate ? -STRING_IS_EMPTY : STRING_IS_EMPTY, TranslateSingleString(str)));
   }
+  else if (strTest.Left(7).Equals("istrue("))
+  {
+    CStdString str = strTest.Mid(7, strTest.GetLength() - 8);
+    return AddMultiInfo(GUIInfo(bNegate ? -VALUE_IS_TRUE : VALUE_IS_TRUE, TranslateSingleString(str)));
+  }
+  else if (strTest.Left(14).Equals("addon.setting("))
+  {
+    CStdString str = strTest.Mid(14, strTest.GetLength() - 15);
+    return AddMultiInfo(GUIInfo(WINDOW_PROPERTY, WINDOW_DIALOG_PLUGIN_SETTINGS, ConditionalStringParameter(str)));
+  }
   else if (strTest.Left(14).Equals("stringcompare("))
   {
     int pos = strTest.Find(",");
@@ -459,7 +469,8 @@ int CGUIInfoManager::TranslateSingleString(const CStdString &strCondition)
     if (info2 > 0)
       return AddMultiInfo(GUIInfo(bNegate ? -STRING_COMPARE: STRING_COMPARE, info, -info2));
     // pipe our original string through the localize parsing then make it lowercase (picks up $LBRACKET etc.)
-    CStdString label = CGUIInfoLabel::GetLabel(original.Mid(pos + 1, original.GetLength() - (pos + 2))).ToLower();
+    CStdString label = CGUIInfoLabel::GetLabel(original.Mid(pos + 1, original.GetLength() - (pos + 2)));
+    label = CGUIInfoLabel::ReplaceAddonStrings(label).ToLower();
     int compareString = ConditionalStringParameter(label);
     return AddMultiInfo(GUIInfo(bNegate ? -STRING_COMPARE: STRING_COMPARE, info, compareString));
   }
@@ -475,7 +486,8 @@ int CGUIInfoManager::TranslateSingleString(const CStdString &strCondition)
     int pos = strTest.Find(",");
     int info = TranslateString(strTest.Mid(10, pos-10));
     // pipe our original string through the localize parsing then make it lowercase (picks up $LBRACKET etc.)
-    CStdString label = CGUIInfoLabel::GetLabel(original.Mid(pos + 1, original.GetLength() - (pos + 2))).ToLower();
+    CStdString label = CGUIInfoLabel::GetLabel(original.Mid(pos + 1, original.GetLength() - (pos + 2)));
+    label = CGUIInfoLabel::ReplaceAddonStrings(label).ToLower();
     int compareString = ConditionalStringParameter(label);
     return AddMultiInfo(GUIInfo(bNegate ? -STRING_STR: STRING_STR, info, compareString));
   }
@@ -969,6 +981,7 @@ int CGUIInfoManager::TranslateMusicPlayerString(const CStdString &info) const
   else if (info.Equals("exists")) return MUSICPLAYER_EXISTS;
   else if (info.Equals("hasprevious")) return MUSICPLAYER_HASPREVIOUS;
   else if (info.Equals("hasnext")) return MUSICPLAYER_HASNEXT;
+  else if (info.Equals("filename")) return MUSICPLAYER_FILENAME;
   return 0;
 }
 
@@ -1120,6 +1133,7 @@ CStdString CGUIInfoManager::GetLabel(int info, int contextWindow)
   case MUSICPLAYER_RATING:
   case MUSICPLAYER_COMMENT:
   case MUSICPLAYER_LYRICS:
+  case MUSICPLAYER_FILENAME:
     strLabel = GetMusicLabel(info);
   break;
   case VIDEOPLAYER_TITLE:
@@ -2121,6 +2135,17 @@ bool CGUIInfoManager::GetMultiInfoBool(const GUIInfo &info, int contextWindow, c
   {
     switch (condition)
     {
+      case VALUE_IS_TRUE:
+        {
+          CStdString value;
+          if (item && item->IsFileItem() && info.GetData1() >= LISTITEM_START && info.GetData1() < LISTITEM_END)
+            value = GetItemImage((const CFileItem *)item, info.GetData1());
+          else
+            value = GetImage(info.GetData1(), contextWindow);
+
+          bReturn = (value.Equals("true") || value.Equals("yes") || value.Equals("on"));
+        }
+        break;
       case SKIN_BOOL:
         {
           bReturn = g_settings.GetSkinBool(info.GetData1());
@@ -2160,6 +2185,23 @@ bool CGUIInfoManager::GetMultiInfoBool(const GUIInfo &info, int contextWindow, c
             bReturn = GetItemImage((const CFileItem *)item, info.GetData1()).Equals(compare);
         else
             bReturn = GetImage(info.GetData1(), contextWindow).Equals(compare);
+        }
+        break;
+      case INTEGER_GREATER_THAN:
+        {
+          CStdString value;
+
+          if (item && item->IsFileItem() && info.GetData1() >= LISTITEM_START && info.GetData1() < LISTITEM_END)
+            value = GetItemImage((const CFileItem *)item, info.GetData1());
+          else
+            value = GetImage(info.GetData1(), contextWindow);
+
+          // Handle the case when a value contains time separator (:). This makes IntegerGreaterThan
+          // useful for Player.Time* members without adding a separate set of members returning time in seconds
+          if ( value.find_first_of( ':' ) != value.npos )
+            bReturn = StringUtils::TimeStringToSeconds( value ) > info.GetData2();
+          else
+            bReturn = atoi( value.c_str() ) > info.GetData2();
         }
         break;
       case STRING_STR:
@@ -2550,7 +2592,7 @@ CStdString CGUIInfoManager::GetMultiInfoLabel(const GUIInfo &info, int contextWi
         return ((CGUITextBox *)control)->GetLabel(info.m_info);
     }
   }
-  else if (info.m_info >= MUSICPLAYER_TITLE && info.m_info <= MUSICPLAYER_DISC_NUMBER)
+  else if (info.m_info >= MUSICPLAYER_TITLE && info.m_info <= MUSICPLAYER_FILENAME)
     return GetMusicPlaylistInfo(info);
   else if (info.m_info == CONTAINER_PROPERTY)
   {
@@ -2585,7 +2627,7 @@ CStdString CGUIInfoManager::GetMultiInfoLabel(const GUIInfo &info, int contextWi
     }
     else
     { // no window specified - assume active
-      window = g_windowManager.GetWindow(g_windowManager.GetActiveWindow());
+      window = GetWindowWithCondition(contextWindow, 0);
     }
 
     if (window)
@@ -2981,7 +3023,7 @@ CStdString CGUIInfoManager::GetMusicLabel(int item)
       return strCodec;
     }
     break;
-  case MUSICPLAYER_LYRICS: 
+  case MUSICPLAYER_LYRICS:
     return GetItemLabel(m_currentFile, AddListItemProp("lyrics"));
   }
   return GetMusicTagLabel(item, m_currentFile);
@@ -2996,19 +3038,25 @@ CStdString CGUIInfoManager::GetMusicTagLabel(int info, const CFileItem *item) co
   case MUSICPLAYER_TITLE:
     if (tag.GetTitle().size()) { return tag.GetTitle(); }
     break;
-  case MUSICPLAYER_ALBUM: 
+  case MUSICPLAYER_FILENAME:
+    if (tag.GetURL().size()) { return tag.GetURL(); }
+    break;
+  case MUSICPLAYER_LYRICS:
+    if (tag.GetLyrics().size()) { return tag.GetLyrics(); }
+    break;
+  case MUSICPLAYER_ALBUM:
     if (tag.GetAlbum().size()) { return tag.GetAlbum(); }
     break;
-  case MUSICPLAYER_ARTIST: 
+  case MUSICPLAYER_ARTIST:
     if (tag.GetArtist().size()) { return tag.GetArtist(); }
     break;
   case MUSICPLAYER_ALBUM_ARTIST:
     if (tag.GetAlbumArtist().size()) { return tag.GetAlbumArtist(); }
     break;
-  case MUSICPLAYER_YEAR: 
+  case MUSICPLAYER_YEAR:
     if (tag.GetYear()) { return tag.GetYearString(); }
     break;
-  case MUSICPLAYER_GENRE: 
+  case MUSICPLAYER_GENRE:
     if (tag.GetGenre().size()) { return tag.GetGenre(); }
     break;
   case MUSICPLAYER_TRACK_NUMBER:
@@ -3028,7 +3076,7 @@ CStdString CGUIInfoManager::GetMusicTagLabel(int info, const CFileItem *item) co
       {
         strDisc.Format("%02i", tag.GetDiscNumber());
         return strDisc;
-      } 
+      }
     }
     break;
   case MUSICPLAYER_RATING:
@@ -3109,12 +3157,10 @@ CStdString CGUIInfoManager::GetVideoLabel(int item)
       break;
     case VIDEOPLAYER_PREMIERED:
       {
-        CStdString strYear;
+        if (!m_currentFile->GetVideoInfoTag()->m_strFirstAired.IsEmpty())
+          return m_currentFile->GetVideoInfoTag()->m_strFirstAired;
         if (!m_currentFile->GetVideoInfoTag()->m_strPremiered.IsEmpty())
-          strYear = m_currentFile->GetVideoInfoTag()->m_strPremiered;
-        else if (!m_currentFile->GetVideoInfoTag()->m_strFirstAired.IsEmpty())
-          strYear = m_currentFile->GetVideoInfoTag()->m_strFirstAired;
-        return strYear;
+          return m_currentFile->GetVideoInfoTag()->m_strPremiered;
       }
       break;
     case VIDEOPLAYER_PLOT:
@@ -3644,10 +3690,10 @@ CStdString CGUIInfoManager::GetItemLabel(const CFileItem *item, int info) const
   case LISTITEM_LABEL2:
     return item->GetLabel2();
   case LISTITEM_TITLE:
-    if (item->HasMusicInfoTag())
-      return item->GetMusicInfoTag()->GetTitle();
     if (item->HasVideoInfoTag())
       return item->GetVideoInfoTag()->m_strTitle;
+    if (item->HasMusicInfoTag())
+      return item->GetMusicInfoTag()->GetTitle();
     break;
   case LISTITEM_ORIGINALTITLE:
     if (item->HasVideoInfoTag())
@@ -3694,12 +3740,10 @@ CStdString CGUIInfoManager::GetItemLabel(const CFileItem *item, int info) const
   case LISTITEM_PREMIERED:
     if (item->HasVideoInfoTag())
     {
-      CStdString strResult;
+      if (!item->GetVideoInfoTag()->m_strFirstAired.IsEmpty())
+        return item->GetVideoInfoTag()->m_strFirstAired;
       if (!item->GetVideoInfoTag()->m_strPremiered.IsEmpty())
-        strResult = item->GetVideoInfoTag()->m_strPremiered;
-      else if (!item->GetVideoInfoTag()->m_strFirstAired.IsEmpty())
-        strResult = item->GetVideoInfoTag()->m_strFirstAired;
-      return strResult;
+        return item->GetVideoInfoTag()->m_strPremiered;
     }
     break;
   case LISTITEM_GENRE:
@@ -3758,7 +3802,7 @@ CStdString CGUIInfoManager::GetItemLabel(const CFileItem *item, int info) const
       if (item->HasVideoInfoTag())
       {
         if (item->GetVideoInfoTag()->m_streamDetails.GetVideoDuration() > 0)
-          duration.Format("%i", item->GetVideoInfoTag()->m_streamDetails.GetVideoDuration());
+          duration.Format("%i", item->GetVideoInfoTag()->m_streamDetails.GetVideoDuration() / 60);
         else if (!item->GetVideoInfoTag()->m_strRuntime.IsEmpty())
           duration = item->GetVideoInfoTag()->m_strRuntime;
       }

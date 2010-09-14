@@ -20,7 +20,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../xbmc/;../../guilib/;../..;../../xbmc/lib/libUPnP/Platinum/Source/Devices/MediaServer;../../xbmc/lib/libUPnP/Platinum/Source/Devices/MediaRenderer;../../xbmc/lib/libUPnP/Platinum/Source/Devices/MediaConnect;../../xbmc/lib/libUPnP/Platinum/Source/Core;../../xbmc/lib/libUPnP/Platinum/Thirdparty/Neptune/Source/Core;../../xbmc/lib/libUPnP/Platinum/Thirdparty/Neptune/Source/System/Win32;../../xbmc/cores/dvdplayer;../../xbmc/lib/boost;..\..\xbmc\lib\libRTMP"
+				AdditionalIncludeDirectories="../../xbmc/;../../xbmc/cores/dvdplayer/Codecs/ffmpeg;../../xbmc/cores/dvdplayer/;../../guilib/;../..;../../xbmc/lib/libUPnP/Platinum/Source/Devices/MediaServer;../../xbmc/lib/libUPnP/Platinum/Source/Devices/MediaRenderer;../../xbmc/lib/libUPnP/Platinum/Source/Devices/MediaConnect;../../xbmc/lib/libUPnP/Platinum/Source/Core;../../xbmc/lib/libUPnP/Platinum/Source/Platinum;../../xbmc/lib/libUPnP/Neptune/Source/Core;../../xbmc/lib/libUPnP/Neptune/Source/System/Win32;../../xbmc/cores/dvdplayer;../../xbmc/lib/boost;..\..\xbmc\lib\libRTMP;../../xbmc/utils;../../xbmc/xbox;../../xbmc/lib/libcurl/include;../../xbmc/lib"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_WIN32_WINNT=0x0500;WINVER=0x0500;NOMINMAX"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="0"
@@ -74,7 +74,7 @@
 				Optimization="0"
 				InlineFunctionExpansion="0"
 				OmitFramePointers="FALSE"
-				AdditionalIncludeDirectories="../../xbmc/;../../guilib/;../..;../../xbmc/lib/libUPnP/Platinum/Source/Devices/MediaServer;../../xbmc/lib/libUPnP/Platinum/Source/Devices/MediaRenderer;../../xbmc/lib/libUPnP/Platinum/Source/Devices/MediaConnect;../../xbmc/lib/libUPnP/Platinum/Source/Core;../../xbmc/lib/libUPnP/Platinum/Thirdparty/Neptune/Source/Core;../../xbmc/lib/libUPnP/Platinum/Thirdparty/Neptune/Source/System/Win32;../../xbmc/cores/dvdplayer;../../xbmc/lib/boost;..\..\xbmc\lib\libRTMP"
+				AdditionalIncludeDirectories="../../xbmc/;../../xbmc/cores/dvdplayer/Codecs/ffmpeg;../../xbmc/cores/dvdplayer/;../../guilib/;../..;../../xbmc/lib/libUPnP/Platinum/Source/Devices/MediaServer;../../xbmc/lib/libUPnP/Platinum/Source/Devices/MediaRenderer;../../xbmc/lib/libUPnP/Platinum/Source/Devices/MediaConnect;../../xbmc/lib/libUPnP/Platinum/Source/Core;../../xbmc/lib/libUPnP/Platinum/Source/Platinum;../../xbmc/lib/libUPnP/Neptune/Source/Core;../../xbmc/lib/libUPnP/Neptune/Source/System/Win32;../../xbmc/cores/dvdplayer;../../xbmc/lib/boost;..\..\xbmc\lib\libRTMP;../../xbmc/utils;../../xbmc/xbox;../../xbmc/lib/libcurl/include;../../xbmc/lib"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_WIN32_WINNT=0x0500;WINVER=0x0500;NOMINMAX"
 				StringPooling="FALSE"
 				MinimalRebuild="TRUE"
@@ -158,9 +158,6 @@
 			</File>
 			<File
 				RelativePath="..\..\xbmc\cores\IPlayer.h">
-			</File>
-			<File
-				RelativePath="..\..\xbmc\cores\PlayerCoreFactory.cpp">
 			</File>
 			<File
 				RelativePath="..\..\xbmc\cores\ssrc.cpp">
@@ -272,6 +269,12 @@
 				</File>
 				<File
 					RelativePath="..\..\xbmc\cores\dvdplayer\DVDStreamInfo.h">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\cores\dvdplayer\Edl.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\cores\dvdplayer\Edl.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\cores\dvdplayer\IDVDPlayer.h">
@@ -618,6 +621,12 @@
 						RelativePath="..\..\xbmc\cores\dvdplayer\DVDSubtitles\DVDSubtitleParserMicroDVD.h">
 					</File>
 					<File
+						RelativePath="..\..\xbmc\cores\dvdplayer\DVDSubtitles\DVDSubtitleParserMPL2.cpp">
+					</File>
+					<File
+						RelativePath="..\..\xbmc\cores\dvdplayer\DVDSubtitles\DVDSubtitleParserMPL2.h">
+					</File>
+					<File
 						RelativePath="..\..\xbmc\cores\dvdplayer\DVDSubtitles\DVDSubtitleParserSami.cpp">
 					</File>
 					<File
@@ -636,6 +645,12 @@
 						RelativePath="..\..\xbmc\cores\dvdplayer\DVDSubtitles\DVDSubtitleParserSubrip.h">
 					</File>
 					<File
+						RelativePath="..\..\xbmc\cores\dvdplayer\DVDSubtitles\DVDSubtitleParserVplayer.cpp">
+					</File>
+					<File
+						RelativePath="..\..\xbmc\cores\dvdplayer\DVDSubtitles\DVDSubtitleParserVplayer.h">
+					</File>
+					<File
 						RelativePath="..\..\xbmc\cores\dvdplayer\DVDSubtitles\DVDSubtitlesLibass.cpp">
 					</File>
 					<File
@@ -646,6 +661,12 @@
 					</File>
 					<File
 						RelativePath=".\xbmc\cores\dvdplayer\DVDSubtitles\DVDSubtitleStream.h">
+					</File>
+					<File
+						RelativePath="..\..\xbmc\cores\dvdplayer\DVDSubtitles\DVDSubtitleTagSami.cpp">
+					</File>
+					<File
+						RelativePath="..\..\xbmc\cores\dvdplayer\DVDSubtitles\DVDSubtitleTagSami.h">
 					</File>
 				</Filter>
 			</Filter>
@@ -797,12 +818,6 @@
 					RelativePath="..\..\xbmc\cores\paplayer\DTSCodec.h">
 				</File>
 				<File
-					RelativePath="..\..\xbmc\cores\paplayer\FileReader.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\paplayer\FileReader.h">
-				</File>
-				<File
 					RelativePath="..\..\xbmc\cores\paplayer\FLACcodec.cpp">
 				</File>
 				<File
@@ -840,6 +855,12 @@
 				</File>
 				<File
 					RelativePath="..\..\xbmc\cores\paplayer\NSFCodec.h">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\cores\paplayer\OggCallback.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\cores\paplayer\OggCallback.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\cores\paplayer\OGGcodec.cpp">
@@ -1160,92 +1181,24 @@
 			<Filter
 				Name="ffmpeg"
 				Filter="">
+			</Filter>
+			<Filter
+				Name="PlayerCoreFactory"
+				Filter="">
 				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\adler32.h">
+					RelativePath="..\..\xbmc\cores\playercorefactory\PlayerCoreConfig.h">
 				</File>
 				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\avcodec.h">
+					RelativePath="..\..\xbmc\cores\playercorefactory\PlayerCoreFactory.cpp">
 				</File>
 				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\avformat.h">
+					RelativePath="..\..\xbmc\cores\playercorefactory\PlayerCoreFactory.h">
 				</File>
 				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\avio.h">
+					RelativePath="..\..\xbmc\cores\playercorefactory\PlayerSelectionRule.cpp">
 				</File>
 				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\avutil.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\common.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\DllAvCodec.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\DllAvFormat.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\DllPostProc.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\DllSwScale.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\ffmpeg.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\fifo.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\integer.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\intfloat_readwrite.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\inttypes.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\log.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\lzo.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\mathematics.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\mem.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\opt.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\postprocess.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\random.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\rational.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\rgb2rgb.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\rtp.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\rtsp.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\rtspcodes.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\stdint.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\ffmpeg\swscale.h">
+					RelativePath="..\..\xbmc\cores\playercorefactory\PlayerSelectionRule.h">
 				</File>
 			</Filter>
 		</Filter>
@@ -1267,6 +1220,12 @@
 			<Filter
 				Name="Settings"
 				Filter="">
+				<File
+					RelativePath="..\..\xbmc\AdvancedSettings.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\AdvancedSettings.h">
+				</File>
 				<File
 					RelativePath="..\..\xbmc\GUIDialogPluginSettings.cpp">
 				</File>
@@ -1299,6 +1258,12 @@
 				</File>
 				<File
 					RelativePath="..\..\xbmc\ScraperSettings.h">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\ScriptSettings.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\ScriptSettings.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\Settings.cpp">
@@ -1718,12 +1683,6 @@
 					RelativePath="..\..\xbmc\DynamicDll.cpp">
 				</File>
 				<File
-					RelativePath="..\..\xbmc\Edl.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\Edl.h">
-				</File>
-				<File
 					RelativePath="..\..\xbmc\utils\Event.cpp">
 				</File>
 				<File
@@ -1755,9 +1714,6 @@
 				</File>
 				<File
 					RelativePath="..\..\xbmc\utils\HTMLUtil.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\utils\HTTP.cpp">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\utils\HttpHeader.cpp">
@@ -1799,7 +1755,10 @@
 					RelativePath="..\..\xbmc\utils\log.cpp">
 				</File>
 				<File
-					RelativePath="..\..\xbmc\utils\md5.c">
+					RelativePath="..\..\xbmc\utils\md5.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\utils\md5.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\MediaManager.cpp">
@@ -1886,7 +1845,19 @@
 					RelativePath="..\..\xbmc\utils\Stopwatch.h">
 				</File>
 				<File
+					RelativePath="..\..\xbmc\utils\StreamDetails.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\utils\StreamDetails.h">
+				</File>
+				<File
 					RelativePath="..\..\xbmc\StringUtils.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\utils\strptime.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\utils\strptime.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\utils\SystemInfo.cpp">
@@ -1902,6 +1873,12 @@
 				</File>
 				<File
 					RelativePath="..\..\xbmc\ThumbnailCache.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\utils\TimeUtils.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\utils\TimeUtils.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\utils\Trainer.cpp">
@@ -1960,6 +1937,12 @@
 				</File>
 				<File
 					RelativePath="..\..\xbmc\Artist.h">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\Bookmark.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\Bookmark.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\Database.cpp">
@@ -2128,7 +2111,19 @@
 					RelativePath="..\..\xbmc\GUIDialogSettings.h">
 				</File>
 				<File
+					RelativePath="..\..\xbmc\GUIDialogSlider.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\GUIDialogSlider.h">
+				</File>
+				<File
 					RelativePath="..\..\xbmc\GUIDialogSubMenu.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\GUIDialogTextViewer.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\GUIDialogTextViewer.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\GUIDialogTrainerSettings.cpp">
@@ -2323,22 +2318,13 @@
 					RelativePath="..\..\xbmc\FileSystem\cdioSupport.cpp">
 				</File>
 				<File
-					RelativePath="..\..\xbmc\FileSystem\CMythDirectory.cpp">
+					RelativePath="..\..\xbmc\lib\libcurl\include\curl\curl.h">
 				</File>
 				<File
-					RelativePath="..\..\xbmc\FileSystem\CMythDirectory.h">
+					RelativePath="..\..\xbmc\FileSystem\DAVDirectory.cpp">
 				</File>
 				<File
-					RelativePath="..\..\xbmc\FileSystem\CMythFile.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\FileSystem\CMythFile.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\FileSystem\CMythSession.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\FileSystem\CMythSession.h">
+					RelativePath="..\..\xbmc\FileSystem\DAVDirectory.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\FileSystem\Directory.cpp">
@@ -2408,6 +2394,12 @@
 				</File>
 				<File
 					RelativePath="..\..\xbmc\FileSystem\FileLastFM.h">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\FileSystem\FileMMS.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\FileSystem\FileMMS.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\FileSystem\FileMusicDatabase.cpp">
@@ -2515,6 +2507,24 @@
 					RelativePath="..\..\xbmc\FileSystem\MusicSearchDirectory.h">
 				</File>
 				<File
+					RelativePath="..\..\xbmc\FileSystem\MythDirectory.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\FileSystem\MythDirectory.h">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\FileSystem\MythFile.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\FileSystem\MythFile.h">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\FileSystem\MythSession.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\FileSystem\MythSession.h">
+				</File>
+				<File
 					RelativePath="..\..\xbmc\FileSystem\NptXbmcFile.cpp">
 				</File>
 				<File
@@ -2588,12 +2598,6 @@
 				</File>
 				<File
 					RelativePath="..\..\xbmc\FileSystem\UPnPDirectory.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\FileSystem\UPnPVirtualPathDirectory.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\FileSystem\UPnPVirtualPathDirectory.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\FileSystem\VideoDatabaseDirectory.cpp">
@@ -2708,6 +2712,12 @@
 					</File>
 					<File
 						RelativePath="..\..\xbmc\FileSystem\MusicDatabaseDirectory\DirectoryNodeRoot.h">
+					</File>
+					<File
+						RelativePath="..\..\xbmc\FileSystem\MusicDatabaseDirectory\DirectoryNodeSingles.cpp">
+					</File>
+					<File
+						RelativePath="..\..\xbmc\FileSystem\MusicDatabaseDirectory\DirectoryNodeSingles.h">
 					</File>
 					<File
 						RelativePath="..\..\xbmc\FileSystem\MusicDatabaseDirectory\DirectoryNodeSong.cpp">
@@ -2898,6 +2908,12 @@
 					</File>
 					<File
 						RelativePath="..\..\xbmc\FileSystem\VideoDatabaseDirectory\DirectoryNodeSeasons.h">
+					</File>
+					<File
+						RelativePath="..\..\xbmc\FileSystem\VideoDatabaseDirectory\DirectoryNodeSets.cpp">
+					</File>
+					<File
+						RelativePath="..\..\xbmc\FileSystem\VideoDatabaseDirectory\DirectoryNodeSets.h">
 					</File>
 					<File
 						RelativePath="..\..\xbmc\FileSystem\VideoDatabaseDirectory\DirectoryNodeStudio.cpp">
@@ -3614,6 +3630,12 @@
 						RelativePath="..\..\xbmc\lib\libPython\xbmcmodule\PythonPlayer.h">
 					</File>
 					<File
+						RelativePath="..\..\xbmc\lib\libPython\xbmcmodule\PythonSettings.cpp">
+					</File>
+					<File
+						RelativePath="..\..\xbmc\lib\libPython\xbmcmodule\PythonSettings.h">
+					</File>
+					<File
 						RelativePath="..\..\xbmc\lib\libPython\xbmcmodule\pyutil.cpp">
 					</File>
 					<File
@@ -3943,37 +3965,22 @@
 				Name="libScrobbler"
 				Filter="">
 				<File
-					RelativePath="..\..\xbmc\lib\libscrobbler\md5.c">
+					RelativePath="..\..\xbmc\lib\libscrobbler\lastfmscrobbler.cpp">
 				</File>
 				<File
-					RelativePath="..\..\xbmc\lib\libscrobbler\md5.h">
+					RelativePath="..\..\xbmc\lib\libscrobbler\lastfmscrobbler.h">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\lib\libscrobbler\librefmscrobbler.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\lib\libscrobbler\librefmscrobbler.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\lib\libscrobbler\scrobbler.cpp">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\lib\libscrobbler\scrobbler.h">
-				</File>
-			</Filter>
-			<Filter
-				Name="libRTMP">
-				<File
-					RelativePath="..\..\xbmc\lib\libRTMP\AMFObject.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\lib\libRTMP\AMFObject.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\lib\libRTMP\rtmp.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\lib\libRTMP\rtmp.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\lib\libRTMP\rtmppacket.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\lib\libRTMP\rtmppacket.h">
 				</File>
 			</Filter>
 		</Filter>

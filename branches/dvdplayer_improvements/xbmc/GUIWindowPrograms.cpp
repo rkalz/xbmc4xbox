@@ -430,16 +430,6 @@ bool CGUIWindowPrograms::OnPlayMedia(int iItem)
   if ( iItem < 0 || iItem >= (int)m_vecItems->Size() ) return false;
   CFileItemPtr pItem = m_vecItems->Get(iItem);
 
-  if (pItem->m_strPath == "add" && pItem->GetLabel() == g_localizeStrings.Get(1026)) // 'add source button' in empty root
-  {
-    if (CGUIDialogMediaSource::ShowAndAddMediaSource("programs"))
-    {
-      Update("");
-      return true;
-    }
-    return false;
-  }
-
   if (pItem->IsDVD())
     return MEDIA_DETECT::CAutorun::PlayDisc();
 
@@ -710,7 +700,7 @@ bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemL
       m_dlgProgress->Progress();
     }
 
-    if (item->m_bIsFolder && !item->IsParentFolder())
+    if (item->m_bIsFolder && !item->IsParentFolder() && !item->IsPlugin())
     { // folder item - let's check for a default.xbe file, and flatten if we have one
       CStdString defaultXBE;
       CUtil::AddFileToFolder(item->m_strPath, "default.xbe", defaultXBE);

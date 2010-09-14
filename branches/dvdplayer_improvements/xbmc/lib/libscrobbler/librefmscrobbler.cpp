@@ -22,9 +22,6 @@
 #include "stdafx.h"
 #include "librefmscrobbler.h"
 #include "Application.h"
-#ifndef _XBOX
-#include "Atomics.h"
-#endif
 #include "Settings.h"
 #include "Util.h"
 
@@ -45,9 +42,6 @@ CLibrefmScrobbler *CLibrefmScrobbler::GetInstance()
 {
   if (!m_pInstance) // Avoid spinning aimlessly
   {
-#ifndef _XBOX
-    CAtomicSpinLock lock(m_instanceLock);
-#endif
     if (!m_pInstance)
     {
       m_pInstance = new CLibrefmScrobbler;
@@ -60,9 +54,6 @@ void CLibrefmScrobbler::RemoveInstance()
 {
   if (m_pInstance)
   {
-#ifndef _XBOX
-    CAtomicSpinLock lock(m_instanceLock);
-#endif
     delete m_pInstance;
     m_pInstance = NULL;
   }
@@ -90,13 +81,13 @@ void CLibrefmScrobbler::NotifyUser(int error)
       strText = g_localizeStrings.Get(15206);
       m_bBadAuth = true;
       strAudioScrobbler = g_localizeStrings.Get(15220);  // Libre.fm
-      g_application.m_guiDialogKaiToast.QueueNotification("", strAudioScrobbler, strText, 10000);
+      g_application.m_guiDialogKaiToast.QueueNotification(CGUIDialogKaiToast::Error, strAudioScrobbler, strText, 10000);
       break;
     case SCROBBLER_USER_ERROR_BANNED:
       strText = g_localizeStrings.Get(15205);
       m_bBanned = true;
       strAudioScrobbler = g_localizeStrings.Get(15220);  // Libre.fm
-      g_application.m_guiDialogKaiToast.QueueNotification("", strAudioScrobbler, strText, 10000);
+      g_application.m_guiDialogKaiToast.QueueNotification(CGUIDialogKaiToast::Error, strAudioScrobbler, strText, 10000);
       break;
     default:
       break;

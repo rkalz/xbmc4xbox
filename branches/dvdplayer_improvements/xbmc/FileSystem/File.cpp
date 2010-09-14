@@ -299,10 +299,10 @@ bool CFile::Open(const CStdString& strFileName, unsigned int flags)
         return false;
     }
 
-    if ( (flags & READ_NO_CACHE) == 0 && CUtil::IsInternetStream(strFileName) && !CUtil::IsPicture(strFileName) )
+    CURL url(strFileName);
+    if ( (flags & READ_NO_CACHE) == 0 && CUtil::IsInternetStream(url) && !CUtil::IsPicture(strFileName) )
       m_flags |= READ_CACHED;
 
-    CURL url(strFileName);
     if (m_flags & READ_CACHED)
     {
       m_pFile = new CFileCache();
@@ -784,7 +784,8 @@ bool CFile::Delete(const CStdString& strFileName)
   {
     CLog::Log(LOGERROR, "%s - Unhandled exception", __FUNCTION__);
   }
-  CLog::Log(LOGERROR, "%s - Error deleting file %s", __FUNCTION__, strFileName.c_str());
+  if (Exists(strFileName))
+    CLog::Log(LOGERROR, "%s - Error deleting file %s", __FUNCTION__, strFileName.c_str());
   return false;
 }
 

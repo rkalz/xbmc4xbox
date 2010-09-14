@@ -89,9 +89,7 @@
 #ifndef HAS_XBOX_D3D
 #include "DirectXGraphics.h"
 #endif
-#ifdef HAS_WEB_SERVER
 #include "lib/libGoAhead/XBMChttp.h"
-#endif
 #include "DNSNameCache.h"
 #include "FileSystem/PluginDirectory.h"
 #include "MusicInfoTag.h"
@@ -104,6 +102,8 @@
 #include "Crc32.h"
 #include "utils/RssReader.h"
 #include "AdvancedSettings.h"
+#include "cores/dvdplayer/DVDSubtitles/DVDSubtitleTagSami.h"
+#include "cores/dvdplayer/DVDSubtitles/DVDSubtitleStream.h"
 
 using namespace std;
 namespace MathUtils {
@@ -633,7 +633,7 @@ void CUtil::RemoveExtension(CStdString& strFileName)
   }
 }
 
-void CUtil::CleanString(CStdString& strFileName, CStdString& strTitle, CStdString& strTitleAndYear, CStdString& strYear, bool bRemoveExtension /* = false */)
+void CUtil::CleanString(const CStdString& strFileName, CStdString& strTitle, CStdString& strTitleAndYear, CStdString& strYear, bool bRemoveExtension /* = false */, bool bCleanChars /* = true */)
 {
   strTitleAndYear = strFileName;
 
@@ -642,7 +642,8 @@ void CUtil::CleanString(CStdString& strFileName, CStdString& strTitle, CStdStrin
 
   const CStdStringArray &regexps = g_advancedSettings.m_videoCleanStringRegExps;
 
-  CRegExp reTags, reYear;
+  CRegExp reTags(true);
+  CRegExp reYear;
   CStdString strExtension;
   GetExtension(strFileName, strExtension);
 
@@ -669,7 +670,7 @@ void CUtil::CleanString(CStdString& strFileName, CStdString& strTitle, CStdStrin
       continue;
     }
     int j=0;
-    if ((j=reTags.RegFind(strFileName.ToLower().c_str())) > 0)
+    if ((j=reTags.RegFind(strFileName.c_str())) > 0)
       strTitleAndYear = strTitleAndYear.Mid(0, j);
   }
 
@@ -678,6 +679,7 @@ void CUtil::CleanString(CStdString& strFileName, CStdString& strTitle, CStdStrin
   // if the file contains no spaces, all '.' tokens should be replaced by
   // spaces - one possibility of a mistake here could be something like:
   // "Dr..StrangeLove" - hopefully no one would have anything like this.
+  if (bCleanChars)
   {
     bool initialDots = true;
     bool alreadyContainsSpace = (strTitleAndYear.Find(' ') >= 0);
@@ -878,7 +880,7 @@ void CUtil::GetQualifiedFilename(const CStdString &strBasePath, CStdString &strF
     // This routine is only called from the playlist loaders,
     // where the filepath is in UTF-8 anyway, so we don't need
     // to do checking for FatX characters.
-    //if (g_advancedSettings.m_bAutoFatxLimit && (CUtil::IsHD(strFilename)))
+    //if (g_guiSettings.GetBool("services.ftpautofatx") && (CUtil::IsHD(strFilename)))
     //  CUtil::GetFatXQualifiedPath(strFilename);
   }
   else //Base is remote
@@ -1505,6 +1507,9 @@ bool CUtil::IsOnLAN(const CStdString& strPath)
   if(!IsRemote(strPath))
     return false;
 
+  if(IsPlugin(strPath))
+    return false;
+
   CStdString host = url.GetHostName();
   if(host.length() == 0)
     return false;
@@ -1638,7 +1643,7 @@ bool CUtil::IsSpecial(const CStdString& strFile)
 bool CUtil::IsPlugin(const CStdString& strFile)
 {
   CURL url(strFile);
-  return url.GetProtocol().Equals("plugin");
+  return url.GetProtocol().Equals("plugin") && !url.GetFileName().IsEmpty();
 }
 
 bool CUtil::IsPluginRoot(const CStdString& strFile)
@@ -1695,9 +1700,9 @@ bool CUtil::IsFTP(const CStdString& strFile)
          url.GetTranslatedProtocol() == "ftps";
 }
 
-bool CUtil::IsInternetStream(const CStdString& strFile, bool bStrictCheck /* = false */)
+bool CUtil::IsInternetStream(const CURL& url, bool bStrictCheck /* = false */)
 {
-  CURL url(strFile);
+  
   CStdString strProtocol = url.GetProtocol();
   
   if (strProtocol.IsEmpty())
@@ -1705,10 +1710,7 @@ bool CUtil::IsInternetStream(const CStdString& strFile, bool bStrictCheck /* = f
 
   // there's nothing to stop internet streams from being stacked
   if (strProtocol == "stack")
-  {
-    CStdString strFile2 = CStackDirectory::GetFirstStackedFile(strFile);
-    return IsInternetStream(strFile2);
-  }
+    return IsInternetStream(CStackDirectory::GetFirstStackedFile(url.Get()));
 
   CStdString strProtocol2 = url.GetTranslatedProtocol();
 
@@ -2559,9 +2561,33 @@ void CUtil::CacheSubtitles(const CStdString& strMovie, CStdString& strExtensionC
   {
     if (items[i]->m_bIsFolder)
       continue;
- 
+
     CStdString filename = GetFileName(items[i]->m_strPath);
-    vecExtensionsCached.push_back(filename.Right(filename.size()-8));
+    strLExt = filename.Right(filename.size()-8);
+    vecExtensionsCached.push_back(strLExt);
+    if (CUtil::GetExtension(filename).Equals(".smi"))
+    {
+      //Cache multi-language sami subtitle
+      CDVDSubtitleStream* pStream = new CDVDSubtitleStream();
+      if(pStream->Open(items[i]->m_strPath))
+      {
+        CDVDSubtitleTagSami TagConv;
+        TagConv.LoadHead(pStream);
+        if (TagConv.m_Langclass.size() >= 2)
+        {
+          for (unsigned int k = 0; k < TagConv.m_Langclass.size(); k++)
+          {
+            strDest.Format("special://temp/subtitle.%s%s", TagConv.m_Langclass[k].Name, strLExt);
+            if (CFile::Cache(items[i]->m_strPath, strDest, pCallback, NULL))
+              CLog::Log(LOGINFO, " cached subtitle %s->%s\n", filename.c_str(), strDest.c_str());
+            CStdString strTemp;
+            strTemp.Format(".%s%s", TagConv.m_Langclass[k].Name, strLExt);
+            vecExtensionsCached.push_back(strTemp);
+          }
+        }
+      }
+      delete pStream;
+    }
   }
 
   // construct string of added exts
@@ -2602,7 +2628,6 @@ bool CUtil::CacheRarSubtitles(const CStdString& strRarPath,
     // checking for embedded rars, I moved this outside the sub_ext[] loop. We only need to check this once for each file.
     if (CUtil::IsRAR(strPathInRar) || CUtil::IsZIP(strPathInRar))
     {
-      CStdString strExtAdded;
       CStdString strRarInRar;
       if (CUtil::GetExtension(strPathInRar).Equals(".rar"))
         CUtil::CreateArchivePath(strRarInRar, "rar", strRarPath, strPathInRar);
@@ -2621,7 +2646,7 @@ bool CUtil::CacheRarSubtitles(const CStdString& strRarPath,
       {
         if (strExt.CompareNoCase(sub_exts[iPos]) == 0)
         {
-          CStdString strSourceUrl, strDestUrl;
+          CStdString strSourceUrl;
           if (CUtil::GetExtension(strRarPath).Equals(".rar"))
             CUtil::CreateArchivePath(strSourceUrl, "rar", strRarPath, strPathInRar);
           else
@@ -3281,8 +3306,22 @@ CStdString CUtil::MakeLegalFileName(const CStdString &strFile, int LegalType)
   // check if the filename is a legal FATX one.
   if (LegalType == LEGAL_FATX) 
   {
+    result.Replace(':', '_');
+    result.Replace('*', '_');
+    result.Replace('?', '_');
+    result.Replace('\"', '_');
+    result.Replace('<', '_');
+    result.Replace('>', '_');
+    result.Replace('|', '_');
+    result.Replace(',', '_');
+    result.Replace('=', '_');
+    result.Replace('+', '_');
+    result.Replace(';', '_');
+    result.Replace('"', '_');
+    result.Replace('\'', '_');
     result.TrimRight(".");
     result.TrimRight(" ");
+
     GetFatXQualifiedPath(result);
   }
 
@@ -3431,7 +3470,8 @@ const BUILT_IN commands[] = {
   { "Control.Message",            true,   "Send a given message to a control within a given window" },
   { "SendClick",                  true,   "Send a click message from the given control to the given window" },
   { "LoadProfile",                true,   "Load the specified profile (note; if locks are active it won't work)" },
-  { "SetProperty",                true,   "Sets a window property for the current window (key,value)" },
+  { "SetProperty",                true,   "Sets a window property for the current focused window/dialog (key,value)" },
+  { "ClearProperty",              true,   "Clears a window property for the current focused window/dialog (key,value)" },
   { "PlayWith",                   true,   "Play the selected item with the specified core" },
   { "WakeOnLan",                  true,   "Sends the wake-up packet to the broadcast address for the specified MAC address" }
 };
@@ -3606,13 +3646,13 @@ int CUtil::ExecBuiltIn(const CStdString& execString)
     {
       g_passwordManager.bMasterUser = false;
       g_passwordManager.LockSources(true);
-      g_application.m_guiDialogKaiToast.QueueNotification(g_localizeStrings.Get(20052),g_localizeStrings.Get(20053));
+      g_application.m_guiDialogKaiToast.QueueNotification(CGUIDialogKaiToast::Warning, g_localizeStrings.Get(20052),g_localizeStrings.Get(20053));
     }
     else if (g_passwordManager.IsMasterLockUnlocked(true))
     {
       g_passwordManager.LockSources(false);
       g_passwordManager.bMasterUser = true;
-      g_application.m_guiDialogKaiToast.QueueNotification(g_localizeStrings.Get(20052),g_localizeStrings.Get(20054));
+      g_application.m_guiDialogKaiToast.QueueNotification(CGUIDialogKaiToast::Warning, g_localizeStrings.Get(20052),g_localizeStrings.Get(20054));
     }
 
     DeleteVideoDatabaseDirectoryCache();
@@ -3948,8 +3988,8 @@ int CUtil::ExecBuiltIn(const CStdString& execString)
     {
       if( g_application.IsPlaying() && g_application.m_pPlayer && g_application.m_pPlayer->CanRecord())
       {
-    if (m_pXbmcHttp && g_stSettings.m_HttpApiBroadcastLevel>=1)
-      g_applicationMessenger.HttpApi(g_application.m_pPlayer->IsRecording()?"broadcastlevel; RecordStopping;1":"broadcastlevel; RecordStarting;1");
+        if (m_pXbmcHttp && g_stSettings.m_HttpApiBroadcastLevel>=1)
+          g_applicationMessenger.HttpApi(g_application.m_pPlayer->IsRecording()?"broadcastlevel; RecordStopping;1":"broadcastlevel; RecordStarting;1");
         g_application.m_pPlayer->Record(!g_application.m_pPlayer->IsRecording());
       }
     }
@@ -4623,9 +4663,15 @@ int CUtil::ExecBuiltIn(const CStdString& execString)
   }
   else if (execute.Equals("setproperty") && params.size() == 2)
   {
-    CGUIWindow *window = g_windowManager.GetWindow(g_windowManager.GetActiveWindow());
+    CGUIWindow *window = g_windowManager.GetWindow(g_windowManager.GetFocusedWindow());
     if (window)
       window->SetProperty(params[0],params[1]);
+  }
+  else if (execute.Equals("clearproperty") && params.size() == 2)
+  {
+    CGUIWindow *window = g_windowManager.GetWindow(g_windowManager.GetFocusedWindow());
+    if (window)
+      window->SetProperty(params[0],"");
   }
   else if (execute.Equals("wakeonlan"))
   {
@@ -5023,7 +5069,7 @@ bool CUtil::AutoDetection()
         //Do Notification for this Client
         CStdString strtemplbl;
         strtemplbl.Format("%s %s",strNickName, v_xboxclients.client_ip[i]);
-        g_application.m_guiDialogKaiToast.QueueNotification(g_localizeStrings.Get(1251), strtemplbl);
+        g_application.m_guiDialogKaiToast.QueueNotification(CGUIDialogKaiToast::Info, g_localizeStrings.Get(1251), strtemplbl);
 
         //Debug Log
         CLog::Log(LOGDEBUG,"%s: %s FTP-Link: %s", g_localizeStrings.Get(1251).c_str(), strNickName.c_str(), strFTPPath.c_str());

@@ -279,7 +279,7 @@ bool CGUIWindowVideoFiles::GetDirectory(const CStdString &strDirectory, CFileIte
   m_stackingAvailable = true;
   m_cleaningAvailable = true;
 
-  if ((m_database.GetScraperForPath(strDirectory,info2) && info2.strContent.Equals("tvshows")) || items.IsTuxBox() || items.IsPlugin() )
+  if ((m_database.GetScraperForPath(strDirectory,info2) && info2.strContent.Equals("tvshows")) || items.IsTuxBox() || items.IsPlugin() || items.IsRSS() || items.IsInternetStream())
   { // dont stack or clean strings in tv dirs
     m_stackingAvailable = false;
     m_cleaningAvailable = false;
@@ -328,21 +328,9 @@ bool CGUIWindowVideoFiles::OnPlayMedia(int iItem)
   if (pItem->m_bIsShareOrDrive)
   	return false;
 
-  if (pItem->m_strPath == "add" && pItem->GetLabel() == g_localizeStrings.Get(1026)) // 'add source button' in empty root
-  {
-    if (CGUIDialogMediaSource::ShowAndAddMediaSource("video"))
-    {
-      Update("");
-      return true;
-    }
-    return false;
-  }
-  else
-  {
-    AddFileToDatabase(pItem.get());
+  AddFileToDatabase(pItem.get());
 
-    return CGUIWindowVideoBase::OnPlayMedia(iItem);
-  }
+  return CGUIWindowVideoBase::OnPlayMedia(iItem);
 }
 
 void CGUIWindowVideoFiles::AddFileToDatabase(const CFileItem* pItem)

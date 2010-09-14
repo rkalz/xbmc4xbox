@@ -467,13 +467,13 @@ bool CFileItem::Exists(bool bUseCache /* = true */) const
 
 bool CFileItem::IsVideo() const
 {
-  if (HasVideoInfoTag()) return true;
-  if (HasMusicInfoTag()) return false;
-  if (HasPictureInfoTag()) return false;
-
   /* check preset mime type */
   if( m_mimetype.Left(6).Equals("video/") )
     return true;
+
+  if (HasVideoInfoTag()) return true;
+  if (HasMusicInfoTag()) return false;
+  if (HasPictureInfoTag()) return false;
 
   if (IsHDHomeRun() || IsTuxBox() || CUtil::IsDVD(m_strPath))
     return true;
@@ -503,16 +503,16 @@ bool CFileItem::IsVideo() const
 
 bool CFileItem::IsAudio() const
 {
+  /* check preset mime type */
+  if( m_mimetype.Left(6).Equals("audio/") )
+    return true;
+
   if (HasMusicInfoTag()) return true;
   if (HasVideoInfoTag()) return false;
   if (HasPictureInfoTag()) return false;
   if (IsCDDA()) return true;
   if (!m_bIsFolder && IsShoutCast()) return true;
   if (!m_bIsFolder && IsLastFM()) return true;
-
-  /* check preset mime type */
-  if( m_mimetype.Left(6).Equals("audio/") )
-    return true;
 
   CStdString extension;
   if( m_mimetype.Left(12).Equals("application/") )
@@ -538,12 +538,12 @@ bool CFileItem::IsAudio() const
 
 bool CFileItem::IsPicture() const
 {
+  if( m_mimetype.Left(6).Equals("image/") )
+    return true;
+
   if (HasPictureInfoTag()) return true;
   if (HasMusicInfoTag()) return false;
   if (HasVideoInfoTag()) return false;
-
-  if( m_mimetype.Left(6).Equals("image/") )
-    return true;
 
   return CUtil::IsPicture(m_strPath);
 }
@@ -1113,6 +1113,8 @@ bool CFileItem::IsSamePath(const CFileItem *item) const
     dbItem.m_lStartOffset = item->m_lStartOffset;
     return IsSamePath(&dbItem);
   }
+  if (HasProperty("original_listitem_url"))
+    return (GetProperty("original_listitem_url") == item->m_strPath);
   return false;
 }
 
@@ -1546,6 +1548,9 @@ void CFileItemList::Sort(SORT_METHOD sortMethod, SORT_ORDER sortOrder)
   case SORT_METHOD_FULLPATH:
     FillSortFields(SSortFileItem::ByFullPath);
     break;
+  case SORT_METHOD_LASTPLAYED:
+    FillSortFields(SSortFileItem::ByLastPlayed);
+    break;
   default:
     break;
   }
@@ -1554,7 +1559,7 @@ void CFileItemList::Sort(SORT_METHOD sortMethod, SORT_ORDER sortOrder)
       sortMethod == SORT_METHOD_VIDEO_SORT_TITLE_IGNORE_THE ||
       sortMethod == SORT_METHOD_LABEL_IGNORE_FOLDERS)
     Sort(sortOrder==SORT_ORDER_ASC ? SSortFileItem::IgnoreFoldersAscending : SSortFileItem::IgnoreFoldersDescending);
-  else if (sortMethod != SORT_METHOD_NONE)
+  else if (sortMethod != SORT_METHOD_NONE && sortMethod != SORT_METHOD_UNSORTED)
     Sort(sortOrder==SORT_ORDER_ASC ? SSortFileItem::Ascending : SSortFileItem::Descending);
 
   m_sortMethod=sortMethod;
@@ -2463,10 +2468,14 @@ CStdString CFileItem::GetCachedVideoThumb() const
 {
   if (IsStack())
     return GetCachedThumb(CStackDirectory::GetFirstStackedFile(m_strPath),g_settings.GetVideoThumbFolder(),true);
-  else if (IsVideoDb() && HasVideoInfoTag() && !m_bIsFolder)
-    return GetCachedThumb(GetVideoInfoTag()->m_strFileNameAndPath,g_settings.GetVideoThumbFolder(),true);
-  else
-    return GetCachedThumb(m_strPath,g_settings.GetVideoThumbFolder(),true);
+  else if (IsVideoDb() && HasVideoInfoTag())
+  {
+    if (m_bIsFolder && !GetVideoInfoTag()->m_strPath.IsEmpty())
+      return GetCachedThumb(GetVideoInfoTag()->m_strPath, g_settings.GetVideoThumbFolder(), true);
+    else if (!GetVideoInfoTag()->m_strFileNameAndPath.IsEmpty())
+      return GetCachedThumb(GetVideoInfoTag()->m_strFileNameAndPath, g_settings.GetVideoThumbFolder(), true);
+  }
+  return GetCachedThumb(m_strPath,g_settings.GetVideoThumbFolder(),true);
 }
 
 CStdString CFileItem::GetCachedEpisodeThumb() const
@@ -2480,6 +2489,7 @@ CStdString CFileItem::GetCachedEpisodeThumb() const
 void CFileItem::SetCachedVideoThumb()
 {
   if (IsParentFolder()) return;
+  if (HasThumbnail()) return;
   CStdString cachedThumb(GetCachedVideoThumb());
   if (HasVideoInfoTag() && !m_bIsFolder  &&
       GetVideoInfoTag()->m_iEpisode > -1 &&

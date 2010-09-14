@@ -57,7 +57,7 @@ class CDateTime;
 #define PLAYER_HAS_AUDIO              2
 #define PLAYER_HAS_VIDEO              3
 #define PLAYER_PLAYING                4
-#define PLAYER_PAUSED                 5 
+#define PLAYER_PAUSED                 5
 #define PLAYER_REWINDING              6
 #define PLAYER_REWINDING_2x           7
 #define PLAYER_REWINDING_4x           8
@@ -72,14 +72,14 @@ class CDateTime;
 #define PLAYER_FORWARDING_32x        17
 #define PLAYER_CAN_RECORD            18
 #define PLAYER_RECORDING             19
-#define PLAYER_CACHING               20 
+#define PLAYER_CACHING               20
 #define PLAYER_DISPLAY_AFTER_SEEK    21
 #define PLAYER_PROGRESS              22
 #define PLAYER_SEEKBAR               23
 #define PLAYER_SEEKTIME              24
 #define PLAYER_SEEKING               25
 #define PLAYER_SHOWTIME              26
-#define PLAYER_TIME                  27  
+#define PLAYER_TIME                  27
 #define PLAYER_TIME_REMAINING        28
 #define PLAYER_DURATION              29
 #define PLAYER_SHOWCODEC             30
@@ -212,6 +212,7 @@ class CDateTime;
 #define MUSICPLAYER_EXISTS          224
 #define MUSICPLAYER_PLAYLISTPLAYING 225
 #define MUSICPLAYER_ALBUM_ARTIST    226
+#define MUSICPLAYER_FILENAME        227
 
 #define VIDEOPLAYER_TITLE             250
 #define VIDEOPLAYER_GENRE             251
@@ -316,6 +317,7 @@ class CDateTime;
 #define STRING_COMPARE              411
 #define STRING_STR                  412
 #define INTEGER_GREATER_THAN        413
+#define VALUE_IS_TRUE               414
 
 #define SKIN_HAS_THEME_START        500
 #define SKIN_HAS_THEME_END          599 // allow for max 100 themes
@@ -435,9 +437,9 @@ class CDateTime;
 // Version string MUST NOT contain spaces.  It is used
 // in the HTTP request user agent.
 #ifdef SVN_REV
-#define VERSION_STRING "pre-3.0-r"SVN_REV
+#define VERSION_STRING "3.0-BETA1-r"SVN_REV
 #else
-#define VERSION_STRING "pre-3.0"
+#define VERSION_STRING "3.0-BETA1"
 #endif
 
 #define LISTITEM_START              35000
@@ -505,7 +507,7 @@ class CDateTime;
 
 // the multiple information vector
 #define MULTI_INFO_START              40000
-#define MULTI_INFO_END                41000 // 1000 references is all we have for now
+#define MULTI_INFO_END                99999
 #define COMBINED_VALUES_START        100000
 
 // forward
@@ -635,6 +637,7 @@ public:
   void SetLibraryBool(int condition, bool value);
   bool GetLibraryBool(int condition);
   void ResetLibraryBools();
+  CStdString LocalizeTime(const CDateTime &time, TIME_FORMAT format) const;
 
 protected:
   // routines for window retrieval
@@ -647,7 +650,6 @@ protected:
   int TranslateListItem(const CStdString &info);
   int TranslateMusicPlayerString(const CStdString &info) const;
   TIME_FORMAT TranslateTimeFormat(const CStdString &format);
-  CStdString LocalizeTime(const CDateTime &time, TIME_FORMAT format) const;
   bool GetItemBool(const CGUIListItem *item, int condition) const;
   CStdString VideoWidthToResolutionDescription(int iWidth) const;
   CStdString VideoAspectToAspectDescription(float fAspect) const;

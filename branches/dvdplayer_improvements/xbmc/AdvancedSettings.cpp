@@ -119,8 +119,8 @@ CAdvancedSettings::CAdvancedSettings()
   // in a flat dir structure, but is perfectly safe in a dir-per-vid one.
   //m_videoStackRegExps.push_back("(.*?)([ ._-]*[0-9])(.*?)(\\.[^.]+)$");
 
-  // foo.s01.e01, foo.s01_e01, S01E02 foo
-  m_tvshowStackRegExps.push_back(TVShowRegexp(false,"[Ss]([0-9]+)[][._-]*[Ee]([0-9]+)([^\\\\/]*)$"));
+  // foo.s01.e01, foo.s01_e01, S01E02 foo, S01 - E02
+  m_tvshowStackRegExps.push_back(TVShowRegexp(false,"[Ss]([0-9]+)[][ ._-]*[Ee]([0-9]+)([^\\\\/]*)$"));
   // foo.ep01, foo.EP_01
   m_tvshowStackRegExps.push_back(TVShowRegexp(false,"[\\._ -]()[Ee][Pp]_?([0-9]+)([^\\\\/]*)$"));
   // foo.yyyy.mm.dd.* (byDate=true)
@@ -177,6 +177,7 @@ CAdvancedSettings::CAdvancedSettings()
   m_bVideoLibraryExportAutoThumbs = false;
   m_bVideoLibraryMyMoviesCategoriesToGenres = false;
   m_bVideoLibraryImportWatchedState = false;
+  m_bVideoScannerIgnoreErrors = false;
 
   m_bUseEvilB = true;
 
@@ -213,7 +214,6 @@ CAdvancedSettings::CAdvancedSettings()
   m_bNavVKeyboard = false;
 
   m_bPythonVerbose = false;
-  m_bAutoFatxLimit = true;
 
   m_bgInfoLoaderMaxThreads = 1;
 }
@@ -365,6 +365,12 @@ bool CAdvancedSettings::Load()
       XMLUtils::GetBoolean(pMyMovies, "categoriestogenres", m_bVideoLibraryMyMoviesCategoriesToGenres);
   }
 
+  pElement = pRootElement->FirstChildElement("videoscanner");
+  if (pElement)
+  {
+    XMLUtils::GetBoolean(pElement, "ignoreerrors", m_bVideoScannerIgnoreErrors);
+  }
+
   pElement = pRootElement->FirstChildElement("slideshow");
   if (pElement)
   {
@@ -424,8 +430,6 @@ bool CAdvancedSettings::Load()
   {
     XMLUtils::GetBoolean(pElement, "verbose", m_bPythonVerbose);
   }
-
-  XMLUtils::GetBoolean(pRootElement, "autofatxlimit", m_bAutoFatxLimit);
 
   XMLUtils::GetString(pRootElement, "cddbaddress", m_cddbAddress);
 
