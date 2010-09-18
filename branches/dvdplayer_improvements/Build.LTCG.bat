@@ -45,7 +45,12 @@ rem	CONFIG START
 	set CLEAN=xbmc.sln /clean Release_LTCG
 	set XBE=Release_LTCG\default.xbe
 	set XBE_PATCH=tools\xbepatch\xbepatch.exe
-	set RAR="%ProgramFiles%\Winrar\rar.exe"
+	
+	SET RAR="?"
+	IF EXIST "%ProgramFiles(x86)%\Winrar\rar.exe" SET RAR="%ProgramFiles(x86)%\Winrar\rar.exe"
+	IF EXIST "%ProgramFiles%\Winrar\rar.exe"      SET RAR="%ProgramFiles%\Winrar\rar.exe"
+	IF EXIST "%ProgramW6432%\Winrar\rar.exe" SET RAR="%ProgramW6432%\Winrar\rar.exe"
+	
 	set RAROPS=a -r -idp -inul -m5 XBMC.rar BUILD
 rem	CONFIG END
 rem ---------------------------------------------
