@@ -6,7 +6,7 @@ timestamp dependency analysis."""
 
 # This module should be kept compatible with Python 2.1.
 
-__revision__ = "$Id: dep_util.py 58049 2007-09-08 00:34:17Z skip.montanaro $"
+__revision__ = "$Id: dep_util.py 37828 2004-11-10 22:23:15Z loewis $"
 
 import os
 from distutils.errors import DistutilsFileError
@@ -19,8 +19,7 @@ def newer (source, target):
     Raise DistutilsFileError if 'source' does not exist.
     """
     if not os.path.exists(source):
-        raise DistutilsFileError, ("file '%s' does not exist" %
-                                   os.path.abspath(source))
+        raise DistutilsFileError, "file '%s' does not exist" % source
     if not os.path.exists(target):
         return 1
 

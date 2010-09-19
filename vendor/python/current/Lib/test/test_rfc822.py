@@ -1,7 +1,7 @@
+import rfc822
+import sys
 import unittest
 from test import test_support
-
-rfc822 = test_support.import_module("rfc822", deprecated=True)
 
 try:
     from cStringIO import StringIO
@@ -45,10 +45,6 @@ class MessageTestCase(unittest.TestCase):
                 print 'extra parsed address:', repr(n), repr(a)
                 continue
             i = i + 1
-            self.assertEqual(mn, n,
-                             "Un-expected name: %s != %s" % (`mn`, `n`))
-            self.assertEqual(ma, a,
-                             "Un-expected address: %s != %s" % (`ma`, `a`))
             if mn == n and ma == a:
                 pass
             else:
@@ -132,12 +128,6 @@ class MessageTestCase(unittest.TestCase):
         self.check(
             'To: person@dom.ain (User J. Person)\n\n',
             [('User J. Person', 'person@dom.ain')])
-
-    def test_doublecomment(self):
-        # The RFC allows comments within comments in an email addr
-        self.check(
-            'To: person@dom.ain ((User J. Person)), John Doe <foo@bar.com>\n\n',
-            [('User J. Person', 'person@dom.ain'), ('John Doe', 'foo@bar.com')])
 
     def test_twisted(self):
         # This one is just twisted.  I don't know what the proper

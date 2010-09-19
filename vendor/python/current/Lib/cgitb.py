@@ -22,8 +22,7 @@ The default handler displays output as HTML.
 """
 
 __author__ = 'Ka-Ping Yee'
-
-__version__ = '$Revision: 55348 $'
+__version__ = '$Revision: 39082 $'
 
 import sys
 
@@ -150,7 +149,7 @@ function calls leading up to the error, in the order they occurred.</p>'''
             if name in done: continue
             done[name] = 1
             if value is not __UNDEF__:
-                if where in ('global', 'builtin'):
+                if where in ['global', 'builtin']:
                     name = ('<em>%s</em> ' % where) + strong(name)
                 elif where == 'local':
                     name = strong(name)
@@ -167,7 +166,7 @@ function calls leading up to the error, in the order they occurred.</p>'''
 
     exception = ['<p>%s: %s' % (strong(pydoc.html.escape(str(etype))),
                                 pydoc.html.escape(str(evalue)))]
-    if isinstance(evalue, BaseException):
+    if type(evalue) is types.InstanceType:
         for name in dir(evalue):
             if name[:1] == '_': continue
             value = pydoc.html.repr(getattr(evalue, name))
@@ -183,8 +182,7 @@ function calls leading up to the error, in the order they occurred.</p>'''
 
 %s
 -->
-''' % pydoc.html.escape(
-          ''.join(traceback.format_exception(etype, evalue, etb)))
+''' % ''.join(traceback.format_exception(etype, evalue, etb))
 
 def text((etype, evalue, etb), context=5):
     """Return a plain text document describing a given traceback."""
@@ -240,7 +238,7 @@ function calls leading up to the error, in the order they occurred.
         frames.append('\n%s\n' % '\n'.join(rows))
 
     exception = ['%s: %s' % (str(etype), str(evalue))]
-    if isinstance(evalue, BaseException):
+    if type(evalue) is types.InstanceType:
         for name in dir(evalue):
             value = pydoc.text.repr(getattr(evalue, name))
             exception.append('\n%s%s = %s' % (" "*4, name, value))

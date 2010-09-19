@@ -4,7 +4,7 @@
 
 import os
 import sys
-import re
+import regex
 import getopt
 import string
 import mhlib
@@ -157,7 +157,7 @@ def scan_unpost(e):
     scanmenu.unpost()
     scanmenu.invoke('active')
 
-scanparser = re.compile('^ *([0-9]+)')
+scanparser = regex.compile('^ *\([0-9]+\)')
 
 def open_folder(e=None):
     global folder, mhf

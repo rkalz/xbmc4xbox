@@ -954,14 +954,8 @@ void
 initsv(void)
 {
 	PyObject *m, *d;
-	
-	if (PyErr_WarnPy3k("the sv module has been removed in "
-	                   "Python 3.0", 2) < 0)
-	    return;
 
 	m = Py_InitModule("sv", sv_methods);
-	if (m == NULL)
-		return;
 	d = PyModule_GetDict(m);
 
 	SvError = PyErr_NewException("sv.error", NULL, NULL);

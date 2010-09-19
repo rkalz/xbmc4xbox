@@ -1,24 +1,17 @@
 # Echo server demo using Unix sockets (handles one connection only)
 # Piet van Oostrum
-
 import os
 from socket import *
-
-FILE = 'unix-socket'
+FILE = 'blabla'
 s = socket(AF_UNIX, SOCK_STREAM)
 s.bind(FILE)
-
 print 'Sock name is: ['+s.getsockname()+']'
-
-# Wait for a connection
 s.listen(1)
 conn, addr = s.accept()
-
-while True:
+print 'Connected by', addr
+while 1:
     data = conn.recv(1024)
-    if not data:
-        break
+    if not data: break
     conn.send(data)
-
 conn.close()
 os.unlink(FILE)

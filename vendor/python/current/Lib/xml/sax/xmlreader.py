@@ -294,12 +294,12 @@ class AttributesImpl:
         return self._attrs[name]
 
     def getNameByQName(self, name):
-        if not name in self._attrs:
+        if not self._attrs.has_key(name):
             raise KeyError, name
         return name
 
     def getQNameByName(self, name):
-        if not name in self._attrs:
+        if not self._attrs.has_key(name):
             raise KeyError, name
         return name
 
@@ -319,7 +319,7 @@ class AttributesImpl:
         return self._attrs.keys()
 
     def has_key(self, name):
-        return name in self._attrs
+        return self._attrs.has_key(name)
 
     def __contains__(self, name):
         return self._attrs.has_key(name)

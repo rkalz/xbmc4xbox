@@ -4,9 +4,8 @@
 """
 
 import unittest
-from test.test_support import run_unittest, TESTFN, import_module
-dircache = import_module('dircache', deprecated=True)
-import os, time, sys, tempfile
+from test.test_support import run_unittest, TESTFN
+import dircache, os, time, sys, tempfile
 
 
 class DircacheTests(unittest.TestCase):
@@ -67,10 +66,7 @@ class DircacheTests(unittest.TestCase):
 
 
 def test_main():
-    try:
-        run_unittest(DircacheTests)
-    finally:
-        dircache.reset()
+    run_unittest(DircacheTests)
 
 
 if __name__ == "__main__":

@@ -148,21 +148,22 @@ releaseobjects(FL_FORM *form)
 static PyObject *
 generic_set_call_back(genericobject *g, PyObject *args)
 {
-	if (PyTuple_GET_SIZE(args) == 0) {
+	if (args == NULL) {
 		Py_XDECREF(g->ob_callback);
 		Py_XDECREF(g->ob_callback_arg);
 		g->ob_callback = NULL;
 		g->ob_callback_arg = NULL;
 	}
 	else {
-        PyObject *a, *b;
-        if (!PyArg_UnpackTuple(args, "set_call_back", 2, 2, &a, &b)
-            return NULL;
+		if (!PyTuple_Check(args) || PyTuple_Size(args) != 2) {
+			PyErr_BadArgument();
+			return NULL;
+		}
 		Py_XDECREF(g->ob_callback);
 		Py_XDECREF(g->ob_callback_arg);
-		g->ob_callback = a;
+		g->ob_callback = PyTuple_GetItem(args, 0);
 		Py_INCREF(g->ob_callback);
-		g->ob_callback_arg = b;
+		g->ob_callback_arg = PyTuple_GetItem(args, 1);
 		Py_INCREF(g->ob_callback_arg);
 	}
 	Py_INCREF(Py_None);
@@ -249,7 +250,7 @@ generic_set_object_shortcut(genericobject *g, PyObject *args)
 }
 
 static PyMethodDef generic_methods[] = {
-	{"set_call_back",	(PyCFunction)generic_set_call_back, METH_VARARGS},
+	{"set_call_back",	(PyCFunction)generic_set_call_back, METH_OLDARGS},
 	{"delete_object",	(PyCFunction)generic_delete_object, METH_NOARGS},
 	{"show_object",		(PyCFunction)generic_show_object, METH_NOARGS},
 	{"hide_object",		(PyCFunction)generic_hide_object, METH_NOARGS},
@@ -260,7 +261,7 @@ static PyMethodDef generic_methods[] = {
 #endif
 	{"activate_object",	(PyCFunction)generic_activate_object, METH_NOARGS},
 	{"deactivate_object",	(PyCFunction)generic_deactivate_object, METH_NOARGS},
-	{"set_object_shortcut",	(PyCFunction)generic_set_object_shortcut, METH_VARARGS},
+	{"set_object_shortcut",	(PyCFunction)generic_set_object_shortcut, METH_OLDARGS},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -2128,14 +2129,7 @@ static PyMethodDef forms_methods[] = {
 PyMODINIT_FUNC
 initfl(void)
 {
-    
-    if (PyErr_WarnPy3k("the fl module has been removed in "
-                       "Python 3.0", 2) < 0)
-        return;
-    
 	Py_InitModule("fl", forms_methods);
-	if (m == NULL)
-		return;
 	foreground();
 	fl_init();
 }

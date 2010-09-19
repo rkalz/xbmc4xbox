@@ -84,7 +84,7 @@ class ExampleASTVisitor(ASTVisitor):
             meth(node, *args)
         elif self.VERBOSE > 0:
             klass = node.__class__
-            if klass not in self.examples:
+            if not self.examples.has_key(klass):
                 self.examples[klass] = klass
                 print
                 print self.visitor

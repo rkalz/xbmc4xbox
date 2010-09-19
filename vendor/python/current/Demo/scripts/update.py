@@ -8,10 +8,10 @@
 
 import os
 import sys
-import re
+import regex
 
-pat = '^([^: \t\n]+):([1-9][0-9]*):'
-prog = re.compile(pat)
+pat = '^\([^: \t\n]+\):\([1-9][0-9]*\):'
+prog = regex.compile(pat)
 
 class FileObj:
     def __init__(self, filename):

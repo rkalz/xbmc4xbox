@@ -4,11 +4,10 @@
 
 """reindent [-d][-r][-v] [ path ... ]
 
--d (--dryrun)   Dry run.   Analyze, but don't make any changes to, files.
--r (--recurse)  Recurse.   Search for all .py files in subdirectories too.
--n (--nobackup) No backup. Does not make a ".bak" file before reindenting.
--v (--verbose)  Verbose.   Print informative msgs; else no output.
--h (--help)     Help.      Print this usage information and exit.
+-d (--dryrun)  Dry run.  Analyze, but don't make any changes to, files.
+-r (--recurse) Recurse.  Search for all .py files in subdirectories too.
+-v (--verbose) Verbose.  Print informative msgs; else no output.
+-h (--help)    Help.     Print this usage information and exit.
 
 Change Python (.py) files to use 4-space indents and no hard tab characters.
 Also trim excess spaces and tabs from ends of lines, and remove empty lines
@@ -32,23 +31,17 @@ resulting .py file won't change it again).
 The hard part of reindenting is figuring out what to do with comment
 lines.  So long as the input files get a clean bill of health from
 tabnanny.py, reindent should do a good job.
-
-The backup file is a copy of the one that is being reindented. The ".bak"
-file is generated with shutil.copy(), but some corner cases regarding
-user/group and permissions could leave the backup file more readable that
-you'd prefer. You can always use the --nobackup option to prevent this.
 """
 
 __version__ = "1"
 
 import tokenize
-import os, shutil
+import os
 import sys
 
-verbose    = 0
-recurse    = 0
-dryrun     = 0
-makebackup = True
+verbose = 0
+recurse = 0
+dryrun  = 0
 
 def usage(msg=None):
     if msg is not None:
@@ -64,10 +57,10 @@ def errprint(*args):
 
 def main():
     import getopt
-    global verbose, recurse, dryrun, makebackup
+    global verbose, recurse, dryrun
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "drnvh",
-                        ["dryrun", "recurse", "nobackup", "verbose", "help"])
+        opts, args = getopt.getopt(sys.argv[1:], "drvh",
+                                   ["dryrun", "recurse", "verbose", "help"])
     except getopt.error, msg:
         usage(msg)
         return
@@ -76,8 +69,6 @@ def main():
             dryrun += 1
         elif o in ('-r', '--recurse'):
             recurse += 1
-        elif o in ('-n', '--nobackup'):
-            makebackup = False
         elif o in ('-v', '--verbose'):
             verbose += 1
         elif o in ('-h', '--help'):
@@ -99,8 +90,7 @@ def check(file):
         for name in names:
             fullname = os.path.join(file, name)
             if ((recurse and os.path.isdir(fullname) and
-                 not os.path.islink(fullname) and
-                 not os.path.split(fullname)[1].startswith("."))
+                 not os.path.islink(fullname))
                 or name.lower().endswith(".py")):
                 check(fullname)
         return
@@ -122,20 +112,19 @@ def check(file):
                 print "But this is a dry run, so leaving it alone."
         if not dryrun:
             bak = file + ".bak"
-            if makebackup:
-                shutil.copyfile(file, bak)
-                if verbose:
-                    print "backed up", file, "to", bak
+            if os.path.exists(bak):
+                os.remove(bak)
+            os.rename(file, bak)
+            if verbose:
+                print "renamed", file, "to", bak
             f = open(file, "w")
             r.write(f)
             f.close()
             if verbose:
                 print "wrote new", file
-        return True
     else:
         if verbose:
             print "unchanged."
-        return False
 
 def _rstrip(line, JUNK='\n \t'):
     """Return line stripped of trailing spaces, tabs, newlines.

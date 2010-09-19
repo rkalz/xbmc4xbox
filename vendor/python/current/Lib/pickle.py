@@ -24,7 +24,7 @@ Misc variables:
 
 """
 
-__version__ = "$Revision: 65524 $"       # Code version
+__version__ = "$Revision: 36861 $"       # Code version
 
 from types import *
 from copy_reg import dispatch_table
@@ -33,6 +33,7 @@ import marshal
 import sys
 import struct
 import re
+import warnings
 
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
@@ -170,7 +171,7 @@ del x
 
 class Pickler:
 
-    def __init__(self, file, protocol=None):
+    def __init__(self, file, protocol=None, bin=None):
         """This takes a file-like object for writing a pickle data stream.
 
         The optional protocol argument tells the pickler to use the
@@ -194,6 +195,12 @@ class Pickler:
         object, or any other custom object that meets this interface.
 
         """
+        if protocol is not None and bin is not None:
+            raise ValueError, "can't specify both 'protocol' and 'bin'"
+        if bin is not None:
+            warnings.warn("The 'bin' argument to Pickler() is deprecated",
+                          DeprecationWarning)
+            protocol = bin
         if protocol is None:
             protocol = 0
         if protocol < 0:
@@ -348,10 +355,17 @@ class Pickler:
 
         # Assert that args is a tuple or None
         if not isinstance(args, TupleType):
-            raise PicklingError("args from reduce() should be a tuple")
+            if args is None:
+                # A hack for Jim Fulton's ExtensionClass, now deprecated.
+                # See load_reduce()
+                warnings.warn("__basicnew__ special case is deprecated",
+                              DeprecationWarning)
+            else:
+                raise PicklingError(
+                    "args from reduce() should be a tuple")
 
         # Assert that func is callable
-        if not hasattr(func, '__call__'):
+        if not callable(func):
             raise PicklingError("func from reduce should be callable")
 
         save = self.save
@@ -1130,7 +1144,13 @@ class Unpickler:
         stack = self.stack
         args = stack.pop()
         func = stack[-1]
-        value = func(*args)
+        if args is None:
+            # A hack for Jim Fulton's ExtensionClass, now deprecated
+            warnings.warn("__basicnew__ special case is deprecated",
+                          DeprecationWarning)
+            value = func.__basicnew__()
+        else:
+            value = func(*args)
         stack[-1] = value
     dispatch[REDUCE] = load_reduce
 
@@ -1358,12 +1378,12 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-def dump(obj, file, protocol=None):
-    Pickler(file, protocol).dump(obj)
+def dump(obj, file, protocol=None, bin=None):
+    Pickler(file, protocol, bin).dump(obj)
 
-def dumps(obj, protocol=None):
+def dumps(obj, protocol=None, bin=None):
     file = StringIO()
-    Pickler(file, protocol).dump(obj)
+    Pickler(file, protocol, bin).dump(obj)
     return file.getvalue()
 
 def load(file):

@@ -4,7 +4,6 @@
 #include "Python.h"
 
 
-#ifndef __LP64__
 
 #include "pymactoolbox.h"
 
@@ -48,45 +47,45 @@ extern int _MediaObj_Convert(PyObject *, Media *);
 #endif
 
 /* Macro to allow us to GetNextInterestingTime without duration */
-#define GetMediaNextInterestingTimeOnly(media, flags, time, rate, rv)                         GetMediaNextInterestingTime(media, flags, time, rate, rv, NULL)
-
+#define GetMediaNextInterestingTimeOnly(media, flags, time, rate, rv) 			GetMediaNextInterestingTime(media, flags, time, rate, rv, NULL)
+			
 /*
 ** Parse/generate time records
 */
 static PyObject *
 QtTimeRecord_New(TimeRecord *itself)
 {
-        if (itself->base)
-                return Py_BuildValue("O&lO&", PyMac_Buildwide, &itself->value, itself->scale,
-                        TimeBaseObj_New, itself->base);
-        else
-                return  Py_BuildValue("O&lO", PyMac_Buildwide, &itself->value, itself->scale,
-                        Py_None);
+	if (itself->base)
+		return Py_BuildValue("O&lO&", PyMac_Buildwide, &itself->value, itself->scale, 
+			TimeBaseObj_New, itself->base);
+	else
+		return  Py_BuildValue("O&lO", PyMac_Buildwide, &itself->value, itself->scale, 
+			Py_None);
 }
 
 static int
 QtTimeRecord_Convert(PyObject *v, TimeRecord *p_itself)
 {
-        PyObject *base = NULL;
-        if( !PyArg_ParseTuple(v, "O&l|O", PyMac_Getwide, &p_itself->value, &p_itself->scale,
-                        &base) )
-                return 0;
-        if ( base == NULL || base == Py_None )
-                p_itself->base = NULL;
-        else
-                if ( !TimeBaseObj_Convert(base, &p_itself->base) )
-                        return 0;
-        return 1;
+	PyObject *base = NULL;
+	if( !PyArg_ParseTuple(v, "O&l|O", PyMac_Getwide, &p_itself->value, &p_itself->scale,
+			&base) )
+		return 0;
+	if ( base == NULL || base == Py_None )
+		p_itself->base = NULL;
+	else
+		if ( !TimeBaseObj_Convert(base, &p_itself->base) )
+			return 0;
+	return 1;
 }
 
 static int
 QtMusicMIDIPacket_Convert(PyObject *v, MusicMIDIPacket *p_itself)
 {
-        int dummy;
-
-        if( !PyArg_ParseTuple(v, "hls#", &p_itself->length, &p_itself->reserved, p_itself->data, dummy) )
-                return 0;
-        return 1;
+	int dummy;
+	
+	if( !PyArg_ParseTuple(v, "hls#", &p_itself->length, &p_itself->reserved, p_itself->data, dummy) )
+		return 0;
+	return 1;
 }
 
 
@@ -109,15 +108,14 @@ PyObject *IdleManagerObj_New(IdleManager itself)
 {
 	IdleManagerObject *it;
 	if (itself == NULL) {
-	                                PyErr_SetString(Qt_Error,"Cannot create IdleManager from NULL pointer");
-	                                return NULL;
-	                        }
+						PyErr_SetString(Qt_Error,"Cannot create IdleManager from NULL pointer");
+						return NULL;
+					}
 	it = PyObject_NEW(IdleManagerObject, &IdleManager_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-
 int IdleManagerObj_Convert(PyObject *v, IdleManager *p_itself)
 {
 	if (v == Py_None)
@@ -156,16 +154,16 @@ static PyMethodDef IdleManagerObj_methods[] = {
 
 #define IdleManagerObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *IdleManagerObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
+static PyObject *IdleManagerObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *_self;
+	PyObject *self;
 	IdleManager itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, IdleManagerObj_Convert, &itself)) return NULL;
-	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((IdleManagerObject *)_self)->ob_itself = itself;
-	return _self;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, IdleManagerObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((IdleManagerObject *)self)->ob_itself = itself;
+	return self;
 }
 
 #define IdleManagerObj_tp_free PyObject_Del
@@ -233,15 +231,14 @@ PyObject *MovieCtlObj_New(MovieController itself)
 {
 	MovieControllerObject *it;
 	if (itself == NULL) {
-	                                PyErr_SetString(Qt_Error,"Cannot create MovieController from NULL pointer");
-	                                return NULL;
-	                        }
+						PyErr_SetString(Qt_Error,"Cannot create MovieController from NULL pointer");
+						return NULL;
+					}
 	it = PyObject_NEW(MovieControllerObject, &MovieController_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-
 int MovieCtlObj_Convert(PyObject *v, MovieController *p_itself)
 {
 	if (v == Py_None)
@@ -1276,16 +1273,16 @@ static PyMethodDef MovieCtlObj_methods[] = {
 
 #define MovieCtlObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *MovieCtlObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
+static PyObject *MovieCtlObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *_self;
+	PyObject *self;
 	MovieController itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, MovieCtlObj_Convert, &itself)) return NULL;
-	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((MovieControllerObject *)_self)->ob_itself = itself;
-	return _self;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, MovieCtlObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((MovieControllerObject *)self)->ob_itself = itself;
+	return self;
 }
 
 #define MovieCtlObj_tp_free PyObject_Del
@@ -1353,15 +1350,14 @@ PyObject *TimeBaseObj_New(TimeBase itself)
 {
 	TimeBaseObject *it;
 	if (itself == NULL) {
-	                                PyErr_SetString(Qt_Error,"Cannot create TimeBase from NULL pointer");
-	                                return NULL;
-	                        }
+						PyErr_SetString(Qt_Error,"Cannot create TimeBase from NULL pointer");
+						return NULL;
+					}
 	it = PyObject_NEW(TimeBaseObject, &TimeBase_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-
 int TimeBaseObj_Convert(PyObject *v, TimeBase *p_itself)
 {
 	if (v == Py_None)
@@ -1770,16 +1766,16 @@ static PyMethodDef TimeBaseObj_methods[] = {
 
 #define TimeBaseObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *TimeBaseObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
+static PyObject *TimeBaseObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *_self;
+	PyObject *self;
 	TimeBase itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, TimeBaseObj_Convert, &itself)) return NULL;
-	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((TimeBaseObject *)_self)->ob_itself = itself;
-	return _self;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, TimeBaseObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((TimeBaseObject *)self)->ob_itself = itself;
+	return self;
 }
 
 #define TimeBaseObj_tp_free PyObject_Del
@@ -1847,15 +1843,14 @@ PyObject *UserDataObj_New(UserData itself)
 {
 	UserDataObject *it;
 	if (itself == NULL) {
-	                                PyErr_SetString(Qt_Error,"Cannot create UserData from NULL pointer");
-	                                return NULL;
-	                        }
+						PyErr_SetString(Qt_Error,"Cannot create UserData from NULL pointer");
+						return NULL;
+					}
 	it = PyObject_NEW(UserDataObject, &UserData_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-
 int UserDataObj_Convert(PyObject *v, UserData *p_itself)
 {
 	if (v == Py_None)
@@ -2141,16 +2136,16 @@ static PyMethodDef UserDataObj_methods[] = {
 
 #define UserDataObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *UserDataObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
+static PyObject *UserDataObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *_self;
+	PyObject *self;
 	UserData itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, UserDataObj_Convert, &itself)) return NULL;
-	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((UserDataObject *)_self)->ob_itself = itself;
-	return _self;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, UserDataObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((UserDataObject *)self)->ob_itself = itself;
+	return self;
 }
 
 #define UserDataObj_tp_free PyObject_Del
@@ -2218,15 +2213,14 @@ PyObject *MediaObj_New(Media itself)
 {
 	MediaObject *it;
 	if (itself == NULL) {
-	                                PyErr_SetString(Qt_Error,"Cannot create Media from NULL pointer");
-	                                return NULL;
-	                        }
+						PyErr_SetString(Qt_Error,"Cannot create Media from NULL pointer");
+						return NULL;
+					}
 	it = PyObject_NEW(MediaObject, &Media_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-
 int MediaObj_Convert(PyObject *v, Media *p_itself)
 {
 	if (v == Py_None)
@@ -3383,16 +3377,16 @@ static PyMethodDef MediaObj_methods[] = {
 
 #define MediaObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *MediaObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
+static PyObject *MediaObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *_self;
+	PyObject *self;
 	Media itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, MediaObj_Convert, &itself)) return NULL;
-	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((MediaObject *)_self)->ob_itself = itself;
-	return _self;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, MediaObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((MediaObject *)self)->ob_itself = itself;
+	return self;
 }
 
 #define MediaObj_tp_free PyObject_Del
@@ -3460,15 +3454,14 @@ PyObject *TrackObj_New(Track itself)
 {
 	TrackObject *it;
 	if (itself == NULL) {
-	                                PyErr_SetString(Qt_Error,"Cannot create Track from NULL pointer");
-	                                return NULL;
-	                        }
+						PyErr_SetString(Qt_Error,"Cannot create Track from NULL pointer");
+						return NULL;
+					}
 	it = PyObject_NEW(TrackObject, &Track_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-
 int TrackObj_Convert(PyObject *v, Track *p_itself)
 {
 	if (v == Py_None)
@@ -4731,16 +4724,16 @@ static PyMethodDef TrackObj_methods[] = {
 
 #define TrackObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *TrackObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
+static PyObject *TrackObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *_self;
+	PyObject *self;
 	Track itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, TrackObj_Convert, &itself)) return NULL;
-	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((TrackObject *)_self)->ob_itself = itself;
-	return _self;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, TrackObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((TrackObject *)self)->ob_itself = itself;
+	return self;
 }
 
 #define TrackObj_tp_free PyObject_Del
@@ -4808,15 +4801,14 @@ PyObject *MovieObj_New(Movie itself)
 {
 	MovieObject *it;
 	if (itself == NULL) {
-	                                PyErr_SetString(Qt_Error,"Cannot create Movie from NULL pointer");
-	                                return NULL;
-	                        }
+						PyErr_SetString(Qt_Error,"Cannot create Movie from NULL pointer");
+						return NULL;
+					}
 	it = PyObject_NEW(MovieObject, &Movie_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-
 int MovieObj_Convert(PyObject *v, Movie *p_itself)
 {
 	if (v == Py_None)
@@ -7284,16 +7276,16 @@ static PyMethodDef MovieObj_methods[] = {
 
 #define MovieObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *MovieObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
+static PyObject *MovieObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *_self;
+	PyObject *self;
 	Movie itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, MovieObj_Convert, &itself)) return NULL;
-	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((MovieObject *)_self)->ob_itself = itself;
-	return _self;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, MovieObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((MovieObject *)self)->ob_itself = itself;
+	return self;
 }
 
 #define MovieObj_tp_free PyObject_Del
@@ -7361,15 +7353,14 @@ PyObject *SGOutputObj_New(SGOutput itself)
 {
 	SGOutputObject *it;
 	if (itself == NULL) {
-	                                PyErr_SetString(Qt_Error,"Cannot create SGOutput from NULL pointer");
-	                                return NULL;
-	                        }
+						PyErr_SetString(Qt_Error,"Cannot create SGOutput from NULL pointer");
+						return NULL;
+					}
 	it = PyObject_NEW(SGOutputObject, &SGOutput_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-
 int SGOutputObj_Convert(PyObject *v, SGOutput *p_itself)
 {
 	if (v == Py_None)
@@ -7408,16 +7399,16 @@ static PyMethodDef SGOutputObj_methods[] = {
 
 #define SGOutputObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *SGOutputObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
+static PyObject *SGOutputObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *_self;
+	PyObject *self;
 	SGOutput itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, SGOutputObj_Convert, &itself)) return NULL;
-	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((SGOutputObject *)_self)->ob_itself = itself;
-	return _self;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, SGOutputObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((SGOutputObject *)self)->ob_itself = itself;
+	return self;
 }
 
 #define SGOutputObj_tp_free PyObject_Del
@@ -11551,7 +11542,7 @@ static PyObject *Qt_GraphicsImportSetDataReference(PyObject *_self, PyObject *_a
 	PyMac_PRECHECK(GraphicsImportSetDataReference);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataReType))
 		return NULL;
@@ -11574,7 +11565,7 @@ static PyObject *Qt_GraphicsImportGetDataReference(PyObject *_self, PyObject *_a
 	PyMac_PRECHECK(GraphicsImportGetDataReference);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetDataReference(ci,
 	                                     &dataRef,
@@ -11596,7 +11587,7 @@ static PyObject *Qt_GraphicsImportSetDataFile(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportSetDataFile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFSSpec, &theFile))
 		return NULL;
 	_rv = GraphicsImportSetDataFile(ci,
@@ -11616,7 +11607,7 @@ static PyObject *Qt_GraphicsImportGetDataFile(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportGetDataFile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFSSpec, &theFile))
 		return NULL;
 	_rv = GraphicsImportGetDataFile(ci,
@@ -11636,7 +11627,7 @@ static PyObject *Qt_GraphicsImportSetDataHandle(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsImportSetDataHandle);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &h))
 		return NULL;
 	_rv = GraphicsImportSetDataHandle(ci,
@@ -11656,7 +11647,7 @@ static PyObject *Qt_GraphicsImportGetDataHandle(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsImportGetDataHandle);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetDataHandle(ci,
 	                                  &h);
@@ -11676,7 +11667,7 @@ static PyObject *Qt_GraphicsImportGetImageDescription(PyObject *_self, PyObject 
 	PyMac_PRECHECK(GraphicsImportGetImageDescription);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetImageDescription(ci,
 	                                        &desc);
@@ -11697,7 +11688,7 @@ static PyObject *Qt_GraphicsImportGetDataOffsetAndSize(PyObject *_self, PyObject
 	PyMac_PRECHECK(GraphicsImportGetDataOffsetAndSize);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetDataOffsetAndSize(ci,
 	                                         &offset,
@@ -11721,7 +11712,7 @@ static PyObject *Qt_GraphicsImportReadData(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportReadData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&sll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &dataPtr,
 	                      &dataOffset,
 	                      &dataSize))
@@ -11745,7 +11736,7 @@ static PyObject *Qt_GraphicsImportSetClip(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportSetClip);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &clipRgn))
 		return NULL;
 	_rv = GraphicsImportSetClip(ci,
@@ -11765,7 +11756,7 @@ static PyObject *Qt_GraphicsImportGetClip(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportGetClip);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetClip(ci,
 	                            &clipRgn);
@@ -11785,7 +11776,7 @@ static PyObject *Qt_GraphicsImportSetSourceRect(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsImportSetSourceRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetRect, &sourceRect))
 		return NULL;
 	_rv = GraphicsImportSetSourceRect(ci,
@@ -11805,7 +11796,7 @@ static PyObject *Qt_GraphicsImportGetSourceRect(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsImportGetSourceRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetSourceRect(ci,
 	                                  &sourceRect);
@@ -11825,7 +11816,7 @@ static PyObject *Qt_GraphicsImportGetNaturalBounds(PyObject *_self, PyObject *_a
 	PyMac_PRECHECK(GraphicsImportGetNaturalBounds);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetNaturalBounds(ci,
 	                                     &naturalBounds);
@@ -11844,7 +11835,7 @@ static PyObject *Qt_GraphicsImportDraw(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportDraw);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportDraw(ci);
 	_res = Py_BuildValue("l",
@@ -11863,7 +11854,7 @@ static PyObject *Qt_GraphicsImportSetGWorld(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportSetGWorld);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      GrafObj_Convert, &port,
 	                      OptResObj_Convert, &gd))
 		return NULL;
@@ -11886,7 +11877,7 @@ static PyObject *Qt_GraphicsImportGetGWorld(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportGetGWorld);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetGWorld(ci,
 	                              &port,
@@ -11908,7 +11899,7 @@ static PyObject *Qt_GraphicsImportSetBoundsRect(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsImportSetBoundsRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetRect, &bounds))
 		return NULL;
 	_rv = GraphicsImportSetBoundsRect(ci,
@@ -11928,7 +11919,7 @@ static PyObject *Qt_GraphicsImportGetBoundsRect(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsImportGetBoundsRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetBoundsRect(ci,
 	                                  &bounds);
@@ -11949,7 +11940,7 @@ static PyObject *Qt_GraphicsImportSaveAsPicture(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsImportSaveAsPicture);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFSSpec, &fss,
 	                      &scriptTag))
 		return NULL;
@@ -11972,7 +11963,7 @@ static PyObject *Qt_GraphicsImportSetGraphicsMode(PyObject *_self, PyObject *_ar
 	PyMac_PRECHECK(GraphicsImportSetGraphicsMode);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&lO&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &graphicsMode,
 	                      QdRGB_Convert, &opColor))
 		return NULL;
@@ -11995,7 +11986,7 @@ static PyObject *Qt_GraphicsImportGetGraphicsMode(PyObject *_self, PyObject *_ar
 	PyMac_PRECHECK(GraphicsImportGetGraphicsMode);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetGraphicsMode(ci,
 	                                    &graphicsMode,
@@ -12017,7 +12008,7 @@ static PyObject *Qt_GraphicsImportSetQuality(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportSetQuality);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &quality))
 		return NULL;
 	_rv = GraphicsImportSetQuality(ci,
@@ -12037,7 +12028,7 @@ static PyObject *Qt_GraphicsImportGetQuality(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportGetQuality);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetQuality(ci,
 	                               &quality);
@@ -12058,7 +12049,7 @@ static PyObject *Qt_GraphicsImportSaveAsQuickTimeImageFile(PyObject *_self, PyOb
 	PyMac_PRECHECK(GraphicsImportSaveAsQuickTimeImageFile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFSSpec, &fss,
 	                      &scriptTag))
 		return NULL;
@@ -12081,7 +12072,7 @@ static PyObject *Qt_GraphicsImportSetDataReferenceOffsetAndLimit(PyObject *_self
 	PyMac_PRECHECK(GraphicsImportSetDataReferenceOffsetAndLimit);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&ll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &offset,
 	                      &limit))
 		return NULL;
@@ -12104,7 +12095,7 @@ static PyObject *Qt_GraphicsImportGetDataReferenceOffsetAndLimit(PyObject *_self
 	PyMac_PRECHECK(GraphicsImportGetDataReferenceOffsetAndLimit);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetDataReferenceOffsetAndLimit(ci,
 	                                                   &offset,
@@ -12127,7 +12118,7 @@ static PyObject *Qt_GraphicsImportGetAliasedDataReference(PyObject *_self, PyObj
 	PyMac_PRECHECK(GraphicsImportGetAliasedDataReference);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetAliasedDataReference(ci,
 	                                            &dataRef,
@@ -12149,7 +12140,7 @@ static PyObject *Qt_GraphicsImportValidate(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportValidate);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportValidate(ci,
 	                             &valid);
@@ -12169,7 +12160,7 @@ static PyObject *Qt_GraphicsImportGetMetaData(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportGetMetaData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &userData))
 		return NULL;
 	_rv = GraphicsImportGetMetaData(ci,
@@ -12189,7 +12180,7 @@ static PyObject *Qt_GraphicsImportGetMIMETypeList(PyObject *_self, PyObject *_ar
 	PyMac_PRECHECK(GraphicsImportGetMIMETypeList);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &qtAtomContainerPtr))
 		return NULL;
 	_rv = GraphicsImportGetMIMETypeList(ci,
@@ -12209,7 +12200,7 @@ static PyObject *Qt_GraphicsImportDoesDrawAllPixels(PyObject *_self, PyObject *_
 	PyMac_PRECHECK(GraphicsImportDoesDrawAllPixels);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportDoesDrawAllPixels(ci,
 	                                      &drawsAllPixels);
@@ -12229,7 +12220,7 @@ static PyObject *Qt_GraphicsImportGetAsPicture(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportGetAsPicture);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetAsPicture(ci,
 	                                 &picture);
@@ -12252,7 +12243,7 @@ static PyObject *Qt_GraphicsImportExportImageFile(PyObject *_self, PyObject *_ar
 	PyMac_PRECHECK(GraphicsImportExportImageFile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetOSType, &fileType,
 	                      PyMac_GetOSType, &fileCreator,
 	                      PyMac_GetFSSpec, &fss,
@@ -12278,7 +12269,7 @@ static PyObject *Qt_GraphicsImportGetExportImageTypeList(PyObject *_self, PyObje
 	PyMac_PRECHECK(GraphicsImportGetExportImageTypeList);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &qtAtomContainerPtr))
 		return NULL;
 	_rv = GraphicsImportGetExportImageTypeList(ci,
@@ -12298,7 +12289,7 @@ static PyObject *Qt_GraphicsImportGetExportSettingsAsAtomContainer(PyObject *_se
 	PyMac_PRECHECK(GraphicsImportGetExportSettingsAsAtomContainer);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &qtAtomContainerPtr))
 		return NULL;
 	_rv = GraphicsImportGetExportSettingsAsAtomContainer(ci,
@@ -12318,7 +12309,7 @@ static PyObject *Qt_GraphicsImportSetExportSettingsFromAtomContainer(PyObject *_
 	PyMac_PRECHECK(GraphicsImportSetExportSettingsFromAtomContainer);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &qtAtomContainer))
 		return NULL;
 	_rv = GraphicsImportSetExportSettingsFromAtomContainer(ci,
@@ -12338,7 +12329,7 @@ static PyObject *Qt_GraphicsImportGetImageCount(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsImportGetImageCount);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetImageCount(ci,
 	                                  &imageCount);
@@ -12358,7 +12349,7 @@ static PyObject *Qt_GraphicsImportSetImageIndex(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsImportSetImageIndex);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &imageIndex))
 		return NULL;
 	_rv = GraphicsImportSetImageIndex(ci,
@@ -12378,7 +12369,7 @@ static PyObject *Qt_GraphicsImportGetImageIndex(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsImportGetImageIndex);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetImageIndex(ci,
 	                                  &imageIndex);
@@ -12399,7 +12390,7 @@ static PyObject *Qt_GraphicsImportGetDataOffsetAndSize64(PyObject *_self, PyObje
 	PyMac_PRECHECK(GraphicsImportGetDataOffsetAndSize64);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetDataOffsetAndSize64(ci,
 	                                           &offset,
@@ -12423,7 +12414,7 @@ static PyObject *Qt_GraphicsImportReadData64(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportReadData64);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&sO&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &dataPtr,
 	                      PyMac_Getwide, &dataOffset,
 	                      &dataSize))
@@ -12448,7 +12439,7 @@ static PyObject *Qt_GraphicsImportSetDataReferenceOffsetAndLimit64(PyObject *_se
 	PyMac_PRECHECK(GraphicsImportSetDataReferenceOffsetAndLimit64);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_Getwide, &offset,
 	                      PyMac_Getwide, &limit))
 		return NULL;
@@ -12471,7 +12462,7 @@ static PyObject *Qt_GraphicsImportGetDataReferenceOffsetAndLimit64(PyObject *_se
 	PyMac_PRECHECK(GraphicsImportGetDataReferenceOffsetAndLimit64);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetDataReferenceOffsetAndLimit64(ci,
 	                                                     &offset,
@@ -12493,7 +12484,7 @@ static PyObject *Qt_GraphicsImportGetDefaultClip(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(GraphicsImportGetDefaultClip);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetDefaultClip(ci,
 	                                   &defaultRgn);
@@ -12514,7 +12505,7 @@ static PyObject *Qt_GraphicsImportGetDefaultGraphicsMode(PyObject *_self, PyObje
 	PyMac_PRECHECK(GraphicsImportGetDefaultGraphicsMode);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetDefaultGraphicsMode(ci,
 	                                           &defaultGraphicsMode,
@@ -12536,7 +12527,7 @@ static PyObject *Qt_GraphicsImportGetDefaultSourceRect(PyObject *_self, PyObject
 	PyMac_PRECHECK(GraphicsImportGetDefaultSourceRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetDefaultSourceRect(ci,
 	                                         &defaultSourceRect);
@@ -12556,7 +12547,7 @@ static PyObject *Qt_GraphicsImportGetColorSyncProfile(PyObject *_self, PyObject 
 	PyMac_PRECHECK(GraphicsImportGetColorSyncProfile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetColorSyncProfile(ci,
 	                                        &profile);
@@ -12576,7 +12567,7 @@ static PyObject *Qt_GraphicsImportSetDestRect(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportSetDestRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetRect, &destRect))
 		return NULL;
 	_rv = GraphicsImportSetDestRect(ci,
@@ -12596,7 +12587,7 @@ static PyObject *Qt_GraphicsImportGetDestRect(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportGetDestRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetDestRect(ci,
 	                                &destRect);
@@ -12616,7 +12607,7 @@ static PyObject *Qt_GraphicsImportSetFlags(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportSetFlags);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &flags))
 		return NULL;
 	_rv = GraphicsImportSetFlags(ci,
@@ -12636,7 +12627,7 @@ static PyObject *Qt_GraphicsImportGetFlags(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsImportGetFlags);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetFlags(ci,
 	                             &flags);
@@ -12657,7 +12648,7 @@ static PyObject *Qt_GraphicsImportGetBaseDataOffsetAndSize64(PyObject *_self, Py
 	PyMac_PRECHECK(GraphicsImportGetBaseDataOffsetAndSize64);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportGetBaseDataOffsetAndSize64(ci,
 	                                               &offset,
@@ -12678,7 +12669,7 @@ static PyObject *Qt_GraphicsImportSetImageIndexToThumbnail(PyObject *_self, PyOb
 	PyMac_PRECHECK(GraphicsImportSetImageIndexToThumbnail);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImportSetImageIndexToThumbnail(ci);
 	_res = Py_BuildValue("l",
@@ -12696,7 +12687,7 @@ static PyObject *Qt_GraphicsExportDoExport(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsExportDoExport);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportDoExport(ci,
 	                             &actualSizeWritten);
@@ -12716,7 +12707,7 @@ static PyObject *Qt_GraphicsExportCanTranscode(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsExportCanTranscode);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportCanTranscode(ci,
 	                                 &canTranscode);
@@ -12735,7 +12726,7 @@ static PyObject *Qt_GraphicsExportDoTranscode(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsExportDoTranscode);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportDoTranscode(ci);
 	_res = Py_BuildValue("l",
@@ -12754,7 +12745,7 @@ static PyObject *Qt_GraphicsExportCanUseCompressor(PyObject *_self, PyObject *_a
 	PyMac_PRECHECK(GraphicsExportCanUseCompressor);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &codecSettingsAtomContainerPtr))
 		return NULL;
 	_rv = GraphicsExportCanUseCompressor(ci,
@@ -12777,7 +12768,7 @@ static PyObject *Qt_GraphicsExportDoUseCompressor(PyObject *_self, PyObject *_ar
 	PyMac_PRECHECK(GraphicsExportDoUseCompressor);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &codecSettingsAtomContainer))
 		return NULL;
 	_rv = GraphicsExportDoUseCompressor(ci,
@@ -12798,7 +12789,7 @@ static PyObject *Qt_GraphicsExportDoStandaloneExport(PyObject *_self, PyObject *
 	PyMac_PRECHECK(GraphicsExportDoStandaloneExport);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportDoStandaloneExport(ci);
 	_res = Py_BuildValue("l",
@@ -12817,7 +12808,7 @@ static PyObject *Qt_GraphicsExportGetDefaultFileTypeAndCreator(PyObject *_self, 
 	PyMac_PRECHECK(GraphicsExportGetDefaultFileTypeAndCreator);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetDefaultFileTypeAndCreator(ci,
 	                                                 &fileType,
@@ -12839,7 +12830,7 @@ static PyObject *Qt_GraphicsExportGetDefaultFileNameExtension(PyObject *_self, P
 	PyMac_PRECHECK(GraphicsExportGetDefaultFileNameExtension);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetDefaultFileNameExtension(ci,
 	                                                &fileNameExtension);
@@ -12859,7 +12850,7 @@ static PyObject *Qt_GraphicsExportGetMIMETypeList(PyObject *_self, PyObject *_ar
 	PyMac_PRECHECK(GraphicsExportGetMIMETypeList);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &qtAtomContainerPtr))
 		return NULL;
 	_rv = GraphicsExportGetMIMETypeList(ci,
@@ -12879,7 +12870,7 @@ static PyObject *Qt_GraphicsExportSetSettingsFromAtomContainer(PyObject *_self, 
 	PyMac_PRECHECK(GraphicsExportSetSettingsFromAtomContainer);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &qtAtomContainer))
 		return NULL;
 	_rv = GraphicsExportSetSettingsFromAtomContainer(ci,
@@ -12899,7 +12890,7 @@ static PyObject *Qt_GraphicsExportGetSettingsAsAtomContainer(PyObject *_self, Py
 	PyMac_PRECHECK(GraphicsExportGetSettingsAsAtomContainer);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &qtAtomContainerPtr))
 		return NULL;
 	_rv = GraphicsExportGetSettingsAsAtomContainer(ci,
@@ -12919,7 +12910,7 @@ static PyObject *Qt_GraphicsExportGetSettingsAsText(PyObject *_self, PyObject *_
 	PyMac_PRECHECK(GraphicsExportGetSettingsAsText);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetSettingsAsText(ci,
 	                                      &theText);
@@ -12939,7 +12930,7 @@ static PyObject *Qt_GraphicsExportSetDontRecompress(PyObject *_self, PyObject *_
 	PyMac_PRECHECK(GraphicsExportSetDontRecompress);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&b",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &dontRecompress))
 		return NULL;
 	_rv = GraphicsExportSetDontRecompress(ci,
@@ -12959,7 +12950,7 @@ static PyObject *Qt_GraphicsExportGetDontRecompress(PyObject *_self, PyObject *_
 	PyMac_PRECHECK(GraphicsExportGetDontRecompress);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetDontRecompress(ci,
 	                                      &dontRecompress);
@@ -12979,7 +12970,7 @@ static PyObject *Qt_GraphicsExportSetInterlaceStyle(PyObject *_self, PyObject *_
 	PyMac_PRECHECK(GraphicsExportSetInterlaceStyle);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &interlaceStyle))
 		return NULL;
 	_rv = GraphicsExportSetInterlaceStyle(ci,
@@ -12999,7 +12990,7 @@ static PyObject *Qt_GraphicsExportGetInterlaceStyle(PyObject *_self, PyObject *_
 	PyMac_PRECHECK(GraphicsExportGetInterlaceStyle);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetInterlaceStyle(ci,
 	                                      &interlaceStyle);
@@ -13019,7 +13010,7 @@ static PyObject *Qt_GraphicsExportSetMetaData(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsExportSetMetaData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &userData))
 		return NULL;
 	_rv = GraphicsExportSetMetaData(ci,
@@ -13039,7 +13030,7 @@ static PyObject *Qt_GraphicsExportGetMetaData(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsExportGetMetaData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &userData))
 		return NULL;
 	_rv = GraphicsExportGetMetaData(ci,
@@ -13059,7 +13050,7 @@ static PyObject *Qt_GraphicsExportSetTargetDataSize(PyObject *_self, PyObject *_
 	PyMac_PRECHECK(GraphicsExportSetTargetDataSize);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &targetDataSize))
 		return NULL;
 	_rv = GraphicsExportSetTargetDataSize(ci,
@@ -13079,7 +13070,7 @@ static PyObject *Qt_GraphicsExportGetTargetDataSize(PyObject *_self, PyObject *_
 	PyMac_PRECHECK(GraphicsExportGetTargetDataSize);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetTargetDataSize(ci,
 	                                      &targetDataSize);
@@ -13099,7 +13090,7 @@ static PyObject *Qt_GraphicsExportSetCompressionMethod(PyObject *_self, PyObject
 	PyMac_PRECHECK(GraphicsExportSetCompressionMethod);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &compressionMethod))
 		return NULL;
 	_rv = GraphicsExportSetCompressionMethod(ci,
@@ -13119,7 +13110,7 @@ static PyObject *Qt_GraphicsExportGetCompressionMethod(PyObject *_self, PyObject
 	PyMac_PRECHECK(GraphicsExportGetCompressionMethod);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetCompressionMethod(ci,
 	                                         &compressionMethod);
@@ -13139,7 +13130,7 @@ static PyObject *Qt_GraphicsExportSetCompressionQuality(PyObject *_self, PyObjec
 	PyMac_PRECHECK(GraphicsExportSetCompressionQuality);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &spatialQuality))
 		return NULL;
 	_rv = GraphicsExportSetCompressionQuality(ci,
@@ -13159,7 +13150,7 @@ static PyObject *Qt_GraphicsExportGetCompressionQuality(PyObject *_self, PyObjec
 	PyMac_PRECHECK(GraphicsExportGetCompressionQuality);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetCompressionQuality(ci,
 	                                          &spatialQuality);
@@ -13180,7 +13171,7 @@ static PyObject *Qt_GraphicsExportSetResolution(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsExportSetResolution);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFixed, &horizontalResolution,
 	                      PyMac_GetFixed, &verticalResolution))
 		return NULL;
@@ -13203,7 +13194,7 @@ static PyObject *Qt_GraphicsExportGetResolution(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsExportGetResolution);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetResolution(ci,
 	                                  &horizontalResolution,
@@ -13225,7 +13216,7 @@ static PyObject *Qt_GraphicsExportSetDepth(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsExportSetDepth);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &depth))
 		return NULL;
 	_rv = GraphicsExportSetDepth(ci,
@@ -13245,7 +13236,7 @@ static PyObject *Qt_GraphicsExportGetDepth(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsExportGetDepth);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetDepth(ci,
 	                             &depth);
@@ -13265,7 +13256,7 @@ static PyObject *Qt_GraphicsExportSetColorSyncProfile(PyObject *_self, PyObject 
 	PyMac_PRECHECK(GraphicsExportSetColorSyncProfile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &colorSyncProfile))
 		return NULL;
 	_rv = GraphicsExportSetColorSyncProfile(ci,
@@ -13285,7 +13276,7 @@ static PyObject *Qt_GraphicsExportGetColorSyncProfile(PyObject *_self, PyObject 
 	PyMac_PRECHECK(GraphicsExportGetColorSyncProfile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetColorSyncProfile(ci,
 	                                        &colorSyncProfile);
@@ -13307,7 +13298,7 @@ static PyObject *Qt_GraphicsExportSetInputDataReference(PyObject *_self, PyObjec
 	PyMac_PRECHECK(GraphicsExportSetInputDataReference);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataRefType,
 	                      ResObj_Convert, &desc))
@@ -13332,7 +13323,7 @@ static PyObject *Qt_GraphicsExportGetInputDataReference(PyObject *_self, PyObjec
 	PyMac_PRECHECK(GraphicsExportGetInputDataReference);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetInputDataReference(ci,
 	                                          &dataRef,
@@ -13355,7 +13346,7 @@ static PyObject *Qt_GraphicsExportSetInputFile(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsExportSetInputFile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFSSpec, &theFile,
 	                      ResObj_Convert, &desc))
 		return NULL;
@@ -13377,7 +13368,7 @@ static PyObject *Qt_GraphicsExportGetInputFile(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsExportGetInputFile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFSSpec, &theFile))
 		return NULL;
 	_rv = GraphicsExportGetInputFile(ci,
@@ -13398,7 +13389,7 @@ static PyObject *Qt_GraphicsExportSetInputHandle(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(GraphicsExportSetInputHandle);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &h,
 	                      ResObj_Convert, &desc))
 		return NULL;
@@ -13420,7 +13411,7 @@ static PyObject *Qt_GraphicsExportGetInputHandle(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(GraphicsExportGetInputHandle);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetInputHandle(ci,
 	                                   &h);
@@ -13442,7 +13433,7 @@ static PyObject *Qt_GraphicsExportSetInputPtr(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(GraphicsExportSetInputPtr);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&slO&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &p,
 	                      &size,
 	                      ResObj_Convert, &desc))
@@ -13466,8 +13457,8 @@ static PyObject *Qt_GraphicsExportSetInputGraphicsImporter(PyObject *_self, PyOb
 	PyMac_PRECHECK(GraphicsExportSetInputGraphicsImporter);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
-	                      CmpInstObj_Convert, &grip))
+	                      CmpObj_Convert, &ci,
+	                      CmpObj_Convert, &grip))
 		return NULL;
 	_rv = GraphicsExportSetInputGraphicsImporter(ci,
 	                                             grip);
@@ -13486,13 +13477,13 @@ static PyObject *Qt_GraphicsExportGetInputGraphicsImporter(PyObject *_self, PyOb
 	PyMac_PRECHECK(GraphicsExportGetInputGraphicsImporter);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetInputGraphicsImporter(ci,
 	                                             &grip);
 	_res = Py_BuildValue("lO&",
 	                     _rv,
-	                     CmpInstObj_New, grip);
+	                     CmpObj_New, grip);
 	return _res;
 }
 
@@ -13506,7 +13497,7 @@ static PyObject *Qt_GraphicsExportSetInputPicture(PyObject *_self, PyObject *_ar
 	PyMac_PRECHECK(GraphicsExportSetInputPicture);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &picture))
 		return NULL;
 	_rv = GraphicsExportSetInputPicture(ci,
@@ -13526,7 +13517,7 @@ static PyObject *Qt_GraphicsExportGetInputPicture(PyObject *_self, PyObject *_ar
 	PyMac_PRECHECK(GraphicsExportGetInputPicture);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetInputPicture(ci,
 	                                    &picture);
@@ -13546,7 +13537,7 @@ static PyObject *Qt_GraphicsExportSetInputGWorld(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(GraphicsExportSetInputGWorld);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      GWorldObj_Convert, &gworld))
 		return NULL;
 	_rv = GraphicsExportSetInputGWorld(ci,
@@ -13566,7 +13557,7 @@ static PyObject *Qt_GraphicsExportGetInputGWorld(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(GraphicsExportGetInputGWorld);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetInputGWorld(ci,
 	                                   &gworld);
@@ -13586,7 +13577,7 @@ static PyObject *Qt_GraphicsExportSetInputPixmap(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(GraphicsExportSetInputPixmap);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &pixmap))
 		return NULL;
 	_rv = GraphicsExportSetInputPixmap(ci,
@@ -13606,7 +13597,7 @@ static PyObject *Qt_GraphicsExportGetInputPixmap(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(GraphicsExportGetInputPixmap);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetInputPixmap(ci,
 	                                   &pixmap);
@@ -13627,7 +13618,7 @@ static PyObject *Qt_GraphicsExportSetInputOffsetAndLimit(PyObject *_self, PyObje
 	PyMac_PRECHECK(GraphicsExportSetInputOffsetAndLimit);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&ll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &offset,
 	                      &limit))
 		return NULL;
@@ -13650,7 +13641,7 @@ static PyObject *Qt_GraphicsExportGetInputOffsetAndLimit(PyObject *_self, PyObje
 	PyMac_PRECHECK(GraphicsExportGetInputOffsetAndLimit);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetInputOffsetAndLimit(ci,
 	                                           &offset,
@@ -13672,7 +13663,7 @@ static PyObject *Qt_GraphicsExportMayExporterReadInputData(PyObject *_self, PyOb
 	PyMac_PRECHECK(GraphicsExportMayExporterReadInputData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportMayExporterReadInputData(ci,
 	                                             &mayReadInputData);
@@ -13692,7 +13683,7 @@ static PyObject *Qt_GraphicsExportGetInputDataSize(PyObject *_self, PyObject *_a
 	PyMac_PRECHECK(GraphicsExportGetInputDataSize);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetInputDataSize(ci,
 	                                     &size);
@@ -13714,7 +13705,7 @@ static PyObject *Qt_GraphicsExportReadInputData(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsExportReadInputData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&sll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &dataPtr,
 	                      &dataOffset,
 	                      &dataSize))
@@ -13738,7 +13729,7 @@ static PyObject *Qt_GraphicsExportGetInputImageDescription(PyObject *_self, PyOb
 	PyMac_PRECHECK(GraphicsExportGetInputImageDescription);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetInputImageDescription(ci,
 	                                             &desc);
@@ -13758,7 +13749,7 @@ static PyObject *Qt_GraphicsExportGetInputImageDimensions(PyObject *_self, PyObj
 	PyMac_PRECHECK(GraphicsExportGetInputImageDimensions);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetInputImageDimensions(ci,
 	                                            &dimensions);
@@ -13778,7 +13769,7 @@ static PyObject *Qt_GraphicsExportGetInputImageDepth(PyObject *_self, PyObject *
 	PyMac_PRECHECK(GraphicsExportGetInputImageDepth);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetInputImageDepth(ci,
 	                                       &inputDepth);
@@ -13801,7 +13792,7 @@ static PyObject *Qt_GraphicsExportDrawInputImage(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(GraphicsExportDrawInputImage);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      GrafObj_Convert, &gw,
 	                      OptResObj_Convert, &gd,
 	                      PyMac_GetRect, &srcRect,
@@ -13828,7 +13819,7 @@ static PyObject *Qt_GraphicsExportSetOutputDataReference(PyObject *_self, PyObje
 	PyMac_PRECHECK(GraphicsExportSetOutputDataReference);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataRefType))
 		return NULL;
@@ -13851,7 +13842,7 @@ static PyObject *Qt_GraphicsExportGetOutputDataReference(PyObject *_self, PyObje
 	PyMac_PRECHECK(GraphicsExportGetOutputDataReference);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetOutputDataReference(ci,
 	                                           &dataRef,
@@ -13873,7 +13864,7 @@ static PyObject *Qt_GraphicsExportSetOutputFile(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsExportSetOutputFile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFSSpec, &theFile))
 		return NULL;
 	_rv = GraphicsExportSetOutputFile(ci,
@@ -13893,7 +13884,7 @@ static PyObject *Qt_GraphicsExportGetOutputFile(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsExportGetOutputFile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFSSpec, &theFile))
 		return NULL;
 	_rv = GraphicsExportGetOutputFile(ci,
@@ -13913,7 +13904,7 @@ static PyObject *Qt_GraphicsExportSetOutputHandle(PyObject *_self, PyObject *_ar
 	PyMac_PRECHECK(GraphicsExportSetOutputHandle);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &h))
 		return NULL;
 	_rv = GraphicsExportSetOutputHandle(ci,
@@ -13933,7 +13924,7 @@ static PyObject *Qt_GraphicsExportGetOutputHandle(PyObject *_self, PyObject *_ar
 	PyMac_PRECHECK(GraphicsExportGetOutputHandle);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetOutputHandle(ci,
 	                                    &h);
@@ -13955,7 +13946,7 @@ static PyObject *Qt_GraphicsExportSetOutputOffsetAndMaxSize(PyObject *_self, PyO
 	PyMac_PRECHECK(GraphicsExportSetOutputOffsetAndMaxSize);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&llb",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &offset,
 	                      &maxSize,
 	                      &truncateFile))
@@ -13981,7 +13972,7 @@ static PyObject *Qt_GraphicsExportGetOutputOffsetAndMaxSize(PyObject *_self, PyO
 	PyMac_PRECHECK(GraphicsExportGetOutputOffsetAndMaxSize);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetOutputOffsetAndMaxSize(ci,
 	                                              &offset,
@@ -14006,7 +13997,7 @@ static PyObject *Qt_GraphicsExportSetOutputFileTypeAndCreator(PyObject *_self, P
 	PyMac_PRECHECK(GraphicsExportSetOutputFileTypeAndCreator);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetOSType, &fileType,
 	                      PyMac_GetOSType, &fileCreator))
 		return NULL;
@@ -14029,7 +14020,7 @@ static PyObject *Qt_GraphicsExportGetOutputFileTypeAndCreator(PyObject *_self, P
 	PyMac_PRECHECK(GraphicsExportGetOutputFileTypeAndCreator);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetOutputFileTypeAndCreator(ci,
 	                                                &fileType,
@@ -14051,7 +14042,7 @@ static PyObject *Qt_GraphicsExportSetOutputMark(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsExportSetOutputMark);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &mark))
 		return NULL;
 	_rv = GraphicsExportSetOutputMark(ci,
@@ -14071,7 +14062,7 @@ static PyObject *Qt_GraphicsExportGetOutputMark(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(GraphicsExportGetOutputMark);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetOutputMark(ci,
 	                                  &mark);
@@ -14093,7 +14084,7 @@ static PyObject *Qt_GraphicsExportReadOutputData(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(GraphicsExportReadOutputData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&sll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &dataPtr,
 	                      &dataOffset,
 	                      &dataSize))
@@ -14119,7 +14110,7 @@ static PyObject *Qt_GraphicsExportSetThumbnailEnabled(PyObject *_self, PyObject 
 	PyMac_PRECHECK(GraphicsExportSetThumbnailEnabled);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&bll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &enableThumbnail,
 	                      &maxThumbnailWidth,
 	                      &maxThumbnailHeight))
@@ -14145,7 +14136,7 @@ static PyObject *Qt_GraphicsExportGetThumbnailEnabled(PyObject *_self, PyObject 
 	PyMac_PRECHECK(GraphicsExportGetThumbnailEnabled);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetThumbnailEnabled(ci,
 	                                        &thumbnailEnabled,
@@ -14169,7 +14160,7 @@ static PyObject *Qt_GraphicsExportSetExifEnabled(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(GraphicsExportSetExifEnabled);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&b",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &enableExif))
 		return NULL;
 	_rv = GraphicsExportSetExifEnabled(ci,
@@ -14189,7 +14180,7 @@ static PyObject *Qt_GraphicsExportGetExifEnabled(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(GraphicsExportGetExifEnabled);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsExportGetExifEnabled(ci,
 	                                   &exifEnabled);
@@ -14212,7 +14203,7 @@ static PyObject *Qt_ImageTranscoderBeginSequence(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(ImageTranscoderBeginSequence);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&sl",
-	                      CmpInstObj_Convert, &itc,
+	                      CmpObj_Convert, &itc,
 	                      ResObj_Convert, &srcDesc,
 	                      &data,
 	                      &dataSize))
@@ -14238,7 +14229,7 @@ static PyObject *Qt_ImageTranscoderDisposeData(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(ImageTranscoderDisposeData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &itc,
+	                      CmpObj_Convert, &itc,
 	                      &dstData))
 		return NULL;
 	_rv = ImageTranscoderDisposeData(itc,
@@ -14257,7 +14248,7 @@ static PyObject *Qt_ImageTranscoderEndSequence(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(ImageTranscoderEndSequence);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &itc))
+	                      CmpObj_Convert, &itc))
 		return NULL;
 	_rv = ImageTranscoderEndSequence(itc);
 	_res = Py_BuildValue("l",
@@ -14854,7 +14845,7 @@ static PyObject *Qt_TweenerReset(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(TweenerReset);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &tc))
+	                      CmpObj_Convert, &tc))
 		return NULL;
 	_rv = TweenerReset(tc);
 	_res = Py_BuildValue("l",
@@ -14968,7 +14959,7 @@ static PyObject *Qt_MovieImportHandle(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportHandle);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&ll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &dataH,
 	                      MovieObj_Convert, &theMovie,
 	                      TrackObj_Convert, &targetTrack,
@@ -15009,7 +15000,7 @@ static PyObject *Qt_MovieImportFile(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportFile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&ll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFSSpec, &theFile,
 	                      MovieObj_Convert, &theMovie,
 	                      TrackObj_Convert, &targetTrack,
@@ -15044,7 +15035,7 @@ static PyObject *Qt_MovieImportSetSampleDuration(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(MovieImportSetSampleDuration);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&ll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &duration,
 	                      &scale))
 		return NULL;
@@ -15067,7 +15058,7 @@ static PyObject *Qt_MovieImportSetSampleDescription(PyObject *_self, PyObject *_
 	PyMac_PRECHECK(MovieImportSetSampleDescription);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &desc,
 	                      PyMac_GetOSType, &mediaType))
 		return NULL;
@@ -15089,7 +15080,7 @@ static PyObject *Qt_MovieImportSetMediaFile(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportSetMediaFile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &alias))
 		return NULL;
 	_rv = MovieImportSetMediaFile(ci,
@@ -15110,7 +15101,7 @@ static PyObject *Qt_MovieImportSetDimensions(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportSetDimensions);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFixed, &width,
 	                      PyMac_GetFixed, &height))
 		return NULL;
@@ -15132,7 +15123,7 @@ static PyObject *Qt_MovieImportSetChunkSize(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportSetChunkSize);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &chunkSize))
 		return NULL;
 	_rv = MovieImportSetChunkSize(ci,
@@ -15153,7 +15144,7 @@ static PyObject *Qt_MovieImportSetAuxiliaryData(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(MovieImportSetAuxiliaryData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &data,
 	                      PyMac_GetOSType, &handleType))
 		return NULL;
@@ -15175,7 +15166,7 @@ static PyObject *Qt_MovieImportSetFromScrap(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportSetFromScrap);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&b",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &fromScrap))
 		return NULL;
 	_rv = MovieImportSetFromScrap(ci,
@@ -15197,7 +15188,7 @@ static PyObject *Qt_MovieImportDoUserDialog(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportDoUserDialog);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFSSpec, &theFile,
 	                      ResObj_Convert, &theData))
 		return NULL;
@@ -15221,7 +15212,7 @@ static PyObject *Qt_MovieImportSetDuration(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportSetDuration);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &duration))
 		return NULL;
 	_rv = MovieImportSetDuration(ci,
@@ -15241,7 +15232,7 @@ static PyObject *Qt_MovieImportGetAuxiliaryDataType(PyObject *_self, PyObject *_
 	PyMac_PRECHECK(MovieImportGetAuxiliaryDataType);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = MovieImportGetAuxiliaryDataType(ci,
 	                                      &auxType);
@@ -15263,7 +15254,7 @@ static PyObject *Qt_MovieImportValidate(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportValidate);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFSSpec, &theFile,
 	                      ResObj_Convert, &theData))
 		return NULL;
@@ -15287,7 +15278,7 @@ static PyObject *Qt_MovieImportGetFileType(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportGetFileType);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = MovieImportGetFileType(ci,
 	                             &fileType);
@@ -15315,7 +15306,7 @@ static PyObject *Qt_MovieImportDataRef(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportDataRef);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&O&ll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataRefType,
 	                      MovieObj_Convert, &theMovie,
@@ -15352,7 +15343,7 @@ static PyObject *Qt_MovieImportGetSampleDescription(PyObject *_self, PyObject *_
 	PyMac_PRECHECK(MovieImportGetSampleDescription);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = MovieImportGetSampleDescription(ci,
 	                                      &desc,
@@ -15375,7 +15366,7 @@ static PyObject *Qt_MovieImportSetOffsetAndLimit(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(MovieImportSetOffsetAndLimit);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&ll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &offset,
 	                      &limit))
 		return NULL;
@@ -15398,7 +15389,7 @@ static PyObject *Qt_MovieImportSetOffsetAndLimit64(PyObject *_self, PyObject *_a
 	PyMac_PRECHECK(MovieImportSetOffsetAndLimit64);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_Getwide, &offset,
 	                      PyMac_Getwide, &limit))
 		return NULL;
@@ -15421,7 +15412,7 @@ static PyObject *Qt_MovieImportIdle(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportIdle);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &inFlags))
 		return NULL;
 	_rv = MovieImportIdle(ci,
@@ -15445,7 +15436,7 @@ static PyObject *Qt_MovieImportValidateDataRef(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportValidateDataRef);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataRefType))
 		return NULL;
@@ -15469,7 +15460,7 @@ static PyObject *Qt_MovieImportGetLoadState(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportGetLoadState);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = MovieImportGetLoadState(ci,
 	                              &importerLoadState);
@@ -15489,7 +15480,7 @@ static PyObject *Qt_MovieImportGetMaxLoadedTime(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(MovieImportGetMaxLoadedTime);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = MovieImportGetMaxLoadedTime(ci,
 	                                  &time);
@@ -15509,7 +15500,7 @@ static PyObject *Qt_MovieImportEstimateCompletionTime(PyObject *_self, PyObject 
 	PyMac_PRECHECK(MovieImportEstimateCompletionTime);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = MovieImportEstimateCompletionTime(ci,
 	                                        &time);
@@ -15529,7 +15520,7 @@ static PyObject *Qt_MovieImportSetDontBlock(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportSetDontBlock);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&b",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &dontBlock))
 		return NULL;
 	_rv = MovieImportSetDontBlock(ci,
@@ -15549,7 +15540,7 @@ static PyObject *Qt_MovieImportGetDontBlock(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportGetDontBlock);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = MovieImportGetDontBlock(ci,
 	                              &willBlock);
@@ -15569,7 +15560,7 @@ static PyObject *Qt_MovieImportSetIdleManager(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieImportSetIdleManager);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      IdleManagerObj_Convert, &im))
 		return NULL;
 	_rv = MovieImportSetIdleManager(ci,
@@ -15589,7 +15580,7 @@ static PyObject *Qt_MovieImportSetNewMovieFlags(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(MovieImportSetNewMovieFlags);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &newMovieFlags))
 		return NULL;
 	_rv = MovieImportSetNewMovieFlags(ci,
@@ -15609,7 +15600,7 @@ static PyObject *Qt_MovieImportGetDestinationMediaType(PyObject *_self, PyObject
 	PyMac_PRECHECK(MovieImportGetDestinationMediaType);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = MovieImportGetDestinationMediaType(ci,
 	                                         &mediaType);
@@ -15633,7 +15624,7 @@ static PyObject *Qt_MovieExportToHandle(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieExportToHandle);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&ll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &dataH,
 	                      MovieObj_Convert, &theMovie,
 	                      TrackObj_Convert, &onlyThisTrack,
@@ -15665,7 +15656,7 @@ static PyObject *Qt_MovieExportToFile(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieExportToFile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&ll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFSSpec, &theFile,
 	                      MovieObj_Convert, &theMovie,
 	                      TrackObj_Convert, &onlyThisTrack,
@@ -15694,7 +15685,7 @@ static PyObject *Qt_MovieExportGetAuxiliaryData(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(MovieExportGetAuxiliaryData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &dataH))
 		return NULL;
 	_rv = MovieExportGetAuxiliaryData(ci,
@@ -15717,7 +15708,7 @@ static PyObject *Qt_MovieExportSetSampleDescription(PyObject *_self, PyObject *_
 	PyMac_PRECHECK(MovieExportSetSampleDescription);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &desc,
 	                      PyMac_GetOSType, &mediaType))
 		return NULL;
@@ -15743,7 +15734,7 @@ static PyObject *Qt_MovieExportDoUserDialog(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieExportDoUserDialog);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&ll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      MovieObj_Convert, &theMovie,
 	                      TrackObj_Convert, &onlyThisTrack,
 	                      &startTime,
@@ -15771,7 +15762,7 @@ static PyObject *Qt_MovieExportGetCreatorType(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieExportGetCreatorType);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = MovieExportGetCreatorType(ci,
 	                                &creator);
@@ -15796,7 +15787,7 @@ static PyObject *Qt_MovieExportToDataRef(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieExportToDataRef);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&O&ll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataRefType,
 	                      MovieObj_Convert, &theMovie,
@@ -15827,7 +15818,7 @@ static PyObject *Qt_MovieExportFromProceduresToDataRef(PyObject *_self, PyObject
 	PyMac_PRECHECK(MovieExportFromProceduresToDataRef);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataRefType))
 		return NULL;
@@ -15851,7 +15842,7 @@ static PyObject *Qt_MovieExportValidate(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MovieExportValidate);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      MovieObj_Convert, &theMovie,
 	                      TrackObj_Convert, &onlyThisTrack))
 		return NULL;
@@ -15875,7 +15866,7 @@ static PyObject *Qt_MovieExportGetFileNameExtension(PyObject *_self, PyObject *_
 	PyMac_PRECHECK(MovieExportGetFileNameExtension);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = MovieExportGetFileNameExtension(ci,
 	                                      &extension);
@@ -15895,7 +15886,7 @@ static PyObject *Qt_MovieExportGetShortFileTypeString(PyObject *_self, PyObject 
 	PyMac_PRECHECK(MovieExportGetShortFileTypeString);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetStr255, typeString))
 		return NULL;
 	_rv = MovieExportGetShortFileTypeString(ci,
@@ -15915,7 +15906,7 @@ static PyObject *Qt_MovieExportGetSourceMediaType(PyObject *_self, PyObject *_ar
 	PyMac_PRECHECK(MovieExportGetSourceMediaType);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = MovieExportGetSourceMediaType(ci,
 	                                    &mediaType);
@@ -15935,7 +15926,7 @@ static PyObject *Qt_TextExportGetTimeFraction(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(TextExportGetTimeFraction);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = TextExportGetTimeFraction(ci,
 	                                &movieTimeFraction);
@@ -15955,7 +15946,7 @@ static PyObject *Qt_TextExportSetTimeFraction(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(TextExportSetTimeFraction);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &movieTimeFraction))
 		return NULL;
 	_rv = TextExportSetTimeFraction(ci,
@@ -15975,7 +15966,7 @@ static PyObject *Qt_TextExportGetSettings(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(TextExportGetSettings);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = TextExportGetSettings(ci,
 	                            &setting);
@@ -15995,7 +15986,7 @@ static PyObject *Qt_TextExportSetSettings(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(TextExportSetSettings);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &setting))
 		return NULL;
 	_rv = TextExportSetSettings(ci,
@@ -16015,7 +16006,7 @@ static PyObject *Qt_MIDIImportGetSettings(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MIDIImportGetSettings);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = MIDIImportGetSettings(ci,
 	                            &setting);
@@ -16035,7 +16026,7 @@ static PyObject *Qt_MIDIImportSetSettings(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(MIDIImportSetSettings);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &setting))
 		return NULL;
 	_rv = MIDIImportSetSettings(ci,
@@ -16055,7 +16046,7 @@ static PyObject *Qt_GraphicsImageImportSetSequenceEnabled(PyObject *_self, PyObj
 	PyMac_PRECHECK(GraphicsImageImportSetSequenceEnabled);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&b",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &enable))
 		return NULL;
 	_rv = GraphicsImageImportSetSequenceEnabled(ci,
@@ -16075,7 +16066,7 @@ static PyObject *Qt_GraphicsImageImportGetSequenceEnabled(PyObject *_self, PyObj
 	PyMac_PRECHECK(GraphicsImageImportGetSequenceEnabled);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = GraphicsImageImportGetSequenceEnabled(ci,
 	                                            &enable);
@@ -16097,7 +16088,7 @@ static PyObject *Qt_PreviewShowData(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(PreviewShowData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&",
-	                      CmpInstObj_Convert, &p,
+	                      CmpObj_Convert, &p,
 	                      PyMac_GetOSType, &dataType,
 	                      ResObj_Convert, &data,
 	                      PyMac_GetRect, &inHere))
@@ -16123,7 +16114,7 @@ static PyObject *Qt_PreviewMakePreviewReference(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(PreviewMakePreviewReference);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &p,
+	                      CmpObj_Convert, &p,
 	                      PyMac_GetFSSpec, &sourceFile))
 		return NULL;
 	_rv = PreviewMakePreviewReference(p,
@@ -16148,7 +16139,7 @@ static PyObject *Qt_PreviewEvent(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(PreviewEvent);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &p))
+	                      CmpObj_Convert, &p))
 		return NULL;
 	_rv = PreviewEvent(p,
 	                   &e,
@@ -16173,7 +16164,7 @@ static PyObject *Qt_DataCodecDecompress(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(DataCodecDecompress);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&slsl",
-	                      CmpInstObj_Convert, &dc,
+	                      CmpObj_Convert, &dc,
 	                      &srcData,
 	                      &srcSize,
 	                      &dstData,
@@ -16200,7 +16191,7 @@ static PyObject *Qt_DataCodecGetCompressBufferSize(PyObject *_self, PyObject *_a
 	PyMac_PRECHECK(DataCodecGetCompressBufferSize);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &dc,
+	                      CmpObj_Convert, &dc,
 	                      &srcSize))
 		return NULL;
 	_rv = DataCodecGetCompressBufferSize(dc,
@@ -16227,7 +16218,7 @@ static PyObject *Qt_DataCodecCompress(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(DataCodecCompress);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&slsl",
-	                      CmpInstObj_Convert, &dc,
+	                      CmpObj_Convert, &dc,
 	                      &srcData,
 	                      &srcSize,
 	                      &dstData,
@@ -16257,7 +16248,7 @@ static PyObject *Qt_DataCodecBeginInterruptSafe(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(DataCodecBeginInterruptSafe);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &dc,
+	                      CmpObj_Convert, &dc,
 	                      &maxSrcSize))
 		return NULL;
 	_rv = DataCodecBeginInterruptSafe(dc,
@@ -16276,7 +16267,7 @@ static PyObject *Qt_DataCodecEndInterruptSafe(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(DataCodecEndInterruptSafe);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &dc))
+	                      CmpObj_Convert, &dc))
 		return NULL;
 	_rv = DataCodecEndInterruptSafe(dc);
 	_res = Py_BuildValue("l",
@@ -17695,7 +17686,7 @@ static PyObject *Qt_VDGetMaxSrcRect(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetMaxSrcRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &inputStd))
 		return NULL;
 	_rv = VDGetMaxSrcRect(ci,
@@ -17718,7 +17709,7 @@ static PyObject *Qt_VDGetActiveSrcRect(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetActiveSrcRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &inputStd))
 		return NULL;
 	_rv = VDGetActiveSrcRect(ci,
@@ -17740,7 +17731,7 @@ static PyObject *Qt_VDSetDigitizerRect(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetDigitizerRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDSetDigitizerRect(ci,
 	                         &digitizerRect);
@@ -17760,7 +17751,7 @@ static PyObject *Qt_VDGetDigitizerRect(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetDigitizerRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetDigitizerRect(ci,
 	                         &digitizerRect);
@@ -17781,7 +17772,7 @@ static PyObject *Qt_VDGetVBlankRect(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetVBlankRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &inputStd))
 		return NULL;
 	_rv = VDGetVBlankRect(ci,
@@ -17803,7 +17794,7 @@ static PyObject *Qt_VDGetMaskPixMap(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetMaskPixMap);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &maskPixMap))
 		return NULL;
 	_rv = VDGetMaskPixMap(ci,
@@ -17823,7 +17814,7 @@ static PyObject *Qt_VDUseThisCLUT(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDUseThisCLUT);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &colorTableHandle))
 		return NULL;
 	_rv = VDUseThisCLUT(ci,
@@ -17845,7 +17836,7 @@ static PyObject *Qt_VDSetInputGammaValue(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetInputGammaValue);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFixed, &channel1,
 	                      PyMac_GetFixed, &channel2,
 	                      PyMac_GetFixed, &channel3))
@@ -17871,7 +17862,7 @@ static PyObject *Qt_VDGetInputGammaValue(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetInputGammaValue);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetInputGammaValue(ci,
 	                           &channel1,
@@ -17895,7 +17886,7 @@ static PyObject *Qt_VDSetBrightness(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetBrightness);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDSetBrightness(ci,
 	                      &brightness);
@@ -17915,7 +17906,7 @@ static PyObject *Qt_VDGetBrightness(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetBrightness);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetBrightness(ci,
 	                      &brightness);
@@ -17935,7 +17926,7 @@ static PyObject *Qt_VDSetContrast(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetContrast);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDSetContrast(ci,
 	                    &contrast);
@@ -17955,7 +17946,7 @@ static PyObject *Qt_VDSetHue(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetHue);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDSetHue(ci,
 	               &hue);
@@ -17975,7 +17966,7 @@ static PyObject *Qt_VDSetSharpness(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetSharpness);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDSetSharpness(ci,
 	                     &sharpness);
@@ -17995,7 +17986,7 @@ static PyObject *Qt_VDSetSaturation(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetSaturation);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDSetSaturation(ci,
 	                      &saturation);
@@ -18015,7 +18006,7 @@ static PyObject *Qt_VDGetContrast(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetContrast);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetContrast(ci,
 	                    &contrast);
@@ -18035,7 +18026,7 @@ static PyObject *Qt_VDGetHue(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetHue);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetHue(ci,
 	               &hue);
@@ -18055,7 +18046,7 @@ static PyObject *Qt_VDGetSharpness(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetSharpness);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetSharpness(ci,
 	                     &sharpness);
@@ -18075,7 +18066,7 @@ static PyObject *Qt_VDGetSaturation(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetSaturation);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetSaturation(ci,
 	                      &saturation);
@@ -18094,7 +18085,7 @@ static PyObject *Qt_VDGrabOneFrame(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGrabOneFrame);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGrabOneFrame(ci);
 	_res = Py_BuildValue("l",
@@ -18113,7 +18104,7 @@ static PyObject *Qt_VDGetMaxAuxBuffer(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetMaxAuxBuffer);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetMaxAuxBuffer(ci,
 	                        &pm,
@@ -18136,7 +18127,7 @@ static PyObject *Qt_VDGetCurrentFlags(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetCurrentFlags);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetCurrentFlags(ci,
 	                        &inputCurrentFlag,
@@ -18158,7 +18149,7 @@ static PyObject *Qt_VDSetKeyColor(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetKeyColor);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &index))
 		return NULL;
 	_rv = VDSetKeyColor(ci,
@@ -18178,7 +18169,7 @@ static PyObject *Qt_VDGetKeyColor(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetKeyColor);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetKeyColor(ci,
 	                    &index);
@@ -18198,7 +18189,7 @@ static PyObject *Qt_VDAddKeyColor(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDAddKeyColor);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDAddKeyColor(ci,
 	                    &index);
@@ -18218,7 +18209,7 @@ static PyObject *Qt_VDGetNextKeyColor(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetNextKeyColor);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &index))
 		return NULL;
 	_rv = VDGetNextKeyColor(ci,
@@ -18239,7 +18230,7 @@ static PyObject *Qt_VDSetKeyColorRange(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetKeyColorRange);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDSetKeyColorRange(ci,
 	                         &minRGB,
@@ -18262,7 +18253,7 @@ static PyObject *Qt_VDGetKeyColorRange(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetKeyColorRange);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetKeyColorRange(ci,
 	                         &minRGB,
@@ -18284,7 +18275,7 @@ static PyObject *Qt_VDSetInputColorSpaceMode(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetInputColorSpaceMode);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &colorSpaceMode))
 		return NULL;
 	_rv = VDSetInputColorSpaceMode(ci,
@@ -18304,7 +18295,7 @@ static PyObject *Qt_VDGetInputColorSpaceMode(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetInputColorSpaceMode);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetInputColorSpaceMode(ci,
 	                               &colorSpaceMode);
@@ -18324,7 +18315,7 @@ static PyObject *Qt_VDSetClipState(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetClipState);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &clipEnable))
 		return NULL;
 	_rv = VDSetClipState(ci,
@@ -18344,7 +18335,7 @@ static PyObject *Qt_VDGetClipState(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetClipState);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetClipState(ci,
 	                     &clipEnable);
@@ -18364,7 +18355,7 @@ static PyObject *Qt_VDSetClipRgn(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetClipRgn);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &clipRegion))
 		return NULL;
 	_rv = VDSetClipRgn(ci,
@@ -18384,7 +18375,7 @@ static PyObject *Qt_VDClearClipRgn(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDClearClipRgn);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &clipRegion))
 		return NULL;
 	_rv = VDClearClipRgn(ci,
@@ -18404,7 +18395,7 @@ static PyObject *Qt_VDGetCLUTInUse(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetCLUTInUse);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetCLUTInUse(ci,
 	                     &colorTableHandle);
@@ -18424,7 +18415,7 @@ static PyObject *Qt_VDSetPLLFilterType(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetPLLFilterType);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &pllType))
 		return NULL;
 	_rv = VDSetPLLFilterType(ci,
@@ -18444,7 +18435,7 @@ static PyObject *Qt_VDGetPLLFilterType(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetPLLFilterType);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetPLLFilterType(ci,
 	                         &pllType);
@@ -18466,7 +18457,7 @@ static PyObject *Qt_VDGetMaskandValue(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetMaskandValue);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&H",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &blendLevel))
 		return NULL;
 	_rv = VDGetMaskandValue(ci,
@@ -18490,7 +18481,7 @@ static PyObject *Qt_VDSetMasterBlendLevel(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetMasterBlendLevel);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDSetMasterBlendLevel(ci,
 	                            &blendLevel);
@@ -18510,7 +18501,7 @@ static PyObject *Qt_VDSetPlayThruOnOff(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetPlayThruOnOff);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &state))
 		return NULL;
 	_rv = VDSetPlayThruOnOff(ci,
@@ -18530,7 +18521,7 @@ static PyObject *Qt_VDSetFieldPreference(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetFieldPreference);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &fieldFlag))
 		return NULL;
 	_rv = VDSetFieldPreference(ci,
@@ -18550,7 +18541,7 @@ static PyObject *Qt_VDGetFieldPreference(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetFieldPreference);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetFieldPreference(ci,
 	                           &fieldFlag);
@@ -18571,7 +18562,7 @@ static PyObject *Qt_VDPreflightGlobalRect(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDPreflightGlobalRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      GrafObj_Convert, &theWindow))
 		return NULL;
 	_rv = VDPreflightGlobalRect(ci,
@@ -18594,7 +18585,7 @@ static PyObject *Qt_VDSetPlayThruGlobalRect(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetPlayThruGlobalRect);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      GrafObj_Convert, &theWindow))
 		return NULL;
 	_rv = VDSetPlayThruGlobalRect(ci,
@@ -18616,7 +18607,7 @@ static PyObject *Qt_VDSetBlackLevelValue(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetBlackLevelValue);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDSetBlackLevelValue(ci,
 	                           &blackLevel);
@@ -18636,7 +18627,7 @@ static PyObject *Qt_VDGetBlackLevelValue(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetBlackLevelValue);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetBlackLevelValue(ci,
 	                           &blackLevel);
@@ -18656,7 +18647,7 @@ static PyObject *Qt_VDSetWhiteLevelValue(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetWhiteLevelValue);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDSetWhiteLevelValue(ci,
 	                           &whiteLevel);
@@ -18676,7 +18667,7 @@ static PyObject *Qt_VDGetWhiteLevelValue(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetWhiteLevelValue);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetWhiteLevelValue(ci,
 	                           &whiteLevel);
@@ -18702,7 +18693,7 @@ static PyObject *Qt_VDGetVideoDefaults(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetVideoDefaults);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetVideoDefaults(ci,
 	                         &blackLevel,
@@ -18734,7 +18725,7 @@ static PyObject *Qt_VDGetNumberOfInputs(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetNumberOfInputs);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetNumberOfInputs(ci,
 	                          &inputs);
@@ -18755,7 +18746,7 @@ static PyObject *Qt_VDGetInputFormat(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetInputFormat);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &input))
 		return NULL;
 	_rv = VDGetInputFormat(ci,
@@ -18777,7 +18768,7 @@ static PyObject *Qt_VDSetInput(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetInput);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &input))
 		return NULL;
 	_rv = VDSetInput(ci,
@@ -18797,7 +18788,7 @@ static PyObject *Qt_VDGetInput(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetInput);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetInput(ci,
 	                 &input);
@@ -18817,7 +18808,7 @@ static PyObject *Qt_VDSetInputStandard(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetInputStandard);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &inputStandard))
 		return NULL;
 	_rv = VDSetInputStandard(ci,
@@ -18837,7 +18828,7 @@ static PyObject *Qt_VDSetupBuffers(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetupBuffers);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &bufferList))
 		return NULL;
 	_rv = VDSetupBuffers(ci,
@@ -18857,7 +18848,7 @@ static PyObject *Qt_VDGrabOneFrameAsync(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGrabOneFrameAsync);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &buffer))
 		return NULL;
 	_rv = VDGrabOneFrameAsync(ci,
@@ -18877,7 +18868,7 @@ static PyObject *Qt_VDDone(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDDone);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &buffer))
 		return NULL;
 	_rv = VDDone(ci,
@@ -18902,7 +18893,7 @@ static PyObject *Qt_VDSetCompression(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetCompression);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&hlll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetOSType, &compressType,
 	                      &depth,
 	                      &spatialQuality,
@@ -18931,7 +18922,7 @@ static PyObject *Qt_VDCompressOneFrameAsync(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDCompressOneFrameAsync);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDCompressOneFrameAsync(ci);
 	_res = Py_BuildValue("l",
@@ -18949,7 +18940,7 @@ static PyObject *Qt_VDGetImageDescription(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetImageDescription);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &desc))
 		return NULL;
 	_rv = VDGetImageDescription(ci,
@@ -18968,7 +18959,7 @@ static PyObject *Qt_VDResetCompressSequence(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDResetCompressSequence);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDResetCompressSequence(ci);
 	_res = Py_BuildValue("l",
@@ -18986,7 +18977,7 @@ static PyObject *Qt_VDSetCompressionOnOff(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetCompressionOnOff);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&b",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &state))
 		return NULL;
 	_rv = VDSetCompressionOnOff(ci,
@@ -19006,7 +18997,7 @@ static PyObject *Qt_VDGetCompressionTypes(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetCompressionTypes);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      ResObj_Convert, &h))
 		return NULL;
 	_rv = VDGetCompressionTypes(ci,
@@ -19026,7 +19017,7 @@ static PyObject *Qt_VDSetTimeBase(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetTimeBase);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      TimeBaseObj_Convert, &t))
 		return NULL;
 	_rv = VDSetTimeBase(ci,
@@ -19046,7 +19037,7 @@ static PyObject *Qt_VDSetFrameRate(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetFrameRate);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetFixed, &framesPerSecond))
 		return NULL;
 	_rv = VDSetFrameRate(ci,
@@ -19068,7 +19059,7 @@ static PyObject *Qt_VDGetDataRate(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetDataRate);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetDataRate(ci,
 	                    &milliSecPerFrame,
@@ -19092,7 +19083,7 @@ static PyObject *Qt_VDGetSoundInputDriver(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetSoundInputDriver);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetStr255, soundDriverName))
 		return NULL;
 	_rv = VDGetSoundInputDriver(ci,
@@ -19113,7 +19104,7 @@ static PyObject *Qt_VDGetDMADepths(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetDMADepths);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetDMADepths(ci,
 	                     &depthArray,
@@ -19135,7 +19126,7 @@ static PyObject *Qt_VDGetPreferredTimeScale(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetPreferredTimeScale);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetPreferredTimeScale(ci,
 	                              &preferred);
@@ -19154,7 +19145,7 @@ static PyObject *Qt_VDReleaseAsyncBuffers(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDReleaseAsyncBuffers);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDReleaseAsyncBuffers(ci);
 	_res = Py_BuildValue("l",
@@ -19172,7 +19163,7 @@ static PyObject *Qt_VDSetDataRate(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetDataRate);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &bytesPerSecond))
 		return NULL;
 	_rv = VDSetDataRate(ci,
@@ -19194,7 +19185,7 @@ static PyObject *Qt_VDGetTimeCode(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetTimeCode);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&ss",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &timeCodeFormat,
 	                      &timeCodeTime))
 		return NULL;
@@ -19218,7 +19209,7 @@ static PyObject *Qt_VDUseSafeBuffers(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDUseSafeBuffers);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&b",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &useSafeBuffers))
 		return NULL;
 	_rv = VDUseSafeBuffers(ci,
@@ -19239,7 +19230,7 @@ static PyObject *Qt_VDGetSoundInputSource(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetSoundInputSource);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &videoInput))
 		return NULL;
 	_rv = VDGetSoundInputSource(ci,
@@ -19266,7 +19257,7 @@ static PyObject *Qt_VDGetCompressionTime(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetCompressionTime);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&h",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetOSType, &compressionType,
 	                      &depth))
 		return NULL;
@@ -19296,7 +19287,7 @@ static PyObject *Qt_VDSetPreferredPacketSize(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetPreferredPacketSize);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &preferredPacketSizeInBytes))
 		return NULL;
 	_rv = VDSetPreferredPacketSize(ci,
@@ -19317,7 +19308,7 @@ static PyObject *Qt_VDSetPreferredImageDimensions(PyObject *_self, PyObject *_ar
 	PyMac_PRECHECK(VDSetPreferredImageDimensions);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&ll",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &width,
 	                      &height))
 		return NULL;
@@ -19340,7 +19331,7 @@ static PyObject *Qt_VDGetPreferredImageDimensions(PyObject *_self, PyObject *_ar
 	PyMac_PRECHECK(VDGetPreferredImageDimensions);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
+	                      CmpObj_Convert, &ci))
 		return NULL;
 	_rv = VDGetPreferredImageDimensions(ci,
 	                                    &width,
@@ -19363,7 +19354,7 @@ static PyObject *Qt_VDGetInputName(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetInputName);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&lO&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &videoInput,
 	                      PyMac_GetStr255, name))
 		return NULL;
@@ -19385,7 +19376,7 @@ static PyObject *Qt_VDSetDestinationPort(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDSetDestinationPort);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      GrafObj_Convert, &destPort))
 		return NULL;
 	_rv = VDSetDestinationPort(ci,
@@ -19406,7 +19397,7 @@ static PyObject *Qt_VDGetDeviceNameAndFlags(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDGetDeviceNameAndFlags);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      PyMac_GetStr255, outName))
 		return NULL;
 	_rv = VDGetDeviceNameAndFlags(ci,
@@ -19428,7 +19419,7 @@ static PyObject *Qt_VDCaptureStateChanging(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(VDCaptureStateChanging);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
+	                      CmpObj_Convert, &ci,
 	                      &inStateFlags))
 		return NULL;
 	_rv = VDCaptureStateChanging(ci,
@@ -19687,7 +19678,7 @@ static PyObject *Qt_SGInitialize(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGInitialize);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGInitialize(s);
 	_res = Py_BuildValue("l",
@@ -19706,7 +19697,7 @@ static PyObject *Qt_SGSetDataOutput(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGSetDataOutput);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      PyMac_GetFSSpec, &movieFile,
 	                      &whereFlags))
 		return NULL;
@@ -19729,7 +19720,7 @@ static PyObject *Qt_SGGetDataOutput(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetDataOutput);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      PyMac_GetFSSpec, &movieFile))
 		return NULL;
 	_rv = SGGetDataOutput(s,
@@ -19752,7 +19743,7 @@ static PyObject *Qt_SGSetGWorld(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGSetGWorld);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      GrafObj_Convert, &gp,
 	                      OptResObj_Convert, &gd))
 		return NULL;
@@ -19775,7 +19766,7 @@ static PyObject *Qt_SGGetGWorld(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetGWorld);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGGetGWorld(s,
 	                  &gp,
@@ -19798,7 +19789,7 @@ static PyObject *Qt_SGNewChannel(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGNewChannel);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      PyMac_GetOSType, &channelType))
 		return NULL;
 	_rv = SGNewChannel(s,
@@ -19820,7 +19811,7 @@ static PyObject *Qt_SGDisposeChannel(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGDisposeChannel);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c))
 		return NULL;
 	_rv = SGDisposeChannel(s,
@@ -19839,7 +19830,7 @@ static PyObject *Qt_SGStartPreview(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGStartPreview);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGStartPreview(s);
 	_res = Py_BuildValue("l",
@@ -19856,7 +19847,7 @@ static PyObject *Qt_SGStartRecord(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGStartRecord);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGStartRecord(s);
 	_res = Py_BuildValue("l",
@@ -19873,7 +19864,7 @@ static PyObject *Qt_SGIdle(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGIdle);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGIdle(s);
 	_res = Py_BuildValue("l",
@@ -19890,7 +19881,7 @@ static PyObject *Qt_SGStop(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGStop);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGStop(s);
 	_res = Py_BuildValue("l",
@@ -19908,7 +19899,7 @@ static PyObject *Qt_SGPause(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPause);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&b",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      &pause))
 		return NULL;
 	_rv = SGPause(s,
@@ -19929,7 +19920,7 @@ static PyObject *Qt_SGPrepare(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPrepare);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&bb",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      &prepareForPreview,
 	                      &prepareForRecord))
 		return NULL;
@@ -19950,7 +19941,7 @@ static PyObject *Qt_SGRelease(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGRelease);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGRelease(s);
 	_res = Py_BuildValue("l",
@@ -19967,7 +19958,7 @@ static PyObject *Qt_SGGetMovie(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetMovie);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGGetMovie(s);
 	_res = Py_BuildValue("O&",
@@ -19985,7 +19976,7 @@ static PyObject *Qt_SGSetMaximumRecordTime(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGSetMaximumRecordTime);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      &ticks))
 		return NULL;
 	_rv = SGSetMaximumRecordTime(s,
@@ -20005,7 +19996,7 @@ static PyObject *Qt_SGGetMaximumRecordTime(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetMaximumRecordTime);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGGetMaximumRecordTime(s,
 	                             &ticks);
@@ -20025,7 +20016,7 @@ static PyObject *Qt_SGGetStorageSpaceRemaining(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetStorageSpaceRemaining);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGGetStorageSpaceRemaining(s,
 	                                 &bytes);
@@ -20045,7 +20036,7 @@ static PyObject *Qt_SGGetTimeRemaining(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetTimeRemaining);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGGetTimeRemaining(s,
 	                         &ticksLeft);
@@ -20068,7 +20059,7 @@ static PyObject *Qt_SGGrabPict(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGrabPict);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&hl",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      PyMac_GetRect, &bounds,
 	                      &offscreenDepth,
 	                      &grabPictFlags))
@@ -20094,7 +20085,7 @@ static PyObject *Qt_SGGetLastMovieResID(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetLastMovieResID);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGGetLastMovieResID(s,
 	                          &resID);
@@ -20114,7 +20105,7 @@ static PyObject *Qt_SGSetFlags(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGSetFlags);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      &sgFlags))
 		return NULL;
 	_rv = SGSetFlags(s,
@@ -20134,7 +20125,7 @@ static PyObject *Qt_SGGetFlags(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetFlags);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGGetFlags(s,
 	                 &sgFlags);
@@ -20155,7 +20146,7 @@ static PyObject *Qt_SGNewChannelFromComponent(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGNewChannelFromComponent);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpObj_Convert, &sgChannelComponent))
 		return NULL;
 	_rv = SGNewChannelFromComponent(s,
@@ -20178,7 +20169,7 @@ static PyObject *Qt_SGSetSettings(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGSetSettings);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      UserDataObj_Convert, &ud,
 	                      &flags))
 		return NULL;
@@ -20201,7 +20192,7 @@ static PyObject *Qt_SGGetSettings(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetSettings);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      &flags))
 		return NULL;
 	_rv = SGGetSettings(s,
@@ -20225,7 +20216,7 @@ static PyObject *Qt_SGGetIndChannel(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetIndChannel);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      &index))
 		return NULL;
 	_rv = SGGetIndChannel(s,
@@ -20249,7 +20240,7 @@ static PyObject *Qt_SGUpdate(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGUpdate);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      ResObj_Convert, &updateRgn))
 		return NULL;
 	_rv = SGUpdate(s,
@@ -20269,7 +20260,7 @@ static PyObject *Qt_SGGetPause(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetPause);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGGetPause(s,
 	                 &paused);
@@ -20291,7 +20282,7 @@ static PyObject *Qt_SGSetChannelSettings(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGSetChannelSettings);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&l",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c,
 	                      UserDataObj_Convert, &ud,
 	                      &flags))
@@ -20317,7 +20308,7 @@ static PyObject *Qt_SGGetChannelSettings(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetChannelSettings);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c,
 	                      &flags))
 		return NULL;
@@ -20342,7 +20333,7 @@ static PyObject *Qt_SGGetMode(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetMode);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGGetMode(s,
 	                &previewMode,
@@ -20366,7 +20357,7 @@ static PyObject *Qt_SGSetDataRef(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGSetDataRef);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&l",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataRefType,
 	                      &whereFlags))
@@ -20392,7 +20383,7 @@ static PyObject *Qt_SGGetDataRef(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetDataRef);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGGetDataRef(s,
 	                   &dataRef,
@@ -20419,7 +20410,7 @@ static PyObject *Qt_SGNewOutput(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGNewOutput);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&l",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataRefType,
 	                      &whereFlags))
@@ -20445,7 +20436,7 @@ static PyObject *Qt_SGDisposeOutput(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGDisposeOutput);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      SGOutputObj_Convert, &sgOut))
 		return NULL;
 	_rv = SGDisposeOutput(s,
@@ -20466,7 +20457,7 @@ static PyObject *Qt_SGSetOutputFlags(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGSetOutputFlags);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      SGOutputObj_Convert, &sgOut,
 	                      &whereFlags))
 		return NULL;
@@ -20489,7 +20480,7 @@ static PyObject *Qt_SGSetChannelOutput(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGSetChannelOutput);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c,
 	                      SGOutputObj_Convert, &sgOut))
 		return NULL;
@@ -20512,7 +20503,7 @@ static PyObject *Qt_SGGetDataOutputStorageSpaceRemaining(PyObject *_self, PyObje
 	PyMac_PRECHECK(SGGetDataOutputStorageSpaceRemaining);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      SGOutputObj_Convert, &sgOut))
 		return NULL;
 	_rv = SGGetDataOutputStorageSpaceRemaining(s,
@@ -20535,7 +20526,7 @@ static PyObject *Qt_SGHandleUpdateEvent(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGHandleUpdateEvent);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      PyMac_GetEventRecord, &event))
 		return NULL;
 	_rv = SGHandleUpdateEvent(s,
@@ -20558,7 +20549,7 @@ static PyObject *Qt_SGSetOutputNextOutput(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGSetOutputNextOutput);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      SGOutputObj_Convert, &sgOut,
 	                      SGOutputObj_Convert, &nextOut))
 		return NULL;
@@ -20581,7 +20572,7 @@ static PyObject *Qt_SGGetOutputNextOutput(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetOutputNextOutput);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      SGOutputObj_Convert, &sgOut))
 		return NULL;
 	_rv = SGGetOutputNextOutput(s,
@@ -20604,7 +20595,7 @@ static PyObject *Qt_SGSetOutputMaximumOffset(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGSetOutputMaximumOffset);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      SGOutputObj_Convert, &sgOut,
 	                      PyMac_Getwide, &maxOffset))
 		return NULL;
@@ -20627,7 +20618,7 @@ static PyObject *Qt_SGGetOutputMaximumOffset(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetOutputMaximumOffset);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      SGOutputObj_Convert, &sgOut))
 		return NULL;
 	_rv = SGGetOutputMaximumOffset(s,
@@ -20651,7 +20642,7 @@ static PyObject *Qt_SGGetOutputDataReference(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetOutputDataReference);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      SGOutputObj_Convert, &sgOut))
 		return NULL;
 	_rv = SGGetOutputDataReference(s,
@@ -20679,7 +20670,7 @@ static PyObject *Qt_SGWriteExtendedMovieData(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGWriteExtendedMovieData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&sl",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c,
 	                      &p,
 	                      &len))
@@ -20707,7 +20698,7 @@ static PyObject *Qt_SGGetStorageSpaceRemaining64(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(SGGetStorageSpaceRemaining64);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGGetStorageSpaceRemaining64(s,
 	                                   &bytes);
@@ -20728,7 +20719,7 @@ static PyObject *Qt_SGGetDataOutputStorageSpaceRemaining64(PyObject *_self, PyOb
 	PyMac_PRECHECK(SGGetDataOutputStorageSpaceRemaining64);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      SGOutputObj_Convert, &sgOut))
 		return NULL;
 	_rv = SGGetDataOutputStorageSpaceRemaining64(s,
@@ -20753,7 +20744,7 @@ static PyObject *Qt_SGWriteMovieData(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGWriteMovieData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&sl",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c,
 	                      &p,
 	                      &len))
@@ -20779,7 +20770,7 @@ static PyObject *Qt_SGGetTimeBase(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGGetTimeBase);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGGetTimeBase(s,
 	                    &tb);
@@ -20805,7 +20796,7 @@ static PyObject *Qt_SGAddMovieData(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGAddMovieData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&slllh",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c,
 	                      &p,
 	                      &len,
@@ -20837,7 +20828,7 @@ static PyObject *Qt_SGChangedSource(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGChangedSource);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c))
 		return NULL;
 	_rv = SGChangedSource(s,
@@ -20864,7 +20855,7 @@ static PyObject *Qt_SGAddExtendedMovieData(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGAddExtendedMovieData);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&slllh",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c,
 	                      &p,
 	                      &len,
@@ -20900,7 +20891,7 @@ static PyObject *Qt_SGAddOutputDataRefToMedia(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGAddOutputDataRefToMedia);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      SGOutputObj_Convert, &sgOut,
 	                      MediaObj_Convert, &theMedia,
 	                      ResObj_Convert, &desc))
@@ -20924,7 +20915,7 @@ static PyObject *Qt_SGSetSettingsSummary(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGSetSettingsSummary);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      ResObj_Convert, &summaryText))
 		return NULL;
 	_rv = SGSetSettingsSummary(s,
@@ -21534,7 +21525,7 @@ static PyObject *Qt_SGInitChannel(PyObject *_self, PyObject *_args)
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      CmpInstObj_Convert, &c,
-	                      CmpInstObj_Convert, &owner))
+	                      CmpObj_Convert, &owner))
 		return NULL;
 	_rv = SGInitChannel(c,
 	                    owner);
@@ -21616,7 +21607,7 @@ static PyObject *Qt_SGPanelGetDitl(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPanelGetDitl);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGPanelGetDitl(s,
 	                     &ditl);
@@ -21636,7 +21627,7 @@ static PyObject *Qt_SGPanelGetTitle(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPanelGetTitle);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      PyMac_GetStr255, title))
 		return NULL;
 	_rv = SGPanelGetTitle(s,
@@ -21656,7 +21647,7 @@ static PyObject *Qt_SGPanelCanRun(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPanelCanRun);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c))
 		return NULL;
 	_rv = SGPanelCanRun(s,
@@ -21678,7 +21669,7 @@ static PyObject *Qt_SGPanelInstall(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPanelInstall);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&h",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c,
 	                      DlgObj_Convert, &d,
 	                      &itemOffset))
@@ -21707,7 +21698,7 @@ static PyObject *Qt_SGPanelEvent(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPanelEvent);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&hO&",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c,
 	                      DlgObj_Convert, &d,
 	                      &itemOffset,
@@ -21740,7 +21731,7 @@ static PyObject *Qt_SGPanelItem(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPanelItem);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&hh",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c,
 	                      DlgObj_Convert, &d,
 	                      &itemOffset,
@@ -21768,7 +21759,7 @@ static PyObject *Qt_SGPanelRemove(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPanelRemove);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&h",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c,
 	                      DlgObj_Convert, &d,
 	                      &itemOffset))
@@ -21792,8 +21783,8 @@ static PyObject *Qt_SGPanelSetGrabber(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPanelSetGrabber);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &s,
-	                      CmpInstObj_Convert, &sg))
+	                      CmpObj_Convert, &s,
+	                      CmpObj_Convert, &sg))
 		return NULL;
 	_rv = SGPanelSetGrabber(s,
 	                        sg);
@@ -21812,7 +21803,7 @@ static PyObject *Qt_SGPanelSetResFile(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPanelSetResFile);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      &resRef))
 		return NULL;
 	_rv = SGPanelSetResFile(s,
@@ -21834,7 +21825,7 @@ static PyObject *Qt_SGPanelGetSettings(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPanelGetSettings);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c,
 	                      &flags))
 		return NULL;
@@ -21860,7 +21851,7 @@ static PyObject *Qt_SGPanelSetSettings(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPanelSetSettings);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&l",
-	                      CmpInstObj_Convert, &s,
+	                      CmpObj_Convert, &s,
 	                      CmpInstObj_Convert, &c,
 	                      UserDataObj_Convert, &ud,
 	                      &flags))
@@ -21884,7 +21875,7 @@ static PyObject *Qt_SGPanelValidateInput(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPanelValidateInput);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGPanelValidateInput(s,
 	                           &ok);
@@ -21905,7 +21896,7 @@ static PyObject *Qt_SGPanelGetDITLForSize(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(SGPanelGetDITLForSize);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &s))
+	                      CmpObj_Convert, &s))
 		return NULL;
 	_rv = SGPanelGetDITLForSize(s,
 	                            &ditl,
@@ -22806,7 +22797,7 @@ static PyObject *Qt_QTVideoOutputGetCurrentClientName(PyObject *_self, PyObject 
 	PyMac_PRECHECK(QTVideoOutputGetCurrentClientName);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &vo,
+	                      CmpObj_Convert, &vo,
 	                      PyMac_GetStr255, str))
 		return NULL;
 	_rv = QTVideoOutputGetCurrentClientName(vo,
@@ -22826,7 +22817,7 @@ static PyObject *Qt_QTVideoOutputSetClientName(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(QTVideoOutputSetClientName);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &vo,
+	                      CmpObj_Convert, &vo,
 	                      PyMac_GetStr255, str))
 		return NULL;
 	_rv = QTVideoOutputSetClientName(vo,
@@ -22846,7 +22837,7 @@ static PyObject *Qt_QTVideoOutputGetClientName(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(QTVideoOutputGetClientName);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &vo,
+	                      CmpObj_Convert, &vo,
 	                      PyMac_GetStr255, str))
 		return NULL;
 	_rv = QTVideoOutputGetClientName(vo,
@@ -22865,7 +22856,7 @@ static PyObject *Qt_QTVideoOutputBegin(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(QTVideoOutputBegin);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &vo))
+	                      CmpObj_Convert, &vo))
 		return NULL;
 	_rv = QTVideoOutputBegin(vo);
 	_res = Py_BuildValue("l",
@@ -22882,7 +22873,7 @@ static PyObject *Qt_QTVideoOutputEnd(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(QTVideoOutputEnd);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &vo))
+	                      CmpObj_Convert, &vo))
 		return NULL;
 	_rv = QTVideoOutputEnd(vo);
 	_res = Py_BuildValue("l",
@@ -22900,7 +22891,7 @@ static PyObject *Qt_QTVideoOutputSetDisplayMode(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(QTVideoOutputSetDisplayMode);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &vo,
+	                      CmpObj_Convert, &vo,
 	                      &displayModeID))
 		return NULL;
 	_rv = QTVideoOutputSetDisplayMode(vo,
@@ -22920,7 +22911,7 @@ static PyObject *Qt_QTVideoOutputGetDisplayMode(PyObject *_self, PyObject *_args
 	PyMac_PRECHECK(QTVideoOutputGetDisplayMode);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &vo))
+	                      CmpObj_Convert, &vo))
 		return NULL;
 	_rv = QTVideoOutputGetDisplayMode(vo,
 	                                  &displayModeID);
@@ -22940,7 +22931,7 @@ static PyObject *Qt_QTVideoOutputGetGWorld(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(QTVideoOutputGetGWorld);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &vo))
+	                      CmpObj_Convert, &vo))
 		return NULL;
 	_rv = QTVideoOutputGetGWorld(vo,
 	                             &gw);
@@ -22961,7 +22952,7 @@ static PyObject *Qt_QTVideoOutputGetIndSoundOutput(PyObject *_self, PyObject *_a
 	PyMac_PRECHECK(QTVideoOutputGetIndSoundOutput);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &vo,
+	                      CmpObj_Convert, &vo,
 	                      &index))
 		return NULL;
 	_rv = QTVideoOutputGetIndSoundOutput(vo,
@@ -22983,7 +22974,7 @@ static PyObject *Qt_QTVideoOutputGetClock(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(QTVideoOutputGetClock);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &vo))
+	                      CmpObj_Convert, &vo))
 		return NULL;
 	_rv = QTVideoOutputGetClock(vo,
 	                            &clock);
@@ -23003,7 +22994,7 @@ static PyObject *Qt_QTVideoOutputSetEchoPort(PyObject *_self, PyObject *_args)
 	PyMac_PRECHECK(QTVideoOutputSetEchoPort);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &vo,
+	                      CmpObj_Convert, &vo,
 	                      GrafObj_Convert, &echoPort))
 		return NULL;
 	_rv = QTVideoOutputSetEchoPort(vo,
@@ -23024,7 +23015,7 @@ static PyObject *Qt_QTVideoOutputGetIndImageDecompressor(PyObject *_self, PyObje
 	PyMac_PRECHECK(QTVideoOutputGetIndImageDecompressor);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &vo,
+	                      CmpObj_Convert, &vo,
 	                      &index))
 		return NULL;
 	_rv = QTVideoOutputGetIndImageDecompressor(vo,
@@ -23046,7 +23037,7 @@ static PyObject *Qt_QTVideoOutputBaseSetEchoPort(PyObject *_self, PyObject *_arg
 	PyMac_PRECHECK(QTVideoOutputBaseSetEchoPort);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &vo,
+	                      CmpObj_Convert, &vo,
 	                      GrafObj_Convert, &echoPort))
 		return NULL;
 	_rv = QTVideoOutputBaseSetEchoPort(vo,
@@ -26295,10 +26286,8 @@ static PyObject *Qt_MoviesTask(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-#endif /* __LP64__ */
 
 static PyMethodDef Qt_methods[] = {
-#ifndef __LP64__
 	{"EnterMovies", (PyCFunction)Qt_EnterMovies, 1,
 	 PyDoc_STR("() -> None")},
 	{"ExitMovies", (PyCFunction)Qt_ExitMovies, 1,
@@ -27991,7 +27980,6 @@ static PyMethodDef Qt_methods[] = {
 	 PyDoc_STR("(WindowPtr wp, Point startPt, Rect boundsRect) -> None")},
 	{"MoviesTask", (PyCFunction)Qt_MoviesTask, 1,
 	 PyDoc_STR("(long maxMilliSecToUse) -> None")},
-#endif /* __LP64__ */
 	{NULL, NULL, 0}
 };
 
@@ -28001,28 +27989,25 @@ static PyMethodDef Qt_methods[] = {
 void init_Qt(void)
 {
 	PyObject *m;
-#ifndef __LP64__
 	PyObject *d;
 
 
 
-	        PyMac_INIT_TOOLBOX_OBJECT_NEW(Track, TrackObj_New);
-	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Track, TrackObj_Convert);
-	        PyMac_INIT_TOOLBOX_OBJECT_NEW(Movie, MovieObj_New);
-	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Movie, MovieObj_Convert);
-	        PyMac_INIT_TOOLBOX_OBJECT_NEW(MovieController, MovieCtlObj_New);
-	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MovieController, MovieCtlObj_Convert);
-	        PyMac_INIT_TOOLBOX_OBJECT_NEW(TimeBase, TimeBaseObj_New);
-	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TimeBase, TimeBaseObj_Convert);
-	        PyMac_INIT_TOOLBOX_OBJECT_NEW(UserData, UserDataObj_New);
-	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(UserData, UserDataObj_Convert);
-	        PyMac_INIT_TOOLBOX_OBJECT_NEW(Media, MediaObj_New);
-	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Media, MediaObj_Convert);
-#endif /* __LP64__ */
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(Track, TrackObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Track, TrackObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(Movie, MovieObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Movie, MovieObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(MovieController, MovieCtlObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MovieController, MovieCtlObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(TimeBase, TimeBaseObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TimeBase, TimeBaseObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(UserData, UserDataObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(UserData, UserDataObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(Media, MediaObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Media, MediaObj_Convert);
 
 
 	m = Py_InitModule("_Qt", Qt_methods);
-#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Qt_Error = PyMac_GetOSErrException();
 	if (Qt_Error == NULL ||
@@ -28084,7 +28069,6 @@ void init_Qt(void)
 	/* Backward-compatible name */
 	Py_INCREF(&SGOutput_Type);
 	PyModule_AddObject(m, "SGOutputType", (PyObject *)&SGOutput_Type);
-#endif /* __LP64__ */
 }
 
 /* ========================= End module _Qt ========================= */

@@ -12,9 +12,6 @@ for manipulation of the pathname component of URLs.
 
 import os
 import stat
-import genericpath
-import warnings
-from genericpath import *
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
@@ -22,7 +19,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "ismount","walk","expanduser","expandvars","normpath","abspath",
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
-           "devnull","realpath","supports_unicode_filenames","relpath"]
+           "devnull","realpath","supports_unicode_filenames"]
 
 # strings representing various path-related bits and pieces
 curdir = '.'
@@ -57,9 +54,7 @@ def isabs(s):
 # Insert a '/' unless the first part is empty or already ends in '/'.
 
 def join(a, *p):
-    """Join two or more pathname components, inserting '/' as needed.
-    If any component is an absolute path, all previous path components
-    will be discarded."""
+    """Join two or more pathname components, inserting '/' as needed"""
     path = a
     for b in p:
         if b.startswith('/'):
@@ -92,8 +87,14 @@ def split(p):
 # It is always true that root + ext == p.
 
 def splitext(p):
-    return genericpath._splitext(p, sep, altsep, extsep)
-splitext.__doc__ = genericpath._splitext.__doc__
+    """Split the extension from a pathname.  Extension is everything from the
+    last dot to the end.  Returns "(root, ext)", either part may be empty."""
+    i = p.rfind('.')
+    if i<=p.rfind('/'):
+        return p, ''
+    else:
+        return p[:i], p[i:]
+
 
 # Split a pathname into a drive specification and the rest of the
 # path.  Useful on DOS/Windows/NT; on Unix, the drive is always empty.
@@ -104,24 +105,50 @@ def splitdrive(p):
     return '', p
 
 
-# Return the tail (basename) part of a path, same as split(path)[1].
+# Return the tail (basename) part of a path.
 
 def basename(p):
     """Returns the final component of a pathname"""
-    i = p.rfind('/') + 1
-    return p[i:]
+    return split(p)[1]
 
 
-# Return the head (dirname) part of a path, same as split(path)[0].
+# Return the head (dirname) part of a path.
 
 def dirname(p):
     """Returns the directory component of a pathname"""
-    i = p.rfind('/') + 1
-    head = p[:i]
-    if head and head != '/'*len(head):
-        head = head.rstrip('/')
-    return head
+    return split(p)[0]
 
+
+# Return the longest prefix of all list elements.
+
+def commonprefix(m):
+    "Given a list of pathnames, returns the longest common leading component"
+    if not m: return ''
+    s1 = min(m)
+    s2 = max(m)
+    n = min(len(s1), len(s2))
+    for i in xrange(n):
+        if s1[i] != s2[i]:
+            return s1[:i]
+    return s1[:n]
+
+# Get size, mtime, atime of files.
+
+def getsize(filename):
+    """Return the size of a file, reported by os.stat()."""
+    return os.stat(filename).st_size
+
+def getmtime(filename):
+    """Return the last modification time of a file, reported by os.stat()."""
+    return os.stat(filename).st_mtime
+
+def getatime(filename):
+    """Return the last access time of a file, reported by os.stat()."""
+    return os.stat(filename).st_atime
+
+def getctime(filename):
+    """Return the metadata change time of a file, reported by os.stat()."""
+    return os.stat(filename).st_ctime
 
 # Is a path a symbolic link?
 # This will always return false on systems where os.lstat doesn't exist.
@@ -134,6 +161,19 @@ def islink(path):
         return False
     return stat.S_ISLNK(st.st_mode)
 
+
+# Does a path exist?
+# This is false for dangling symbolic links.
+
+def exists(path):
+    """Test whether a path exists.  Returns False for broken symbolic links"""
+    try:
+        st = os.stat(path)
+    except os.error:
+        return False
+    return True
+
+
 # Being true for dangling symbolic links is also useful.
 
 def lexists(path):
@@ -143,6 +183,32 @@ def lexists(path):
     except os.error:
         return False
     return True
+
+
+# Is a path a directory?
+# This follows symbolic links, so both islink() and isdir() can be true
+# for the same path.
+
+def isdir(path):
+    """Test whether a path is a directory"""
+    try:
+        st = os.stat(path)
+    except os.error:
+        return False
+    return stat.S_ISDIR(st.st_mode)
+
+
+# Is a path a regular file?
+# This follows symbolic links, so both islink() and isfile() can be true
+# for the same path.
+
+def isfile(path):
+    """Test whether a path is a regular file"""
+    try:
+        st = os.stat(path)
+    except os.error:
+        return False
+    return stat.S_ISREG(st.st_mode)
 
 
 # Are two filenames really pointing to the same file?
@@ -179,8 +245,8 @@ def samestat(s1, s2):
 def ismount(path):
     """Test whether a path is a mount point"""
     try:
-        s1 = os.lstat(path)
-        s2 = os.lstat(join(path, '..'))
+        s1 = os.stat(path)
+        s2 = os.stat(join(path, '..'))
     except os.error:
         return False # It doesn't exist -- so not a mount point :-)
     dev1 = s1.st_dev
@@ -216,8 +282,7 @@ def walk(top, func, arg):
     beyond that arg is always passed to func.  It can be used, e.g., to pass
     a filename pattern, or a mutable object designed to accumulate
     statistics.  Passing None for arg is common."""
-    warnings.warnpy3k("In 3.x, os.path.walk is removed in favor of os.walk.",
-                      stacklevel=2)
+
     try:
         names = os.listdir(top)
     except os.error:
@@ -263,7 +328,8 @@ def expanduser(path):
         except KeyError:
             return path
         userhome = pwent.pw_dir
-    userhome = userhome.rstrip('/') or userhome
+    if userhome.endswith('/'):
+        i += 1
     return userhome + path[i:]
 
 
@@ -386,20 +452,3 @@ def _resolve_link(path):
     return path
 
 supports_unicode_filenames = False
-
-def relpath(path, start=curdir):
-    """Return a relative version of a path"""
-
-    if not path:
-        raise ValueError("no path specified")
-
-    start_list = abspath(start).split(sep)
-    path_list = abspath(path).split(sep)
-
-    # Work out how much of the filepath is shared by start and path.
-    i = len(commonprefix([start_list, path_list]))
-
-    rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
-    if not rel_list:
-        return curdir
-    return join(*rel_list)

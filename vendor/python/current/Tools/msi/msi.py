@@ -1,14 +1,15 @@
 # Python MSI Generator
 # (C) 2003 Martin v. Loewis
 # See "FOO" in comments refers to MSDN sections with the title FOO.
-import msilib, schema, sequence, os, glob, time, re, shutil
+import msilib, schema, sequence, os, glob, time, re
 from msilib import Feature, CAB, Directory, Dialog, Binary, add_data
 import uisample
 from win32com.client import constants
 from distutils.spawn import find_executable
-from uuids import product_codes
 
 # Settings can be overridden in config.py below
+# 1 for Itanium build
+msilib.Win64 = 0
 # 0 for official python.org releases
 # 1 for intermediate releases by anybody, with
 # a new product code for every package.
@@ -24,10 +25,6 @@ srcdir = os.path.abspath("../..")
 full_current_version = None
 # Is Tcl available at all?
 have_tcl = True
-# path to PCbuild directory
-PCBUILD="PCbuild"
-# msvcrt version
-MSVCR = "90"
 
 try:
     from config import *
@@ -64,11 +61,34 @@ current_version = "%s.%d" % (short_version, FIELD3)
 # This should never change. The UpgradeCode of this package can be
 # used in the Upgrade table of future packages to make the future
 # package replace this one. See "UpgradeCode Property".
-# upgrade_code gets set to upgrade_code_64 when we have determined
-# that the target is Win64.
 upgrade_code_snapshot='{92A24481-3ECB-40FC-8836-04B7966EC0D5}'
 upgrade_code='{65E6DE48-A358-434D-AA4F-4AF72DB4718F}'
-upgrade_code_64='{6A965A0C-6EE6-4E3A-9983-3263F56311EC}'
+
+# This should be extended for each Python release.
+# The product code must change whenever the name of the MSI file
+# changes, and when new component codes are issued for existing
+# components. See "Changing the Product Code". As we change the
+# component codes with every build, we need a new product code
+# each time. For intermediate (snapshot) releases, they are automatically
+# generated. For official releases, we record the product codes,
+# so people can refer to them.
+product_codes = {
+    '2.4.101': '{0e9b4d8e-6cda-446e-a208-7b92f3ddffa0}', # 2.4a1, released as a snapshot
+    '2.4.102': '{1b998745-4901-4edb-bc52-213689e1b922}', # 2.4a2
+    '2.4.103': '{33fc8bd2-1e8f-4add-a40a-ade2728d5942}', # 2.4a3
+    '2.4.111': '{51a7e2a8-2025-4ef0-86ff-e6aab742d1fa}', # 2.4b1
+    '2.4.112': '{4a5e7c1d-c659-4fe3-b8c9-7c65bd9c95a5}', # 2.4b2
+    '2.4.121': '{75508821-a8e9-40a8-95bd-dbe6033ddbea}', # 2.4c1
+    '2.4.122': '{83a9118b-4bdd-473b-afc3-bcb142feca9e}', # 2.4c2
+    '2.4.150': '{82d9302e-f209-4805-b548-52087047483a}', # 2.4.0
+    '2.4.1121':'{be027411-8e6b-4440-a29b-b07df0690230}', # 2.4.1c1
+    '2.4.1122':'{02818752-48bf-4074-a281-7a4114c4f1b1}', # 2.4.1c2
+    '2.4.1150':'{4d4f5346-7e4a-40b5-9387-fdb6181357fc}', # 2.4.1
+    '2.4.2121':'{5ef9d6b6-df78-45d2-ab09-14786a3c5a99}', # 2.4.2c1
+    '2.4.2150':'{b191e49c-ea23-43b2-b28a-14e0784069b8}', # 2.4.2
+    '2.4.3121':'{f669ed4d-1dce-41c4-9617-d985397187a1}', # 2.4.3c1
+    '2.4.3150':'{75e71add-042c-4f30-bfac-a9ec42351313}', # 2.4.3
+}
 
 if snapshot:
     current_version = "%s.%s.%s" % (major, minor, int(time.time()/3600/24))
@@ -85,19 +105,24 @@ extensions = [
     'select.pyd',
     'unicodedata.pyd',
     'winsound.pyd',
-    '_elementtree.pyd',
+    'zlib.pyd',
     '_bsddb.pyd',
     '_socket.pyd',
     '_ssl.pyd',
     '_testcapi.pyd',
     '_tkinter.pyd',
-    '_msi.pyd',
-    '_ctypes.pyd',
-    '_ctypes_test.pyd',
-    '_sqlite3.pyd',
-    '_hashlib.pyd',
-    '_multiprocessing.pyd'
 ]
+
+if major+minor <= "23":
+    extensions.extend([
+    '_csv.pyd',
+    '_sre.pyd',
+    '_symtable.pyd',
+    '_winreg.pyd',
+    'datetime.pyd'
+    'mmap.pyd',
+    'parser.pyd',
+    ])
 
 # Well-known component UUIDs
 # These are needed for SharedDLLs reference counter; if
@@ -106,20 +131,12 @@ extensions = [
 # from 1 to 2 (due to what I consider a bug in MSI)
 # Using the same UUID is fine since these files are versioned,
 # so Installer will always keep the newest version.
-# NOTE: All uuids are self generated.
+msvcr71_uuid = "{8666C8DD-D0B4-4B42-928E-A69E32FA5D4D}"
 pythondll_uuid = {
     "24":"{9B81E618-2301-4035-AC77-75D9ABEB7301}",
-    "25":"{2e41b118-38bd-4c1b-a840-6977efd1b911}",
-    "26":"{34ebecac-f046-4e1c-b0e3-9bac3cdaacfa}",
+    "25":"{2e41b118-38bd-4c1b-a840-6977efd1b911}"
     } [major+minor]
 
-# Compute the name that Sphinx gives to the docfile
-docfile = ""
-if micro:
-    docfile = str(micro)
-if level < 0xf:
-    docfile += '%x%s' % (level, serial)
-docfile = 'python%s%s%s.chm' % (major, minor, docfile)
 
 # Build the mingw import library, libpythonXY.a
 # This requires 'nm' and 'dlltool' executables on your PATH
@@ -160,24 +177,12 @@ def build_mingw_lib(lib_file, def_file, dll_file, mingw_lib):
     return True
 
 # Target files (.def and .a) go in PCBuild directory
-lib_file = os.path.join(srcdir, PCBUILD, "python%s%s.lib" % (major, minor))
-def_file = os.path.join(srcdir, PCBUILD, "python%s%s.def" % (major, minor))
+lib_file = os.path.join(srcdir, "PCBuild", "python%s%s.lib" % (major, minor))
+def_file = os.path.join(srcdir, "PCBuild", "python%s%s.def" % (major, minor))
 dll_file = "python%s%s.dll" % (major, minor)
-mingw_lib = os.path.join(srcdir, PCBUILD, "libpython%s%s.a" % (major, minor))
+mingw_lib = os.path.join(srcdir, "PCBuild", "libpython%s%s.a" % (major, minor))
 
 have_mingw = build_mingw_lib(lib_file, def_file, dll_file, mingw_lib)
-
-# Determine the target architechture
-dll_path = os.path.join(srcdir, PCBUILD, dll_file)
-msilib.set_arch_from_file(dll_path)
-if msilib.pe_type(dll_path) != msilib.pe_type("msisupport.dll"):
-    raise SystemError, "msisupport.dll for incorrect architecture"
-if msilib.Win64:
-    upgrade_code = upgrade_code_64
-    # Bump the last digit of the code by one, so that 32-bit and 64-bit
-    # releases get separate product codes
-    digit = hex((int(product_code[-2],16)+1)%16)[-1]
-    product_code = product_code[:-2] + digit + '}'
 
 if testpackage:
     ext = 'px'
@@ -187,11 +192,9 @@ else:
     testprefix = ''
 
 if msilib.Win64:
-    SystemFolderName = "[System64Folder]"
-    registry_component = 4|256
+    SystemFolderName = "[SystemFolder64]"
 else:
     SystemFolderName = "[SystemFolder]"
-    registry_component = 4
 
 msilib.reset()
 
@@ -207,19 +210,18 @@ def build_database():
         uc = upgrade_code_snapshot
     else:
         uc = upgrade_code
-    if msilib.Win64:
-        productsuffix = " (64-bit)"
-    else:
-        productsuffix = ""
     # schema represents the installer 2.0 database schema.
     # sequence is the set of standard sequences
     # (ui/execute, admin/advt/install)
-    db = msilib.init_database("python-%s%s.msi" % (full_current_version, msilib.arch_ext),
-                  schema, ProductName="Python "+full_current_version+productsuffix,
+    if msilib.Win64:
+        w64 = ".ia64"
+    else:
+        w64 = ""
+    db = msilib.init_database("python-%s%s.msi" % (full_current_version, w64),
+                  schema, ProductName="Python "+full_current_version,
                   ProductCode=product_code,
                   ProductVersion=current_version,
-                  Manufacturer=u"Python Software Foundation",
-                  request_uac = True)
+                  Manufacturer=u"Martin v. L\xf6wis")
     # The default sequencing of the RemoveExistingProducts action causes
     # removal of files that got just installed. Place it after
     # InstallInitialize, so we first uninstall everything, but still roll
@@ -266,8 +268,6 @@ def remove_old_versions(db):
              (upgrade_code_snapshot, start, "%s.%d.0" % (major, int(minor)+1),
               None, migrate_features, None, "REMOVEOLDSNAPSHOT")])
         props = "REMOVEOLDSNAPSHOT;REMOVEOLDVERSION"
-
-    props += ";TARGETDIR;DLLDIR"
     # Installer collects the product codes of the earlier releases in
     # these properties. In order to allow modification of the properties,
     # they must be declared as secure. See "SecureCustomProperties Property"
@@ -353,7 +353,7 @@ def add_ui(db):
     if not os.path.exists(srcdir+r"\PC\python_icon.exe"):
         raise "Run icons.mak in PC directory"
     add_data(db, "Binary",
-             [("PythonWin", msilib.Binary(r"%s\PCbuild\installer.bmp" % srcdir)), # 152x328 pixels
+             [("PythonWin", msilib.Binary(srcdir+r"\PCbuild\installer.bmp")), # 152x328 pixels
               ("py.ico",msilib.Binary(srcdir+r"\PC\py.ico")),
              ])
     add_data(db, "Icon",
@@ -370,7 +370,7 @@ def add_ui(db):
     # See "Custom Action Type 1"
     if msilib.Win64:
         CheckDir = "CheckDir"
-        UpdateEditIDLE = "UpdateEditIDLE"
+        UpdateEditIdle = "UpdateEditIDLE"
     else:
         CheckDir =  "_CheckDir@4"
         UpdateEditIDLE = "_UpdateEditIDLE@4"
@@ -398,8 +398,7 @@ def add_ui(db):
               ("VerdanaRed9", "Verdana", 9, 255, 0),
              ])
 
-    compileargs = r'-Wi "[TARGETDIR]Lib\compileall.py" -f -x bad_coding|badsyntax|site-packages|py3_ "[TARGETDIR]Lib"'
-    lib2to3args = r'-c "import lib2to3.pygram, lib2to3.patcomp;lib2to3.patcomp.PatternCompiler()"'
+    compileargs = r"-Wi [TARGETDIR]Lib\compileall.py -f -x badsyntax [TARGETDIR]Lib"
     # See "CustomAction Table"
     add_data(db, "CustomAction", [
         # msidbCustomActionTypeFirstSequence + msidbCustomActionTypeTextData + msidbCustomActionTypeProperty
@@ -413,7 +412,6 @@ def add_ui(db):
         # See "Custom Action Type 18"
         ("CompilePyc", 18, "python.exe", compileargs),
         ("CompilePyo", 18, "python.exe", "-O "+compileargs),
-        ("CompileGrammar", 18, "python.exe", lib2to3args),
         ])
 
     # UI Sequences, see "InstallUISequence Table", "Using a Sequence Table"
@@ -443,14 +441,12 @@ def add_ui(db):
              ("UpdateEditIDLE", None, 1050),
              ("CompilePyc", "COMPILEALL", 6800),
              ("CompilePyo", "COMPILEALL", 6801),
-             ("CompileGrammar", "COMPILEALL", 6802),
             ])
     add_data(db, "AdminExecuteSequence",
             [("InitialTargetDir", 'TARGETDIR=""', 750),
              ("SetDLLDirToTarget", 'DLLDIR=""', 751),
              ("CompilePyc", "COMPILEALL", 6800),
              ("CompilePyo", "COMPILEALL", 6801),
-             ("CompileGrammar", "COMPILEALL", 6802),
             ])
 
     #####################################################################
@@ -490,14 +486,13 @@ def add_ui(db):
     exit_dialog.cancel("Cancel", "Back", active = 0)
     exit_dialog.text("Acknowledgements", 135, 95, 220, 120, 0x30003,
       "Special Windows thanks to:\n"
+      "    LettError, Erik van Blokland, for the \n"
+      "    Python for Windows graphic.\n"
+      "       http://www.letterror.com/\n"
+      "\n"
       "    Mark Hammond, without whose years of freely \n"
       "    shared Windows expertise, Python for Windows \n"
       "    would still be Python for DOS.")
-
-    c = exit_dialog.text("warning", 135, 200, 220, 40, 0x30003,
-            "{\\VerdanaRed9}Warning: Python 2.5.x is the last "
-            "Python release for Windows 9x.")
-    c.condition("Hide", "NOT Version9X")
 
     exit_dialog.text("Description", 135, 235, 220, 20, 0x30003,
                "Click the Finish button to exit the Installer.")
@@ -699,11 +694,10 @@ def add_ui(db):
                         "AdminInstall", "Next", "Cancel")
     whichusers.title("Select whether to install [ProductName] for all users of this computer.")
     # A radio group with two options: allusers, justme
-    g = whichusers.radiogroup("AdminInstall", 135, 60, 235, 80, 3,
+    g = whichusers.radiogroup("AdminInstall", 135, 60, 160, 50, 3,
                               "WhichUsers", "", "Next")
-    g.condition("Disable", "VersionNT=600") # Not available on Vista and Windows 2008
     g.add("ALL", 0, 5, 150, 20, "Install for all users")
-    g.add("JUSTME", 0, 25, 235, 20, "Install just for me (not available on Windows Vista)")
+    g.add("JUSTME", 0, 25, 150, 20, "Install just for me")
 
     whichusers.back("Back", None, active=0)
 
@@ -717,14 +711,17 @@ def add_ui(db):
     #####################################################################
     # Advanced Dialog.
     advanced = PyDialog(db, "AdvancedDlg", x, y, w, h, modal, title,
-                        "CompilePyc", "Ok", "Ok")
+                        "CompilePyc", "Next", "Cancel")
     advanced.title("Advanced Options for [ProductName]")
     # A radio group with two options: allusers, justme
     advanced.checkbox("CompilePyc", 135, 60, 230, 50, 3,
-                      "COMPILEALL", "Compile .py files to byte code after installation", "Ok")
+                      "COMPILEALL", "Compile .py files to byte code after installation", "Next")
 
-    c = advanced.cancel("Ok", "CompilePyc", name="Ok") # Button just has location of cancel button.
+    c = advanced.next("Finish", "Cancel")
     c.event("EndDialog", "Return")
+
+    c = advanced.cancel("Cancel", "CompilePyc")
+    c.event("SpawnDialog", "CancelDlg")
 
     #####################################################################
     # Existing Directory dialog
@@ -816,16 +813,10 @@ def add_features(db):
     # (i.e. additional Python libraries) need to follow the parent feature.
     # Features that have no advertisement trigger (e.g. the test suite)
     # must not support advertisement
-    global default_feature, tcltk, htmlfiles, tools, testsuite, ext_feature, private_crt
+    global default_feature, tcltk, htmlfiles, tools, testsuite, ext_feature
     default_feature = Feature(db, "DefaultFeature", "Python",
                               "Python Interpreter and Libraries",
                               1, directory = "TARGETDIR")
-    shared_crt = Feature(db, "SharedCRT", "MSVCRT", "C Run-Time (system-wide)", 0,
-                         level=0)
-    private_crt = Feature(db, "PrivateCRT", "MSVCRT", "C Run-Time (private)", 0,
-                          level=0)
-    add_data(db, "Condition", [("SharedCRT", 1, sys32cond),
-                               ("PrivateCRT", 1, "not "+sys32cond)])
     # We don't support advertisement of extensions
     ext_feature = Feature(db, "Extensions", "Register Extensions",
                           "Make this Python installation the default Python installation", 3,
@@ -842,48 +833,26 @@ def add_features(db):
                         "Python test suite (Lib/test/)", 11,
                         parent = default_feature, attributes=2|8)
 
-def extract_msvcr90():
-    # Find the redistributable files
-    if msilib.Win64:
-        arch = "amd64"
-    else:
-        arch = "x86"
-    dir = os.path.join(os.environ['VS90COMNTOOLS'], r"..\..\VC\redist\%s\Microsoft.VC90.CRT" % arch)
-
-    result = []
+def extract_msvcr71():
+    import _winreg
+    # Find the location of the merge modules
+    k = _winreg.OpenKey(
+        _winreg.HKEY_LOCAL_MACHINE,
+        r"Software\Microsoft\VisualStudio\7.1\Setup\VS")
+    dir = _winreg.QueryValueEx(k, "MSMDir")[0]
+    _winreg.CloseKey(k)
+    files = glob.glob1(dir, "*CRT71*")
+    assert len(files) == 1
+    file = os.path.join(dir, files[0])
+    # Extract msvcr71.dll
+    m = msilib.MakeMerge2()
+    m.OpenModule(file, 0)
+    m.ExtractFiles(".")
+    m.CloseModule()
+    # Find the version/language of msvcr71.dll
     installer = msilib.MakeInstaller()
-    # omit msvcm90 and msvcp90, as they aren't really needed
-    files = ["Microsoft.VC90.CRT.manifest", "msvcr90.dll"]
-    for f in files:
-        path = os.path.join(dir, f)
-        kw = {'src':path}
-        if f.endswith('.dll'):
-            kw['version'] = installer.FileVersion(path, 0)
-            kw['language'] = installer.FileVersion(path, 1)
-        result.append((f, kw))
-    return result
-
-def generate_license():
-    import shutil, glob
-    out = open("LICENSE.txt", "w")
-    shutil.copyfileobj(open(os.path.join(srcdir, "LICENSE")), out)
-    shutil.copyfileobj(open("crtlicense.txt"), out)
-    for name, pat, file in (("bzip2","bzip2-*", "LICENSE"),
-                      ("Berkeley DB", "db-*", "LICENSE"),
-                      ("openssl", "openssl-*", "LICENSE"),
-                      ("Tcl", "tcl8*", "license.terms"),
-                      ("Tk", "tk8*", "license.terms"),
-                      ("Tix", "tix-*", "license.terms")):
-        out.write("\nThis copy of Python includes a copy of %s, which is licensed under the following terms:\n\n" % name)
-        dirs = glob.glob(srcdir+"/../"+pat)
-        if not dirs:
-            raise ValueError, "Could not find "+srcdir+"/../"+pat
-        if len(dirs) > 2:
-            raise ValueError, "Multiple copies of "+pat
-        dir = dirs[0]
-        shutil.copyfileobj(open(os.path.join(dir, file)), out)
-    out.close()
-
+    return installer.FileVersion("msvcr71.dll", 0), \
+           installer.FileVersion("msvcr71.dll", 1)
 
 class PyDirectory(Directory):
     """By default, all components in the Python installer
@@ -902,21 +871,21 @@ def add_files(db):
     root = PyDirectory(db, cab, None, srcdir, "TARGETDIR", "SourceDir")
     default_feature.set_current()
     if not msilib.Win64:
-        root.add_file("%s/w9xpopen.exe" % PCBUILD)
+        root.add_file("PCBuild/w9xpopen.exe")
+    root.add_file("PC/py.ico")
+    root.add_file("PC/pyc.ico")
     root.add_file("README.txt", src="README")
     root.add_file("NEWS.txt", src="Misc/NEWS")
-    generate_license()
-    root.add_file("LICENSE.txt", src=os.path.abspath("LICENSE.txt"))
+    root.add_file("LICENSE.txt", src="LICENSE")
     root.start_component("python.exe", keyfile="python.exe")
-    root.add_file("%s/python.exe" % PCBUILD)
+    root.add_file("PCBuild/python.exe")
     root.start_component("pythonw.exe", keyfile="pythonw.exe")
-    root.add_file("%s/pythonw.exe" % PCBUILD)
+    root.add_file("PCBuild/pythonw.exe")
 
     # msidbComponentAttributesSharedDllRefCount = 8, see "Component Table"
     dlldir = PyDirectory(db, cab, root, srcdir, "DLLDIR", ".")
-
     pydll = "python%s%s.dll" % (major, minor)
-    pydllsrc = os.path.join(srcdir, PCBUILD, pydll)
+    pydllsrc = srcdir + "/PCBuild/" + pydll
     dlldir.start_component("DLLDIR", flags = 8, keyfile = pydll, uuid = pythondll_uuid)
     installer = msilib.MakeInstaller()
     pyversion = installer.FileVersion(pydllsrc, 0)
@@ -924,43 +893,20 @@ def add_files(db):
         # For releases, the Python DLL has the same version as the
         # installer package.
         assert pyversion.split(".")[:3] == current_version.split(".")
-    dlldir.add_file("%s/python%s%s.dll" % (PCBUILD, major, minor),
+    dlldir.add_file("PCBuild/python%s%s.dll" % (major, minor),
                     version=pyversion,
                     language=installer.FileVersion(pydllsrc, 1))
-    DLLs = PyDirectory(db, cab, root, srcdir + "/" + PCBUILD, "DLLs", "DLLS|DLLs")
-
-    # msvcr90.dll: Need to place the DLL and the manifest into the root directory,
-    # plus another copy of the manifest in the DLLs directory, with the manifest
-    # pointing to the root directory
-    root.start_component("msvcr90", feature=private_crt)
-    # Results are ID,keyword pairs
-    manifest, crtdll = extract_msvcr90()
-    root.add_file(manifest[0], **manifest[1])
-    root.add_file(crtdll[0], **crtdll[1])
-    # Copy the manifest
-    # Actually, don't do that anymore - no DLL in DLLs should have a manifest
-    # dependency on msvcr90.dll anymore, so this should not be necessary
-    #manifest_dlls = manifest[0]+".root"
-    #open(manifest_dlls, "w").write(open(manifest[1]['src']).read().replace("msvcr","../msvcr"))
-    #DLLs.start_component("msvcr90_dlls", feature=private_crt)
-    #DLLs.add_file(manifest[0], src=os.path.abspath(manifest_dlls))
-
-    # Now start the main component for the DLLs directory;
-    # no regular files have been added to the directory yet.
-    DLLs.start_component()
-
-    # Check if _ctypes.pyd exists
-    have_ctypes = os.path.exists(srcdir+"/%s/_ctypes.pyd" % PCBUILD)
-    if not have_ctypes:
-        print "WARNING: _ctypes.pyd not found, ctypes will not be included"
-        extensions.remove("_ctypes.pyd")
+    # XXX determine dependencies
+    version, lang = extract_msvcr71()
+    dlldir.start_component("msvcr71", flags=8, keyfile="msvcr71.dll", uuid=msvcr71_uuid)
+    dlldir.add_file("msvcr71.dll", src=os.path.abspath("msvcr71.dll"),
+                    version=version, language=lang)
+    tmpfiles.append("msvcr71.dll")
 
     # Add all .py files in Lib, except lib-tk, test
     dirs={}
     pydirs = [(root,"Lib")]
     while pydirs:
-        # Commit every now and then, or else installer will complain
-        db.Commit()
         parent, dir = pydirs.pop()
         if dir == ".svn" or dir.startswith("plat-"):
             continue
@@ -969,13 +915,11 @@ def add_files(db):
                 continue
             tcltk.set_current()
         elif dir in ['test', 'tests', 'data', 'output']:
-            # test: Lib, Lib/email, Lib/bsddb, Lib/ctypes, Lib/sqlite3
+            # test: Lib, Lib/email, Lib/bsddb
             # tests: Lib/distutils
             # data: Lib/email/test
             # output: Lib/test
             testsuite.set_current()
-        elif not have_ctypes and dir == "ctypes":
-            continue
         else:
             default_feature.set_current()
         lib = PyDirectory(db, cab, parent, dir, dir, "%s|%s" % (parent.make_short(dir), dir))
@@ -990,29 +934,16 @@ def add_files(db):
         if files:
             # Add an entry to the RemoveFile table to remove bytecode files.
             lib.remove_pyc()
-        if dir.endswith('.egg-info'):
-            lib.add_file('entry_points.txt')
-            lib.add_file('PKG-INFO')
-            lib.add_file('top_level.txt')
-            lib.add_file('zip-safe')
-            continue
         if dir=='test' and parent.physical=='Lib':
             lib.add_file("185test.db")
             lib.add_file("audiotest.au")
             lib.add_file("cfgparser.1")
-            lib.add_file("sgml_input.html")
             lib.add_file("test.xml")
             lib.add_file("test.xml.out")
             lib.add_file("testtar.tar")
             lib.add_file("test_difflib_expect.html")
-            lib.add_file("check_soundcard.vbs")
-            lib.add_file("empty.vbs")
-            lib.add_file("Sine-1000Hz-300ms.aif")
             lib.glob("*.uue")
-            lib.glob("*.pem")
-            lib.glob("*.pck")
             lib.add_file("readme.txt", src="README")
-            lib.add_file("zipdir.zip")
         if dir=='decimaltestdata':
             lib.glob("*.decTest")
         if dir=='output':
@@ -1023,13 +954,9 @@ def add_files(db):
         if dir=="Icons":
             lib.glob("*.gif")
             lib.add_file("idle.icns")
-        if dir=="command" and parent.physical=="distutils":
-            lib.glob("wininst*.exe")
-        if dir=="setuptools":
-            lib.add_file("cli.exe")
-            lib.add_file("gui.exe")
-        if dir=="lib2to3":
-            lib.removefile("pickle", "*.pickle")
+        if dir=="command":
+            lib.add_file("wininst-6.exe")
+            lib.add_file("wininst-7.1.exe")
         if dir=="data" and parent.physical=="test" and parent.basedir.physical=="email":
             # This should contain all non-.svn files listed in subversion
             for f in os.listdir(lib.absolute):
@@ -1043,41 +970,29 @@ def add_files(db):
                 pydirs.append((lib, f))
     # Add DLLs
     default_feature.set_current()
-    lib = DLLs
-    lib.add_file("py.ico", src=srcdir+"/PC/py.ico")
-    lib.add_file("pyc.ico", src=srcdir+"/PC/pyc.ico")
+    lib = PyDirectory(db, cab, root, srcdir+"/PCBuild", "DLLs", "DLLS|DLLs")
     dlls = []
     tclfiles = []
     for f in extensions:
         if f=="_tkinter.pyd":
             continue
-        if not os.path.exists(srcdir + "/" + PCBUILD + "/" + f):
+        if not os.path.exists(srcdir+"/PCBuild/"+f):
             print "WARNING: Missing extension", f
             continue
         dlls.append(f)
         lib.add_file(f)
-    # Add sqlite
-    if msilib.msi_type=="Intel64;1033":
-        sqlite_arch = "/ia64"
-    elif msilib.msi_type=="x64;1033":
-        sqlite_arch = "/amd64"
-        tclsuffix = "64"
-    else:
-        sqlite_arch = ""
-        tclsuffix = ""
-    lib.add_file("sqlite3.dll")
     if have_tcl:
-        if not os.path.exists("%s/%s/_tkinter.pyd" % (srcdir, PCBUILD)):
+        if not os.path.exists(srcdir+"/PCBuild/_tkinter.pyd"):
             print "WARNING: Missing _tkinter.pyd"
         else:
             lib.start_component("TkDLLs", tcltk)
             lib.add_file("_tkinter.pyd")
             dlls.append("_tkinter.pyd")
-            tcldir = os.path.normpath(srcdir+("/../tcltk%s/bin" % tclsuffix))
+            tcldir = os.path.normpath(srcdir+"/../tcltk/bin")
             for f in glob.glob1(tcldir, "*.dll"):
                 lib.add_file(f, src=os.path.join(tcldir, f))
     # check whether there are any unknown extensions
-    for f in glob.glob1(srcdir+"/"+PCBUILD, "*.pyd"):
+    for f in glob.glob1(srcdir+"/PCBuild", "*.pyd"):
         if f.endswith("_d.pyd"): continue # debug version
         if f in dlls: continue
         print "WARNING: Unknown extension", f
@@ -1088,7 +1003,7 @@ def add_files(db):
     lib.glob("*.h")
     lib.add_file("pyconfig.h", src="../PC/pyconfig.h")
     # Add import libraries
-    lib = PyDirectory(db, cab, root, PCBUILD, "libs", "LIBS|libs")
+    lib = PyDirectory(db, cab, root, "PCBuild", "libs", "LIBS|libs")
     for f in dlls:
         lib.add_file(f.replace('pyd','lib'))
     lib.add_file('python%s%s.lib' % (major, minor))
@@ -1097,7 +1012,7 @@ def add_files(db):
         lib.add_file('libpython%s%s.a' % (major, minor))
     if have_tcl:
         # Add Tcl/Tk
-        tcldirs = [(root, '../tcltk%s/lib' % tclsuffix, 'tcl')]
+        tcldirs = [(root, '../tcltk/lib', 'tcl')]
         tcltk.set_current()
         while tcldirs:
             parent, phys, dir = tcldirs.pop()
@@ -1124,15 +1039,14 @@ def add_files(db):
         if os.path.exists(os.path.join(lib.absolute, "README")):
             lib.add_file("README.txt", src="README")
         if f == 'Scripts':
-            lib.add_file("2to3.py", src="2to3")
             if have_tcl:
                 lib.start_component("pydocgui.pyw", tcltk, keyfile="pydocgui.pyw")
                 lib.add_file("pydocgui.pyw")
     # Add documentation
     htmlfiles.set_current()
     lib = PyDirectory(db, cab, root, "Doc", "Doc", "DOC|Doc")
-    lib.start_component("documentation", keyfile=docfile)
-    lib.add_file(docfile, src="build/htmlhelp/"+docfile)
+    lib.start_component("documentation", keyfile="Python%s%s.chm" % (major,minor))
+    lib.add_file("Python%s%s.chm" % (major, minor))
 
     cab.commit(db)
 
@@ -1148,15 +1062,15 @@ def add_registry(db):
     tcldata = []
     if have_tcl:
         tcldata = [
-            ("REGISTRY.tcl", msilib.gen_uuid(), "TARGETDIR", registry_component, None,
+            ("REGISTRY.tcl", msilib.gen_uuid(), "TARGETDIR", 4, None,
              "py.IDLE")]
     add_data(db, "Component",
              # msidbComponentAttributesRegistryKeyPath = 4
-             [("REGISTRY", msilib.gen_uuid(), "TARGETDIR", registry_component, None,
+             [("REGISTRY", msilib.gen_uuid(), "TARGETDIR", 4, None,
                "InstallPath"),
-              ("REGISTRY.doc", msilib.gen_uuid(), "TARGETDIR", registry_component, None,
+              ("REGISTRY.doc", msilib.gen_uuid(), "TARGETDIR", 4, None,
                "Documentation"),
-              ("REGISTRY.def", msilib.gen_uuid(), "TARGETDIR", registry_component,
+              ("REGISTRY.def", msilib.gen_uuid(), "TARGETDIR", 4,
                None, None)] + tcldata)
     # See "FeatureComponents Table".
     # The association between TclTk and pythonw.exe is necessary to make ICE59
@@ -1182,7 +1096,6 @@ def add_registry(db):
     ewi = "Edit with IDLE"
     pat2 = r"Software\Classes\%sPython.%sFile\DefaultIcon"
     pat3 = r"Software\Classes\%sPython.%sFile"
-    pat4 = r"Software\Classes\%sPython.%sFile\shellex\DropHandler"
     tcl_verbs = []
     if have_tcl:
         tcl_verbs=[
@@ -1218,11 +1131,11 @@ def add_registry(db):
              ] + tcl_verbs + [
              #Icons
              ("py.icon", -1, pat2 % (testprefix, ""), "",
-              r'[DLLs]py.ico', "REGISTRY.def"),
+              r'[TARGETDIR]py.ico', "REGISTRY.def"),
              ("pyw.icon", -1, pat2 % (testprefix, "NoCon"), "",
-              r'[DLLs]py.ico', "REGISTRY.def"),
+              r'[TARGETDIR]py.ico', "REGISTRY.def"),
              ("pyc.icon", -1, pat2 % (testprefix, "Compiled"), "",
-              r'[DLLs]pyc.ico', "REGISTRY.def"),
+              r'[TARGETDIR]pyc.ico', "REGISTRY.def"),
              # Descriptions
              ("py.txt", -1, pat3 % (testprefix, ""), "",
               "Python File", "REGISTRY.def"),
@@ -1230,13 +1143,6 @@ def add_registry(db):
               "Python File (no console)", "REGISTRY.def"),
              ("pyc.txt", -1, pat3 % (testprefix, "Compiled"), "",
               "Compiled Python File", "REGISTRY.def"),
-             # Drop Handler
-             ("py.drop", -1, pat4 % (testprefix, ""), "",
-              "{60254CA5-953B-11CF-8C96-00AA00B8708C}", "REGISTRY.def"),
-             ("pyw.drop", -1, pat4 % (testprefix, "NoCon"), "",
-              "{60254CA5-953B-11CF-8C96-00AA00B8708C}", "REGISTRY.def"),
-             ("pyc.drop", -1, pat4 % (testprefix, "Compiled"), "",
-              "{60254CA5-953B-11CF-8C96-00AA00B8708C}", "REGISTRY.def"),
             ])
 
     # Registry keys
@@ -1248,13 +1154,10 @@ def add_registry(db):
               ("PythonPath", -1, prefix+r"\PythonPath", "",
                r"[TARGETDIR]Lib;[TARGETDIR]DLLs;[TARGETDIR]Lib\lib-tk", "REGISTRY"),
               ("Documentation", -1, prefix+r"\Help\Main Python Documentation", "",
-               "[TARGETDIR]Doc\\"+docfile , "REGISTRY.doc"),
+               r"[TARGETDIR]Doc\Python%s%s.chm" % (major, minor), "REGISTRY.doc"),
               ("Modules", -1, prefix+r"\Modules", "+", None, "REGISTRY"),
               ("AppPaths", -1, r"Software\Microsoft\Windows\CurrentVersion\App Paths\Python.exe",
-               "", r"[TARGETDIR]Python.exe", "REGISTRY.def"),
-              ("DisplayIcon", -1,
-               r"Software\Microsoft\Windows\CurrentVersion\Uninstall\%s" % product_code,
-               "DisplayIcon", "[TARGETDIR]python.exe", "REGISTRY")
+               "", r"[TARGETDIR]Python.exe", "REGISTRY.def")
               ])
     # Shortcuts, see "Shortcut Table"
     add_data(db, "Directory",
@@ -1281,7 +1184,7 @@ def add_registry(db):
               # htmlfiles.id, None, None, None, None, None, None, None),
               ## Non-advertised shortcuts: must be associated with a registry component
               ("Manual", "MenuDir", "MANUAL|Python Manuals", "REGISTRY.doc",
-               "[#%s]" % docfile, None,
+               "[#Python%s%s.chm]" % (major,minor), None,
                None, None, None, None, None, None),
               ("Uninstall", "MenuDir", "UNINST|Uninstall Python", "REGISTRY",
                SystemFolderName+"msiexec",  "/x%s" % product_code,

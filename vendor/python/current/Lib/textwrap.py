@@ -5,19 +5,19 @@
 # Copyright (C) 2002, 2003 Python Software Foundation.
 # Written by Greg Ward <gward@python.net>
 
-__revision__ = "$Id: textwrap.py 68135 2009-01-01 15:46:10Z georg.brandl $"
+__revision__ = "$Id: textwrap.py 39547 2005-09-15 17:21:59Z rhettinger $"
 
 import string, re
 
 # Do the right thing with boolean values for all known Python versions
 # (so this module can be copied to projects that don't depend on Python
-# 2.3, e.g. Optik and Docutils) by uncommenting the block of code below.
-#try:
-#    True, False
-#except NameError:
-#    (True, False) = (1, 0)
+# 2.3, e.g. Optik and Docutils).
+try:
+    True, False
+except NameError:
+    (True, False) = (1, 0)
 
-__all__ = ['TextWrapper', 'wrap', 'fill', 'dedent']
+__all__ = ['TextWrapper', 'wrap', 'fill']
 
 # Hardcode the recognized whitespace characters to the US-ASCII
 # whitespace characters.  The main reason for doing this is that in
@@ -63,12 +63,6 @@ class TextWrapper:
       break_long_words (default: true)
         Break words longer than 'width'.  If false, those words will not
         be broken, and some lines might be longer than 'width'.
-      break_on_hyphens (default: true)
-        Allow breaking hyphenated words. If true, wrapping will occur
-        preferably on whitespaces and right after hyphens part of
-        compound words.
-      drop_whitespace (default: true)
-        Drop leading and trailing whitespace from lines.
     """
 
     whitespace_trans = string.maketrans(_whitespace, ' ' * len(_whitespace))
@@ -86,21 +80,14 @@ class TextWrapper:
     # (after stripping out empty strings).
     wordsep_re = re.compile(
         r'(\s+|'                                  # any whitespace
-        r'[^\s\w]*\w+[^0-9\W]-(?=\w+[^0-9\W])|'   # hyphenated words
+        r'[^\s\w]*\w+[a-zA-Z]-(?=\w+[a-zA-Z])|'   # hyphenated words
         r'(?<=[\w\!\"\'\&\.\,\?])-{2,}(?=\w))')   # em-dash
-
-    # This less funky little regex just split on recognized spaces. E.g.
-    #   "Hello there -- you goof-ball, use the -b option!"
-    # splits into
-    #   Hello/ /there/ /--/ /you/ /goof-ball,/ /use/ /the/ /-b/ /option!/
-    wordsep_simple_re = re.compile(r'(\s+)')
 
     # XXX this is not locale- or charset-aware -- string.lowercase
     # is US-ASCII only (and therefore English-only)
     sentence_end_re = re.compile(r'[%s]'              # lowercase letter
                                  r'[\.\!\?]'          # sentence-ending punct.
                                  r'[\"\']?'           # optional end-of-quote
-                                 r'\Z'                # end of chunk
                                  % string.lowercase)
 
 
@@ -111,9 +98,7 @@ class TextWrapper:
                  expand_tabs=True,
                  replace_whitespace=True,
                  fix_sentence_endings=False,
-                 break_long_words=True,
-                 drop_whitespace=True,
-                 break_on_hyphens=True):
+                 break_long_words=True):
         self.width = width
         self.initial_indent = initial_indent
         self.subsequent_indent = subsequent_indent
@@ -121,15 +106,6 @@ class TextWrapper:
         self.replace_whitespace = replace_whitespace
         self.fix_sentence_endings = fix_sentence_endings
         self.break_long_words = break_long_words
-        self.drop_whitespace = drop_whitespace
-        self.break_on_hyphens = break_on_hyphens
-
-        # recompile the regexes for Unicode mode -- done in this clumsy way for
-        # backwards compatibility because it's rather common to monkey-patch
-        # the TextWrapper class' wordsep_re attribute.
-        self.wordsep_re_uni = re.compile(self.wordsep_re.pattern, re.U)
-        self.wordsep_simple_re_uni = re.compile(
-            self.wordsep_simple_re.pattern, re.U)
 
 
     # -- Private methods -----------------------------------------------
@@ -162,23 +138,9 @@ class TextWrapper:
         breaks into the following chunks:
           'Look,', ' ', 'goof-', 'ball', ' ', '--', ' ',
           'use', ' ', 'the', ' ', '-b', ' ', 'option!'
-        if break_on_hyphens is True, or in:
-          'Look,', ' ', 'goof-ball', ' ', '--', ' ',
-          'use', ' ', 'the', ' ', '-b', ' ', option!'
-        otherwise.
         """
-        if isinstance(text, unicode):
-            if self.break_on_hyphens:
-                pat = self.wordsep_re_uni
-            else:
-                pat = self.wordsep_simple_re_uni
-        else:
-            if self.break_on_hyphens:
-                pat = self.wordsep_re
-            else:
-                pat = self.wordsep_simple_re
-        chunks = pat.split(text)
-        chunks = filter(None, chunks)  # remove empty chunks
+        chunks = self.wordsep_re.split(text)
+        chunks = filter(None, chunks)
         return chunks
 
     def _fix_sentence_endings(self, chunks):
@@ -207,12 +169,7 @@ class TextWrapper:
         Handle a chunk of text (most likely a word, not whitespace) that
         is too long to fit in any line.
         """
-        # Figure out when indent is larger than the specified width, and make
-        # sure at least one character is stripped off on every pass
-        if width < 1:
-            space_left = 1
-        else:
-            space_left = width - cur_len
+        space_left = max(width - cur_len, 1)
 
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
@@ -271,7 +228,7 @@ class TextWrapper:
 
             # First chunk on line is whitespace -- drop it, unless this
             # is the very beginning of the text (ie. no lines started yet).
-            if self.drop_whitespace and chunks[-1].strip() == '' and lines:
+            if chunks[-1].strip() == '' and lines:
                 del chunks[-1]
 
             while chunks:
@@ -292,7 +249,7 @@ class TextWrapper:
                 self._handle_long_word(chunks, cur_line, cur_len, width)
 
             # If the last chunk on this line is all whitespace, drop it.
-            if self.drop_whitespace and cur_line and cur_line[-1].strip() == '':
+            if cur_line and cur_line[-1].strip() == '':
                 del cur_line[-1]
 
             # Convert current line back to a string and store it in list
@@ -360,58 +317,41 @@ def fill(text, width=70, **kwargs):
 
 # -- Loosely related functionality -------------------------------------
 
-_whitespace_only_re = re.compile('^[ \t]+$', re.MULTILINE)
-_leading_whitespace_re = re.compile('(^[ \t]*)(?:[^ \t\n])', re.MULTILINE)
-
 def dedent(text):
-    """Remove any common leading whitespace from every line in `text`.
+    """dedent(text : string) -> string
 
-    This can be used to make triple-quoted strings line up with the left
-    edge of the display, while still presenting them in the source code
-    in indented form.
+    Remove any whitespace than can be uniformly removed from the left
+    of every line in `text`.
 
-    Note that tabs and spaces are both treated as whitespace, but they
-    are not equal: the lines "  hello" and "\thello" are
-    considered to have no common leading whitespace.  (This behaviour is
-    new in Python 2.5; older versions of this module incorrectly
-    expanded tabs before searching for common leading whitespace.)
+    This can be used e.g. to make triple-quoted strings line up with
+    the left edge of screen/whatever, while still presenting it in the
+    source code in indented form.
+
+    For example:
+
+        def test():
+            # end first line with \ to avoid the empty line!
+            s = '''\
+            hello
+              world
+            '''
+            print repr(s)          # prints '    hello\n      world\n    '
+            print repr(dedent(s))  # prints 'hello\n  world\n'
     """
-    # Look for the longest leading string of spaces and tabs common to
-    # all lines.
+    lines = text.expandtabs().split('\n')
     margin = None
-    text = _whitespace_only_re.sub('', text)
-    indents = _leading_whitespace_re.findall(text)
-    for indent in indents:
+    for line in lines:
+        content = line.lstrip()
+        if not content:
+            continue
+        indent = len(line) - len(content)
         if margin is None:
             margin = indent
-
-        # Current line more deeply indented than previous winner:
-        # no change (previous winner is still on top).
-        elif indent.startswith(margin):
-            pass
-
-        # Current line consistent with and no deeper than previous winner:
-        # it's the new winner.
-        elif margin.startswith(indent):
-            margin = indent
-
-        # Current line and previous winner have no common whitespace:
-        # there is no margin.
         else:
-            margin = ""
-            break
+            margin = min(margin, indent)
 
-    # sanity check (testing/debugging only)
-    if 0 and margin:
-        for line in text.split("\n"):
-            assert not line or line.startswith(margin), \
-                   "line = %r, margin = %r" % (line, margin)
+    if margin is not None and margin > 0:
+        for i in range(len(lines)):
+            lines[i] = lines[i][margin:]
 
-    if margin:
-        text = re.sub(r'(?m)^' + margin, '', text)
-    return text
-
-if __name__ == "__main__":
-    #print dedent("\tfoo\n\tbar")
-    #print dedent("  \thello there\n  \t  how are you?")
-    print dedent("Hello there.\n  This is indented.")
+    return '\n'.join(lines)

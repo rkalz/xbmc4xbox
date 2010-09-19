@@ -6,8 +6,7 @@
 
 import sys; rprt = sys.stderr.write #for debugging
 
-class error(Exception):
-    pass
+error = 'bitvec.error'
 
 
 def _check_value(value):
@@ -21,7 +20,7 @@ def _compute_len(param):
     mant, l = math.frexp(float(param))
     bitmask = 1L << l
     if bitmask <= param:
-        raise RuntimeError('(param, l) = %r' % ((param, l),))
+        raise 'FATAL', '(param, l) = %r' % ((param, l),)
     while l:
         bitmask = bitmask >> 1
         if param & bitmask:

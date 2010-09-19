@@ -5,9 +5,9 @@ distribution)."""
 
 # This module should be kept compatible with Python 2.1.
 
-__revision__ = "$Id: bdist.py 62197 2008-04-07 01:53:39Z mark.hammond $"
+__revision__ = "$Id: bdist.py 37828 2004-11-10 22:23:15Z loewis $"
 
-import os
+import os, string
 from types import *
 from distutils.core import Command
 from distutils.errors import *
@@ -97,10 +97,7 @@ class bdist (Command):
     def finalize_options (self):
         # have to finalize 'plat_name' before 'bdist_base'
         if self.plat_name is None:
-            if self.skip_build:
-                self.plat_name = get_platform()
-            else:
-                self.plat_name = self.get_finalized_command('build').plat_name
+            self.plat_name = get_platform()
 
         # 'bdist_base' -- parent of per-built-distribution-format
         # temporary directories (eg. we'll probably have
@@ -123,6 +120,7 @@ class bdist (Command):
             self.dist_dir = "dist"
 
     # finalize_options()
+
 
     def run (self):
 

@@ -20,12 +20,7 @@ class Log:
 
     def _log(self, level, msg, args):
         if level >= self.threshold:
-            if not args:
-                # msg may contain a '%'. If args is empty,
-                # don't even try to string-format
-                print msg
-            else:
-                print msg % args
+            print msg % args
             sys.stdout.flush()
 
     def log(self, level, msg, *args):

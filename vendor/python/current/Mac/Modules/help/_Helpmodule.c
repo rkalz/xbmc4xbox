@@ -3,7 +3,6 @@
 
 #include "Python.h"
 
-#ifndef __LP64__
 
 
 #include "pymactoolbox.h"
@@ -145,10 +144,7 @@ static PyObject *Help_HMHideTag(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#endif /* __LP64__ */
-
 static PyMethodDef Help_methods[] = {
-#ifndef __LP64__
 	{"HMGetHelpMenu", (PyCFunction)Help_HMGetHelpMenu, 1,
 	 PyDoc_STR("() -> (MenuRef outHelpMenu, MenuItemIndex outFirstCustomItemIndex)")},
 	{"HMAreHelpTagsDisplayed", (PyCFunction)Help_HMAreHelpTagsDisplayed, 1,
@@ -165,7 +161,6 @@ static PyMethodDef Help_methods[] = {
 	 PyDoc_STR("(DialogPtr inDialog, SInt16 inHdlgRsrcID, SInt16 inItemStart) -> None")},
 	{"HMHideTag", (PyCFunction)Help_HMHideTag, 1,
 	 PyDoc_STR("() -> None")},
-#endif /* __LP64__ */
 	{NULL, NULL, 0}
 };
 
@@ -175,21 +170,17 @@ static PyMethodDef Help_methods[] = {
 void init_Help(void)
 {
 	PyObject *m;
-#ifndef __LP64__
 	PyObject *d;
-#endif /* __LP64__ */
 
 
 
 
 	m = Py_InitModule("_Help", Help_methods);
-#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Help_Error = PyMac_GetOSErrException();
 	if (Help_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Help_Error) != 0)
 		return;
-#endif /* __LP64__ */
 }
 
 /* ======================== End module _Help ======================== */

@@ -5,6 +5,7 @@
 
 import pickle
 import cPickle
+import unittest
 
 from test import test_support
 from test.pickletester import AbstractPickleTests

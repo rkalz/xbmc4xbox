@@ -126,9 +126,7 @@ _b32alphabet = {
     8: 'I', 17: 'R', 26: '2',
     }
 
-_b32tab = _b32alphabet.items()
-_b32tab.sort()
-_b32tab = [v for k, v in _b32tab]
+_b32tab = [v for v in _b32alphabet.values()]
 _b32rev = dict([(v, long(k)) for k, v in _b32alphabet.items()])
 
 
@@ -308,7 +306,7 @@ def decode(input, output):
 
 
 def encodestring(s):
-    """Encode a string into multiple lines of base-64 data."""
+    """Encode a string."""
     pieces = []
     for i in range(0, len(s), MAXBINSIZE):
         chunk = s[i : i + MAXBINSIZE]

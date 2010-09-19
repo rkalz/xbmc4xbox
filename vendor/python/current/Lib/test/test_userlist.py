@@ -1,6 +1,7 @@
 # Check every path through every method of UserList
 
 from UserList import UserList
+import unittest
 from test import test_support, list_tests
 
 class UserListTest(list_tests.CommonTest):

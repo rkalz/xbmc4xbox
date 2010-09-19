@@ -8,6 +8,7 @@ from test import test_support
 
 import sys, os, uu, cStringIO
 import uu
+from StringIO import StringIO
 
 plaintext = "The smooth-scaled python crept over the sleeping dog\n"
 
@@ -112,9 +113,7 @@ class UUFileTest(unittest.TestCase):
         del self.tmpout
 
     def test_encode(self):
-        fin = fout = None
         try:
-            test_support.unlink(self.tmpin)
             fin = open(self.tmpin, 'wb')
             fin.write(plaintext)
             fin.close()
@@ -129,27 +128,17 @@ class UUFileTest(unittest.TestCase):
             s = fout.read()
             fout.close()
             self.assertEqual(s, encodedtextwrapped % (0644, self.tmpin))
-
-            # in_file and out_file as filenames
-            uu.encode(self.tmpin, self.tmpout, self.tmpin, mode=0644)
-            fout = open(self.tmpout, 'r')
-            s = fout.read()
-            fout.close()
-            self.assertEqual(s, encodedtextwrapped % (0644, self.tmpin))
-
         finally:
             self._kill(fin)
             self._kill(fout)
 
     def test_decode(self):
-        f = None
         try:
-            test_support.unlink(self.tmpin)
-            f = open(self.tmpin, 'w')
+            f = open(self.tmpin, 'wb')
             f.write(encodedtextwrapped % (0644, self.tmpout))
             f.close()
 
-            f = open(self.tmpin, 'r')
+            f = open(self.tmpin, 'rb')
             uu.decode(f)
             f.close()
 
@@ -163,15 +152,14 @@ class UUFileTest(unittest.TestCase):
 
     def test_decodetwice(self):
         # Verify that decode() will refuse to overwrite an existing file
-        f = None
         try:
             f = cStringIO.StringIO(encodedtextwrapped % (0644, self.tmpout))
 
-            f = open(self.tmpin, 'r')
+            f = open(self.tmpin, 'rb')
             uu.decode(f)
             f.close()
 
-            f = open(self.tmpin, 'r')
+            f = open(self.tmpin, 'rb')
             self.assertRaises(uu.Error, uu.decode, f)
             f.close()
         finally:

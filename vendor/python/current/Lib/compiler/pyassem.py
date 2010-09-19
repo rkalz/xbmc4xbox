@@ -1,8 +1,9 @@
 """A flow graph representation for Python bytecode"""
 
 import dis
-import types
+import new
 import sys
+import types
 
 from compiler import misc
 from compiler.consts \
@@ -210,7 +211,7 @@ def dfs_postorder(b, seen):
     order = []
     seen[b] = b
     for c in b.get_children():
-        if c in seen:
+        if seen.has_key(c):
             continue
         order = order + dfs_postorder(c, seen)
     order.append(b)
@@ -363,15 +364,16 @@ class PyFlowGraph(FlowGraph):
 
     def getCode(self):
         """Get a Python code object"""
-        assert self.stage == RAW
-        self.computeStackDepth()
-        self.flattenGraph()
-        assert self.stage == FLAT
-        self.convertArgs()
-        assert self.stage == CONV
-        self.makeByteCode()
-        assert self.stage == DONE
-        return self.newCodeObject()
+        if self.stage == RAW:
+            self.computeStackDepth()
+            self.flattenGraph()
+        if self.stage == FLAT:
+            self.convertArgs()
+        if self.stage == CONV:
+            self.makeByteCode()
+        if self.stage == DONE:
+            return self.newCodeObject()
+        raise RuntimeError, "inconsistent PyFlowGraph state"
 
     def dump(self, io=None):
         if io:
@@ -406,7 +408,7 @@ class PyFlowGraph(FlowGraph):
         seen = {}
 
         def max_depth(b, d):
-            if b in seen:
+            if seen.has_key(b):
                 return d
             seen[b] = 1
             d = d + depth[b]
@@ -482,7 +484,7 @@ class PyFlowGraph(FlowGraph):
         for name in self.cellvars:
             cells[name] = 1
         self.cellvars = [name for name in self.varnames
-                         if name in cells]
+                         if cells.has_key(name)]
         for name in self.cellvars:
             del cells[name]
         self.cellvars = self.cellvars + cells.keys()
@@ -595,7 +597,7 @@ class PyFlowGraph(FlowGraph):
         argcount = self.argcount
         if self.flags & CO_VARKEYWORDS:
             argcount = argcount - 1
-        return types.CodeType(argcount, nlocals, self.stacksize, self.flags,
+        return new.code(argcount, nlocals, self.stacksize, self.flags,
                         self.lnotab.getCode(), self.getConsts(),
                         tuple(self.names), tuple(self.varnames),
                         self.filename, self.name, self.lnotab.firstline,
@@ -640,7 +642,7 @@ def getArgCount(args):
 
 def twobyte(val):
     """Convert an int argument into high and low bytes"""
-    assert isinstance(val, int)
+    assert type(val) == types.IntType
     return divmod(val, 256)
 
 class LineAddrTable:
@@ -744,7 +746,6 @@ class StackDepthTracker:
     effect = {
         'POP_TOP': -1,
         'DUP_TOP': 1,
-        'LIST_APPEND': -2,
         'SLICE+1': -1,
         'SLICE+2': -1,
         'SLICE+3': -2,
@@ -772,14 +773,13 @@ class StackDepthTracker:
         'COMPARE_OP': -1,
         'STORE_FAST': -1,
         'IMPORT_STAR': -1,
-        'IMPORT_NAME': -1,
+        'IMPORT_NAME': 0,
         'IMPORT_FROM': 1,
         'LOAD_ATTR': 0, # unlike other loads
         # close enough...
         'SETUP_EXCEPT': 3,
         'SETUP_FINALLY': 3,
         'FOR_ITER': 1,
-        'WITH_CLEANUP': -1,
         }
     # use pattern match
     patterns = [

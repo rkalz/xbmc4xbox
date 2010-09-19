@@ -758,14 +758,8 @@ void
 initcd(void)
 {
 	PyObject *m, *d;
-	
-	if (PyErr_WarnPy3k("the cd module has been removed in "
-	                   "Python 3.0", 2) < 0)
-	    return;
 
 	m = Py_InitModule("cd", CD_methods);
-	if (m == NULL)
-		return;
 	d = PyModule_GetDict(m);
 
 	CdError = PyErr_NewException("cd.error", NULL, NULL);

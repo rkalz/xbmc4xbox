@@ -10,8 +10,8 @@ import os
 
 __all__ = ["getline", "clearcache", "checkcache"]
 
-def getline(filename, lineno, module_globals=None):
-    lines = getlines(filename, module_globals)
+def getline(filename, lineno):
+    lines = getlines(filename)
     if 1 <= lineno <= len(lines):
         return lines[lineno-1]
     else:
@@ -30,14 +30,14 @@ def clearcache():
     cache = {}
 
 
-def getlines(filename, module_globals=None):
+def getlines(filename):
     """Get the lines for a file from the cache.
     Update the cache if it doesn't contain an entry for this file already."""
 
     if filename in cache:
         return cache[filename][2]
     else:
-        return updatecache(filename, module_globals)
+        return updatecache(filename)
 
 
 def checkcache(filename=None):
@@ -54,8 +54,6 @@ def checkcache(filename=None):
 
     for filename in filenames:
         size, mtime, lines, fullname = cache[filename]
-        if mtime is None:
-            continue   # no-op for files loaded via a __loader__
         try:
             stat = os.stat(fullname)
         except os.error:
@@ -65,7 +63,7 @@ def checkcache(filename=None):
             del cache[filename]
 
 
-def updatecache(filename, module_globals=None):
+def updatecache(filename):
     """Update a cache entry and return its list of lines.
     If something's wrong, print a message, discard the cache entry,
     and return an empty list."""
@@ -74,40 +72,12 @@ def updatecache(filename, module_globals=None):
         del cache[filename]
     if not filename or filename[0] + filename[-1] == '<>':
         return []
-
     fullname = filename
     try:
         stat = os.stat(fullname)
     except os.error, msg:
-        basename = filename
-
-        # Try for a __loader__, if available
-        if module_globals and '__loader__' in module_globals:
-            name = module_globals.get('__name__')
-            loader = module_globals['__loader__']
-            get_source = getattr(loader, 'get_source', None)
-
-            if name and get_source:
-                try:
-                    data = get_source(name)
-                except (ImportError, IOError):
-                    pass
-                else:
-                    if data is None:
-                        # No luck, the PEP302 loader cannot find the source
-                        # for this module.
-                        return []
-                    cache[filename] = (
-                        len(data), None,
-                        [line+'\n' for line in data.splitlines()], fullname
-                    )
-                    return cache[filename][2]
-
-        # Try looking through the module search path, which is only useful
-        # when handling a relative filename.
-        if os.path.isabs(filename):
-            return []
-
+        # Try looking through the module search path.
+        basename = os.path.split(filename)[1]
         for dirname in sys.path:
             # When using imputil, sys.path may contain things other than
             # strings; ignore them when it happens.

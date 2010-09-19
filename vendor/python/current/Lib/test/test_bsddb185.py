@@ -4,9 +4,9 @@ The file 185test.db found in Lib/test/ is for testing purposes with this
 testing suite.
 
 """
-from test.test_support import run_unittest, findfile, import_module
+from test.test_support import verbose, run_unittest, findfile
 import unittest
-bsddb185 = import_module('bsddb185', deprecated=True)
+import bsddb185
 import anydbm
 import whichdb
 import os

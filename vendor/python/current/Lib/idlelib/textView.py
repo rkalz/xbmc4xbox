@@ -6,12 +6,13 @@ from Tkinter import *
 import tkMessageBox
 
 class TextViewer(Toplevel):
-    """A simple text viewer dialog for IDLE
-
     """
-    def __init__(self, parent, title, text):
-        """Show the given text in a scrollable window with a 'close' button
+    simple text viewer dialog for idle
+    """
+    def __init__(self, parent, title, fileName, data=None):
+        """If data exists, load it into viewer, otherwise try to load file.
 
+        fileName - string, should be an absoulute filename
         """
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
@@ -32,9 +33,22 @@ class TextViewer(Toplevel):
         #key bindings for this dialog
         self.bind('<Return>',self.Ok) #dismiss dialog
         self.bind('<Escape>',self.Ok) #dismiss dialog
-        self.textView.insert(0.0, text)
+        if data:
+            self.textView.insert(0.0, data)
+        else:
+            self.LoadTextFile(fileName)
         self.textView.config(state=DISABLED)
         self.wait_window()
+
+    def LoadTextFile(self, fileName):
+        textFile = None
+        try:
+            textFile = open(fileName, 'r')
+        except IOError:
+            tkMessageBox.showerror(title='File Load Error',
+                    message='Unable to load file %r .' % (fileName,))
+        else:
+            self.textView.insert(0.0,textFile.read())
 
     def CreateWidgets(self):
         frameText = Frame(self, relief=SUNKEN, height=700)
@@ -56,38 +70,9 @@ class TextViewer(Toplevel):
     def Ok(self, event=None):
         self.destroy()
 
-
-def view_text(parent, title, text):
-    TextViewer(parent, title, text)
-
-def view_file(parent, title, filename, encoding=None):
-    try:
-        if encoding:
-            import codecs
-            textFile = codecs.open(filename, 'r')
-        else:
-            textFile = open(filename, 'r')
-    except IOError:
-        import tkMessageBox
-        tkMessageBox.showerror(title='File Load Error',
-                               message='Unable to load file %r .' % filename,
-                               parent=parent)
-    else:
-        return view_text(parent, title, textFile.read())
-
-
 if __name__ == '__main__':
     #test the dialog
     root=Tk()
-    root.title('textView test')
-    filename = './textView.py'
-    text = file(filename, 'r').read()
-    btn1 = Button(root, text='view_text',
-                 command=lambda:view_text(root, 'view_text', text))
-    btn1.pack(side=LEFT)
-    btn2 = Button(root, text='view_file',
-                  command=lambda:view_file(root, 'view_file', filename))
-    btn2.pack(side=LEFT)
-    close = Button(root, text='Close', command=root.destroy)
-    close.pack(side=RIGHT)
+    Button(root,text='View',
+            command=lambda:TextViewer(root,'Text','./textView.py')).pack()
     root.mainloop()

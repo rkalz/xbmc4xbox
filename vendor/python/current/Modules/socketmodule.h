@@ -13,24 +13,18 @@
 # endif
 
 #else /* MS_WINDOWS */
+#if _MSC_VER >= 1300
 # include <winsock2.h>
 # include <ws2tcpip.h>
-/* VC6 is shipped with old platform headers, and does not have MSTcpIP.h
- * Separate SDKs have all the functions we want, but older ones don't have
- * any version information. 
- * I use SIO_GET_MULTICAST_FILTER to detect a decent SDK.
- */
-# ifdef SIO_GET_MULTICAST_FILTER
-#  include <MSTcpIP.h> /* for SIO_RCVALL */
-#  define HAVE_ADDRINFO
-#  define HAVE_SOCKADDR_STORAGE
-#  define HAVE_GETADDRINFO
-#  define HAVE_GETNAMEINFO
-#  define ENABLE_IPV6
-# else
-typedef int socklen_t;
-# endif /* IPPROTO_IPV6 */
-#endif /* MS_WINDOWS */
+# define HAVE_ADDRINFO
+# define HAVE_SOCKADDR_STORAGE
+# define HAVE_GETADDRINFO
+# define HAVE_GETNAMEINFO
+# define ENABLE_IPV6
+#else
+# include <winsock.h>
+#endif
+#endif
 
 #ifdef HAVE_SYS_UN_H
 # include <sys/un.h>
@@ -38,21 +32,11 @@ typedef int socklen_t;
 # undef AF_UNIX
 #endif
 
-#ifdef HAVE_LINUX_NETLINK_H
-# ifdef HAVE_ASM_TYPES_H
-#  include <asm/types.h>
-# endif
-# include <linux/netlink.h>
-#else
-#  undef AF_NETLINK
-#endif
-
 #ifdef HAVE_BLUETOOTH_BLUETOOTH_H
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/rfcomm.h>
 #include <bluetooth/l2cap.h>
 #include <bluetooth/sco.h>
-#include <bluetooth/hci.h>
 #endif
 
 #ifdef HAVE_BLUETOOTH_H
@@ -63,10 +47,6 @@ typedef int socklen_t;
 # include <sys/ioctl.h>
 # include <net/if.h>
 # include <netpacket/packet.h>
-#endif
-
-#ifdef HAVE_LINUX_TIPC_H
-# include <linux/tipc.h>
 #endif
 
 #ifndef Py__SOCKET_H
@@ -98,9 +78,6 @@ typedef union sock_addr {
 #ifdef AF_UNIX
 	struct sockaddr_un un;
 #endif
-#ifdef AF_NETLINK
-	struct sockaddr_nl nl;
-#endif
 #ifdef ENABLE_IPV6
 	struct sockaddr_in6 in6;
 	struct sockaddr_storage storage;
@@ -109,7 +86,6 @@ typedef union sock_addr {
 	struct sockaddr_l2 bt_l2;
 	struct sockaddr_rc bt_rc;
 	struct sockaddr_sco bt_sco;
-	struct sockaddr_hci bt_hci;
 #endif
 #ifdef HAVE_NETPACKET_PACKET_H
 	struct sockaddr_ll ll;
@@ -126,6 +102,7 @@ typedef struct {
 	int sock_family;	/* Address family, e.g., AF_INET */
 	int sock_type;		/* Socket type, e.g., SOCK_STREAM */
 	int sock_proto;		/* Protocol type, usually 0 */
+	sock_addr_t sock_addr;	/* Socket address */
 	PyObject *(*errorhandler)(void); /* Error handler; checks
 					    errno, returns NULL and
 					    sets a Python exception */
@@ -232,7 +209,7 @@ int PySocketModule_ImportModuleAndAPI(void)
 	void *api;
 
 	DPRINTF("Importing the %s C API...\n", apimodule);
-	mod = PyImport_ImportModuleNoBlock(apimodule);
+	mod = PyImport_ImportModule(apimodule);
 	if (mod == NULL)
 		goto onError;
 	DPRINTF(" %s package found\n", apimodule);

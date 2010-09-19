@@ -12,18 +12,19 @@ coerce(x, wanted_sample) coerces a python object to another python object
 # Apple Event Registry, chapter 9.
 #
 
-from warnings import warnpy3k
-warnpy3k("In 3.x, the aepack module is removed.", stacklevel=2)
-
 import struct
+import string
 import types
+from string import strip
 from types import *
 from Carbon import AE
 from Carbon.AppleEvents import *
 import MacOS
 import Carbon.File
+import StringIO
 import aetypes
 from aetypes import mkenum, ObjectSpecifier
+import os
 
 # These ones seem to be missing from AppleEvents
 # (they're in AERegistry.h)
@@ -58,11 +59,7 @@ unpacker_coercions = {
 # Some python types we need in the packer:
 #
 AEDescType = AE.AEDescType
-try:
-    FSSType = Carbon.File.FSSpecType
-except AttributeError:
-    class FSSType:
-        pass
+FSSType = Carbon.File.FSSpecType
 FSRefType = Carbon.File.FSRefType
 AliasType = Carbon.File.AliasType
 
@@ -84,7 +81,7 @@ def pack(x, forcetype = None):
         else:
             return pack(x).AECoerceDesc(forcetype)
 
-    if x is None:
+    if x == None:
         return AE.AECreateDesc('null', '')
 
     if isinstance(x, AEDescType):

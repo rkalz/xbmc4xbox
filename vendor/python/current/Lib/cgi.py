@@ -34,27 +34,13 @@ __version__ = "2.6"
 # Imports
 # =======
 
-from operator import attrgetter
 import sys
 import os
 import urllib
+import mimetools
+import rfc822
 import UserDict
-import urlparse
-
-from warnings import filterwarnings, catch_warnings, warn
-with catch_warnings():
-    if sys.py3kwarning:
-        filterwarnings("ignore", ".*mimetools has been removed",
-                        DeprecationWarning)
-    import mimetools
-    if sys.py3kwarning:
-        filterwarnings("ignore", ".*rfc822 has been removed", DeprecationWarning)
-    import rfc822
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from StringIO import StringIO
 
 __all__ = ["MiniFieldStorage", "FieldStorage", "FormContentDict",
            "SvFormContentDict", "InterpFormContentDict", "FormContent",
@@ -175,28 +161,79 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
     return parse_qs(qs, keep_blank_values, strict_parsing)
 
 
-# parse query string function called from urlparse,
-# this is done in order to maintain backward compatiblity.
-
 def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
-    """Parse a query given as a string argument."""
-    warn("cgi.parse_qs is deprecated, use urlparse.parse_qs \
-            instead", PendingDeprecationWarning, 2)
-    return urlparse.parse_qs(qs, keep_blank_values, strict_parsing)
+    """Parse a query given as a string argument.
 
+        Arguments:
+
+        qs: URL-encoded query string to be parsed
+
+        keep_blank_values: flag indicating whether blank values in
+            URL encoded queries should be treated as blank strings.
+            A true value indicates that blanks should be retained as
+            blank strings.  The default false value indicates that
+            blank values are to be ignored and treated as if they were
+            not included.
+
+        strict_parsing: flag indicating what to do with parsing errors.
+            If false (the default), errors are silently ignored.
+            If true, errors raise a ValueError exception.
+    """
+    dict = {}
+    for name, value in parse_qsl(qs, keep_blank_values, strict_parsing):
+        if name in dict:
+            dict[name].append(value)
+        else:
+            dict[name] = [value]
+    return dict
 
 def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
-    """Parse a query given as a string argument."""
-    warn("cgi.parse_qsl is deprecated, use urlparse.parse_qsl instead",
-         PendingDeprecationWarning, 2)
-    return urlparse.parse_qsl(qs, keep_blank_values, strict_parsing)
+    """Parse a query given as a string argument.
+
+    Arguments:
+
+    qs: URL-encoded query string to be parsed
+
+    keep_blank_values: flag indicating whether blank values in
+        URL encoded queries should be treated as blank strings.  A
+        true value indicates that blanks should be retained as blank
+        strings.  The default false value indicates that blank values
+        are to be ignored and treated as if they were  not included.
+
+    strict_parsing: flag indicating what to do with parsing errors. If
+        false (the default), errors are silently ignored. If true,
+        errors raise a ValueError exception.
+
+    Returns a list, as G-d intended.
+    """
+    pairs = [s2 for s1 in qs.split('&') for s2 in s1.split(';')]
+    r = []
+    for name_value in pairs:
+        if not name_value and not strict_parsing:
+            continue
+        nv = name_value.split('=', 1)
+        if len(nv) != 2:
+            if strict_parsing:
+                raise ValueError, "bad query field: %r" % (name_value,)
+            # Handle case of a control-name with no equal sign
+            if keep_blank_values:
+                nv.append('')
+            else:
+                continue
+        if len(nv[1]) or keep_blank_values:
+            name = urllib.unquote(nv[0].replace('+', ' '))
+            value = urllib.unquote(nv[1].replace('+', ' '))
+            r.append((name, value))
+
+    return r
+
 
 def parse_multipart(fp, pdict):
     """Parse multipart input.
 
     Arguments:
     fp   : input file
-    pdict: dictionary containing other parameters of content-type header
+    pdict: dictionary containing other parameters of conten-type header
 
     Returns a dictionary just like parse_qs(): keys are the field names, each
     value is a list of values for that field.  This is easy to use but not
@@ -210,10 +247,6 @@ def parse_multipart(fp, pdict):
 
     XXX This should really be subsumed by FieldStorage altogether -- no
     point in having two implementations of the same parsing algorithm.
-    Also, FieldStorage protects itself better against certain DoS attacks
-    by limiting the size of the data read in one chunk.  The API here
-    does not support that kind of protection.  This also affects parse()
-    since it can call parse_multipart().
 
     """
     boundary = ""
@@ -289,28 +322,16 @@ def parse_multipart(fp, pdict):
     return partdict
 
 
-def _parseparam(s):
-    while s[:1] == ';':
-        s = s[1:]
-        end = s.find(';')
-        while end > 0 and s.count('"', 0, end) % 2:
-            end = s.find(';', end + 1)
-        if end < 0:
-            end = len(s)
-        f = s[:end]
-        yield f.strip()
-        s = s[end:]
-
 def parse_header(line):
     """Parse a Content-type like header.
 
     Return the main content-type and a dictionary of options.
 
     """
-    parts = _parseparam(';' + line)
-    key = parts.next()
+    plist = map(lambda x: x.strip(), line.split(';'))
+    key = plist.pop(0).lower()
     pdict = {}
-    for p in parts:
+    for p in plist:
         i = p.find('=')
         if i >= 0:
             name = p[:i].strip().lower()
@@ -427,7 +448,6 @@ class FieldStorage:
         self.strict_parsing = strict_parsing
         if 'REQUEST_METHOD' in environ:
             method = environ['REQUEST_METHOD'].upper()
-        self.qs_on_post = None
         if method == 'GET' or method == 'HEAD':
             if 'QUERY_STRING' in environ:
                 qs = environ['QUERY_STRING']
@@ -446,8 +466,6 @@ class FieldStorage:
                 headers['content-type'] = "application/x-www-form-urlencoded"
             if 'CONTENT_TYPE' in environ:
                 headers['content-type'] = environ['CONTENT_TYPE']
-            if 'QUERY_STRING' in environ:
-                self.qs_on_post = environ['QUERY_STRING']
             if 'CONTENT_LENGTH' in environ:
                 headers['content-length'] = environ['CONTENT_LENGTH']
         self.fp = fp or sys.stdin
@@ -549,7 +567,7 @@ class FieldStorage:
         if key in self:
             value = self[key]
             if type(value) is type([]):
-                return map(attrgetter('value'), value)
+                return map(lambda v: v.value, value)
             else:
                 return value.value
         else:
@@ -571,7 +589,7 @@ class FieldStorage:
         if key in self:
             value = self[key]
             if type(value) is type([]):
-                return map(attrgetter('value'), value)
+                return map(lambda v: v.value, value)
             else:
                 return [value.value]
         else:
@@ -581,35 +599,37 @@ class FieldStorage:
         """Dictionary style keys() method."""
         if self.list is None:
             raise TypeError, "not indexable"
-        return list(set(item.name for item in self.list))
+        keys = []
+        for item in self.list:
+            if item.name not in keys: keys.append(item.name)
+        return keys
 
     def has_key(self, key):
         """Dictionary style has_key() method."""
         if self.list is None:
             raise TypeError, "not indexable"
-        return any(item.name == key for item in self.list)
+        for item in self.list:
+            if item.name == key: return True
+        return False
 
     def __contains__(self, key):
         """Dictionary style __contains__ method."""
         if self.list is None:
             raise TypeError, "not indexable"
-        return any(item.name == key for item in self.list)
+        for item in self.list:
+            if item.name == key: return True
+        return False
 
     def __len__(self):
         """Dictionary style len(x) support."""
         return len(self.keys())
 
-    def __nonzero__(self):
-        return bool(self.list)
-
     def read_urlencoded(self):
         """Internal: read data in query string format."""
         qs = self.fp.read(self.length)
-        if self.qs_on_post:
-            qs += '&' + self.qs_on_post
         self.list = list = []
-        for key, value in urlparse.parse_qsl(qs, self.keep_blank_values,
-                                            self.strict_parsing):
+        for key, value in parse_qsl(qs, self.keep_blank_values,
+                                    self.strict_parsing):
             list.append(MiniFieldStorage(key, value))
         self.skip_lines()
 
@@ -621,12 +641,6 @@ class FieldStorage:
         if not valid_boundary(ib):
             raise ValueError, 'Invalid boundary in multipart form: %r' % (ib,)
         self.list = []
-        if self.qs_on_post:
-            for key, value in urlparse.parse_qsl(self.qs_on_post,
-                                self.keep_blank_values, self.strict_parsing):
-                self.list.append(MiniFieldStorage(key, value))
-            FieldStorageClass = None
-
         klass = self.FieldStorageClass or self.__class__
         part = klass(self.fp, {}, ib,
                      environ, keep_blank_values, strict_parsing)
@@ -681,7 +695,7 @@ class FieldStorage:
     def read_lines_to_eof(self):
         """Internal: read lines until EOF."""
         while 1:
-            line = self.fp.readline(1<<16)
+            line = self.fp.readline()
             if not line:
                 self.done = -1
                 break
@@ -692,13 +706,12 @@ class FieldStorage:
         next = "--" + self.outerboundary
         last = next + "--"
         delim = ""
-        last_line_lfend = True
         while 1:
-            line = self.fp.readline(1<<16)
+            line = self.fp.readline()
             if not line:
                 self.done = -1
                 break
-            if line[:2] == "--" and last_line_lfend:
+            if line[:2] == "--":
                 strippedline = line.strip()
                 if strippedline == next:
                     break
@@ -709,14 +722,11 @@ class FieldStorage:
             if line[-2:] == "\r\n":
                 delim = "\r\n"
                 line = line[:-2]
-                last_line_lfend = True
             elif line[-1] == "\n":
                 delim = "\n"
                 line = line[:-1]
-                last_line_lfend = True
             else:
                 delim = ""
-                last_line_lfend = False
             self.__write(odelim + line)
 
     def skip_lines(self):
@@ -725,20 +735,18 @@ class FieldStorage:
             return
         next = "--" + self.outerboundary
         last = next + "--"
-        last_line_lfend = True
         while 1:
-            line = self.fp.readline(1<<16)
+            line = self.fp.readline()
             if not line:
                 self.done = -1
                 break
-            if line[:2] == "--" and last_line_lfend:
+            if line[:2] == "--":
                 strippedline = line.strip()
                 if strippedline == next:
                     break
                 if strippedline == last:
                     self.done = 1
                     break
-            last_line_lfend = line.endswith('\n')
 
     def make_file(self, binary=None):
         """Overridable: return a readable & writable file.
@@ -785,10 +793,8 @@ class FormContentDict(UserDict.UserDict):
     form.dict == {key: [val, val, ...], ...}
 
     """
-    def __init__(self, environ=os.environ, keep_blank_values=0, strict_parsing=0):
-        self.dict = self.data = parse(environ=environ,
-                                      keep_blank_values=keep_blank_values,
-                                      strict_parsing=strict_parsing)
+    def __init__(self, environ=os.environ):
+        self.dict = self.data = parse(environ=environ)
         self.query_string = environ['QUERY_STRING']
 
 
@@ -1029,9 +1035,7 @@ environment as well.  Here are some common variable names:
 # =========
 
 def escape(s, quote=None):
-    '''Replace special characters "&", "<" and ">" to HTML-safe sequences.
-    If the optional flag quote is true, the quotation mark character (")
-    is also translated.'''
+    """Replace special characters '&', '<' and '>' by SGML entities."""
     s = s.replace("&", "&amp;") # Must be done first!
     s = s.replace("<", "&lt;")
     s = s.replace(">", "&gt;")

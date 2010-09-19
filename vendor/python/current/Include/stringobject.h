@@ -1,5 +1,5 @@
 
-/* String (str/bytes) object interface */
+/* String object interface */
 
 #ifndef Py_STRINGOBJECT_H
 #define Py_STRINGOBJECT_H
@@ -55,28 +55,27 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyBaseString_Type;
 PyAPI_DATA(PyTypeObject) PyString_Type;
 
-#define PyString_Check(op) \
-                 PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_STRING_SUBCLASS)
-#define PyString_CheckExact(op) (Py_TYPE(op) == &PyString_Type)
+#define PyString_Check(op) PyObject_TypeCheck(op, &PyString_Type)
+#define PyString_CheckExact(op) ((op)->ob_type == &PyString_Type)
 
-PyAPI_FUNC(PyObject *) PyString_FromStringAndSize(const char *, Py_ssize_t);
+PyAPI_FUNC(PyObject *) PyString_FromStringAndSize(const char *, int);
 PyAPI_FUNC(PyObject *) PyString_FromString(const char *);
 PyAPI_FUNC(PyObject *) PyString_FromFormatV(const char*, va_list)
 				Py_GCC_ATTRIBUTE((format(printf, 1, 0)));
 PyAPI_FUNC(PyObject *) PyString_FromFormat(const char*, ...)
 				Py_GCC_ATTRIBUTE((format(printf, 1, 2)));
-PyAPI_FUNC(Py_ssize_t) PyString_Size(PyObject *);
+PyAPI_FUNC(int) PyString_Size(PyObject *);
 PyAPI_FUNC(char *) PyString_AsString(PyObject *);
 PyAPI_FUNC(PyObject *) PyString_Repr(PyObject *, int);
 PyAPI_FUNC(void) PyString_Concat(PyObject **, PyObject *);
 PyAPI_FUNC(void) PyString_ConcatAndDel(PyObject **, PyObject *);
-PyAPI_FUNC(int) _PyString_Resize(PyObject **, Py_ssize_t);
+PyAPI_FUNC(int) _PyString_Resize(PyObject **, int);
 PyAPI_FUNC(int) _PyString_Eq(PyObject *, PyObject*);
 PyAPI_FUNC(PyObject *) PyString_Format(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyString_FormatLong(PyObject*, int, int,
 						  int, char**, int*);
-PyAPI_FUNC(PyObject *) PyString_DecodeEscape(const char *, Py_ssize_t, 
-						   const char *, Py_ssize_t,
+PyAPI_FUNC(PyObject *) PyString_DecodeEscape(const char *, int, 
+						   const char *, int,
 						   const char *);
 
 PyAPI_FUNC(void) PyString_InternInPlace(PyObject **);
@@ -89,7 +88,7 @@ PyAPI_FUNC(void) _Py_ReleaseInternedStrings(void);
 
 /* Macro, trading safety for speed */
 #define PyString_AS_STRING(op) (((PyStringObject *)(op))->ob_sval)
-#define PyString_GET_SIZE(op)  Py_SIZE(op)
+#define PyString_GET_SIZE(op)  (((PyStringObject *)(op))->ob_size)
 
 /* _PyString_Join(sep, x) is like sep.join(x).  sep must be PyStringObject*,
    x must be an iterable object. */
@@ -102,7 +101,7 @@ PyAPI_FUNC(PyObject *) _PyString_Join(PyObject *sep, PyObject *x);
 
 PyAPI_FUNC(PyObject*) PyString_Decode(
     const char *s,              /* encoded string */
-    Py_ssize_t size,            /* size of buffer */
+    int size,                   /* size of buffer */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
     );
@@ -112,7 +111,7 @@ PyAPI_FUNC(PyObject*) PyString_Decode(
 
 PyAPI_FUNC(PyObject*) PyString_Encode(
     const char *s,              /* string char buffer */
-    Py_ssize_t size,            /* number of chars to encode */
+    int size,                   /* number of chars to encode */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
     );
@@ -172,27 +171,11 @@ PyAPI_FUNC(PyObject*) PyString_AsDecodedString(
 PyAPI_FUNC(int) PyString_AsStringAndSize(
     register PyObject *obj,	/* string or Unicode object */
     register char **s,		/* pointer to buffer variable */
-    register Py_ssize_t *len	/* pointer to length variable or NULL
+    register int *len		/* pointer to length variable or NULL
 				   (only possible for 0-terminated
 				   strings) */
     );
-
-/* Using the current locale, insert the thousands grouping
-   into the string pointed to by buffer.  For the argument descriptions,
-   see Objects/stringlib/localeutil.h */
-
-PyAPI_FUNC(int) _PyString_InsertThousandsGrouping(char *buffer,
-						  Py_ssize_t n_buffer,
-						  Py_ssize_t n_digits,
-						  Py_ssize_t buf_size,
-						  Py_ssize_t *count,
-						  int append_zero_char);
-
-/* Format the object based on the format_spec, as defined in PEP 3101
-   (Advanced String Formatting). */
-PyAPI_FUNC(PyObject *) _PyBytes_FormatAdvanced(PyObject *obj,
-					       char *format_spec,
-					       Py_ssize_t format_spec_len);
+    
 
 #ifdef __cplusplus
 }

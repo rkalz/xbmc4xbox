@@ -1,4 +1,5 @@
 import pickle
+import unittest
 from cStringIO import StringIO
 
 from test import test_support

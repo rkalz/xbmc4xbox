@@ -4,10 +4,9 @@ Implements the Distutils 'sdist' command (create a source distribution)."""
 
 # This module should be kept compatible with Python 2.1.
 
-__revision__ = "$Id: sdist.py 68968 2009-01-26 17:20:15Z tarek.ziade $"
+__revision__ = "$Id: sdist.py 37828 2004-11-10 22:23:15Z loewis $"
 
-import os, string
-import sys
+import sys, os, string
 from types import *
 from glob import glob
 from distutils.core import Command
@@ -348,25 +347,15 @@ class sdist (Command):
           * the build tree (typically "build")
           * the release tree itself (only an issue if we ran "sdist"
             previously with --keep-temp, or it aborted)
-          * any RCS, CVS, .svn, .hg, .git, .bzr, _darcs directories
+          * any RCS, CVS and .svn directories
         """
         build = self.get_finalized_command('build')
         base_dir = self.distribution.get_fullname()
 
         self.filelist.exclude_pattern(None, prefix=build.build_base)
         self.filelist.exclude_pattern(None, prefix=base_dir)
+        self.filelist.exclude_pattern(r'/(RCS|CVS|\.svn)/.*', is_regex=1)
 
-        # pruning out vcs directories
-        # both separators are used under win32
-        if sys.platform == 'win32':
-            seps = r'/|\\'
-        else:
-            seps = '/'
-
-        vcs_dirs = ['RCS', 'CVS', r'\.svn', r'\.hg', r'\.git', r'\.bzr',
-                    '_darcs']
-        vcs_ptrn = r'(^|%s)(%s)(%s).*' % (seps, '|'.join(vcs_dirs), seps)
-        self.filelist.exclude_pattern(vcs_ptrn, is_regex=1)
 
     def write_manifest (self):
         """Write the file list in 'self.filelist' (presumably as filled in
@@ -394,7 +383,6 @@ class sdist (Command):
             if line[-1] == '\n':
                 line = line[0:-1]
             self.filelist.append(line)
-        manifest.close()
 
     # read_manifest ()
 
@@ -458,14 +446,9 @@ class sdist (Command):
 
         self.make_release_tree(base_dir, self.filelist.files)
         archive_files = []              # remember names of files we create
-        # tar archive must be created last to avoid overwrite and remove
-        if 'tar' in self.formats:
-            self.formats.append(self.formats.pop(self.formats.index('tar')))
-
         for fmt in self.formats:
             file = self.make_archive(base_name, fmt, base_dir=base_dir)
             archive_files.append(file)
-            self.distribution.dist_files.append(('sdist', '', file))
 
         self.archive_files = archive_files
 

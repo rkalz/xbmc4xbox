@@ -14,7 +14,7 @@ cdattrs = ['BLOCKSIZE', 'CDROM', 'DATASIZE', 'ERROR', 'NODISC', 'PAUSED', 'PLAYI
 # attributes.  More comprehensive examples can be found in Demo/cd and
 # require that you have a CD and a CD ROM drive
 
-def test_main():
+def main():
     # touch all the attributes of cd without doing anything
     if verbose:
         print 'Touching cd module attributes...'
@@ -23,7 +23,4 @@ def test_main():
             print 'touching: ', attr
         getattr(cd, attr)
 
-
-
-if __name__ == '__main__':
-    test_main()
+main()

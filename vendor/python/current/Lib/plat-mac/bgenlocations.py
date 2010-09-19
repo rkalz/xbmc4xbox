@@ -5,10 +5,7 @@
 # but mac-style for MacPython, whether running on OS9 or OSX.
 #
 
-import os
-
-from warnings import warnpy3k
-warnpy3k("In 3.x, the bgenlocations module is removed.", stacklevel=2)
+import sys, os
 
 Error = "bgenlocations.Error"
 #

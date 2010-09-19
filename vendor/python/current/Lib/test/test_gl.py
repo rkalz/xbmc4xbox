@@ -81,7 +81,7 @@ glattrs = ['RGBcolor', 'RGBcursor', 'RGBmode', 'RGBrange', 'RGBwritemask',
 'xfpt4s', 'xfpti', 'xfpts', 'zbuffer', 'zclear', 'zdraw', 'zfunction',
 'zsource', 'zwritemask']
 
-def test_main():
+def main():
     # insure that we at least have an X display before continuing.
     import os
     try:
@@ -147,6 +147,4 @@ def test_main():
         print 'winclose'
     gl.winclose(w)
 
-
-if __name__ == '__main__':
-    test_main()
+main()

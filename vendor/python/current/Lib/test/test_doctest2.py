@@ -80,7 +80,6 @@ class C(object):
         -12
         """)
 
-    @staticmethod
     def statm():
         """
         A static method.
@@ -92,7 +91,8 @@ class C(object):
         """
         return 666
 
-    @classmethod
+    statm = staticmethod(statm)
+
     def clsm(cls, val):
         """
         A class method.
@@ -103,6 +103,8 @@ class C(object):
         23
         """
         return val
+
+    clsm = classmethod(clsm)
 
 def test_main():
     from test import test_doctest2

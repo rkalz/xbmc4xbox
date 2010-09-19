@@ -73,10 +73,6 @@ There are also some utility functions here.
 
 import time
 
-from warnings import warnpy3k
-warnpy3k("in 3.x, rfc822 has been removed in favor of the email package",
-         stacklevel=2)
-
 __all__ = ["Message","AddressList","parsedate","parsedate_tz","mktime_tz"]
 
 _blanklines = ('\r\n', '\n')            # Optimization for islast()
@@ -94,6 +90,8 @@ class Message:
                 fp.tell()
             except (AttributeError, IOError):
                 seekable = 0
+            else:
+                seekable = 1
         self.fp = fp
         self.seekable = seekable
         self.startofheaders = None
@@ -136,7 +134,7 @@ class Message:
         """
         self.dict = {}
         self.unixfrom = ''
-        self.headers = lst = []
+        self.headers = list = []
         self.status = ''
         headerseen = ""
         firstline = 1
@@ -163,7 +161,7 @@ class Message:
             firstline = 0
             if headerseen and line[0] in ' \t':
                 # It's a continuation line.
-                lst.append(line)
+                list.append(line)
                 x = (self.dict[headerseen] + "\n " + line.strip())
                 self.dict[headerseen] = x.strip()
                 continue
@@ -176,7 +174,7 @@ class Message:
             headerseen = self.isheader(line)
             if headerseen:
                 # It's a legal header line, save it.
-                lst.append(line)
+                list.append(line)
                 self.dict[headerseen] = line[len(headerseen)+1:].strip()
                 continue
             else:
@@ -204,7 +202,8 @@ class Message:
         i = line.find(':')
         if i > 0:
             return line[:i].lower()
-        return None
+        else:
+            return None
 
     def islast(self, line):
         """Determine whether a line is a legal end of RFC 2822 headers.
@@ -236,7 +235,7 @@ class Message:
         """
         name = name.lower() + ':'
         n = len(name)
-        lst = []
+        list = []
         hit = 0
         for line in self.headers:
             if line[:n].lower() == name:
@@ -244,8 +243,8 @@ class Message:
             elif not line[:1].isspace():
                 hit = 0
             if hit:
-                lst.append(line)
-        return lst
+                list.append(line)
+        return list
 
     def getfirstmatchingheader(self, name):
         """Get the first header line matching name.
@@ -255,7 +254,7 @@ class Message:
         """
         name = name.lower() + ':'
         n = len(name)
-        lst = []
+        list = []
         hit = 0
         for line in self.headers:
             if hit:
@@ -264,8 +263,8 @@ class Message:
             elif line[:n].lower() == name:
                 hit = 1
             if hit:
-                lst.append(line)
-        return lst
+                list.append(line)
+        return list
 
     def getrawheader(self, name):
         """A higher-level interface to getfirstmatchingheader().
@@ -276,11 +275,11 @@ class Message:
         occur.
         """
 
-        lst = self.getfirstmatchingheader(name)
-        if not lst:
+        list = self.getfirstmatchingheader(name)
+        if not list:
             return None
-        lst[0] = lst[0][len(name) + 1:]
-        return ''.join(lst)
+        list[0] = list[0][len(name) + 1:]
+        return ''.join(list)
 
     def getheader(self, name, default=None):
         """Get the header value for a name.
@@ -289,7 +288,10 @@ class Message:
         header value for a given header name, or None if it doesn't exist.
         This uses the dictionary version which finds the *last* such header.
         """
-        return self.dict.get(name.lower(), default)
+        try:
+            return self.dict[name.lower()]
+        except KeyError:
+            return default
     get = getheader
 
     def getheaders(self, name):
@@ -397,7 +399,8 @@ class Message:
         del self[name] # Won't fail if it doesn't exist
         self.dict[name.lower()] = value
         text = name + ": " + value
-        for line in text.split("\n"):
+        lines = text.split("\n")
+        for line in lines:
             self.headers.append(line + "\n")
 
     def __delitem__(self, name):
@@ -408,7 +411,7 @@ class Message:
         del self.dict[name]
         name = name + ':'
         n = len(name)
-        lst = []
+        list = []
         hit = 0
         for i in range(len(self.headers)):
             line = self.headers[i]
@@ -417,8 +420,8 @@ class Message:
             elif not line[:1].isspace():
                 hit = 0
             if hit:
-                lst.append(i)
-        for i in reversed(lst):
+                list.append(i)
+        for i in reversed(list):
             del self.headers[i]
 
     def setdefault(self, name, default=""):
@@ -427,7 +430,8 @@ class Message:
             return self.dict[lowername]
         else:
             text = name + ": " + default
-            for line in text.split("\n"):
+            lines = text.split("\n")
+            for line in lines:
                 self.headers.append(line + "\n")
             self.dict[lowername] = default
             return default
@@ -469,28 +473,29 @@ class Message:
 # XXX The inverses of the parse functions may also be useful.
 
 
-def unquote(s):
+def unquote(str):
     """Remove quotes from a string."""
-    if len(s) > 1:
-        if s.startswith('"') and s.endswith('"'):
-            return s[1:-1].replace('\\\\', '\\').replace('\\"', '"')
-        if s.startswith('<') and s.endswith('>'):
-            return s[1:-1]
-    return s
+    if len(str) > 1:
+        if str.startswith('"') and str.endswith('"'):
+            return str[1:-1].replace('\\\\', '\\').replace('\\"', '"')
+        if str.startswith('<') and str.endswith('>'):
+            return str[1:-1]
+    return str
 
 
-def quote(s):
+def quote(str):
     """Add quotes around a string."""
-    return s.replace('\\', '\\\\').replace('"', '\\"')
+    return str.replace('\\', '\\\\').replace('"', '\\"')
 
 
 def parseaddr(address):
     """Parse an address into a (realname, mailaddr) tuple."""
     a = AddressList(address)
-    lst = a.addresslist
-    if not lst:
+    list = a.addresslist
+    if not list:
         return (None, None)
-    return lst[0]
+    else:
+        return list[0]
 
 
 class AddrlistClass:
@@ -538,10 +543,12 @@ class AddrlistClass:
         Returns a list containing all of the addresses.
         """
         result = []
-        ad = self.getaddress()
-        while ad:
-            result += ad
+        while 1:
             ad = self.getaddress()
+            if ad:
+                result += ad
+            else:
+                break
         return result
 
     def getaddress(self):
@@ -574,11 +581,11 @@ class AddrlistClass:
             returnlist = []
 
             fieldlen = len(self.field)
-            self.pos += 1
+            self.pos = self.pos + 1
             while self.pos < len(self.field):
                 self.gotonext()
                 if self.pos < fieldlen and self.field[self.pos] == ';':
-                    self.pos += 1
+                    self.pos = self.pos + 1
                     break
                 returnlist = returnlist + self.getaddress()
 
@@ -595,11 +602,11 @@ class AddrlistClass:
             if plist:
                 returnlist = [(' '.join(self.commentlist), plist[0])]
             elif self.field[self.pos] in self.specials:
-                self.pos += 1
+                self.pos = self.pos + 1
 
         self.gotonext()
         if self.pos < len(self.field) and self.field[self.pos] == ',':
-            self.pos += 1
+            self.pos = self.pos + 1
         return returnlist
 
     def getrouteaddr(self):
@@ -611,7 +618,7 @@ class AddrlistClass:
             return
 
         expectroute = 0
-        self.pos += 1
+        self.pos = self.pos + 1
         self.gotonext()
         adlist = ""
         while self.pos < len(self.field):
@@ -619,16 +626,16 @@ class AddrlistClass:
                 self.getdomain()
                 expectroute = 0
             elif self.field[self.pos] == '>':
-                self.pos += 1
+                self.pos = self.pos + 1
                 break
             elif self.field[self.pos] == '@':
-                self.pos += 1
+                self.pos = self.pos + 1
                 expectroute = 1
             elif self.field[self.pos] == ':':
-                self.pos += 1
+                self.pos = self.pos + 1
             else:
                 adlist = self.getaddrspec()
-                self.pos += 1
+                self.pos = self.pos + 1
                 break
             self.gotonext()
 
@@ -642,7 +649,7 @@ class AddrlistClass:
         while self.pos < len(self.field):
             if self.field[self.pos] == '.':
                 aslist.append('.')
-                self.pos += 1
+                self.pos = self.pos + 1
             elif self.field[self.pos] == '"':
                 aslist.append('"%s"' % self.getquote())
             elif self.field[self.pos] in self.atomends:
@@ -654,7 +661,7 @@ class AddrlistClass:
             return ''.join(aslist)
 
         aslist.append('@')
-        self.pos += 1
+        self.pos = self.pos + 1
         self.gotonext()
         return ''.join(aslist) + self.getdomain()
 
@@ -663,13 +670,13 @@ class AddrlistClass:
         sdlist = []
         while self.pos < len(self.field):
             if self.field[self.pos] in self.LWS:
-                self.pos += 1
+                self.pos = self.pos + 1
             elif self.field[self.pos] == '(':
                 self.commentlist.append(self.getcomment())
             elif self.field[self.pos] == '[':
                 sdlist.append(self.getdomainliteral())
             elif self.field[self.pos] == '.':
-                self.pos += 1
+                self.pos = self.pos + 1
                 sdlist.append('.')
             elif self.field[self.pos] in self.atomends:
                 break
@@ -694,22 +701,21 @@ class AddrlistClass:
 
         slist = ['']
         quote = 0
-        self.pos += 1
+        self.pos = self.pos + 1
         while self.pos < len(self.field):
             if quote == 1:
                 slist.append(self.field[self.pos])
                 quote = 0
             elif self.field[self.pos] in endchars:
-                self.pos += 1
+                self.pos = self.pos + 1
                 break
             elif allowcomments and self.field[self.pos] == '(':
                 slist.append(self.getcomment())
-                continue        # have already advanced pos from getcomment
             elif self.field[self.pos] == '\\':
                 quote = 1
             else:
                 slist.append(self.field[self.pos])
-            self.pos += 1
+            self.pos = self.pos + 1
 
         return ''.join(slist)
 
@@ -740,7 +746,7 @@ class AddrlistClass:
             if self.field[self.pos] in atomends:
                 break
             else: atomlist.append(self.field[self.pos])
-            self.pos += 1
+            self.pos = self.pos + 1
 
         return ''.join(atomlist)
 
@@ -755,7 +761,7 @@ class AddrlistClass:
 
         while self.pos < len(self.field):
             if self.field[self.pos] in self.LWS:
-                self.pos += 1
+                self.pos = self.pos + 1
             elif self.field[self.pos] == '"':
                 plist.append(self.getquote())
             elif self.field[self.pos] == '(':
@@ -858,11 +864,6 @@ def parsedate_tz(data):
     if data[0][-1] in (',', '.') or data[0].lower() in _daynames:
         # There's a dayname here. Skip it
         del data[0]
-    else:
-        # no space after the "weekday,"?
-        i = data[0].rfind(',')
-        if i >= 0:
-            data[0] = data[0][i+1:]
     if len(data) == 3: # RFC 850 date, deprecated
         stuff = data[0].split('-')
         if len(stuff) == 3:
@@ -929,15 +930,16 @@ def parsedate_tz(data):
         else:
             tzsign = 1
         tzoffset = tzsign * ( (tzoffset//100)*3600 + (tzoffset % 100)*60)
-    return (yy, mm, dd, thh, tmm, tss, 0, 1, 0, tzoffset)
+    tuple = (yy, mm, dd, thh, tmm, tss, 0, 1, 0, tzoffset)
+    return tuple
 
 
 def parsedate(data):
     """Convert a time string to a time tuple."""
     t = parsedate_tz(data)
-    if t is None:
-        return t
-    return t[:9]
+    if type(t) == type( () ):
+        return t[:9]
+    else: return t
 
 
 def mktime_tz(data):
@@ -963,10 +965,10 @@ def formatdate(timeval=None):
         timeval = time.time()
     timeval = time.gmtime(timeval)
     return "%s, %02d %s %04d %02d:%02d:%02d GMT" % (
-            ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[timeval[6]],
+            ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][timeval[6]],
             timeval[2],
-            ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
-             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")[timeval[1]-1],
+            ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][timeval[1]-1],
                                 timeval[0], timeval[3], timeval[4], timeval[5])
 
 
@@ -1000,7 +1002,7 @@ if __name__ == '__main__':
     m.rewindbody()
     n = 0
     while f.readline():
-        n += 1
+        n = n + 1
     print 'Lines:', n
     print '-'*70
     print 'len =', len(m)

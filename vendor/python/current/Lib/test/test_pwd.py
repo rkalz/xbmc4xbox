@@ -35,14 +35,9 @@ class PwdTest(unittest.TestCase):
             entriesbyname.setdefault(e.pw_name, []).append(e)
             entriesbyuid.setdefault(e.pw_uid, []).append(e)
 
-        if len(entries) > 1000:  # Huge passwd file (NIS?) -- skip the rest
-            return
-
         # check whether the entry returned by getpwuid()
         # for each uid is among those from getpwall() for this uid
         for e in entries:
-            if not e[0] or e[0] == '+':
-                continue # skip NIS entries etc.
             self.assert_(pwd.getpwnam(e.pw_name) in entriesbyname[e.pw_name])
             self.assert_(pwd.getpwuid(e.pw_uid) in entriesbyuid[e.pw_uid])
 
@@ -62,7 +57,7 @@ class PwdTest(unittest.TestCase):
         namei = 0
         fakename = allnames[namei]
         while fakename in bynames:
-            chars = list(fakename)
+            chars = map(None, fakename)
             for i in xrange(len(chars)):
                 if chars[i] == 'z':
                     chars[i] = 'A'
@@ -79,7 +74,7 @@ class PwdTest(unittest.TestCase):
                 except IndexError:
                     # should never happen... if so, just forget it
                     break
-            fakename = ''.join(chars)
+            fakename = ''.join(map(None, chars))
 
         self.assertRaises(KeyError, pwd.getpwnam, fakename)
 

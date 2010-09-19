@@ -4,7 +4,7 @@ import shutil
 import gettext
 import unittest
 
-from test import test_support
+from test.test_support import run_suite
 
 
 # TODO:
@@ -145,14 +145,6 @@ trggrkg zrffntr pngnybt yvoenel.''')
         # Try unicode return type
         t.install(unicode=True)
         eq(_('mullusk'), 'bacon')
-        # Test installation of other methods
-        import __builtin__
-        t.install(unicode=True, names=["gettext", "lgettext"])
-        eq(_, t.ugettext)
-        eq(__builtin__.gettext, t.ugettext)
-        eq(lgettext, t.lgettext)
-        del __builtin__.gettext
-        del __builtin__.lgettext
 
 
 class GettextTestCase2(GettextBaseTest):
@@ -336,8 +328,19 @@ class WeirdMetadataTest(GettextBaseTest):
            'John Doe <jdoe@example.com>\nJane Foobar <jfoobar@example.com>')
 
 
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(GettextTestCase1))
+    suite.addTest(unittest.makeSuite(GettextTestCase2))
+    suite.addTest(unittest.makeSuite(PluralFormsTestCase))
+    suite.addTest(unittest.makeSuite(UnicodeTranslationsTest))
+    suite.addTest(unittest.makeSuite(WeirdMetadataTest))
+    return suite
+
+
 def test_main():
-    test_support.run_unittest(__name__)
+    run_suite(suite())
+
 
 if __name__ == '__main__':
     test_main()

@@ -5,10 +5,6 @@
 
 #include <dlfcn.h>
 
-#ifdef __VMS
-#include <unistd.h>
-#endif
-
 #ifndef RTLD_LAZY
 #define RTLD_LAZY 1
 #endif
@@ -62,7 +58,7 @@ dl_sym(dlobject *xp, PyObject *args)
 		name = PyString_AS_STRING(args);
 	} else {
 		PyErr_Format(PyExc_TypeError, "expected string, found %.200s",
-			     Py_TYPE(args)->tp_name);
+			     args->ob_type->tp_name);
 		return NULL;
 	}
 	func = dlsym(xp->dl_handle, name);
@@ -81,8 +77,8 @@ dl_call(dlobject *xp, PyObject *args)
                      long, long, long, long, long);
 	long alist[10];
 	long res;
-	Py_ssize_t i;
-	Py_ssize_t n = PyTuple_Size(args);
+	int i;
+	int n = PyTuple_Size(args);
 	if (n < 1) {
 		PyErr_SetString(PyExc_TypeError, "at least a name is needed");
 		return NULL;
@@ -141,7 +137,8 @@ dl_getattr(dlobject *xp, char *name)
 
 
 static PyTypeObject Dltype = {
-	PyVarObject_HEAD_INIT(NULL, 0)
+	PyObject_HEAD_INIT(NULL)
+	0,			/*ob_size*/
 	"dl.dl",		/*tp_name*/
 	sizeof(dlobject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
@@ -186,30 +183,9 @@ dl_open(PyObject *self, PyObject *args)
 	}
 	handle = dlopen(name, mode);
 	if (handle == NULL) {
-		char *errmsg = dlerror();
-		if (!errmsg)
-			errmsg = "dlopen() error";
-		PyErr_SetString(Dlerror, errmsg);
+		PyErr_SetString(Dlerror, dlerror());
 		return NULL;
 	}
-#ifdef __VMS
-	/*   Under OpenVMS dlopen doesn't do any check, just save the name
-	 * for later use, so we have to check if the file is readable,
-	 * the name can be a logical or a file from SYS$SHARE.
-	 */
-	if (access(name, R_OK)) {
-		char fname[strlen(name) + 20];
-		strcpy(fname, "SYS$SHARE:");
-		strcat(fname, name);
-		strcat(fname, ".EXE");
-		if (access(fname, R_OK)) {
-			dlclose(handle);
-			PyErr_SetString(Dlerror,
-				"File not found or protection violation");
-			return NULL;
-		}
-	}
-#endif
 	return newdlobject(handle);
 }
 
@@ -238,17 +214,11 @@ initdl(void)
 {
 	PyObject *m, *d, *x;
 
-    if (PyErr_WarnPy3k("the dl module has been removed in "
-                        "Python 3.0; use the ctypes module instead", 2) < 0)
-        return;    
-
 	/* Initialize object type */
-	Py_TYPE(&Dltype) = &PyType_Type;
+	Dltype.ob_type = &PyType_Type;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("dl", dl_methods);
-	if (m == NULL)
-		return;
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);

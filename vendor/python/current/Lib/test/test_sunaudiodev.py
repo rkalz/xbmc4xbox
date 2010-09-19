@@ -1,5 +1,5 @@
-from test.test_support import findfile, TestFailed, TestSkipped, import_module
-sunaudiodev = import_module('sunaudiodev', deprecated=True)
+from test.test_support import verbose, findfile, TestFailed, TestSkipped
+import sunaudiodev
 import os
 
 try:
@@ -22,11 +22,7 @@ def play_sound_file(path):
         a.write(data)
         a.close()
 
-
-def test_main():
+def test():
     play_sound_file(findfile('audiotest.au'))
 
-
-
-if __name__ == '__main__':
-    test_main()
+test()

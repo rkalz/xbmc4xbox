@@ -2,17 +2,26 @@
 TestCases for exercising a Queue DB.
 """
 
-import os, string
+import sys, os, string
+import tempfile
 from pprint import pprint
 import unittest
 
-from test_all import db, verbose, get_new_database_path
+try:
+    # For Pythons w/distutils pybsddb
+    from bsddb3 import db
+except ImportError:
+    # For Python 2.3
+    from bsddb import db
+
+from test_all import verbose
+
 
 #----------------------------------------------------------------------
 
 class SimpleQueueTestCase(unittest.TestCase):
     def setUp(self):
-        self.filename = get_new_database_path()
+        self.filename = tempfile.mktemp()
 
     def tearDown(self):
         try:
@@ -39,14 +48,14 @@ class SimpleQueueTestCase(unittest.TestCase):
         for x in string.letters:
             d.append(x * 40)
 
-        self.assertEqual(len(d), len(string.letters))
+        assert len(d) == 52
 
         d.put(100, "some more data")
         d.put(101, "and some more ")
         d.put(75,  "out of order")
         d.put(1,   "replacement data")
 
-        self.assertEqual(len(d), len(string.letters)+3)
+        assert len(d) == 55
 
         if verbose:
             print "before close" + '-' * 30
@@ -61,11 +70,7 @@ class SimpleQueueTestCase(unittest.TestCase):
             print "after open" + '-' * 30
             pprint(d.stat())
 
-        # Test "txn" as a positional parameter
-        d.append("one more", None)
-        # Test "txn" as a keyword parameter
-        d.append("another one", txn=None)
-
+        d.append("one more")
         c = d.cursor()
 
         if verbose:
@@ -83,9 +88,9 @@ class SimpleQueueTestCase(unittest.TestCase):
             print "after consume loop" + '-' * 30
             pprint(d.stat())
 
-        self.assertEqual(len(d), 0, \
+        assert len(d) == 0, \
                "if you see this message then you need to rebuild " \
-               "Berkeley DB 3.1.17 with the patch in patches/qam_stat.diff")
+               "BerkeleyDB 3.1.17 with the patch in patches/qam_stat.diff"
 
         d.close()
 
@@ -115,14 +120,14 @@ class SimpleQueueTestCase(unittest.TestCase):
         for x in string.letters:
             d.append(x * 40)
 
-        self.assertEqual(len(d), len(string.letters))
+        assert len(d) == 52
 
         d.put(100, "some more data")
         d.put(101, "and some more ")
         d.put(75,  "out of order")
         d.put(1,   "replacement data")
 
-        self.assertEqual(len(d), len(string.letters)+3)
+        assert len(d) == 55
 
         if verbose:
             print "before close" + '-' * 30

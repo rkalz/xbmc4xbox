@@ -9,10 +9,9 @@
 
     Each codec module must export the following interface:
 
-    * getregentry() -> codecs.CodecInfo object
-    The getregentry() API must a CodecInfo object with encoder, decoder,
-    incrementalencoder, incrementaldecoder, streamwriter and streamreader
-    atttributes which adhere to the Python Codec Interface Standard.
+    * getregentry() -> (encoder, decoder, stream_reader, stream_writer)
+    The getregentry() API must return callable objects which adhere to
+    the Python Codec Interface Standard.
 
     In addition, a module may optionally also define the following
     APIs which are then used by the package's codec search function:
@@ -28,9 +27,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 
-import codecs
-from encodings import aliases
-import __builtin__
+import codecs, exceptions, types, aliases
 
 _cache = {}
 _unknown = '--unknown--'
@@ -43,7 +40,8 @@ _norm_encoding_map = ('                                              . '
                       '                ')
 _aliases = aliases.aliases
 
-class CodecRegistryError(LookupError, SystemError):
+class CodecRegistryError(exceptions.LookupError,
+                         exceptions.SystemError):
     pass
 
 def normalize_encoding(encoding):
@@ -61,7 +59,7 @@ def normalize_encoding(encoding):
     """
     # Make sure we have an 8-bit string, because .translate() works
     # differently for Unicode strings.
-    if hasattr(__builtin__, "unicode") and isinstance(encoding, unicode):
+    if type(encoding) is types.UnicodeType:
         # Note that .encode('latin-1') does *not* use the codec
         # registry, so this call doesn't recurse. (See unicodeobject.c
         # PyUnicode_AsEncodedString() for details)
@@ -91,13 +89,11 @@ def search_function(encoding):
     else:
         modnames = [norm_encoding]
     for modname in modnames:
-        if not modname or '.' in modname:
+        if not modname:
             continue
         try:
-            # Import is absolute to prevent the possibly malicious import of a
-            # module with side-effects that is not in the 'encodings' package.
-            mod = __import__('encodings.' + modname, fromlist=_import_tail,
-                             level=0)
+            mod = __import__(modname,
+                             globals(), locals(), _import_tail)
         except ImportError:
             pass
         else:
@@ -117,24 +113,16 @@ def search_function(encoding):
         return None
 
     # Now ask the module for the registry entry
-    entry = getregentry()
-    if not isinstance(entry, codecs.CodecInfo):
-        if not 4 <= len(entry) <= 7:
+    entry = tuple(getregentry())
+    if len(entry) != 4:
+        raise CodecRegistryError,\
+              'module "%s" (%s) failed to register' % \
+              (mod.__name__, mod.__file__)
+    for obj in entry:
+        if not callable(obj):
             raise CodecRegistryError,\
-                 'module "%s" (%s) failed to register' % \
+                  'incompatible codecs in module "%s" (%s)' % \
                   (mod.__name__, mod.__file__)
-        if not callable(entry[0]) or \
-           not callable(entry[1]) or \
-           (entry[2] is not None and not callable(entry[2])) or \
-           (entry[3] is not None and not callable(entry[3])) or \
-           (len(entry) > 4 and entry[4] is not None and not callable(entry[4])) or \
-           (len(entry) > 5 and entry[5] is not None and not callable(entry[5])):
-            raise CodecRegistryError,\
-                'incompatible codecs in module "%s" (%s)' % \
-                (mod.__name__, mod.__file__)
-        if len(entry)<7 or entry[6] is None:
-            entry += (None,)*(6-len(entry)) + (mod.__name__.split(".", 1)[1],)
-        entry = codecs.CodecInfo(*entry)
 
     # Cache the codec registry entry
     _cache[encoding] = entry

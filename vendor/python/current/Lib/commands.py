@@ -32,8 +32,6 @@ __all__ = ["getstatusoutput","getoutput","getstatus"]
 #
 def getstatus(file):
     """Return output of "ls -ld <file>" in a string."""
-    import warnings
-    warnings.warn("commands.getstatus() is deprecated", DeprecationWarning, 2)
     return getoutput('ls -ld' + mkarg(file))
 
 
@@ -63,8 +61,6 @@ def getstatusoutput(cmd):
 # Make command argument from directory and pathname (prefix space, add quotes).
 #
 def mk2arg(head, x):
-    from warnings import warnpy3k
-    warnpy3k("In 3.x, mk2arg has been removed.")
     import os
     return mkarg(os.path.join(head, x))
 
@@ -77,8 +73,6 @@ def mk2arg(head, x):
 # with backslash.
 #
 def mkarg(x):
-    from warnings import warnpy3k
-    warnpy3k("in 3.x, mkarg has been removed.")
     if '\'' not in x:
         return ' \'' + x + '\''
     s = ' "'

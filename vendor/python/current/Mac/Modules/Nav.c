@@ -33,8 +33,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "pymactoolbox.h"
 #include <Carbon/Carbon.h>
 
-#ifndef __LP64__
-
 static PyObject *ErrorObject;
 
 static NavEventUPP my_eventProcUPP;
@@ -133,7 +131,7 @@ filldialogoptions(PyObject *d,
 		OSType *fileTypeP,
 		OSType *fileCreatorP)
 {
-	Py_ssize_t pos = 0;
+	int pos = 0;
 	PyObject *key, *value;
 	char *keystr;
 	AEDesc *defaultLocation_storage;
@@ -303,18 +301,13 @@ navrr_dealloc(navrrobject *self)
 static PyObject *
 navrr_getattr(navrrobject *self, char *name)
 {
-	FSRef fsr;
 	FSSpec fss;
+	FSRef fsr;
 	
 	if( strcmp(name, "__members__") == 0 )
-		return Py_BuildValue(
-				"ssssssssss", 
-				"version", "validRecord", "replacing",
-			"isStationery", "translationNeeded", 
-			"selection", 
-			"selection_fsr",
+		return Py_BuildValue("ssssssssss", "version", "validRecord", "replacing",
+			"isStationery", "translationNeeded", "selection", "selection_fsr",
 			"fileTranslation", "keyScript", "saveFileName");
-
 	if( strcmp(name, "version") == 0 )
 		return Py_BuildValue("h", self->itself.version);
 	if( strcmp(name, "validRecord") == 0 )
@@ -326,8 +319,7 @@ navrr_getattr(navrrobject *self, char *name)
 	if( strcmp(name, "translationNeeded") == 0 )
 		return Py_BuildValue("l", (long)self->itself.translationNeeded);
 	if( strcmp(name, "selection") == 0 ) {
-		SInt32 i;
-		long count;
+		SInt32 i, count;
 		OSErr err;
 		PyObject *rv, *rvitem;
 		AEDesc desc;
@@ -357,8 +349,7 @@ navrr_getattr(navrrobject *self, char *name)
 		return rv;
 	}
 	if( strcmp(name, "selection_fsr") == 0 ) {
-		SInt32 i;
-		long count;
+		SInt32 i, count;
 		OSErr err;
 		PyObject *rv, *rvitem;
 		AEDesc desc;
@@ -870,8 +861,7 @@ nav_NavGetDefaultDialogOptions(PyObject *self, PyObject *args)
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
-	return Py_BuildValue(
-			"{s:h,s:l,s:O&,s:O&,s:O&,s:O&,s:O&,s:O&,s:O&,s:O&,s:O&}",
+	return Py_BuildValue("{s:h,s:l,s:O&,s:O&,s:O&,s:O&,s:O&,s:O&,s:O&,s:O&,s:O&}",
 		"version", dialogOptions.version,
 		"dialogOptionFlags", dialogOptions.dialogOptionFlags,
 		"location", PyMac_BuildPoint, dialogOptions.location,
@@ -881,9 +871,8 @@ nav_NavGetDefaultDialogOptions(PyObject *self, PyObject *args)
 		"cancelButtonLabel", PyMac_BuildStr255, &dialogOptions.cancelButtonLabel,
 		"savedFileName", PyMac_BuildStr255, &dialogOptions.savedFileName,
 		"message", PyMac_BuildStr255, &dialogOptions.message,
-		"preferenceKey", PyMac_BuildOSType, dialogOptions.preferenceKey
-		,"popupExtension", OptResObj_New, dialogOptions.popupExtension
-		);
+		"preferenceKey", PyMac_BuildOSType, dialogOptions.preferenceKey,
+		"popupExtension", OptResObj_New, dialogOptions.popupExtension);
 }
 
 /* List of methods defined in the module */
@@ -923,23 +912,10 @@ static char Nav_module_documentation[] =
 "Pass None as eventProc to get movable-modal dialogs that process updates through the standard Python mechanism."
 ;
 
-
-#endif /* !__LP64__ */
-
-
 void
 initNav(void)
 {
 	PyObject *m, *d;
-	
-	if (PyErr_WarnPy3k("In 3.x, Nav is removed.", 1))
-		return;
-
-#ifdef __LP64__
-	PyErr_SetString(PyExc_ImportError, "Navigation Services not available in 64-bit mode");
-	return;
-
-#else	/* !__LP64__ */
 
 	/* Test that we have NavServices */
 	if ( !NavServicesAvailable() ) {
@@ -962,7 +938,6 @@ initNav(void)
 	my_eventProcUPP = NewNavEventUPP(my_eventProc);
 	my_previewProcUPP = NewNavPreviewUPP(my_previewProc);
 	my_filterProcUPP = NewNavObjectFilterUPP(my_filterProc);
-#endif /* !__LP64__ */
 	
 }
 

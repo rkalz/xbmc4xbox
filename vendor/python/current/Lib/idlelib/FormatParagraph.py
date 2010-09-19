@@ -75,7 +75,6 @@ class FormatParagraph:
         else:
             text.mark_set("insert", last)
         text.see("insert")
-        return "break"
 
 def find_paragraph(text, mark):
     lineno, col = map(int, mark.split("."))

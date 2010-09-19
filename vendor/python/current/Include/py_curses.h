@@ -10,12 +10,7 @@
 #ifdef	_BSD_WCHAR_T_DEFINED_
 #define _WCHAR_T
 #endif
-
-/* the following define is necessary for OS X 10.6; without it, the
-   Apple-supplied ncurses.h sets NCURSES_OPAQUE to 1, and then Python
-   can't get at the WINDOW flags field. */
-#define NCURSES_OPAQUE 0
-#endif /* __APPLE__ */
+#endif
 
 #ifdef __FreeBSD__
 /*
@@ -78,7 +73,7 @@ typedef struct {
 	WINDOW *win;
 } PyCursesWindowObject;
 
-#define PyCursesWindow_Check(v)	 (Py_TYPE(v) == &PyCursesWindow_Type)
+#define PyCursesWindow_Check(v)	 ((v)->ob_type == &PyCursesWindow_Type)
 
 #ifdef CURSES_MODULE
 /* This section is used when compiling _cursesmodule.c */
@@ -95,7 +90,7 @@ static void **PyCurses_API;
 
 #define import_curses() \
 { \
-  PyObject *module = PyImport_ImportModuleNoBlock("_curses"); \
+  PyObject *module = PyImport_ImportModule("_curses"); \
   if (module != NULL) { \
     PyObject *module_dict = PyModule_GetDict(module); \
     PyObject *c_api_object = PyDict_GetItemString(module_dict, "_C_API"); \

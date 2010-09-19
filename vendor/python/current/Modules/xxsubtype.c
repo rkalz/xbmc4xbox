@@ -79,6 +79,8 @@ static PyMethodDef spamlist_methods[] = {
 	{NULL,	NULL},
 };
 
+static PyTypeObject spamlist_type;
+
 static int
 spamlist_init(spamlistobject *self, PyObject *args, PyObject *kwds)
 {
@@ -101,7 +103,8 @@ static PyGetSetDef spamlist_getsets[] = {
 };
 
 static PyTypeObject spamlist_type = {
-	PyVarObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
+	PyObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type))
+	0,
 	"xxsubtype.spamlist",
 	sizeof(spamlistobject),
 	0,
@@ -176,6 +179,8 @@ static PyMethodDef spamdict_methods[] = {
 	{NULL,	NULL},
 };
 
+static PyTypeObject spamdict_type;
+
 static int
 spamdict_init(spamdictobject *self, PyObject *args, PyObject *kwds)
 {
@@ -192,7 +197,8 @@ static PyMemberDef spamdict_members[] = {
 };
 
 static PyTypeObject spamdict_type = {
-	PyVarObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
+	PyObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type))
+	0,
 	"xxsubtype.spamdict",
 	sizeof(spamdictobject),
 	0,

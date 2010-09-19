@@ -33,10 +33,17 @@ static PyObject *
 gestalt_gestalt(PyObject *self, PyObject *args)
 {
 	OSErr iErr;
+	char *str;
+	int size;
 	OSType selector;
-	SInt32 response;
-	if (!PyArg_ParseTuple(args, "O&", PyMac_GetOSType, &selector))
+	long response;
+	if (!PyArg_Parse(args, "s#", &str, &size))
 		return NULL;
+	if (size != 4) {
+		PyErr_SetString(PyExc_TypeError, "gestalt arg must be 4-char string");
+		return NULL;
+	}
+	selector = *(OSType*)str;
 	iErr = Gestalt ( selector, &response );
 	if (iErr != 0) 
 		return PyMac_Error(iErr);
@@ -44,7 +51,7 @@ gestalt_gestalt(PyObject *self, PyObject *args)
 }
 
 static struct PyMethodDef gestalt_methods[] = {
-	{"gestalt", gestalt_gestalt, METH_VARARGS},
+	{"gestalt", gestalt_gestalt},
 	{NULL, NULL} /* Sentinel */
 };
 

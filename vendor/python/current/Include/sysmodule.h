@@ -23,7 +23,6 @@ PyAPI_DATA(int) _PySys_CheckInterval;
 
 PyAPI_FUNC(void) PySys_ResetWarnOptions(void);
 PyAPI_FUNC(void) PySys_AddWarnOption(char *);
-PyAPI_FUNC(int) PySys_HasWarnOptions(void);
 
 #ifdef __cplusplus
 }

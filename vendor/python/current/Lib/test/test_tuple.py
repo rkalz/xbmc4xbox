@@ -1,3 +1,4 @@
+import unittest
 from test import test_support, seq_tests
 
 class TupleTest(seq_tests.CommonTest):
@@ -7,13 +8,6 @@ class TupleTest(seq_tests.CommonTest):
         super(TupleTest, self).test_len()
         # calling built-in types without argument must return empty
         self.assertEqual(tuple(), ())
-        t0_3 = (0, 1, 2, 3)
-        t0_3_bis = tuple(t0_3)
-        self.assert_(t0_3 is t0_3_bis)
-        self.assertEqual(tuple([]), ())
-        self.assertEqual(tuple([0, 1, 2, 3]), (0, 1, 2, 3))
-        self.assertEqual(tuple(''), ())
-        self.assertEqual(tuple('spam'), ('s', 'p', 'a', 'm'))
 
     def test_truth(self):
         super(TupleTest, self).test_truth()

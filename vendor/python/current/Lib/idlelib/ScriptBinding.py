@@ -31,13 +31,16 @@ IDENTCHARS = string.ascii_letters + string.digits + "_"
 
 indent_message = """Error: Inconsistent indentation detected!
 
-1) Your indentation is outright incorrect (easy to fix), OR
+This means that either:
 
-2) Your indentation mixes tabs and spaces.
+1) your indentation is outright incorrect (easy to fix), or
 
-To fix case 2, change all tabs to spaces by using Edit->Select All followed \
-by Format->Untabify Region and specify the number of columns used by each tab.
-"""
+2) your indentation mixes tabs and spaces in a way that depends on \
+how many spaces a tab is worth.
+
+To fix case 2, change all tabs to spaces by using Select All followed \
+by Untabify Region (both in the Edit menu)."""
+
 
 class ScriptBinding:
 
@@ -51,16 +54,15 @@ class ScriptBinding:
         # Provide instance variables referenced by Debugger
         # XXX This should be done differently
         self.flist = self.editwin.flist
-        self.root = self.editwin.root
+        self.root = self.flist.root
 
     def check_module_event(self, event):
         filename = self.getfilename()
         if not filename:
-            return 'break'
-        if not self.checksyntax(filename):
-            return 'break'
+            return
         if not self.tabnanny(filename):
-            return 'break'
+            return
+        self.checksyntax(filename)
 
     def tabnanny(self, filename):
         f = open(filename, 'r')
@@ -136,12 +138,10 @@ class ScriptBinding:
         """
         filename = self.getfilename()
         if not filename:
-            return 'break'
+            return
         code = self.checksyntax(filename)
         if not code:
-            return 'break'
-        if not self.tabnanny(filename):
-            return 'break'
+            return
         shell = self.shell
         interp = shell.interp
         if PyShell.use_subprocess:
@@ -164,7 +164,6 @@ class ScriptBinding:
         #         go to __stderr__.  With subprocess, they go to the shell.
         #         Need to change streams in PyShell.ModifiedInterpreter.
         interp.runcode(code)
-        return 'break'
 
     def getfilename(self):
         """Get source filename.  If not saved, offer to save (or create) file

@@ -134,7 +134,7 @@ def fillAppsMenu():
     file_m_apps.add('command')
     file_m_apps.delete(0, 'last')
     names = root.winfo_interps()
-    names = list(names)
+    names = map(None, names) # convert tuple to list
     names.sort()
     for name in names:
         try:

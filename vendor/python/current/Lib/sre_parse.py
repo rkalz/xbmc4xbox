@@ -16,21 +16,15 @@ import sys
 
 from sre_constants import *
 
-def set(seq):
-    s = {}
-    for elem in seq:
-        s[elem] = 1
-    return s
-
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS = "*+?{"
 
-DIGITS = set("0123456789")
+DIGITS = tuple("0123456789")
 
-OCTDIGITS = set("01234567")
-HEXDIGITS = set("0123456789abcdefABCDEF")
+OCTDIGITS = tuple("01234567")
+HEXDIGITS = tuple("0123456789abcdefABCDEF")
 
-WHITESPACE = set(" \t\n\r\v\f")
+WHITESPACE = tuple(" \t\n\r\v\f")
 
 ESCAPES = {
     r"\a": (LITERAL, ord("\a")),
@@ -134,11 +128,11 @@ class SubPattern:
     def __delitem__(self, index):
         del self.data[index]
     def __getitem__(self, index):
-        if isinstance(index, slice):
-            return SubPattern(self.pattern, self.data[index])
         return self.data[index]
     def __setitem__(self, index, code):
         self.data[index] = code
+    def __getslice__(self, start, stop):
+        return SubPattern(self.pattern, self.data[start:stop])
     def insert(self, index, code):
         self.data.insert(index, code)
     def append(self, code):
@@ -377,11 +371,6 @@ def _parse_sub_cond(source, state, condgroup):
     subpattern.append((GROUPREF_EXISTS, (condgroup, item_yes, item_no)))
     return subpattern
 
-_PATTERNENDERS = set("|)")
-_ASSERTCHARS = set("=!<")
-_LOOKBEHINDASSERTCHARS = set("=!")
-_REPEATCODES = set([MIN_REPEAT, MAX_REPEAT])
-
 def _parse(source, state):
     # parse a simple pattern
     subpattern = SubPattern(state)
@@ -391,10 +380,10 @@ def _parse(source, state):
     sourceget = source.get
     sourcematch = source.match
     _len = len
-    PATTERNENDERS = _PATTERNENDERS
-    ASSERTCHARS = _ASSERTCHARS
-    LOOKBEHINDASSERTCHARS = _LOOKBEHINDASSERTCHARS
-    REPEATCODES = _REPEATCODES
+    PATTERNENDERS = ("|", ")")
+    ASSERTCHARS = ("=", "!", "<")
+    LOOKBEHINDASSERTCHARS = ("=", "!")
+    REPEATCODES = (MIN_REPEAT, MAX_REPEAT)
 
     while 1:
 

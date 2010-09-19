@@ -55,7 +55,6 @@ static PyStructSequence_Desc struct_rusage_desc = {
 	16	/* n_in_sequence */
 };
 
-static int initialized;
 static PyTypeObject StructRUsageType;
 
 static PyObject *
@@ -147,7 +146,7 @@ resource_setrlimit(PyObject *self, PyObject *args)
 	int resource;
 	PyObject *curobj, *maxobj;
 
-	if (!PyArg_ParseTuple(args, "i(OO):setrlimit",
+	if (!PyArg_ParseTuple(args, "i(OO):setrlimit", 
 			      &resource, &curobj, &maxobj))
 		return NULL;
 
@@ -159,27 +158,27 @@ resource_setrlimit(PyObject *self, PyObject *args)
 
 #if !defined(HAVE_LARGEFILE_SUPPORT)
 	rl.rlim_cur = PyInt_AsLong(curobj);
-	if (rl.rlim_cur == (rlim_t)-1 && PyErr_Occurred())
+	if (rl.rlim_cur == -1 && PyErr_Occurred())
 	    return NULL;
 	rl.rlim_max = PyInt_AsLong(maxobj);
-	if (rl.rlim_max == (rlim_t)-1 && PyErr_Occurred())
+	if (rl.rlim_max == -1 && PyErr_Occurred())
 	    return NULL;
 #else
 	/* The limits are probably bigger than a long */
 	rl.rlim_cur = PyLong_Check(curobj) ?
 		PyLong_AsLongLong(curobj) : PyInt_AsLong(curobj);
-	if (rl.rlim_cur == (rlim_t)-1 && PyErr_Occurred())
+	if (rl.rlim_cur == -1 && PyErr_Occurred())
 	    return NULL;
 	rl.rlim_max = PyLong_Check(maxobj) ?
 		PyLong_AsLongLong(maxobj) : PyInt_AsLong(maxobj);
-	if (rl.rlim_max == (rlim_t)-1 && PyErr_Occurred())
+	if (rl.rlim_max == -1 && PyErr_Occurred())
 	    return NULL;
 #endif
 
 	rl.rlim_cur = rl.rlim_cur & RLIM_INFINITY;
 	rl.rlim_max = rl.rlim_max & RLIM_INFINITY;
 	if (setrlimit(resource, &rl) == -1) {
-		if (errno == EINVAL)
+		if (errno == EINVAL) 
 			PyErr_SetString(PyExc_ValueError,
 					"current limit exceeds maximum limit");
 		else if (errno == EPERM)
@@ -194,9 +193,12 @@ resource_setrlimit(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-resource_getpagesize(PyObject *self, PyObject *unused)
+resource_getpagesize(PyObject *self, PyObject *args)
 {
 	long pagesize = 0;
+	if (!PyArg_ParseTuple(args, ":getpagesize"))
+		return NULL;
+
 #if defined(HAVE_GETPAGESIZE)
 	pagesize = getpagesize();
 #elif defined(HAVE_SYSCONF)
@@ -218,7 +220,7 @@ resource_methods[] = {
 	{"getrusage",    resource_getrusage,   METH_VARARGS},
 	{"getrlimit",    resource_getrlimit,   METH_VARARGS},
 	{"setrlimit",    resource_setrlimit,   METH_VARARGS},
-	{"getpagesize",  resource_getpagesize, METH_NOARGS},
+	{"getpagesize",  resource_getpagesize, METH_VARARGS},
 	{NULL, NULL}			     /* sentinel */
 };
 
@@ -232,8 +234,6 @@ initresource(void)
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("resource", resource_methods);
-	if (m == NULL)
-		return;
 
 	/* Add some symbolic constants to the module */
 	if (ResourceError == NULL) {
@@ -242,10 +242,7 @@ initresource(void)
 	}
 	Py_INCREF(ResourceError);
 	PyModule_AddObject(m, "error", ResourceError);
-	if (!initialized)
-		PyStructSequence_InitType(&StructRUsageType, 
-					  &struct_rusage_desc);
-	Py_INCREF(&StructRUsageType);
+ 	PyStructSequence_InitType(&StructRUsageType, &struct_rusage_desc);
  	PyModule_AddObject(m, "struct_rusage", 
 			   (PyObject*) &StructRUsageType);
 
@@ -298,10 +295,6 @@ initresource(void)
 	PyModule_AddIntConstant(m, "RLIMIT_MEMLOCK", RLIMIT_MEMLOCK);
 #endif
 
-#ifdef RLIMIT_SBSIZE
-	PyModule_AddIntConstant(m, "RLIMIT_SBSIZE", RLIMIT_SBSIZE);
-#endif
-
 #ifdef RUSAGE_SELF
 	PyModule_AddIntConstant(m, "RUSAGE_SELF", RUSAGE_SELF);
 #endif
@@ -325,5 +318,4 @@ initresource(void)
 	if (v) {
 		PyModule_AddObject(m, "RLIM_INFINITY", v);
 	}
-	initialized = 1;
 }

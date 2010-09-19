@@ -4,6 +4,7 @@
 # generates a boilerplate to be edited by hand.
 
 import sys
+import os
 from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)
 from scantools import Scanner

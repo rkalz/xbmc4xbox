@@ -77,10 +77,7 @@ def c2py(plural):
     Python lambda function that implements an equivalent expression.
     """
     # Security check, allow only the "n" identifier
-    try:
-        from cStringIO import StringIO
-    except ImportError:
-        from StringIO import StringIO
+    from StringIO import StringIO
     import token, tokenize
     tokens = tokenize.generate_tokens(StringIO(plural).readline)
     try:
@@ -239,19 +236,9 @@ class NullTranslations:
     def set_output_charset(self, charset):
         self._output_charset = charset
 
-    def install(self, unicode=False, names=None):
+    def install(self, unicode=False):
         import __builtin__
         __builtin__.__dict__['_'] = unicode and self.ugettext or self.gettext
-        if hasattr(names, "__contains__"):
-            if "gettext" in names:
-                __builtin__.__dict__['gettext'] = __builtin__.__dict__['_']
-            if "ngettext" in names:
-                __builtin__.__dict__['ngettext'] = (unicode and self.ungettext
-                                                             or self.ngettext)
-            if "lgettext" in names:
-                __builtin__.__dict__['lgettext'] = self.lgettext
-            if "lngettext" in names:
-                __builtin__.__dict__['lngettext'] = self.lngettext
 
 
 class GNUTranslations(NullTranslations):
@@ -489,9 +476,9 @@ def translation(domain, localedir=None, languages=None,
     return result
 
 
-def install(domain, localedir=None, unicode=False, codeset=None, names=None):
+def install(domain, localedir=None, unicode=False, codeset=None):
     t = translation(domain, localedir, fallback=True, codeset=codeset)
-    t.install(unicode, names)
+    t.install(unicode)
 
 
 

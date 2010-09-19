@@ -32,7 +32,6 @@ python ftplib.py -d localhost -l -p -l
 # Changes and improvements suggested by Steve Majewski.
 # Modified by Jack to work on the mac.
 # Modified by Siebren to support docstrings and PASV.
-# Modified by Phil Schwartz to add storbinary and storlines callbacks.
 #
 
 import os
@@ -44,7 +43,6 @@ try:
     from socket import getfqdn; socket.getfqdn = getfqdn; del getfqdn
 except ImportError:
     import socket
-from socket import _GLOBAL_DEFAULT_TIMEOUT
 
 __all__ = ["FTP","Netrc"]
 
@@ -66,26 +64,21 @@ class error_proto(Error): pass          # response does not begin with [1-5]
 
 # All exceptions (hopefully) that may be raised here and that aren't
 # (always) programming errors on our side
-all_errors = (Error, IOError, EOFError)
+all_errors = (Error, socket.error, IOError, EOFError)
 
 
 # Line terminators (we always output CRLF, but accept any of CRLF, CR, LF)
 CRLF = '\r\n'
+
 
 # The class itself
 class FTP:
 
     '''An FTP client class.
 
-    To create a connection, call the class using these arguments:
-            host, user, passwd, acct, timeout
-
-    The first four arguments are all strings, and have default value ''.
-    timeout must be numeric and defaults to None if not passed,
-    meaning that no timeout will be set on any ftp socket(s)
-    If a timeout is passed, then this is now the default timeout for all ftp
-    socket operations for this instance.
-
+    To create a connection, call the class using these argument:
+            host, user, passwd, acct
+    These are all strings, and have default value ''.
     Then use self.connect() with optional host and port argument.
 
     To download a file, use ftp.retrlines('RETR ' + filename),
@@ -109,27 +102,32 @@ class FTP:
     # Initialize host to localhost, port to standard ftp port
     # Optional arguments are host (for connect()),
     # and user, passwd, acct (for login())
-    def __init__(self, host='', user='', passwd='', acct='',
-                 timeout=_GLOBAL_DEFAULT_TIMEOUT):
-        self.timeout = timeout
+    def __init__(self, host='', user='', passwd='', acct=''):
         if host:
             self.connect(host)
-            if user:
-                self.login(user, passwd, acct)
+            if user: self.login(user, passwd, acct)
 
-    def connect(self, host='', port=0, timeout=-999):
+    def connect(self, host = '', port = 0):
         '''Connect to host.  Arguments are:
-         - host: hostname to connect to (string, default previous host)
-         - port: port to connect to (integer, default previous port)
-        '''
-        if host != '':
-            self.host = host
-        if port > 0:
-            self.port = port
-        if timeout != -999:
-            self.timeout = timeout
-        self.sock = socket.create_connection((self.host, self.port), self.timeout)
-        self.af = self.sock.family
+        - host: hostname to connect to (string, default previous host)
+        - port: port to connect to (integer, default previous port)'''
+        if host: self.host = host
+        if port: self.port = port
+        msg = "getaddrinfo returns an empty list"
+        for res in socket.getaddrinfo(self.host, self.port, 0, socket.SOCK_STREAM):
+            af, socktype, proto, canonname, sa = res
+            try:
+                self.sock = socket.socket(af, socktype, proto)
+                self.sock.connect(sa)
+            except socket.error, msg:
+                if self.sock:
+                    self.sock.close()
+                self.sock = None
+                continue
+            break
+        if not self.sock:
+            raise socket.error, msg
+        self.af = af
         self.file = self.sock.makefile('rb')
         self.welcome = self.getresp()
         return self.welcome
@@ -221,7 +219,7 @@ class FTP:
     def voidresp(self):
         """Expect a response beginning with '2'."""
         resp = self.getresp()
-        if resp[:1] != '2':
+        if resp[0] != '2':
             raise error_reply, resp
         return resp
 
@@ -252,7 +250,7 @@ class FTP:
         port number.
         '''
         hbytes = host.split('.')
-        pbytes = [repr(port//256), repr(port%256)]
+        pbytes = [repr(port/256), repr(port%256)]
         bytes = hbytes + pbytes
         cmd = 'PORT ' + ','.join(bytes)
         return self.voidcmd(cmd)
@@ -314,25 +312,19 @@ class FTP:
         expected size may be None if it could not be determined.
 
         Optional `rest' argument can be a string that is sent as the
-        argument to a REST command.  This is essentially a server
+        argument to a RESTART command.  This is essentially a server
         marker used to tell the server to skip over any data up to the
         given marker.
         """
         size = None
         if self.passiveserver:
             host, port = self.makepasv()
-            conn = socket.create_connection((host, port), self.timeout)
+            af, socktype, proto, canon, sa = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)[0]
+            conn = socket.socket(af, socktype, proto)
+            conn.connect(sa)
             if rest is not None:
                 self.sendcmd("REST %s" % rest)
             resp = self.sendcmd(cmd)
-            # Some servers apparently send a 200 reply to
-            # a LIST or STOR command, before the 150 reply
-            # (and way before the 226 reply). This seems to
-            # be in violation of the protocol (which only allows
-            # 1xx or error messages for LIST), so we just discard
-            # this response.
-            if resp[0] == '2':
-                resp = self.getresp()
             if resp[0] != '1':
                 raise error_reply, resp
         else:
@@ -340,9 +332,6 @@ class FTP:
             if rest is not None:
                 self.sendcmd("REST %s" % rest)
             resp = self.sendcmd(cmd)
-            # See above.
-            if resp[0] == '2':
-                resp = self.getresp()
             if resp[0] != '1':
                 raise error_reply, resp
             conn, sockaddr = sock.accept()
@@ -377,18 +366,14 @@ class FTP:
         return resp
 
     def retrbinary(self, cmd, callback, blocksize=8192, rest=None):
-        """Retrieve data in binary mode.  A new port is created for you.
+        """Retrieve data in binary mode.
 
-        Args:
-          cmd: A RETR command.
-          callback: A single parameter callable to be called on each
-                    block of data read.
-          blocksize: The maximum number of bytes to read from the
-                     socket at one time.  [default: 8192]
-          rest: Passed to transfercmd().  [default: None]
+        `cmd' is a RETR command.  `callback' is a callback function is
+        called for each block.  No more than `blocksize' number of
+        bytes will be read from the socket.  Optional `rest' is passed
+        to transfercmd().
 
-        Returns:
-          The response code.
+        A new port is created for you.  Return the response code.
         """
         self.voidcmd('TYPE I')
         conn = self.transfercmd(cmd, rest)
@@ -401,17 +386,11 @@ class FTP:
         return self.voidresp()
 
     def retrlines(self, cmd, callback = None):
-        """Retrieve data in line mode.  A new port is created for you.
-
-        Args:
-          cmd: A RETR, LIST, NLST, or MLSD command.
-          callback: An optional single parameter callable that is called
-                    for each line with the trailing CRLF stripped.
-                    [default: print_line()]
-
-        Returns:
-          The response code.
-        """
+        '''Retrieve data in line mode.
+        The argument is a RETR or LIST command.
+        The callback function (2nd argument) is called for each line,
+        with trailing CRLF stripped.  This creates a new port for you.
+        print_line() is the default callback.'''
         if callback is None: callback = print_line
         resp = self.sendcmd('TYPE A')
         conn = self.transfercmd(cmd)
@@ -430,42 +409,19 @@ class FTP:
         conn.close()
         return self.voidresp()
 
-    def storbinary(self, cmd, fp, blocksize=8192, callback=None):
-        """Store a file in binary mode.  A new port is created for you.
-
-        Args:
-          cmd: A STOR command.
-          fp: A file-like object with a read(num_bytes) method.
-          blocksize: The maximum data size to read from fp and send over
-                     the connection at once.  [default: 8192]
-          callback: An optional single parameter callable that is called on
-                    on each block of data after it is sent.  [default: None]
-
-        Returns:
-          The response code.
-        """
+    def storbinary(self, cmd, fp, blocksize=8192):
+        '''Store a file in binary mode.'''
         self.voidcmd('TYPE I')
         conn = self.transfercmd(cmd)
         while 1:
             buf = fp.read(blocksize)
             if not buf: break
             conn.sendall(buf)
-            if callback: callback(buf)
         conn.close()
         return self.voidresp()
 
-    def storlines(self, cmd, fp, callback=None):
-        """Store a file in line mode.  A new port is created for you.
-
-        Args:
-          cmd: A STOR command.
-          fp: A file-like object with a readline() method.
-          callback: An optional single parameter callable that is called on
-                    on each line after it is sent.  [default: None]
-
-        Returns:
-          The response code.
-        """
+    def storlines(self, cmd, fp):
+        '''Store a file in line mode.'''
         self.voidcmd('TYPE A')
         conn = self.transfercmd(cmd)
         while 1:
@@ -475,7 +431,6 @@ class FTP:
                 if buf[-1] in CRLF: buf = buf[:-1]
                 buf = buf + CRLF
             conn.sendall(buf)
-            if callback: callback(buf)
         conn.close()
         return self.voidresp()
 
@@ -520,6 +475,8 @@ class FTP:
         resp = self.sendcmd('DELE ' + filename)
         if resp[:3] in ('250', '200'):
             return resp
+        elif resp[:1] == '5':
+            raise error_perm, resp
         else:
             raise error_reply, resp
 
@@ -538,7 +495,7 @@ class FTP:
 
     def size(self, filename):
         '''Retrieve the size of a file.'''
-        # The SIZE command is defined in RFC-3659
+        # Note that the RFC doesn't say anything about 'SIZE'
         resp = self.sendcmd('SIZE ' + filename)
         if resp[:3] == '213':
             s = resp[3:].strip()

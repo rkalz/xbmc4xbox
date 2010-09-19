@@ -1,6 +1,6 @@
 #
 # XML-RPC CLIENT LIBRARY
-# $Id: xmlrpclib.py 65467 2008-08-04 00:50:11Z brett.cannon $
+# $Id: xmlrpclib.py 38463 2005-02-11 18:00:16Z fdrake $
 #
 # an XML-RPC client interface for Python.
 #
@@ -149,11 +149,6 @@ except NameError:
     unicode = None # unicode support not available
 
 try:
-    import datetime
-except ImportError:
-    datetime = None
-
-try:
     _bool_is_builtin = False.__class__.__name__ == "bool"
 except NameError:
     _bool_is_builtin = 0
@@ -282,13 +277,10 @@ class Fault(Error):
 # @param value A boolean value.  Any true value is interpreted as True,
 #              all other values are interpreted as False.
 
-from sys import modules
-mod_dict = modules[__name__].__dict__
 if _bool_is_builtin:
     boolean = Boolean = bool
     # to avoid breaking code which references xmlrpclib.{True,False}
-    mod_dict['True'] = True
-    mod_dict['False'] = False
+    True, False = True, False
 else:
     class Boolean:
         """Boolean-value wrapper.
@@ -319,8 +311,7 @@ else:
         def __nonzero__(self):
             return self.value
 
-    mod_dict['True'] = Boolean(1)
-    mod_dict['False'] = Boolean(0)
+    True, False = Boolean(1), Boolean(0)
 
     ##
     # Map true or false value to XML-RPC boolean values.
@@ -337,8 +328,6 @@ else:
         """Convert any Python value to XML-RPC 'boolean'."""
         return _truefalse[operator.truth(value)]
 
-del modules, mod_dict
-
 ##
 # Wrapper for XML-RPC DateTime values.  This converts a time value to
 # the format used by XML-RPC.
@@ -352,20 +341,6 @@ del modules, mod_dict
 # @param value The time, given as an ISO 8601 string, a time
 #              tuple, or a integer time value.
 
-def _strftime(value):
-    if datetime:
-        if isinstance(value, datetime.datetime):
-            return "%04d%02d%02dT%02d:%02d:%02d" % (
-                value.year, value.month, value.day,
-                value.hour, value.minute, value.second)
-
-    if not isinstance(value, (TupleType, time.struct_time)):
-        if value == 0:
-            value = time.time()
-        value = time.localtime(value)
-
-    return "%04d%02d%02dT%02d:%02d:%02d" % value[:6]
-
 class DateTime:
     """DateTime wrapper for an ISO 8601 string or time tuple or
     localtime integer value to generate 'dateTime.iso8601' XML-RPC
@@ -373,62 +348,18 @@ class DateTime:
     """
 
     def __init__(self, value=0):
-        if isinstance(value, StringType):
-            self.value = value
-        else:
-            self.value = _strftime(value)
-
-    def make_comparable(self, other):
-        if isinstance(other, DateTime):
-            s = self.value
-            o = other.value
-        elif datetime and isinstance(other, datetime.datetime):
-            s = self.value
-            o = other.strftime("%Y%m%dT%H:%M:%S")
-        elif isinstance(other, (str, unicode)):
-            s = self.value
-            o = other
-        elif hasattr(other, "timetuple"):
-            s = self.timetuple()
-            o = other.timetuple()
-        else:
-            otype = (hasattr(other, "__class__")
-                     and other.__class__.__name__
-                     or type(other))
-            raise TypeError("Can't compare %s and %s" %
-                            (self.__class__.__name__, otype))
-        return s, o
-
-    def __lt__(self, other):
-        s, o = self.make_comparable(other)
-        return s < o
-
-    def __le__(self, other):
-        s, o = self.make_comparable(other)
-        return s <= o
-
-    def __gt__(self, other):
-        s, o = self.make_comparable(other)
-        return s > o
-
-    def __ge__(self, other):
-        s, o = self.make_comparable(other)
-        return s >= o
-
-    def __eq__(self, other):
-        s, o = self.make_comparable(other)
-        return s == o
-
-    def __ne__(self, other):
-        s, o = self.make_comparable(other)
-        return s != o
-
-    def timetuple(self):
-        return time.strptime(self.value, "%Y%m%dT%H:%M:%S")
+        if not isinstance(value, StringType):
+            if not isinstance(value, (TupleType, time.struct_time)):
+                if value == 0:
+                    value = time.time()
+                value = time.localtime(value)
+            value = time.strftime("%Y%m%dT%H:%M:%S", value)
+        self.value = value
 
     def __cmp__(self, other):
-        s, o = self.make_comparable(other)
-        return cmp(s, o)
+        if isinstance(other, DateTime):
+            other = other.value
+        return cmp(self.value, other)
 
     ##
     # Get date/time value.
@@ -442,7 +373,6 @@ class DateTime:
         return "<DateTime %s at %x>" % (repr(self.value), id(self))
 
     def decode(self, data):
-        data = str(data)
         self.value = string.strip(data)
 
     def encode(self, out):
@@ -455,10 +385,6 @@ def _datetime(data):
     value = DateTime()
     value.decode(data)
     return value
-
-def _datetime_type(data):
-    t = time.strptime(data, "%Y%m%dT%H:%M:%S")
-    return datetime.datetime(*tuple(t)[:6])
 
 ##
 # Wrapper for binary data.  This can be used to transport any kind
@@ -684,19 +610,9 @@ class Marshaller:
         try:
             f = self.dispatch[type(value)]
         except KeyError:
-            # check if this object can be marshalled as a structure
-            try:
-                value.__dict__
-            except:
-                raise TypeError, "cannot marshal %s objects" % type(value)
-            # check if this class is a sub-class of a basic type,
-            # because we don't know how to marshal these types
-            # (e.g. a string sub-class)
-            for type_ in type(value).__mro__:
-                if type_ in self.dispatch.keys():
-                    raise TypeError, "cannot marshal %s objects" % type(value)
-            f = self.dispatch[InstanceType]
-        f(self, value, write)
+            raise TypeError, "cannot marshal %s objects" % type(value)
+        else:
+            f(self, value, write)
 
     def dump_nil (self, value, write):
         if not self.allow_none:
@@ -750,7 +666,7 @@ class Marshaller:
 
     def dump_array(self, value, write):
         i = id(value)
-        if i in self.memo:
+        if self.memo.has_key(i):
             raise TypeError, "cannot marshal recursive sequences"
         self.memo[i] = None
         dump = self.__dump
@@ -764,7 +680,7 @@ class Marshaller:
 
     def dump_struct(self, value, write, escape=escape):
         i = id(value)
-        if i in self.memo:
+        if self.memo.has_key(i):
             raise TypeError, "cannot marshal recursive dictionaries"
         self.memo[i] = None
         dump = self.__dump
@@ -782,13 +698,6 @@ class Marshaller:
         write("</struct></value>\n")
         del self.memo[i]
     dispatch[DictType] = dump_struct
-
-    if datetime:
-        def dump_datetime(self, value, write):
-            write("<value><dateTime.iso8601>")
-            write(_strftime(value))
-            write("</dateTime.iso8601></value>\n")
-        dispatch[datetime.datetime] = dump_datetime
 
     def dump_instance(self, value, write):
         # check for special wrappers
@@ -818,7 +727,7 @@ class Unmarshaller:
     # and again, if you don't understand what's going on in here,
     # that's perfectly ok.
 
-    def __init__(self, use_datetime=0):
+    def __init__(self):
         self._type = None
         self._stack = []
         self._marks = []
@@ -826,9 +735,6 @@ class Unmarshaller:
         self._methodname = None
         self._encoding = "utf-8"
         self.append = self._stack.append
-        self._use_datetime = use_datetime
-        if use_datetime and not datetime:
-            raise ValueError, "the datetime module is not available"
 
     def close(self):
         # return response tuple and target method
@@ -903,7 +809,6 @@ class Unmarshaller:
         self.append(int(data))
         self._value = 0
     dispatch["i4"] = end_int
-    dispatch["i8"] = end_int
     dispatch["int"] = end_int
 
     def end_double(self, data):
@@ -947,8 +852,6 @@ class Unmarshaller:
     def end_dateTime(self, data):
         value = DateTime()
         value.decode(data)
-        if self._use_datetime:
-            value = _datetime_type(data)
         self.append(value)
     dispatch["dateTime.iso8601"] = end_dateTime
 
@@ -1050,23 +953,17 @@ class MultiCall:
 #
 # return A (parser, unmarshaller) tuple.
 
-def getparser(use_datetime=0):
+def getparser():
     """getparser() -> parser, unmarshaller
 
     Create an instance of the fastest available parser, and attach it
     to an unmarshalling object.  Return both objects.
     """
-    if use_datetime and not datetime:
-        raise ValueError, "the datetime module is not available"
     if FastParser and FastUnmarshaller:
-        if use_datetime:
-            mkdatetime = _datetime_type
-        else:
-            mkdatetime = _datetime
-        target = FastUnmarshaller(True, False, _binary, mkdatetime, Fault)
+        target = FastUnmarshaller(True, False, _binary, _datetime, Fault)
         parser = FastParser(target)
     else:
-        target = Unmarshaller(use_datetime=use_datetime)
+        target = Unmarshaller()
         if FastParser:
             parser = FastParser(target)
         elif SgmlopParser:
@@ -1169,7 +1066,7 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None,
 #     (None if not present).
 # @see Fault
 
-def loads(data, use_datetime=0):
+def loads(data):
     """data -> unmarshalled data, method name
 
     Convert an XML-RPC packet to unmarshalled data plus a method
@@ -1178,7 +1075,7 @@ def loads(data, use_datetime=0):
     If the XML-RPC packet represents a fault condition, this function
     raises a Fault exception.
     """
-    p, u = getparser(use_datetime=use_datetime)
+    p, u = getparser()
     p.feed(data)
     p.close()
     return u.close(), u.getmethodname()
@@ -1209,9 +1106,6 @@ class Transport:
 
     # client identifier (may be overridden)
     user_agent = "xmlrpclib.py/%s (by www.pythonware.com)" % __version__
-
-    def __init__(self, use_datetime=0):
-        self._use_datetime = use_datetime
 
     ##
     # Send a complete request, and parse the response.
@@ -1259,7 +1153,7 @@ class Transport:
 
     def getparser(self):
         # get parser and unmarshaller
-        return getparser(use_datetime=self._use_datetime)
+        return getparser()
 
     ##
     # Get authorization info from host parameter
@@ -1453,7 +1347,7 @@ class ServerProxy:
     """
 
     def __init__(self, uri, transport=None, encoding=None, verbose=0,
-                 allow_none=0, use_datetime=0):
+                 allow_none=0):
         # establish a "logical" server connection
 
         # get the url
@@ -1467,9 +1361,9 @@ class ServerProxy:
 
         if transport is None:
             if type == "https":
-                transport = SafeTransport(use_datetime=use_datetime)
+                transport = SafeTransport()
             else:
-                transport = Transport(use_datetime=use_datetime)
+                transport = Transport()
         self.__transport = transport
 
         self.__encoding = encoding

@@ -7,19 +7,14 @@ XXX The functions here don't copy the resource fork or other metadata on Mac.
 import os
 import sys
 import stat
+import exceptions
 from os.path import abspath
-import fnmatch
 
 __all__ = ["copyfileobj","copyfile","copymode","copystat","copy","copy2",
            "copytree","move","rmtree","Error"]
 
-class Error(EnvironmentError):
+class Error(exceptions.EnvironmentError):
     pass
-
-try:
-    WindowsError
-except NameError:
-    WindowsError = None
 
 def copyfileobj(fsrc, fdst, length=16*1024):
     """copy data from file-like object fsrc to file-like object fdst"""
@@ -66,15 +61,13 @@ def copymode(src, dst):
         os.chmod(dst, mode)
 
 def copystat(src, dst):
-    """Copy all stat info (mode bits, atime, mtime, flags) from src to dst"""
+    """Copy all stat info (mode bits, atime and mtime) from src to dst"""
     st = os.stat(src)
     mode = stat.S_IMODE(st.st_mode)
     if hasattr(os, 'utime'):
         os.utime(dst, (st.st_atime, st.st_mtime))
     if hasattr(os, 'chmod'):
         os.chmod(dst, mode)
-    if hasattr(os, 'chflags') and hasattr(st, 'st_flags'):
-        os.chflags(dst, st.st_flags)
 
 
 def copy(src, dst):
@@ -99,19 +92,8 @@ def copy2(src, dst):
     copyfile(src, dst)
     copystat(src, dst)
 
-def ignore_patterns(*patterns):
-    """Function that can be used as copytree() ignore parameter.
 
-    Patterns is a sequence of glob-style patterns
-    that are used to exclude files"""
-    def _ignore_patterns(path, names):
-        ignored_names = []
-        for pattern in patterns:
-            ignored_names.extend(fnmatch.filter(names, pattern))
-        return set(ignored_names)
-    return _ignore_patterns
-
-def copytree(src, dst, symlinks=False, ignore=None):
+def copytree(src, dst, symlinks=False):
     """Recursively copy a directory tree using copy2().
 
     The destination directory must not already exist.
@@ -122,32 +104,13 @@ def copytree(src, dst, symlinks=False, ignore=None):
     it is false, the contents of the files pointed to by symbolic
     links are copied.
 
-    The optional ignore argument is a callable. If given, it
-    is called with the `src` parameter, which is the directory
-    being visited by copytree(), and `names` which is the list of
-    `src` contents, as returned by os.listdir():
-
-        callable(src, names) -> ignored_names
-
-    Since copytree() is called recursively, the callable will be
-    called once for each directory that is copied. It returns a
-    list of names relative to the `src` directory that should
-    not be copied.
-
     XXX Consider this example code rather than the ultimate tool.
 
     """
     names = os.listdir(src)
-    if ignore is not None:
-        ignored_names = ignore(src, names)
-    else:
-        ignored_names = set()
-
-    os.makedirs(dst)
+    os.mkdir(dst)
     errors = []
     for name in names:
-        if name in ignored_names:
-            continue
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
         try:
@@ -155,24 +118,16 @@ def copytree(src, dst, symlinks=False, ignore=None):
                 linkto = os.readlink(srcname)
                 os.symlink(linkto, dstname)
             elif os.path.isdir(srcname):
-                copytree(srcname, dstname, symlinks, ignore)
+                copytree(srcname, dstname, symlinks)
             else:
                 copy2(srcname, dstname)
             # XXX What about devices, sockets etc.?
         except (IOError, os.error), why:
-            errors.append((srcname, dstname, str(why)))
+            errors.append((srcname, dstname, why))
         # catch the Error from the recursive copytree so that we can
         # continue with other files
         except Error, err:
             errors.extend(err.args[0])
-    try:
-        copystat(src, dst)
-    except OSError, why:
-        if WindowsError is not None and isinstance(why, WindowsError):
-            # Copying file access times may fail on Windows
-            pass
-        else:
-            errors.extend((src, dst, str(why)))
     if errors:
         raise Error, errors
 
@@ -193,14 +148,6 @@ def rmtree(path, ignore_errors=False, onerror=None):
     elif onerror is None:
         def onerror(*args):
             raise
-    try:
-        if os.path.islink(path):
-            # symlinks to directories are forbidden, see bug #1669
-            raise OSError("Cannot call rmtree on a symbolic link")
-    except OSError:
-        onerror(os.path.islink, path, sys.exc_info())
-        # can't continue even if onerror hook returns
-        return
     names = []
     try:
         names = os.listdir(path)
@@ -224,51 +171,27 @@ def rmtree(path, ignore_errors=False, onerror=None):
     except os.error:
         onerror(os.rmdir, path, sys.exc_info())
 
-
-def _basename(path):
-    # A basename() variant which first strips the trailing slash, if present.
-    # Thus we always get the last component of the path, even for directories.
-    return os.path.basename(path.rstrip(os.path.sep))
-
 def move(src, dst):
-    """Recursively move a file or directory to another location. This is
-    similar to the Unix "mv" command.
+    """Recursively move a file or directory to another location.
 
-    If the destination is a directory or a symlink to a directory, the source
-    is moved inside the directory. The destination path must not already
-    exist.
-
-    If the destination already exists but is not a directory, it may be
-    overwritten depending on os.rename() semantics.
-
-    If the destination is on our current filesystem, then rename() is used.
-    Otherwise, src is copied to the destination and then removed.
+    If the destination is on our current filesystem, then simply use
+    rename.  Otherwise, copy src to the dst and then remove src.
     A lot more could be done here...  A look at a mv.c shows a lot of
     the issues this implementation glosses over.
 
     """
-    real_dst = dst
-    if os.path.isdir(dst):
-        real_dst = os.path.join(dst, _basename(src))
-        if os.path.exists(real_dst):
-            raise Error, "Destination path '%s' already exists" % real_dst
+
     try:
-        os.rename(src, real_dst)
+        os.rename(src, dst)
     except OSError:
         if os.path.isdir(src):
             if destinsrc(src, dst):
                 raise Error, "Cannot move a directory '%s' into itself '%s'." % (src, dst)
-            copytree(src, real_dst, symlinks=True)
+            copytree(src, dst, symlinks=True)
             rmtree(src)
         else:
-            copy2(src, real_dst)
+            copy2(src,dst)
             os.unlink(src)
 
 def destinsrc(src, dst):
-    src = abspath(src)
-    dst = abspath(dst)
-    if not src.endswith(os.path.sep):
-        src += os.path.sep
-    if not dst.endswith(os.path.sep):
-        dst += os.path.sep
-    return dst.startswith(src)
+    return abspath(dst).startswith(abspath(src))

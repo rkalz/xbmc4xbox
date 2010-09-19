@@ -145,7 +145,7 @@ PROLOGUE = '''
 <TITLE>%(title)s</TITLE>
 </HEAD>
 
-<BODY
+<BODY BACKGROUND="http://www.python.org/pics/RedShort.gif"
       BGCOLOR="#FFFFFF"
       TEXT="#000000"
       LINK="#AA0000"

@@ -8,8 +8,6 @@ PyCell_New(PyObject *obj)
 	PyCellObject *op;
 
 	op = (PyCellObject *)PyObject_GC_New(PyCellObject, &PyCell_Type);
-	if (op == NULL)
-		return NULL;
 	op->ob_ref = obj;
 	Py_XINCREF(obj);
 
@@ -31,15 +29,13 @@ PyCell_Get(PyObject *op)
 int
 PyCell_Set(PyObject *op, PyObject *obj)
 {
-	PyObject* oldobj;
 	if (!PyCell_Check(op)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	oldobj = PyCell_GET(op);
+	Py_XDECREF(((PyCellObject*)op)->ob_ref);
 	Py_XINCREF(obj);
 	PyCell_SET(op, obj);
-	Py_XDECREF(oldobj);
 	return 0;
 }
 
@@ -54,12 +50,6 @@ cell_dealloc(PyCellObject *op)
 static int
 cell_compare(PyCellObject *a, PyCellObject *b)
 {
-	/* Py3K warning for comparisons  */
-	if (PyErr_WarnPy3k("cell comparisons not supported in 3.x",
-			   1) < 0) {
-		return -2;
-	}
-
 	if (a->ob_ref == NULL) {
 		if (b->ob_ref == NULL)
 			return 0;
@@ -83,36 +73,22 @@ cell_repr(PyCellObject *op)
 static int
 cell_traverse(PyCellObject *op, visitproc visit, void *arg)
 {
-	Py_VISIT(op->ob_ref);
+	if (op->ob_ref)
+		return visit(op->ob_ref, arg);
 	return 0;
 }
 
 static int
 cell_clear(PyCellObject *op)
 {
-	Py_CLEAR(op->ob_ref);
+	Py_XDECREF(op->ob_ref);
+	op->ob_ref = NULL;
 	return 0;
 }
 
-static PyObject *
-cell_get_contents(PyCellObject *op, void *closure)
-{
-	if (op->ob_ref == NULL)
-	{
-		PyErr_SetString(PyExc_ValueError, "Cell is empty");
-		return NULL;
-	}
-	Py_INCREF(op->ob_ref);
-	return op->ob_ref;
-}
-
-static PyGetSetDef cell_getsetlist[] = {
-	{"cell_contents", (getter)cell_get_contents, NULL},
-	{NULL} /* sentinel */
-};
-
 PyTypeObject PyCell_Type = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,
 	"cell",
 	sizeof(PyCellObject),
 	0,
@@ -135,11 +111,4 @@ PyTypeObject PyCell_Type = {
  	0,					/* tp_doc */
  	(traverseproc)cell_traverse,		/* tp_traverse */
  	(inquiry)cell_clear,			/* tp_clear */
-	0,					/* tp_richcompare */
-	0,					/* tp_weaklistoffset */
-	0, 					/* tp_iter */
-	0,					/* tp_iternext */
-	0,					/* tp_methods */
-	0,					/* tp_members */
-	cell_getsetlist,			/* tp_getset */
 };

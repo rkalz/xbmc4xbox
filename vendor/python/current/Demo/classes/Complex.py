@@ -54,7 +54,7 @@
 # nor are shift and mask operations.
 #
 # The standard module math does not support complex numbers.
-# The cmath modules should be used instead.
+# (I suppose it would be easy to implement a cmath module.)
 #
 # Idea:
 # add a class Polar(r, phi) and mixed-mode arithmetic which
@@ -62,8 +62,8 @@
 # Complex for +,-,cmp
 # Polar   for *,/,pow
 
-import math
-import sys
+
+import types, math
 
 twopi = math.pi*2.0
 halfpi = math.pi/2.0
@@ -74,8 +74,8 @@ def IsComplex(obj):
 def ToComplex(obj):
     if IsComplex(obj):
         return obj
-    elif isinstance(obj, tuple):
-        return Complex(*obj)
+    elif type(obj) == types.TupleType:
+        return apply(Complex, obj)
     else:
         return Complex(obj)
 
@@ -86,40 +86,34 @@ def PolarToComplex(r = 0, phi = 0, fullcircle = twopi):
 def Re(obj):
     if IsComplex(obj):
         return obj.re
-    return obj
+    else:
+        return obj
 
 def Im(obj):
     if IsComplex(obj):
         return obj.im
-    return 0
+    else:
+        return obj
 
 class Complex:
 
     def __init__(self, re=0, im=0):
-        _re = 0
-        _im = 0
         if IsComplex(re):
-            _re = re.re
-            _im = re.im
-        else:
-            _re = re
+            im = i + Complex(0, re.im)
+            re = re.re
         if IsComplex(im):
-            _re = _re - im.im
-            _im = _im + im.re
-        else:
-            _im = _im + im
-        # this class is immutable, so setting self.re directly is
-        # not possible.
-        self.__dict__['re'] = _re
-        self.__dict__['im'] = _im
+            re = re - im.im
+            im = im.re
+        self.__dict__['re'] = re
+        self.__dict__['im'] = im
 
     def __setattr__(self, name, value):
         raise TypeError, 'Complex numbers are immutable'
 
     def __hash__(self):
-        if not self.im:
-            return hash(self.re)
-        return hash((self.re, self.im))
+        if not self.im: return hash(self.re)
+        mod = sys.maxint + 1L
+        return int((hash(self.re) + 2L*hash(self.im) + mod) % (2L*mod) - mod)
 
     def __repr__(self):
         if not self.im:
@@ -140,7 +134,8 @@ class Complex:
         return self
 
     def __abs__(self):
-        return math.hypot(self.re, self.im)
+        # XXX could be done differently to avoid overflow!
+        return math.sqrt(self.re*self.re + self.im*self.im)
 
     def __int__(self):
         if self.im:
@@ -229,41 +224,22 @@ def exp(z):
 
 
 def checkop(expr, a, b, value, fuzz = 1e-6):
+    import sys
     print '       ', a, 'and', b,
     try:
         result = eval(expr)
     except:
         result = sys.exc_type
     print '->', result
-    if isinstance(result, str) or isinstance(value, str):
-        ok = (result == value)
+    if (type(result) == type('') or type(value) == type('')):
+        ok = result == value
     else:
         ok = abs(result - value) <= fuzz
     if not ok:
         print '!!\t!!\t!! should be', value, 'diff', abs(result - value)
 
+
 def test():
-    print 'test constructors'
-    constructor_test = (
-        # "expect" is an array [re,im] "got" the Complex.
-            ( (0,0), Complex() ),
-            ( (0,0), Complex() ),
-            ( (1,0), Complex(1) ),
-            ( (0,1), Complex(0,1) ),
-            ( (1,2), Complex(Complex(1,2)) ),
-            ( (1,3), Complex(Complex(1,2),1) ),
-            ( (0,0), Complex(0,Complex(0,0)) ),
-            ( (3,4), Complex(3,Complex(4)) ),
-            ( (-1,3), Complex(1,Complex(3,2)) ),
-            ( (-7,6), Complex(Complex(1,2),Complex(4,8)) ) )
-    cnt = [0,0]
-    for t in constructor_test:
-        cnt[0] += 1
-        if ((t[0][0]!=t[1].re)or(t[0][1]!=t[1].im)):
-            print "        expected", t[0], "got", t[1]
-            cnt[1] += 1
-    print "  ", cnt[1], "of", cnt[0], "tests failed"
-    # test operators
     testsuite = {
             'a+b': [
                     (1, 10, 11),
@@ -309,11 +285,13 @@ def test():
                     (Complex(1), Complex(0,10), 1),
             ],
     }
-    for expr in sorted(testsuite):
+    exprs = testsuite.keys()
+    exprs.sort()
+    for expr in exprs:
         print expr + ':'
         t = (expr,)
         for item in testsuite[expr]:
-            checkop(*(t+item))
+            apply(checkop, t+item)
 
 
 if __name__ == '__main__':

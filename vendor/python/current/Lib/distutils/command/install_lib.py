@@ -1,18 +1,16 @@
 # This module should be kept compatible with Python 2.1.
 
-__revision__ = "$Id: install_lib.py 72578 2009-05-12 07:04:51Z tarek.ziade $"
+__revision__ = "$Id: install_lib.py 37828 2004-11-10 22:23:15Z loewis $"
 
-import os
+import sys, os, string
 from types import IntType
 from distutils.core import Command
 from distutils.errors import DistutilsOptionError
 
 
 # Extension for Python source files.
-if hasattr(os, 'extsep'):
-    PYTHON_SOURCE_EXTENSION = os.extsep + "py"
-else:
-    PYTHON_SOURCE_EXTENSION = ".py"
+PYTHON_SOURCE_EXTENSION = os.extsep + "py"
+
 
 class install_lib (Command):
 
@@ -80,8 +78,7 @@ class install_lib (Command):
         if type(self.optimize) is not IntType:
             try:
                 self.optimize = int(self.optimize)
-                if self.optimize not in (0, 1, 2):
-                    raise AssertionError
+                assert 0 <= self.optimize <= 2
             except (ValueError, AssertionError):
                 raise DistutilsOptionError, "optimize must be 0, 1, or 2"
 

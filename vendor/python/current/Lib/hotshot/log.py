@@ -2,6 +2,7 @@ import _hotshot
 import os.path
 import parser
 import symbol
+import sys
 
 from _hotshot import \
      WHAT_ENTER, \

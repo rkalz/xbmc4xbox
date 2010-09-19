@@ -6,9 +6,7 @@ There are two classes:
         only suitable for the simplest of AppleEvent servers.
 """
 
-from warnings import warnpy3k
-warnpy3k("In 3.x, the MiniAEFrame module is removed.", stacklevel=2)
-
+import sys
 import traceback
 import MacOS
 from Carbon import AE
@@ -161,7 +159,7 @@ class AEServer:
             #Same try/except comment as above
             rv = _function(**_parameters)
 
-        if rv is None:
+        if rv == None:
             aetools.packevent(_reply, {})
         else:
             aetools.packevent(_reply, {'----':rv})

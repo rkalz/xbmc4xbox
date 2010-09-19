@@ -3,7 +3,6 @@
 
 #include "Python.h"
 
-#ifndef __LP64__
 
 
 #include "pymactoolbox.h"
@@ -25,7 +24,7 @@ extern PyObject *_MenuObj_New(MenuHandle);
 extern int _MenuObj_Convert(PyObject *, MenuHandle *);
 
 #define MenuObj_New _MenuObj_New
-#define MenuObj_Convert _MenuObj_Convert
+#define MenuObj_Convert _MenuObj_Convert 
 #endif
 
 #define as_Menu(h) ((MenuHandle)h)
@@ -35,21 +34,21 @@ extern int _MenuObj_Convert(PyObject *, MenuHandle *);
 /* Alternative version of MenuObj_New, which returns None for NULL argument */
 PyObject *OptMenuObj_New(MenuRef itself)
 {
-        if (itself == NULL) {
-                Py_INCREF(Py_None);
-                return Py_None;
-        }
-        return MenuObj_New(itself);
+	if (itself == NULL) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	return MenuObj_New(itself);
 }
 
 /* Alternative version of MenuObj_Convert, which returns NULL for a None argument */
 int OptMenuObj_Convert(PyObject *v, MenuRef *p_itself)
 {
-        if ( v == Py_None ) {
-                *p_itself = NULL;
-                return 1;
-        }
-        return MenuObj_Convert(v, p_itself);
+	if ( v == Py_None ) {
+		*p_itself = NULL;
+		return 1;
+	}
+	return MenuObj_Convert(v, p_itself);
 }
 
 static PyObject *Menu_Error;
@@ -73,7 +72,6 @@ PyObject *MenuObj_New(MenuHandle itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-
 int MenuObj_Convert(PyObject *v, MenuHandle *p_itself)
 {
 	if (!MenuObj_Check(v))
@@ -2538,16 +2536,16 @@ static PyMethodDef MenuObj_methods[] = {
 
 #define MenuObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *MenuObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
+static PyObject *MenuObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *_self;
+	PyObject *self;
 	MenuHandle itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, MenuObj_Convert, &itself)) return NULL;
-	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((MenuObject *)_self)->ob_itself = itself;
-	return _self;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, MenuObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((MenuObject *)self)->ob_itself = itself;
+	return self;
 }
 
 #define MenuObj_tp_free PyObject_Del
@@ -3348,10 +3346,8 @@ static PyObject *Menu_RemoveMenuCommandProperty(PyObject *_self, PyObject *_args
 	_res = Py_None;
 	return _res;
 }
-#endif /* __LP64__ */
 
 static PyMethodDef Menu_methods[] = {
-#ifndef __LP64__
 	{"NewMenu", (PyCFunction)Menu_NewMenu, 1,
 	 PyDoc_STR("(MenuID menuID, Str255 menuTitle) -> (MenuHandle _rv)")},
 	{"MacGetMenu", (PyCFunction)Menu_MacGetMenu, 1,
@@ -3436,7 +3432,6 @@ static PyMethodDef Menu_methods[] = {
 	 PyDoc_STR("(MenuHandle inMenu, MenuCommand inCommandID, OSType inPropertyCreator, OSType inPropertyTag) -> (ByteCount outSize)")},
 	{"RemoveMenuCommandProperty", (PyCFunction)Menu_RemoveMenuCommandProperty, 1,
 	 PyDoc_STR("(MenuHandle inMenu, MenuCommand inCommandID, OSType inPropertyCreator, OSType inPropertyTag) -> None")},
-#endif /* __LP64__ */
 	{NULL, NULL, 0}
 };
 
@@ -3446,18 +3441,15 @@ static PyMethodDef Menu_methods[] = {
 void init_Menu(void)
 {
 	PyObject *m;
-#ifndef __LP64__
 	PyObject *d;
 
 
 
-	        PyMac_INIT_TOOLBOX_OBJECT_NEW(MenuHandle, MenuObj_New);
-	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MenuHandle, MenuObj_Convert);
-#endif /* __LP64__ */
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(MenuHandle, MenuObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MenuHandle, MenuObj_Convert);
 
 
 	m = Py_InitModule("_Menu", Menu_methods);
-#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Menu_Error = PyMac_GetOSErrException();
 	if (Menu_Error == NULL ||
@@ -3470,7 +3462,6 @@ void init_Menu(void)
 	/* Backward-compatible name */
 	Py_INCREF(&Menu_Type);
 	PyModule_AddObject(m, "MenuType", (PyObject *)&Menu_Type);
-#endif /* __LP64__ */
 }
 
 /* ======================== End module _Menu ======================== */

@@ -39,12 +39,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/export:initexample"
-				AdditionalDependencies="odbc32.lib odbccp32.lib python26.lib"
-				OutputFile=".\Release/example.pyd"
+				AdditionalDependencies="odbc32.lib odbccp32.lib python24.lib"
+				OutputFile=".\Release/example.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\PCbuild"
-				ModuleDefinitionFile=""
+				ModuleDefinitionFile=".\example.def"
 				ProgramDatabaseFile=".\Release/example.pdb"
 				SubSystem="2"
 				ImportLibrary=".\Release/example.lib"
@@ -105,12 +105,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/export:initexample"
-				AdditionalDependencies="odbc32.lib odbccp32.lib python26_d.lib"
-				OutputFile=".\Debug/example_d.pyd"
+				AdditionalDependencies="odbc32.lib odbccp32.lib python24_d.lib"
+				OutputFile=".\Debug/example_d.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\PCbuild"
-				ModuleDefinitionFile=""
+				ModuleDefinitionFile=".\example.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Debug/example_d.pdb"
 				SubSystem="2"
@@ -170,6 +170,9 @@
 						AdditionalIncludeDirectories=""
 						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;$(NoInherit)"/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="example.def">
 			</File>
 		</Filter>
 		<Filter

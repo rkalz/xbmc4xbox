@@ -1,6 +1,5 @@
-from test import test_support
 import mimetools
-multifile = test_support.import_module('multifile', deprecated=True)
+import multifile
 import cStringIO
 
 msg = """Mime-Version: 1.0

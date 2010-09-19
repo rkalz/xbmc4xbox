@@ -1,4 +1,4 @@
-# dialog.py -- Tkinter interface to the tk_dialog script.
+# Dialog.py -- Tkinter interface to the tk_dialog script.
 
 from Tkinter import *
 from Tkinter import _cnfmerge

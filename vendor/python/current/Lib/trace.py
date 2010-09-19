@@ -35,17 +35,15 @@ Sample use, command line:
   trace.py --trackcalls spam.py eggs
 
 Sample use, programmatically
-  import sys
-
-  # create a Trace object, telling it what to ignore, and whether to
-  # do tracing or line-counting or both.
-  tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,], trace=0,
-                    count=1)
-  # run the new command using the given tracer
-  tracer.run('main()')
-  # make a report, placing output in /tmp
-  r = tracer.results()
-  r.write_results(show_missing=True, coverdir="/tmp")
+   # create a Trace object, telling it what to ignore, and whether to
+   # do tracing or line-counting or both.
+   trace = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,], trace=0,
+                       count=1)
+   # run the new command using the given trace
+   trace.run('main()')
+   # make a report, telling it where you want output
+   r = trace.results()
+   r.write_results(show_missing=True)
 """
 
 import linecache
@@ -53,7 +51,6 @@ import os
 import re
 import sys
 import threading
-import time
 import token
 import tokenize
 import types
@@ -99,13 +96,10 @@ Modifiers:
                       with '>>>>>> '.
 -s, --summary         Write a brief summary on stdout for each file.
                       (Can only be used with --count or --report.)
--g, --timing          Prefix each line with the time since the program started.
-                      Only used while tracing.
 
 Filters, may be repeated multiple times:
---ignore-module=<mod> Ignore the given module(s) and its submodules
-                      (if it is a package).  Accepts comma separated
-                      list of module names
+--ignore-module=<mod> Ignore the given module and its submodules
+                      (if it is a package).
 --ignore-dir=<dir>    Ignore files in the given directory (multiple
                       directories can be joined by os.pathsep).
 """ % sys.argv[0])
@@ -183,11 +177,9 @@ def fullmodname(path):
     # looking in sys.path for the longest matching prefix.  We'll
     # assume that the rest is the package name.
 
-    comparepath = os.path.normcase(path)
     longest = ""
     for dir in sys.path:
-        dir = os.path.normcase(dir)
-        if comparepath.startswith(dir) and comparepath[len(dir)] == os.sep:
+        if path.startswith(dir) and path[len(dir)] == os.path.sep:
             if len(dir) > len(longest):
                 longest = dir
 
@@ -290,10 +282,8 @@ class CoverageResults:
             # skip some "files" we don't care about...
             if filename == "<string>":
                 continue
-            if filename.startswith("<doctest "):
-                continue
 
-            if filename.endswith((".pyc", ".pyo")):
+            if filename.endswith(".pyc") or filename.endswith(".pyo"):
                 filename = filename[:-1]
 
             if coverdir is None:
@@ -438,8 +428,7 @@ def find_executable_linenos(filename):
 
 class Trace:
     def __init__(self, count=1, trace=1, countfuncs=0, countcallers=0,
-                 ignoremods=(), ignoredirs=(), infile=None, outfile=None,
-                 timing=False):
+                 ignoremods=(), ignoredirs=(), infile=None, outfile=None):
         """
         @param count true iff it should count number of times each
                      line is executed
@@ -455,7 +444,6 @@ class Trace:
         @param infile file from which to read stored counts to be
                      added into the results
         @param outfile file in which to write the results
-        @param timing true iff timing information be displayed
         """
         self.infile = infile
         self.outfile = outfile
@@ -468,9 +456,6 @@ class Trace:
         self._calledfuncs = {}
         self._callers = {}
         self._caller_cache = {}
-        self.start_time = None
-        if timing:
-            self.start_time = time.time()
         if countcallers:
             self.globaltrace = self.globaltrace_trackcallers
         elif countfuncs:
@@ -598,7 +583,7 @@ class Trace:
         """
         if why == 'call':
             code = frame.f_code
-            filename = frame.f_globals.get('__file__', None)
+            filename = code.co_filename
             if filename:
                 # XXX modname() doesn't work right for packages, so
                 # the ignore support won't work right for packages
@@ -621,8 +606,6 @@ class Trace:
             key = filename, lineno
             self.counts[key] = self.counts.get(key, 0) + 1
 
-            if self.start_time:
-                print '%.2f' % (time.time() - self.start_time),
             bname = os.path.basename(filename)
             print "%s(%d): %s" % (bname, lineno,
                                   linecache.getline(filename, lineno)),
@@ -634,8 +617,6 @@ class Trace:
             filename = frame.f_code.co_filename
             lineno = frame.f_lineno
 
-            if self.start_time:
-                print '%.2f' % (time.time() - self.start_time),
             bname = os.path.basename(filename)
             print "%s(%d): %s" % (bname, lineno,
                                   linecache.getline(filename, lineno)),
@@ -665,13 +646,13 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
     try:
-        opts, prog_argv = getopt.getopt(argv[1:], "tcrRf:d:msC:lTg",
+        opts, prog_argv = getopt.getopt(argv[1:], "tcrRf:d:msC:lT",
                                         ["help", "version", "trace", "count",
                                          "report", "no-report", "summary",
                                          "file=", "missing",
                                          "ignore-module=", "ignore-dir=",
                                          "coverdir=", "listfuncs",
-                                         "trackcalls", "timing"])
+                                         "trackcalls"])
 
     except getopt.error, msg:
         sys.stderr.write("%s: %s\n" % (sys.argv[0], msg))
@@ -691,7 +672,6 @@ def main(argv=None):
     summary = 0
     listfuncs = False
     countcallers = False
-    timing = False
 
     for opt, val in opts:
         if opt == "--help":
@@ -708,10 +688,6 @@ def main(argv=None):
 
         if opt == "-l" or opt == "--listfuncs":
             listfuncs = True
-            continue
-
-        if opt == "-g" or opt == "--timing":
-            timing = True
             continue
 
         if opt == "-t" or opt == "--trace":
@@ -747,8 +723,7 @@ def main(argv=None):
             continue
 
         if opt == "--ignore-module":
-            for mod in val.split(","):
-                ignore_modules.append(mod.strip())
+            ignore_modules.append(val)
             continue
 
         if opt == "--ignore-dir":
@@ -796,7 +771,7 @@ def main(argv=None):
         t = Trace(count, trace, countfuncs=listfuncs,
                   countcallers=countcallers, ignoremods=ignore_modules,
                   ignoredirs=ignore_dirs, infile=counts_file,
-                  outfile=counts_file, timing=timing)
+                  outfile=counts_file)
         try:
             t.run('execfile(%r)' % (progname,))
         except IOError, err:

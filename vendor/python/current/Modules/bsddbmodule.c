@@ -240,7 +240,7 @@ bsddb_dealloc(bsddbobject *dp)
 #define BSDDB_END_SAVE(_dp) Py_END_ALLOW_THREADS
 #endif
 
-static Py_ssize_t
+static int
 bsddb_length(bsddbobject *dp)
 {
 	check_bsddbobject_open(dp, -1);
@@ -374,7 +374,7 @@ bsddb_ass_sub(bsddbobject *dp, PyObject *key, PyObject *value)
 }
 
 static PyMappingMethods bsddb_as_mapping = {
-	(lenfunc)bsddb_length,		/*mp_length*/
+	(inquiry)bsddb_length,		/*mp_length*/
 	(binaryfunc)bsddb_subscript,	/*mp_subscript*/
 	(objobjargproc)bsddb_ass_sub,	/*mp_ass_subscript*/
 };
@@ -847,14 +847,8 @@ PyMODINIT_FUNC
 initbsddb185(void) {
 	PyObject *m, *d;
 
-    if (PyErr_WarnPy3k("the bsddb185 module has been removed in "
-                       "Python 3.0", 2) < 0)
-        return;    
-
 	Bsddbtype.ob_type = &PyType_Type;
 	m = Py_InitModule("bsddb185", bsddbmodule_methods);
-	if (m == NULL)
-		return;
 	d = PyModule_GetDict(m);
 	BsddbError = PyErr_NewException("bsddb.error", NULL, NULL);
 	if (BsddbError != NULL)

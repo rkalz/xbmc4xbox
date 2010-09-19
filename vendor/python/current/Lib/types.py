@@ -86,8 +86,4 @@ EllipsisType = type(Ellipsis)
 DictProxyType = type(TypeType.__dict__)
 NotImplementedType = type(NotImplemented)
 
-# For Jython, the following two types are identical
-GetSetDescriptorType = type(FunctionType.func_code)
-MemberDescriptorType = type(FunctionType.func_globals)
-
-del sys, _f, _g, _C, _x                           # Not for export
+del sys, _f, _g, _C, _x                  # Not for export

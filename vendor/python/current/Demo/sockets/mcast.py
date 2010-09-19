@@ -13,6 +13,7 @@ MYGROUP = '225.0.0.250'
 import sys
 import time
 import struct
+import regsub
 from socket import *
 
 

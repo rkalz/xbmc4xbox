@@ -4,7 +4,6 @@
 #include "Python.h"
 
 
-#ifndef __LP64__
 
 #include "pymactoolbox.h"
 
@@ -51,7 +50,6 @@ PyObject *GWorldObj_New(GWorldPtr itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-
 int GWorldObj_Convert(PyObject *v, GWorldPtr *p_itself)
 {
 	if (!GWorldObj_Check(v))
@@ -136,16 +134,16 @@ static PyMethodDef GWorldObj_methods[] = {
 
 #define GWorldObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *GWorldObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
+static PyObject *GWorldObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *_self;
+	PyObject *self;
 	GWorldPtr itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, GWorldObj_Convert, &itself)) return NULL;
-	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((GWorldObject *)_self)->ob_itself = itself;
-	return _self;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, GWorldObj_Convert, &itself)) return NULL;
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((GWorldObject *)self)->ob_itself = itself;
+	return self;
 }
 
 #define GWorldObj_tp_free PyObject_Del
@@ -607,7 +605,7 @@ static PyObject *Qdoffs_GetPixMapBytes(PyObject *_self, PyObject *_args)
 	char *cp;
 
 	if ( !PyArg_ParseTuple(_args, "O&ii", ResObj_Convert, &pm, &from, &length) )
-	        return NULL;
+		return NULL;
 	cp = GetPixBaseAddr(pm)+from;
 	_res = PyString_FromStringAndSize(cp, length);
 	return _res;
@@ -623,7 +621,7 @@ static PyObject *Qdoffs_PutPixMapBytes(PyObject *_self, PyObject *_args)
 	char *cp, *icp;
 
 	if ( !PyArg_ParseTuple(_args, "O&is#", ResObj_Convert, &pm, &from, &icp, &length) )
-	        return NULL;
+		return NULL;
 	cp = GetPixBaseAddr(pm)+from;
 	memcpy(cp, icp, length);
 	Py_INCREF(Py_None);
@@ -631,10 +629,8 @@ static PyObject *Qdoffs_PutPixMapBytes(PyObject *_self, PyObject *_args)
 	return _res;
 
 }
-#endif /* __LP64__ */
 
 static PyMethodDef Qdoffs_methods[] = {
-#ifndef __LP64__
 	{"NewGWorld", (PyCFunction)Qdoffs_NewGWorld, 1,
 	 PyDoc_STR("(short PixelDepth, Rect boundsRect, CTabHandle cTable, GDHandle aGDevice, GWorldFlags flags) -> (GWorldPtr offscreenGWorld)")},
 	{"LockPixels", (PyCFunction)Qdoffs_LockPixels, 1,
@@ -681,7 +677,6 @@ static PyMethodDef Qdoffs_methods[] = {
 	 PyDoc_STR("(pixmap, int start, int size) -> string. Return bytes from the pixmap")},
 	{"PutPixMapBytes", (PyCFunction)Qdoffs_PutPixMapBytes, 1,
 	 PyDoc_STR("(pixmap, int start, string data). Store bytes into the pixmap")},
-#endif /* __LP64__ */
 	{NULL, NULL, 0}
 };
 
@@ -691,18 +686,15 @@ static PyMethodDef Qdoffs_methods[] = {
 void init_Qdoffs(void)
 {
 	PyObject *m;
-#ifndef __LP64__
 	PyObject *d;
 
 
 
-	        PyMac_INIT_TOOLBOX_OBJECT_NEW(GWorldPtr, GWorldObj_New);
-	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GWorldPtr, GWorldObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(GWorldPtr, GWorldObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GWorldPtr, GWorldObj_Convert);
 
-#endif /* __LP64__ */
 
 	m = Py_InitModule("_Qdoffs", Qdoffs_methods);
-#ifndef __LP64__
 	d = PyModule_GetDict(m);
 	Qdoffs_Error = PyMac_GetOSErrException();
 	if (Qdoffs_Error == NULL ||
@@ -715,7 +707,6 @@ void init_Qdoffs(void)
 	/* Backward-compatible name */
 	Py_INCREF(&GWorld_Type);
 	PyModule_AddObject(m, "GWorldType", (PyObject *)&GWorld_Type);
-#endif /* __LP64__ */
 }
 
 /* ======================= End module _Qdoffs ======================= */

@@ -5,40 +5,46 @@ import atexit
 from test import test_support
 
 class TestCase(unittest.TestCase):
-    def setUp(self):
-        s = StringIO.StringIO()
-        self.save_stdout = sys.stdout
-        self.save_stderr = sys.stderr
-        sys.stdout = sys.stderr = self.subst_io = s
-        self.save_handlers = atexit._exithandlers
-        atexit._exithandlers = []
-
-    def tearDown(self):
-        sys.stdout = self.save_stdout
-        sys.stderr = self.save_stderr
-        atexit._exithandlers = self.save_handlers
-
     def test_args(self):
-        atexit.register(self.h1)
-        atexit.register(self.h4)
-        atexit.register(self.h4, 4, kw="abc")
-        atexit._run_exitfuncs()
-        self.assertEqual(self.subst_io.getvalue(),
-                         "h4 (4,) {'kw': 'abc'}\nh4 () {}\nh1\n")
-
-    def test_badargs(self):
-        atexit.register(lambda: 1, 0, 0, (x for x in (1,2)), 0, 0)
-        self.assertRaises(TypeError, atexit._run_exitfuncs)
+        # be sure args are handled properly
+        s = StringIO.StringIO()
+        sys.stdout = sys.stderr = s
+        save_handlers = atexit._exithandlers
+        atexit._exithandlers = []
+        try:
+            atexit.register(self.h1)
+            atexit.register(self.h4)
+            atexit.register(self.h4, 4, kw="abc")
+            atexit._run_exitfuncs()
+        finally:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            atexit._exithandlers = save_handlers
+        self.assertEqual(s.getvalue(), "h4 (4,) {'kw': 'abc'}\nh4 () {}\nh1\n")
 
     def test_order(self):
-        atexit.register(self.h1)
-        atexit.register(self.h2)
-        atexit.register(self.h3)
-        atexit._run_exitfuncs()
-        self.assertEqual(self.subst_io.getvalue(), "h3\nh2\nh1\n")
+        # be sure handlers are executed in reverse order
+        s = StringIO.StringIO()
+        sys.stdout = sys.stderr = s
+        save_handlers = atexit._exithandlers
+        atexit._exithandlers = []
+        try:
+            atexit.register(self.h1)
+            atexit.register(self.h2)
+            atexit.register(self.h3)
+            atexit._run_exitfuncs()
+        finally:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            atexit._exithandlers = save_handlers
+        self.assertEqual(s.getvalue(), "h3\nh2\nh1\n")
 
     def test_sys_override(self):
         # be sure a preset sys.exitfunc is handled properly
+        s = StringIO.StringIO()
+        sys.stdout = sys.stderr = s
+        save_handlers = atexit._exithandlers
+        atexit._exithandlers = []
         exfunc = sys.exitfunc
         sys.exitfunc = self.h1
         reload(atexit)
@@ -46,13 +52,26 @@ class TestCase(unittest.TestCase):
             atexit.register(self.h2)
             atexit._run_exitfuncs()
         finally:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            atexit._exithandlers = save_handlers
             sys.exitfunc = exfunc
-        self.assertEqual(self.subst_io.getvalue(), "h2\nh1\n")
+        self.assertEqual(s.getvalue(), "h2\nh1\n")
 
     def test_raise(self):
-        atexit.register(self.raise1)
-        atexit.register(self.raise2)
-        self.assertRaises(TypeError, atexit._run_exitfuncs)
+        # be sure raises are handled properly
+        s = StringIO.StringIO()
+        sys.stdout = sys.stderr = s
+        save_handlers = atexit._exithandlers
+        atexit._exithandlers = []
+        try:
+            atexit.register(self.raise1)
+            atexit.register(self.raise2)
+            self.assertRaises(TypeError, atexit._run_exitfuncs)
+        finally:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            atexit._exithandlers = save_handlers
 
     ### helpers
     def h1(self):

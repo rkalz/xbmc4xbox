@@ -20,6 +20,7 @@ barrier, in particular frame and traceback objects.
 
 """
 
+import sys
 import types
 import rpc
 import Debugger

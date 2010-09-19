@@ -42,8 +42,8 @@ static sadstatusobject *sads_alloc(void);	/* Forward */
 
 static PyObject *SunAudioError;
 
-#define is_sadobject(v)		(Py_TYPE(v) == &Sadtype)
-#define is_sadstatusobject(v)	(Py_TYPE(v) == &Sadstatustype)
+#define is_sadobject(v)		((v)->ob_type == &Sadtype)
+#define is_sadstatusobject(v)	((v)->ob_type == &Sadstatustype)
 
 
 static sadobject *
@@ -409,7 +409,8 @@ sads_setattr(sadstatusobject *xp, char *name, PyObject *v)
 
 
 static PyTypeObject Sadtype = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,				/*ob_size*/
 	"sunaudiodev.sun_audio_device",	/*tp_name*/
 	sizeof(sadobject),		/*tp_size*/
 	0,				/*tp_itemsize*/
@@ -423,7 +424,8 @@ static PyTypeObject Sadtype = {
 };
 
 static PyTypeObject Sadstatustype = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,				/*ob_size*/
 	"sunaudiodev.sun_audio_device_status", /*tp_name*/
 	sizeof(sadstatusobject),	/*tp_size*/
 	0,				/*tp_itemsize*/
@@ -452,14 +454,8 @@ void
 initsunaudiodev(void)
 {
 	PyObject *m, *d;
-	
-	if (PyErr_WarnPy3k("the sunaudiodev module has been removed in "
-	                   "Python 3.0", 2) < 0)
-	    return;
 
 	m = Py_InitModule("sunaudiodev", sunaudiodev_methods);
-	if (m == NULL)
-		return;
 	d = PyModule_GetDict(m);
 	SunAudioError = PyErr_NewException("sunaudiodev.error", NULL, NULL);
 	if (SunAudioError)

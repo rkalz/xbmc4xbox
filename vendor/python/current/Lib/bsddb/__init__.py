@@ -33,36 +33,18 @@
 #----------------------------------------------------------------------
 
 
-"""Support for Berkeley DB 4.0 through 4.7 with a simple interface.
-
-For the full featured object oriented interface use the bsddb.db module
-instead.  It mirrors the Oracle Berkeley DB C API.
+"""Support for BerkeleyDB 3.2 through 4.2.
 """
-
-import sys
-absolute_import = (sys.version_info[0] >= 3)
-
-if sys.py3kwarning:
-    import warnings
-    warnings.warnpy3k("in 3.x, bsddb has been removed; "
-                      "please use the pybsddb project instead",
-                      DeprecationWarning, 2)
 
 try:
     if __name__ == 'bsddb3':
         # import _pybsddb binary as it should be the more recent version from
         # a standalone pybsddb addon package than the version included with
         # python as bsddb._bsddb.
-        if absolute_import :
-            # Because this syntaxis is not valid before Python 2.5
-            exec("from . import _pybsddb")
-        else :
-            import _pybsddb
+        import _pybsddb
         _bsddb = _pybsddb
-        from bsddb3.dbutils import DeadlockWrap as _DeadlockWrap
     else:
         import _bsddb
-        from bsddb.dbutils import DeadlockWrap as _DeadlockWrap
 except ImportError:
     # Remove ourselves from sys.modules
     import sys
@@ -79,18 +61,16 @@ error = db.DBError  # So bsddb.error will mean something...
 
 import sys, os
 
-from weakref import ref
-
-if sys.version_info[0:2] <= (2, 5) :
+# for backwards compatibility with python versions older than 2.3, the
+# iterator interface is dynamically defined and added using a mixin
+# class.  old python can't tokenize it due to the yield keyword.
+if sys.version >= '2.3':
     import UserDict
-    MutableMapping = UserDict.DictMixin
-else :
-    import collections
-    MutableMapping = collections.MutableMapping
-
-class _iter_mixin(MutableMapping):
+    from weakref import ref
+    exec """
+class _iter_mixin(UserDict.DictMixin):
     def _make_iter_cursor(self):
-        cur = _DeadlockWrap(self.db.cursor)
+        cur = self.db.cursor()
         key = id(cur)
         self._cursor_refs[key] = ref(cur, self._gen_cref_cleaner(key))
         return cur
@@ -102,88 +82,68 @@ class _iter_mixin(MutableMapping):
         return lambda ref: self._cursor_refs.pop(key, None)
 
     def __iter__(self):
-        self._kill_iteration = False
-        self._in_iter += 1
         try:
-            try:
-                cur = self._make_iter_cursor()
+            cur = self._make_iter_cursor()
 
-                # FIXME-20031102-greg: race condition.  cursor could
-                # be closed by another thread before this call.
+            # FIXME-20031102-greg: race condition.  cursor could
+            # be closed by another thread before this call.
 
-                # since we're only returning keys, we call the cursor
-                # methods with flags=0, dlen=0, dofs=0
-                key = _DeadlockWrap(cur.first, 0,0,0)[0]
-                yield key
+            # since we're only returning keys, we call the cursor
+            # methods with flags=0, dlen=0, dofs=0
+            key = cur.first(0,0,0)[0]
+            yield key
 
-                next = getattr(cur, "next")
-                while 1:
-                    try:
-                        key = _DeadlockWrap(next, 0,0,0)[0]
-                        yield key
-                    except _bsddb.DBCursorClosedError:
-                        if self._kill_iteration:
-                            raise RuntimeError('Database changed size '
-                                               'during iteration.')
-                        cur = self._make_iter_cursor()
-                        # FIXME-20031101-greg: race condition.  cursor could
-                        # be closed by another thread before this call.
-                        _DeadlockWrap(cur.set, key,0,0,0)
-                        next = getattr(cur, "next")
-            except _bsddb.DBNotFoundError:
-                pass
-            except _bsddb.DBCursorClosedError:
-                # the database was modified during iteration.  abort.
-                pass
-# When Python 2.3 not supported in bsddb3, we can change this to "finally"
-        except :
-            self._in_iter -= 1
-            raise
-
-        self._in_iter -= 1
+            next = cur.next
+            while 1:
+                try:
+                    key = next(0,0,0)[0]
+                    yield key
+                except _bsddb.DBCursorClosedError:
+                    cur = self._make_iter_cursor()
+                    # FIXME-20031101-greg: race condition.  cursor could
+                    # be closed by another thread before this call.
+                    cur.set(key,0,0,0)
+                    next = cur.next
+        except _bsddb.DBNotFoundError:
+            return
+        except _bsddb.DBCursorClosedError:
+            # the database was modified during iteration.  abort.
+            return
 
     def iteritems(self):
-        if not self.db:
-            return
-        self._kill_iteration = False
-        self._in_iter += 1
         try:
             try:
                 cur = self._make_iter_cursor()
+            except AttributeError:
+                return
 
-                # FIXME-20031102-greg: race condition.  cursor could
-                # be closed by another thread before this call.
+            # FIXME-20031102-greg: race condition.  cursor could
+            # be closed by another thread before this call.
 
-                kv = _DeadlockWrap(cur.first)
-                key = kv[0]
-                yield kv
+            kv = cur.first()
+            key = kv[0]
+            yield kv
 
-                next = getattr(cur, "next")
-                while 1:
-                    try:
-                        kv = _DeadlockWrap(next)
-                        key = kv[0]
-                        yield kv
-                    except _bsddb.DBCursorClosedError:
-                        if self._kill_iteration:
-                            raise RuntimeError('Database changed size '
-                                               'during iteration.')
-                        cur = self._make_iter_cursor()
-                        # FIXME-20031101-greg: race condition.  cursor could
-                        # be closed by another thread before this call.
-                        _DeadlockWrap(cur.set, key,0,0,0)
-                        next = getattr(cur, "next")
-            except _bsddb.DBNotFoundError:
-                pass
-            except _bsddb.DBCursorClosedError:
-                # the database was modified during iteration.  abort.
-                pass
-# When Python 2.3 not supported in bsddb3, we can change this to "finally"
-        except :
-            self._in_iter -= 1
-            raise
-
-        self._in_iter -= 1
+            next = cur.next
+            while 1:
+                try:
+                    kv = next()
+                    key = kv[0]
+                    yield kv
+                except _bsddb.DBCursorClosedError:
+                    cur = self._make_iter_cursor()
+                    # FIXME-20031101-greg: race condition.  cursor could
+                    # be closed by another thread before this call.
+                    cur.set(key,0,0,0)
+                    next = cur.next
+        except _bsddb.DBNotFoundError:
+            return
+        except _bsddb.DBCursorClosedError:
+            # the database was modified during iteration.  abort.
+            return
+"""
+else:
+    class _iter_mixin: pass
 
 
 class _DBWithCursor(_iter_mixin):
@@ -212,21 +172,19 @@ class _DBWithCursor(_iter_mixin):
         # a collection of all DBCursor objects currently allocated
         # by the _iter_mixin interface.
         self._cursor_refs = {}
-        self._in_iter = 0
-        self._kill_iteration = False
 
     def __del__(self):
         self.close()
 
     def _checkCursor(self):
         if self.dbc is None:
-            self.dbc = _DeadlockWrap(self.db.cursor)
+            self.dbc = self.db.cursor()
             if self.saved_dbc_key is not None:
-                _DeadlockWrap(self.dbc.set, self.saved_dbc_key)
+                self.dbc.set(self.saved_dbc_key)
                 self.saved_dbc_key = None
 
     # This method is needed for all non-cursor DB calls to avoid
-    # Berkeley DB deadlocks (due to being opened with DB_INIT_LOCK
+    # BerkeleyDB deadlocks (due to being opened with DB_INIT_LOCK
     # and DB_THREAD to be thread safe) when intermixing database
     # operations that use the cursor internally with those that don't.
     def _closeCursors(self, save=1):
@@ -235,15 +193,15 @@ class _DBWithCursor(_iter_mixin):
             self.dbc = None
             if save:
                 try:
-                    self.saved_dbc_key = _DeadlockWrap(c.current, 0,0,0)[0]
+                    self.saved_dbc_key = c.current(0,0,0)[0]
                 except db.DBError:
                     pass
-            _DeadlockWrap(c.close)
+            c.close()
             del c
         for cref in self._cursor_refs.values():
             c = cref()
             if c is not None:
-                _DeadlockWrap(c.close)
+                c.close()
 
     def _checkOpen(self):
         if self.db is None:
@@ -254,94 +212,73 @@ class _DBWithCursor(_iter_mixin):
 
     def __len__(self):
         self._checkOpen()
-        return _DeadlockWrap(lambda: len(self.db))  # len(self.db)
-
-    if sys.version_info[0:2] >= (2, 6) :
-        def __repr__(self) :
-            if self.isOpen() :
-                return repr(dict(_DeadlockWrap(self.db.items)))
-            return repr(dict())
+        return len(self.db)
 
     def __getitem__(self, key):
         self._checkOpen()
-        return _DeadlockWrap(lambda: self.db[key])  # self.db[key]
+        return self.db[key]
 
     def __setitem__(self, key, value):
         self._checkOpen()
         self._closeCursors()
-        if self._in_iter and key not in self:
-            self._kill_iteration = True
-        def wrapF():
-            self.db[key] = value
-        _DeadlockWrap(wrapF)  # self.db[key] = value
+        self.db[key] = value
 
     def __delitem__(self, key):
         self._checkOpen()
         self._closeCursors()
-        if self._in_iter and key in self:
-            self._kill_iteration = True
-        def wrapF():
-            del self.db[key]
-        _DeadlockWrap(wrapF)  # del self.db[key]
+        del self.db[key]
 
     def close(self):
         self._closeCursors(save=0)
         if self.dbc is not None:
-            _DeadlockWrap(self.dbc.close)
+            self.dbc.close()
         v = 0
         if self.db is not None:
-            v = _DeadlockWrap(self.db.close)
+            v = self.db.close()
         self.dbc = None
         self.db = None
         return v
 
     def keys(self):
         self._checkOpen()
-        return _DeadlockWrap(self.db.keys)
+        return self.db.keys()
 
     def has_key(self, key):
         self._checkOpen()
-        return _DeadlockWrap(self.db.has_key, key)
+        return self.db.has_key(key)
 
     def set_location(self, key):
         self._checkOpen()
         self._checkCursor()
-        return _DeadlockWrap(self.dbc.set_range, key)
+        return self.dbc.set_range(key)
 
-    def next(self):  # Renamed by "2to3"
+    def next(self):
         self._checkOpen()
         self._checkCursor()
-        rv = _DeadlockWrap(getattr(self.dbc, "next"))
+        rv = self.dbc.next()
         return rv
-
-    if sys.version_info[0] >= 3 :  # For "2to3" conversion
-        next = __next__
 
     def previous(self):
         self._checkOpen()
         self._checkCursor()
-        rv = _DeadlockWrap(self.dbc.prev)
+        rv = self.dbc.prev()
         return rv
 
     def first(self):
         self._checkOpen()
-        # fix 1725856: don't needlessly try to restore our cursor position
-        self.saved_dbc_key = None
         self._checkCursor()
-        rv = _DeadlockWrap(self.dbc.first)
+        rv = self.dbc.first()
         return rv
 
     def last(self):
         self._checkOpen()
-        # fix 1725856: don't needlessly try to restore our cursor position
-        self.saved_dbc_key = None
         self._checkCursor()
-        rv = _DeadlockWrap(self.dbc.last)
+        rv = self.dbc.last()
         return rv
 
     def sync(self):
         self._checkOpen()
-        return _DeadlockWrap(self.db.sync)
+        return self.db.sync()
 
 
 #----------------------------------------------------------------------
@@ -351,9 +288,10 @@ def hashopen(file, flag='c', mode=0666, pgsize=None, ffactor=None, nelem=None,
             cachesize=None, lorder=None, hflags=0):
 
     flags = _checkflag(flag, file)
-    e = _openDBEnv(cachesize)
+    e = _openDBEnv()
     d = db.DB(e)
     d.set_flags(hflags)
+    if cachesize is not None: d.set_cachesize(0, cachesize)
     if pgsize is not None:    d.set_pagesize(pgsize)
     if lorder is not None:    d.set_lorder(lorder)
     if ffactor is not None:   d.set_h_ffactor(ffactor)
@@ -368,8 +306,9 @@ def btopen(file, flag='c', mode=0666,
             pgsize=None, lorder=None):
 
     flags = _checkflag(flag, file)
-    e = _openDBEnv(cachesize)
+    e = _openDBEnv()
     d = db.DB(e)
+    if cachesize is not None: d.set_cachesize(0, cachesize)
     if pgsize is not None: d.set_pagesize(pgsize)
     if lorder is not None: d.set_lorder(lorder)
     d.set_flags(btflags)
@@ -386,8 +325,9 @@ def rnopen(file, flag='c', mode=0666,
             rlen=None, delim=None, source=None, pad=None):
 
     flags = _checkflag(flag, file)
-    e = _openDBEnv(cachesize)
+    e = _openDBEnv()
     d = db.DB(e)
+    if cachesize is not None: d.set_cachesize(0, cachesize)
     if pgsize is not None: d.set_pagesize(pgsize)
     if lorder is not None: d.set_lorder(lorder)
     d.set_flags(rnflags)
@@ -400,14 +340,8 @@ def rnopen(file, flag='c', mode=0666,
 
 #----------------------------------------------------------------------
 
-def _openDBEnv(cachesize):
+def _openDBEnv():
     e = db.DBEnv()
-    if cachesize is not None:
-        if cachesize >= 20480:
-            e.set_cachesize(0, cachesize)
-        else:
-            raise error, "cachesize must be >= 20480"
-    e.set_lk_detect(db.DB_LOCK_DEFAULT)
     e.open('.', db.DB_PRIVATE | db.DB_CREATE | db.DB_THREAD | db.DB_INIT_LOCK | db.DB_INIT_MPOOL)
     return e
 
@@ -423,9 +357,9 @@ def _checkflag(flag, file):
     elif flag == 'n':
         flags = db.DB_CREATE
         #flags = db.DB_CREATE | db.DB_TRUNCATE
-        # we used db.DB_TRUNCATE flag for this before but Berkeley DB
+        # we used db.DB_TRUNCATE flag for this before but BerkeleyDB
         # 4.2.52 changed to disallowed truncate with txn environments.
-        if file is not None and os.path.isfile(file):
+        if os.path.isfile(file):
             os.unlink(file)
     else:
         raise error, "flags should be one of 'r', 'w', 'c' or 'n'"
@@ -436,15 +370,18 @@ def _checkflag(flag, file):
 
 # This is a silly little hack that allows apps to continue to use the
 # DB_THREAD flag even on systems without threads without freaking out
-# Berkeley DB.
+# BerkeleyDB.
 #
 # This assumes that if Python was built with thread support then
-# Berkeley DB was too.
+# BerkeleyDB was too.
 
 try:
     import thread
     del thread
+    if db.version() < (3, 3, 0):
+        db.DB_THREAD = 0
 except ImportError:
     db.DB_THREAD = 0
+
 
 #----------------------------------------------------------------------

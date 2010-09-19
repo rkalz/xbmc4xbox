@@ -32,9 +32,6 @@
  *
  */
 
-/* Licensed to PSF under a Contributor Agreement. */
-/* See http://www.python.org/2.4/license for licensing details. */
-
 /* TODO: handle unicode command lines? */
 /* TODO: handle unicode environment? */
 
@@ -69,14 +66,6 @@ sp_handle_new(HANDLE handle)
 	return (PyObject*) self;
 }
 
-#if defined(MS_WIN32) && !defined(MS_WIN64)
-#define HANDLE_TO_PYNUM(handle)	PyInt_FromLong((long) handle)
-#define PY_HANDLE_PARAM	"l"
-#else
-#define HANDLE_TO_PYNUM(handle)	PyLong_FromLongLong((long long) handle)
-#define PY_HANDLE_PARAM	"L"
-#endif
-
 static PyObject*
 sp_handle_detach(sp_handle_object* self, PyObject* args)
 {
@@ -87,10 +76,10 @@ sp_handle_detach(sp_handle_object* self, PyObject* args)
 
 	handle = self->handle;
 
-	self->handle = INVALID_HANDLE_VALUE;
+	self->handle = NULL;
 
 	/* note: return the current handle, as an integer */
-	return HANDLE_TO_PYNUM(handle);
+	return PyInt_FromLong((long) handle);
 }
 
 static PyObject*
@@ -112,12 +101,12 @@ sp_handle_dealloc(sp_handle_object* self)
 {
 	if (self->handle != INVALID_HANDLE_VALUE)
 		CloseHandle(self->handle);
-	PyObject_FREE(self);
+	PyMem_DEL(self);
 }
 
 static PyMethodDef sp_handle_methods[] = {
-	{"Detach", (PyCFunction) sp_handle_detach, METH_VARARGS},
-	{"Close",  (PyCFunction) sp_handle_close,  METH_VARARGS},
+	{"Detach", (PyCFunction) sp_handle_detach, 1},
+	{"Close", (PyCFunction) sp_handle_close, 1},
 	{NULL, NULL}
 };
 
@@ -130,7 +119,7 @@ sp_handle_getattr(sp_handle_object* self, char* name)
 static PyObject*
 sp_handle_as_int(sp_handle_object* self)
 {
-	return HANDLE_TO_PYNUM(self->handle);
+	return PyInt_FromLong((long) self->handle);
 }
 
 static PyNumberMethods sp_handle_as_number;
@@ -176,7 +165,7 @@ sp_GetStdHandle(PyObject* self, PyObject* args)
 	}
 
 	/* note: returns integer, not handle object */
-	return HANDLE_TO_PYNUM(handle);
+	return PyInt_FromLong((long) handle);
 }
 
 static PyObject *
@@ -194,16 +183,14 @@ sp_DuplicateHandle(PyObject* self, PyObject* args)
 	HANDLE target_handle;
 	BOOL result;
 
-	HANDLE source_process_handle;
-	HANDLE source_handle;
-	HANDLE target_process_handle;
+	long source_process_handle;
+	long source_handle;
+	long target_process_handle;
 	int desired_access;
 	int inherit_handle;
 	int options = 0;
 
-	if (! PyArg_ParseTuple(args,
-			       PY_HANDLE_PARAM PY_HANDLE_PARAM PY_HANDLE_PARAM
-			       "ii|i:DuplicateHandle",
+	if (! PyArg_ParseTuple(args, "lllii|i:DuplicateHandle",
 	                       &source_process_handle,
 	                       &source_handle,
 	                       &target_process_handle,
@@ -214,9 +201,9 @@ sp_DuplicateHandle(PyObject* self, PyObject* args)
 
 	Py_BEGIN_ALLOW_THREADS
 	result = DuplicateHandle(
-		source_process_handle,
-		source_handle,
-		target_process_handle,
+		(HANDLE) source_process_handle,
+		(HANDLE) source_handle,
+		(HANDLE) target_process_handle,
 		&target_handle,
 		desired_access,
 		inherit_handle,
@@ -260,23 +247,19 @@ static int
 getint(PyObject* obj, char* name)
 {
 	PyObject* value;
-	int ret;
 
 	value = PyObject_GetAttrString(obj, name);
 	if (! value) {
 		PyErr_Clear(); /* FIXME: propagate error? */
 		return 0;
 	}
-	ret = (int) PyInt_AsLong(value);
-	Py_DECREF(value);
-	return ret;
+	return (int) PyInt_AsLong(value);
 }
 
 static HANDLE
 gethandle(PyObject* obj, char* name)
 {
 	sp_handle_object* value;
-	HANDLE ret;
 
 	value = (sp_handle_object*) PyObject_GetAttrString(obj, name);
 	if (! value) {
@@ -284,11 +267,8 @@ gethandle(PyObject* obj, char* name)
 		return NULL;
 	}
 	if (value->ob_type != &sp_handle_type)
-		ret = NULL;
-	else
-		ret = value->handle;
-	Py_DECREF(value);
-	return ret;
+		return NULL;
+	return value->handle;
 }
 
 static PyObject*
@@ -353,9 +333,6 @@ getenvironment(PyObject* environment)
 
 	/* PyObject_Print(out, stdout, 0); */
 
-	Py_XDECREF(keys);
-	Py_XDECREF(values);
-
 	return out;
 
  error:
@@ -405,9 +382,6 @@ sp_CreateProcess(PyObject* self, PyObject* args)
 	si.hStdOutput = gethandle(startup_info, "hStdOutput");
 	si.hStdError = gethandle(startup_info, "hStdError");
 
-	if (PyErr_Occurred())
-		return NULL;
-
 	if (env_mapping == Py_None)
 		environment = NULL;
 	else {
@@ -442,36 +416,16 @@ sp_CreateProcess(PyObject* self, PyObject* args)
 }
 
 static PyObject *
-sp_TerminateProcess(PyObject* self, PyObject* args)
-{
-	BOOL result;
-
-	HANDLE process;
-	int exit_code;
-	if (! PyArg_ParseTuple(args, PY_HANDLE_PARAM "i:TerminateProcess",
-			       &process, &exit_code))
-		return NULL;
-
-	result = TerminateProcess(process, exit_code);
-
-	if (! result)
-		return PyErr_SetFromWindowsErr(GetLastError());
-
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-static PyObject *
 sp_GetExitCodeProcess(PyObject* self, PyObject* args)
 {
 	DWORD exit_code;
 	BOOL result;
 
-	HANDLE process;
-	if (! PyArg_ParseTuple(args, PY_HANDLE_PARAM ":GetExitCodeProcess", &process))
+	long process;
+	if (! PyArg_ParseTuple(args, "l:GetExitCodeProcess", &process))
 		return NULL;
 
-	result = GetExitCodeProcess(process, &exit_code);
+	result = GetExitCodeProcess((HANDLE) process, &exit_code);
 
 	if (! result)
 		return PyErr_SetFromWindowsErr(GetLastError());
@@ -484,15 +438,15 @@ sp_WaitForSingleObject(PyObject* self, PyObject* args)
 {
 	DWORD result;
 
-	HANDLE handle;
+	long handle;
 	int milliseconds;
-	if (! PyArg_ParseTuple(args, PY_HANDLE_PARAM "i:WaitForSingleObject",
+	if (! PyArg_ParseTuple(args, "li:WaitForSingleObject",
 	                  	     &handle,
 	                  	     &milliseconds))
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-	result = WaitForSingleObject(handle, (DWORD) milliseconds);
+	result = WaitForSingleObject((HANDLE) handle, (DWORD) milliseconds);
 	Py_END_ALLOW_THREADS
 
 	if (result == WAIT_FAILED)
@@ -514,14 +468,13 @@ static PyObject *
 sp_GetModuleFileName(PyObject* self, PyObject* args)
 {
 	BOOL result;
-	HMODULE module;
+	long module;
 	TCHAR filename[MAX_PATH];
 
-	if (! PyArg_ParseTuple(args, PY_HANDLE_PARAM ":GetModuleFileName",
-			       &module))
+	if (! PyArg_ParseTuple(args, "l:GetModuleFileName", &module))
 		return NULL;
 
-	result = GetModuleFileName(module, filename, MAX_PATH);
+	result = GetModuleFileName((HMODULE)module, filename, MAX_PATH);
 	filename[MAX_PATH-1] = '\0';
 
 	if (! result)
@@ -536,7 +489,6 @@ static PyMethodDef sp_functions[] = {
 	{"DuplicateHandle",	sp_DuplicateHandle,	METH_VARARGS},
 	{"CreatePipe",		sp_CreatePipe,		METH_VARARGS},
 	{"CreateProcess",	sp_CreateProcess,	METH_VARARGS},
-	{"TerminateProcess",	sp_TerminateProcess,	METH_VARARGS},
 	{"GetExitCodeProcess",	sp_GetExitCodeProcess,	METH_VARARGS},
 	{"WaitForSingleObject",	sp_WaitForSingleObject, METH_VARARGS},
 	{"GetVersion",		sp_GetVersion,		METH_VARARGS},
@@ -571,8 +523,6 @@ init_subprocess()
 	sp_handle_as_number.nb_int = (unaryfunc) sp_handle_as_int;
 
 	m = Py_InitModule("_subprocess", sp_functions);
-	if (m == NULL)
-		return;
 	d = PyModule_GetDict(m);
 
 	/* constants */

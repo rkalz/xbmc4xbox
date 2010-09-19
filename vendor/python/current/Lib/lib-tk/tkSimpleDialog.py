@@ -26,6 +26,7 @@ askstring -- get a string from the user
 '''
 
 from Tkinter import *
+import os
 
 class Dialog(Toplevel):
 
@@ -45,12 +46,7 @@ class Dialog(Toplevel):
             title -- the dialog title
         '''
         Toplevel.__init__(self, parent)
-
-        # If the master is not viewable, don't
-        # make the child transient, or else it
-        # would be opened withdrawn
-        if parent.winfo_viewable():
-            self.transient(parent)
+        self.transient(parent)
 
         if title:
             self.title(title)
@@ -128,10 +124,9 @@ class Dialog(Toplevel):
         self.withdraw()
         self.update_idletasks()
 
-        try:
-            self.apply()
-        finally:
-            self.cancel()
+        self.apply()
+
+        self.cancel()
 
     def cancel(self, event=None):
 

@@ -101,7 +101,7 @@ PyAPI_FUNC(void) PyObject_Free(void *);
 
 /* Macros */
 #ifdef WITH_PYMALLOC
-#ifdef PYMALLOC_DEBUG	/* WITH_PYMALLOC && PYMALLOC_DEBUG */
+#ifdef PYMALLOC_DEBUG
 PyAPI_FUNC(void *) _PyObject_DebugMalloc(size_t nbytes);
 PyAPI_FUNC(void *) _PyObject_DebugRealloc(void *p, size_t nbytes);
 PyAPI_FUNC(void) _PyObject_DebugFree(void *p);
@@ -124,7 +124,11 @@ PyAPI_FUNC(void) _PyObject_DebugMallocStats(void);
 #else	/* ! WITH_PYMALLOC */
 #define PyObject_MALLOC		PyMem_MALLOC
 #define PyObject_REALLOC	PyMem_REALLOC
-#define PyObject_FREE		PyMem_FREE
+/* This is an odd one!  For backward compatibility with old extensions, the
+   PyMem "release memory" functions have to invoke the object allocator's
+   free() function.  When pymalloc isn't enabled, that leaves us using
+   the platform free(). */
+#define PyObject_FREE		free
 
 #endif	/* WITH_PYMALLOC */
 
@@ -142,9 +146,9 @@ PyAPI_FUNC(void) _PyObject_DebugMallocStats(void);
 /* Functions */
 PyAPI_FUNC(PyObject *) PyObject_Init(PyObject *, PyTypeObject *);
 PyAPI_FUNC(PyVarObject *) PyObject_InitVar(PyVarObject *,
-                                                 PyTypeObject *, Py_ssize_t);
+                                                 PyTypeObject *, int);
 PyAPI_FUNC(PyObject *) _PyObject_New(PyTypeObject *);
-PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
+PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, int);
 
 #define PyObject_New(type, typeobj) \
 		( (type *) _PyObject_New(typeobj) )
@@ -154,9 +158,9 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 /* Macros trading binary compatibility for speed. See also pymem.h.
    Note that these macros expect non-NULL object pointers.*/
 #define PyObject_INIT(op, typeobj) \
-	( Py_TYPE(op) = (typeobj), _Py_NewReference((PyObject *)(op)), (op) )
+	( (op)->ob_type = (typeobj), _Py_NewReference((PyObject *)(op)), (op) )
 #define PyObject_INIT_VAR(op, typeobj, size) \
-	( Py_SIZE(op) = (size), PyObject_INIT((op), (typeobj)) )
+	( (op)->ob_size = (size), PyObject_INIT((op), (typeobj)) )
 
 #define _PyObject_SIZE(typeobj) ( (typeobj)->tp_basicsize )
 
@@ -225,16 +229,16 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
  */
 
 /* C equivalent of gc.collect(). */
-PyAPI_FUNC(Py_ssize_t) PyGC_Collect(void);
+PyAPI_FUNC(long) PyGC_Collect(void);
 
 /* Test if a type has a GC head */
 #define PyType_IS_GC(t) PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 
 /* Test if an object has a GC head */
-#define PyObject_IS_GC(o) (PyType_IS_GC(Py_TYPE(o)) && \
-	(Py_TYPE(o)->tp_is_gc == NULL || Py_TYPE(o)->tp_is_gc(o)))
+#define PyObject_IS_GC(o) (PyType_IS_GC((o)->ob_type) && \
+	((o)->ob_type->tp_is_gc == NULL || (o)->ob_type->tp_is_gc(o)))
 
-PyAPI_FUNC(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, Py_ssize_t);
+PyAPI_FUNC(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, int);
 #define PyObject_GC_Resize(type, op, n) \
 		( (type *) _PyObject_GC_Resize((PyVarObject *)(op), (n)) )
 
@@ -246,7 +250,7 @@ typedef union _gc_head {
 	struct {
 		union _gc_head *gc_next;
 		union _gc_head *gc_prev;
-		Py_ssize_t gc_refs;
+		int gc_refs;
 	} gc;
 	long double dummy;  /* force worst-case alignment */
 } PyGC_Head;
@@ -287,7 +291,7 @@ extern PyGC_Head *_PyGC_generation0;
 
 PyAPI_FUNC(PyObject *) _PyObject_GC_Malloc(size_t);
 PyAPI_FUNC(PyObject *) _PyObject_GC_New(PyTypeObject *);
-PyAPI_FUNC(PyVarObject *) _PyObject_GC_NewVar(PyTypeObject *, Py_ssize_t);
+PyAPI_FUNC(PyVarObject *) _PyObject_GC_NewVar(PyTypeObject *, int);
 PyAPI_FUNC(void) PyObject_GC_Track(void *);
 PyAPI_FUNC(void) PyObject_GC_UnTrack(void *);
 PyAPI_FUNC(void) PyObject_GC_Del(void *);
@@ -303,13 +307,13 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
  * "visit" and "arg".  This is intended to keep tp_traverse functions
  * looking as much alike as possible.
  */
-#define Py_VISIT(op)							\
-        do { 								\
-                if (op) {						\
-                        int vret = visit((PyObject *)(op), arg);	\
-                        if (vret)					\
-                                return vret;				\
-                }							\
+#define Py_VISIT(op)					\
+        do { 						\
+                if (op) {				\
+                        int vret = visit((op), arg);	\
+                        if (vret)			\
+                                return vret;		\
+                }					\
         } while (0)
 
 /* This is here for the sake of backwards compatibility.  Extensions that
@@ -328,7 +332,7 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
          && ((t)->tp_weaklistoffset > 0))
 
 #define PyObject_GET_WEAKREFS_LISTPTR(o) \
-	((PyObject **) (((char *) (o)) + Py_TYPE(o)->tp_weaklistoffset))
+	((PyObject **) (((char *) (o)) + (o)->ob_type->tp_weaklistoffset))
 
 #ifdef __cplusplus
 }

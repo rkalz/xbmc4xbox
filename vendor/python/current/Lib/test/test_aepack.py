@@ -59,9 +59,6 @@ class TestAepack(unittest.TestCase):
             import Carbon.File
         except:
             return
-
-        if not hasattr(Carbon.File, "FSSpec"):
-            return
         o = Carbon.File.FSSpec(os.curdir)
         packed = aepack.pack(o)
         unpacked = aepack.unpack(packed)
@@ -71,8 +68,6 @@ class TestAepack(unittest.TestCase):
         try:
             import Carbon.File
         except:
-            return
-        if not hasattr(Carbon.File, "FSSpec"):
             return
         o = Carbon.File.FSSpec(os.curdir).NewAliasMinimal()
         packed = aepack.pack(o)

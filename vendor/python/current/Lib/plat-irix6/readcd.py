@@ -1,7 +1,4 @@
 # Class interface to the CD module.
-from warnings import warnpy3k
-warnpy3k("the readcd module has been removed in Python 3.0", stacklevel=2)
-del warnpy3k
 
 import cd, CD
 

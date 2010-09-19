@@ -1,8 +1,6 @@
 
 /* fcntl module */
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 
 #ifdef HAVE_SYS_FILE_H
@@ -34,10 +32,10 @@ fcntl_fcntl(PyObject *self, PyObject *args)
 {
 	int fd;
 	int code;
-	long arg;
+	int arg;
 	int ret;
 	char *str;
-	Py_ssize_t len;
+	int len;
 	char buf[1024];
 
 	if (PyArg_ParseTuple(args, "O&is#:fcntl",
@@ -61,7 +59,7 @@ fcntl_fcntl(PyObject *self, PyObject *args)
 	PyErr_Clear();
 	arg = 0;
 	if (!PyArg_ParseTuple(args,
-             "O&i|l;fcntl requires a file or file descriptor,"
+             "O&i|i;fcntl requires a file or file descriptor,"
              " an integer and optionally a third integer or a string", 
 			      conv_descriptor, &fd, &code, &arg)) {
 	  return NULL;
@@ -95,38 +93,33 @@ corresponding to the return value of the fcntl call in the C code.");
 static PyObject *
 fcntl_ioctl(PyObject *self, PyObject *args)
 {
-#define IOCTL_BUFSZ 1024
 	int fd;
-	/* In PyArg_ParseTuple below, we use the unsigned non-checked 'I'
-	   format for the 'code' parameter because Python turns 0x8000000
-	   into either a large positive number (PyLong or PyInt on 64-bit
-	   platforms) or a negative number on others (32-bit PyInt)
-	   whereas the system expects it to be a 32bit bit field value
-	   regardless of it being passed as an int or unsigned long on
-	   various platforms.  See the termios.TIOCSWINSZ constant across
-	   platforms for an example of thise.
-
-	   If any of the 64bit platforms ever decide to use more than 32bits
-	   in their unsigned long ioctl codes this will break and need
-	   special casing based on the platform being built on.
-	 */
-	unsigned int code;
+	int code;
 	int arg;
 	int ret;
 	char *str;
-	Py_ssize_t len;
-	int mutate_arg = 1;
- 	char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
+	int len;
+	int mutate_arg = 0;
+	char buf[1024];
 
-	if (PyArg_ParseTuple(args, "O&Iw#|i:ioctl",
+	if (PyArg_ParseTuple(args, "O&iw#|i:ioctl",
                              conv_descriptor, &fd, &code, 
 			     &str, &len, &mutate_arg)) {
 		char *arg;
 
+		if (PyTuple_Size(args) == 3) {
+#if (PY_MAJOR_VERSION>2) || (PY_MINOR_VERSION>=5)
+#error Remove the warning, change mutate_arg to 1
+#endif
+			if (PyErr_Warn(PyExc_FutureWarning,
+       "ioctl with mutable buffer will mutate the buffer by default in 2.5"
+				    ) < 0)
+				return NULL;
+			mutate_arg = 0;
+		}
 	       	if (mutate_arg) {
-			if (len <= IOCTL_BUFSZ) {
+			if (len <= sizeof buf) {
 				memcpy(buf, str, len);
-				buf[len] = '\0';
 				arg = buf;
 			} 
 			else {
@@ -134,14 +127,13 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 			}
 		}
 		else {
-			if (len > IOCTL_BUFSZ) {
+			if (len > sizeof buf) {
 				PyErr_SetString(PyExc_ValueError,
 					"ioctl string arg too long");
 				return NULL;
 			}
 			else {
 				memcpy(buf, str, len);
-				buf[len] = '\0';
 				arg = buf;
 			}
 		}
@@ -153,7 +145,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 		else {
 			ret = ioctl(fd, code, arg);
 		}
-		if (mutate_arg && (len < IOCTL_BUFSZ)) {
+		if (mutate_arg && (len < sizeof buf)) {
 			memcpy(str, buf, len);
 		}
 		if (ret < 0) {
@@ -169,15 +161,14 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 	}
 
 	PyErr_Clear();
-	if (PyArg_ParseTuple(args, "O&Is#:ioctl",
+	if (PyArg_ParseTuple(args, "O&is#:ioctl",
                              conv_descriptor, &fd, &code, &str, &len)) {
-		if (len > IOCTL_BUFSZ) {
+		if (len > sizeof buf) {
 			PyErr_SetString(PyExc_ValueError,
 					"ioctl string arg too long");
 			return NULL;
 		}
 		memcpy(buf, str, len);
-		buf[len] = '\0';
 		Py_BEGIN_ALLOW_THREADS
 		ret = ioctl(fd, code, buf);
 		Py_END_ALLOW_THREADS
@@ -191,8 +182,8 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 	PyErr_Clear();
 	arg = 0;
 	if (!PyArg_ParseTuple(args,
-	     "O&I|i;ioctl requires a file or file descriptor,"
-	     " an integer and optionally an integer or buffer argument",
+	     "O&i|i;ioctl requires a file or file descriptor,"
+	     " an integer and optionally a integer or buffer argument",
 			      conv_descriptor, &fd, &code, &arg)) {
 	  return NULL;
 	}
@@ -208,7 +199,6 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	return PyInt_FromLong((long)ret);
-#undef IOCTL_BUFSZ
 }
 
 PyDoc_STRVAR(ioctl_doc,
@@ -299,7 +289,7 @@ PyDoc_STRVAR(flock_doc,
 "flock(fd, operation)\n\
 \n\
 Perform the lock operation op on file descriptor fd.  See the Unix \n\
-manual page for flock(3) for details.  (On some systems, this function is\n\
+manual flock(3) for details.  (On some systems, this function is\n\
 emulated using fcntl().)");
 
 
@@ -336,7 +326,7 @@ fcntl_lockf(PyObject *self, PyObject *args)
 			l.l_type = F_WRLCK;
 		else {
 			PyErr_SetString(PyExc_ValueError,
-					"unrecognized lockf argument");
+					"unrecognized flock argument");
 			return NULL;
 		}
 		l.l_start = l.l_len = 0;
@@ -387,7 +377,7 @@ following values:\n\
     LOCK_SH - acquire a shared lock\n\
     LOCK_EX - acquire an exclusive lock\n\
 \n\
-When operation is LOCK_SH or LOCK_EX, it can also be bitwise ORed with\n\
+When operation is LOCK_SH or LOCK_EX, it can also be bit-wise OR'd with\n\
 LOCK_NB to avoid blocking on lock acquisition.  If LOCK_NB is used and the\n\
 lock cannot be acquired, an IOError will be raised and the exception will\n\
 have an errno attribute set to EACCES or EAGAIN (depending on the operating\n\
@@ -510,9 +500,6 @@ all_ins(PyObject* d)
         if (ins(d, "F_SETLKW64", (long)F_SETLKW64)) return -1;
 #endif
 /* GNU extensions, as of glibc 2.2.4. */
-#ifdef FASYNC
-        if (ins(d, "FASYNC", (long)FASYNC)) return -1;
-#endif
 #ifdef F_SETLEASE
         if (ins(d, "F_SETLEASE", (long)F_SETLEASE)) return -1;
 #endif
@@ -528,11 +515,6 @@ all_ins(PyObject* d)
 #endif
 #ifdef F_SHLCK
         if (ins(d, "F_SHLCK", (long)F_SHLCK)) return -1;
-#endif
-
-/* OS X (and maybe others) let you tell the storage device to flush to physical media */
-#ifdef F_FULLFSYNC
-        if (ins(d, "F_FULLFSYNC", (long)F_FULLFSYNC)) return -1;
 #endif
 
 /* For F_{GET|SET}FL */
@@ -611,8 +593,6 @@ initfcntl(void)
 
 	/* Create the module and add the functions and documentation */
 	m = Py_InitModule3("fcntl", fcntl_methods, module_doc);
-	if (m == NULL)
-		return;
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);

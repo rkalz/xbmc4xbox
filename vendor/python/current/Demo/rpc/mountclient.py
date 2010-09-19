@@ -100,7 +100,7 @@ class PartialMountClient:
     # This function is called to cough up a suitable
     # authentication object for a call to procedure 'proc'.
     def mkcred(self):
-        if self.cred is None:
+        if self.cred == None:
             self.cred = rpc.AUTH_UNIX, rpc.make_auth_unix_default()
         return self.cred
 

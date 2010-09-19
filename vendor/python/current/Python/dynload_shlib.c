@@ -130,7 +130,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 	handle = dlopen(pathname, dlopenflags);
 
 	if (handle == NULL) {
-		const char *error = dlerror();
+		char *error = dlerror();
 		if (error == NULL)
 			error = "unknown dlopen() error";
 		PyErr_SetString(PyExc_ImportError, error);

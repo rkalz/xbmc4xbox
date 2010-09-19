@@ -38,8 +38,8 @@ class SyntaxErrorChecker:
 
     def visitAssign(self, node):
         # the transformer module handles many of these
-        pass
-##        for target in node.nodes:
+        for target in node.nodes:
+            pass
 ##            if isinstance(target, ast.AssList):
 ##                if target.lineno is None:
 ##                    target.lineno = node.lineno

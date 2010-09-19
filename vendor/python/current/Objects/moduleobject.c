@@ -15,7 +15,7 @@ static PyMemberDef module_members[] = {
 };
 
 PyObject *
-PyModule_New(const char *name)
+PyModule_New(char *name)
 {
 	PyModuleObject *m;
 	PyObject *nameobj;
@@ -29,8 +29,6 @@ PyModule_New(const char *name)
 	if (PyDict_SetItemString(m->md_dict, "__name__", nameobj) != 0)
 		goto fail;
 	if (PyDict_SetItemString(m->md_dict, "__doc__", Py_None) != 0)
-		goto fail;
-	if (PyDict_SetItemString(m->md_dict, "__package__", Py_None) != 0)
 		goto fail;
 	Py_DECREF(nameobj);
 	PyObject_GC_Track(m);
@@ -106,7 +104,7 @@ _PyModule_Clear(PyObject *m)
 	   None, rather than deleting them from the dictionary, to
 	   avoid rehashing the dictionary (to some extent). */
 
-	Py_ssize_t pos;
+	int pos;
 	PyObject *key, *value;
 	PyObject *d;
 
@@ -153,8 +151,8 @@ module_init(PyModuleObject *m, PyObject *args, PyObject *kwds)
 {
 	static char *kwlist[] = {"name", "doc", NULL};
 	PyObject *dict, *name = Py_None, *doc = Py_None;
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "S|O:module.__init__",
-                                         kwlist, &name, &doc))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "S|O:module.__init__", kwlist,
+					 &name, &doc))
 		return -1;
 	dict = m->md_dict;
 	if (dict == NULL) {
@@ -178,7 +176,7 @@ module_dealloc(PyModuleObject *m)
 		_PyModule_Clear((PyObject *)m);
 		Py_DECREF(m->md_dict);
 	}
-	Py_TYPE(m)->tp_free((PyObject *)m);
+	m->ob_type->tp_free((PyObject *)m);
 }
 
 static PyObject *
@@ -206,7 +204,8 @@ module_repr(PyModuleObject *m)
 static int
 module_traverse(PyModuleObject *m, visitproc visit, void *arg)
 {
-	Py_VISIT(m->md_dict);
+	if (m->md_dict != NULL)
+		return visit(m->md_dict, arg);
 	return 0;
 }
 
@@ -217,7 +216,8 @@ Create a module object.\n\
 The name must be a string; the optional doc argument can have any type.");
 
 PyTypeObject PyModule_Type = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,					/* ob_size */
 	"module",				/* tp_name */
 	sizeof(PyModuleObject),			/* tp_size */
 	0,					/* tp_itemsize */

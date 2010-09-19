@@ -4,14 +4,7 @@
 #include "Python.h"
 #include "structmember.h"
 
-/* Free list for method objects to safe malloc/free overhead
- * The m_self element is used to chain the objects.
- */
 static PyCFunctionObject *free_list = NULL;
-static int numfree = 0;
-#ifndef PyCFunction_MAXFREELIST
-#define PyCFunction_MAXFREELIST 256
-#endif
 
 PyObject *
 PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
@@ -21,7 +14,6 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
 	if (op != NULL) {
 		free_list = (PyCFunctionObject *)(op->m_self);
 		PyObject_INIT(op, &PyCFunction_Type);
-		numfree--;
 	}
 	else {
 		op = PyObject_GC_New(PyCFunctionObject, &PyCFunction_Type);
@@ -73,7 +65,7 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 	PyCFunctionObject* f = (PyCFunctionObject*)func;
 	PyCFunction meth = PyCFunction_GET_FUNCTION(func);
 	PyObject *self = PyCFunction_GET_SELF(func);
-	Py_ssize_t size;
+	int size;
 
 	switch (PyCFunction_GET_FLAGS(func) & ~(METH_CLASS | METH_STATIC | METH_COEXIST)) {
 	case METH_VARARGS:
@@ -89,7 +81,7 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 			if (size == 0)
 				return (*meth)(self, NULL);
 			PyErr_Format(PyExc_TypeError,
-			    "%.200s() takes no arguments (%zd given)",
+			    "%.200s() takes no arguments (%d given)",
 			    f->m_ml->ml_name, size);
 			return NULL;
 		}
@@ -100,7 +92,7 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 			if (size == 1)
 				return (*meth)(self, PyTuple_GET_ITEM(arg, 0));
 			PyErr_Format(PyExc_TypeError,
-			    "%.200s() takes exactly one argument (%zd given)",
+			    "%.200s() takes exactly one argument (%d given)",
 			    f->m_ml->ml_name, size);
 			return NULL;
 		}
@@ -133,20 +125,14 @@ meth_dealloc(PyCFunctionObject *m)
 	_PyObject_GC_UNTRACK(m);
 	Py_XDECREF(m->m_self);
 	Py_XDECREF(m->m_module);
-	if (numfree < PyCFunction_MAXFREELIST) {
-		m->m_self = (PyObject *)free_list;
-		free_list = m;
-		numfree++;
-	}
-	else {
-		PyObject_GC_Del(m);
-	}
+	m->m_self = (PyObject *)free_list;
+	free_list = m;
 }
 
 static PyObject *
 meth_get__doc__(PyCFunctionObject *m, void *closure)
 {
-	const char *doc = m->m_ml->ml_doc;
+	char *doc = m->m_ml->ml_doc;
 
 	if (doc != NULL)
 		return PyString_FromString(doc);
@@ -163,8 +149,17 @@ meth_get__name__(PyCFunctionObject *m, void *closure)
 static int
 meth_traverse(PyCFunctionObject *m, visitproc visit, void *arg)
 {
-	Py_VISIT(m->m_self);
-	Py_VISIT(m->m_module);
+	int err;
+	if (m->m_self != NULL) {
+		err = visit(m->m_self, arg);
+		if (err)
+			return err;
+	}
+	if (m->m_module != NULL) {
+		err = visit(m->m_module, arg);
+		if (err)
+			return err;
+	}
 	return 0;
 }
 
@@ -194,7 +189,7 @@ static PyGetSetDef meth_getsets [] = {
 #define OFF(x) offsetof(PyCFunctionObject, x)
 
 static PyMemberDef meth_members[] = {
-	{"__module__",    T_OBJECT,     OFF(m_module), PY_WRITE_RESTRICTED},
+	{"__module__",    T_OBJECT,     OFF(m_module), WRITE_RESTRICTED},
 	{NULL}
 };
 
@@ -223,40 +218,6 @@ meth_compare(PyCFunctionObject *a, PyCFunctionObject *b)
 		return 1;
 }
 
-static PyObject *
-meth_richcompare(PyObject *self, PyObject *other, int op)
-{
-	PyCFunctionObject *a, *b;
-	PyObject *res;
-	int eq;
-
-	if (op != Py_EQ && op != Py_NE) {
-		/* Py3K warning if comparison isn't == or !=.  */
-		if (PyErr_WarnPy3k("builtin_function_or_method order "
-				   "comparisons not supported in 3.x", 1) < 0) {
-			return NULL;
-		}
-
-		Py_INCREF(Py_NotImplemented);
-		return Py_NotImplemented;
-	}
-	else if (!PyCFunction_Check(self) || !PyCFunction_Check(other)) {
-		Py_INCREF(Py_NotImplemented);
-		return Py_NotImplemented;
-	}
-	a = (PyCFunctionObject *)self;
-	b = (PyCFunctionObject *)other;
-	eq = a->m_self == b->m_self;
-	if (eq)
-		eq = a->m_ml->ml_meth == b->m_ml->ml_meth;
-	if (op == Py_EQ)
-		res = eq ? Py_True : Py_False;
-	else
-		res = eq ? Py_False : Py_True;
-	Py_INCREF(res);
-	return res;
-}
-
 static long
 meth_hash(PyCFunctionObject *a)
 {
@@ -279,7 +240,8 @@ meth_hash(PyCFunctionObject *a)
 
 
 PyTypeObject PyCFunction_Type = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,
 	"builtin_function_or_method",
 	sizeof(PyCFunctionObject),
 	0,
@@ -302,7 +264,7 @@ PyTypeObject PyCFunction_Type = {
  	0,					/* tp_doc */
  	(traverseproc)meth_traverse,		/* tp_traverse */
 	0,					/* tp_clear */
-	meth_richcompare,					/* tp_richcompare */
+	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
@@ -349,17 +311,13 @@ listmethodchain(PyMethodChain *chain)
 /* Find a method in a method chain */
 
 PyObject *
-Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, const char *name)
+Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, char *name)
 {
 	if (name[0] == '_' && name[1] == '_') {
-		if (strcmp(name, "__methods__") == 0) {
-			if (PyErr_WarnPy3k("__methods__ not supported in 3.x",
-					   1) < 0)
-				return NULL;
+		if (strcmp(name, "__methods__") == 0)
 			return listmethodchain(chain);
-		}
 		if (strcmp(name, "__doc__") == 0) {
-			const char *doc = self->ob_type->tp_doc;
+			char *doc = self->ob_type->tp_doc;
 			if (doc != NULL)
 				return PyString_FromString(doc);
 		}
@@ -381,7 +339,7 @@ Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, const char *name)
 /* Find a method in a single method list */
 
 PyObject *
-Py_FindMethod(PyMethodDef *methods, PyObject *self, const char *name)
+Py_FindMethod(PyMethodDef *methods, PyObject *self, char *name)
 {
 	PyMethodChain chain;
 	chain.methods = methods;
@@ -391,32 +349,21 @@ Py_FindMethod(PyMethodDef *methods, PyObject *self, const char *name)
 
 /* Clear out the free list */
 
-int
-PyCFunction_ClearFreeList(void)
+void
+PyCFunction_Fini(void)
 {
-	int freelist_size = numfree;
-	
 	while (free_list) {
 		PyCFunctionObject *v = free_list;
 		free_list = (PyCFunctionObject *)(v->m_self);
 		PyObject_GC_Del(v);
-		numfree--;
 	}
-	assert(numfree == 0);
-	return freelist_size;
-}
-
-void
-PyCFunction_Fini(void)
-{
-	(void)PyCFunction_ClearFreeList();
 }
 
 /* PyCFunction_New() is now just a macro that calls PyCFunction_NewEx(),
    but it's part of the API so we need to keep a function around that
    existing C extensions can call.
 */
-
+   
 #undef PyCFunction_New
 PyAPI_FUNC(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
 

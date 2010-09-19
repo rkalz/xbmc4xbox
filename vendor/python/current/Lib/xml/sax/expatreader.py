@@ -107,7 +107,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         xmlreader.IncrementalParser.parse(self, source)
 
     def prepareParser(self, source):
-        if source.getSystemId() is not None:
+        if source.getSystemId() != None:
             self._parser.SetBase(source.getSystemId())
 
     # Redefined setContentHandler to allow changing handlers during parsing
@@ -243,14 +243,13 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 
     def reset(self):
         if self._namespaces:
-            self._parser = expat.ParserCreate(self._source.getEncoding(), " ",
+            self._parser = expat.ParserCreate(None, " ",
                                               intern=self._interning)
             self._parser.namespace_prefixes = 1
             self._parser.StartElementHandler = self.start_element_ns
             self._parser.EndElementHandler = self.end_element_ns
         else:
-            self._parser = expat.ParserCreate(self._source.getEncoding(),
-                                              intern = self._interning)
+            self._parser = expat.ParserCreate(intern = self._interning)
             self._parser.StartElementHandler = self.start_element
             self._parser.EndElementHandler = self.end_element
 

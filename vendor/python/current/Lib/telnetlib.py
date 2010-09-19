@@ -1,4 +1,4 @@
-r"""TELNET client class.
+"""TELNET client class.
 
 Based on RFC 854: TELNET Protocol Specification, by J. Postel and
 J. Reynolds
@@ -184,18 +184,17 @@ class Telnet:
 
     """
 
-    def __init__(self, host=None, port=0,
-                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+    def __init__(self, host=None, port=0):
         """Constructor.
 
         When called without arguments, create an unconnected instance.
-        With a hostname argument, it connects the instance; port number
-        and timeout are optional.
+        With a hostname argument, it connects the instance; a port
+        number is optional.
+
         """
         self.debuglevel = DEBUGLEVEL
         self.host = host
         self.port = port
-        self.timeout = timeout
         self.sock = None
         self.rawq = ''
         self.irawq = 0
@@ -206,23 +205,36 @@ class Telnet:
         self.sbdataq = ''
         self.option_callback = None
         if host is not None:
-            self.open(host, port, timeout)
+            self.open(host, port)
 
-    def open(self, host, port=0, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+    def open(self, host, port=0):
         """Connect to a host.
 
         The optional second argument is the port number, which
         defaults to the standard telnet port (23).
 
         Don't try to reopen an already connected instance.
+
         """
         self.eof = 0
         if not port:
             port = TELNET_PORT
         self.host = host
         self.port = port
-        self.timeout = timeout
-        self.sock = socket.create_connection((host, port), timeout)
+        msg = "getaddrinfo returns an empty list"
+        for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
+            af, socktype, proto, canonname, sa = res
+            try:
+                self.sock = socket.socket(af, socktype, proto)
+                self.sock.connect(sa)
+            except socket.error, msg:
+                if self.sock:
+                    self.sock.close()
+                self.sock = None
+                continue
+            break
+        if not self.sock:
+            raise socket.error, msg
 
     def __del__(self):
         """Destructor -- close the connection."""
@@ -299,8 +311,6 @@ class Telnet:
         s_args = s_reply
         if timeout is not None:
             s_args = s_args + (timeout,)
-            from time import time
-            time_start = time()
         while not self.eof and select.select(*s_args) == s_reply:
             i = max(0, len(self.cookedq)-n)
             self.fill_rawq()
@@ -311,11 +321,6 @@ class Telnet:
                 buf = self.cookedq[:i]
                 self.cookedq = self.cookedq[i:]
                 return buf
-            if timeout is not None:
-                elapsed = time() - time_start
-                if elapsed >= timeout:
-                    break
-                s_args = s_reply + (timeout-elapsed,)
         return self.read_very_lazy()
 
     def read_all(self):
@@ -433,7 +438,7 @@ class Telnet:
                     else:
                         self.iacseq += c
                 elif len(self.iacseq) == 1:
-                    # 'IAC: IAC CMD [OPTION only for WILL/WONT/DO/DONT]'
+                    'IAC: IAC CMD [OPTION only for WILL/WONT/DO/DONT]'
                     if c in (DO, DONT, WILL, WONT):
                         self.iacseq += c
                         continue
@@ -596,9 +601,6 @@ class Telnet:
             if not hasattr(list[i], "search"):
                 if not re: import re
                 list[i] = re.compile(list[i])
-        if timeout is not None:
-            from time import time
-            time_start = time()
         while 1:
             self.process_rawq()
             for i in indices:
@@ -611,11 +613,7 @@ class Telnet:
             if self.eof:
                 break
             if timeout is not None:
-                elapsed = time() - time_start
-                if elapsed >= timeout:
-                    break
-                s_args = ([self.fileno()], [], [], timeout-elapsed)
-                r, w, x = select.select(*s_args)
+                r, w, x = select.select([self.fileno()], [], [], timeout)
                 if not r:
                     break
             self.fill_rawq()
@@ -649,7 +647,7 @@ def test():
             port = socket.getservbyname(portstr, 'tcp')
     tn = Telnet()
     tn.set_debuglevel(debuglevel)
-    tn.open(host, port, timeout=0.5)
+    tn.open(host, port)
     tn.interact()
     tn.close()
 

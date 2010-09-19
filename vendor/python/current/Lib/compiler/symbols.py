@@ -49,9 +49,9 @@ class Scope:
 
     def add_global(self, name):
         name = self.mangle(name)
-        if name in self.uses or name in self.defs:
+        if self.uses.has_key(name) or self.defs.has_key(name):
             pass # XXX warn about global following def/use
-        if name in self.params:
+        if self.params.has_key(name):
             raise SyntaxError, "%s in %s is global and parameter" % \
                   (name, self.name)
         self.globals[name] = 1
@@ -88,13 +88,14 @@ class Scope:
 
         The scope of a name could be LOCAL, GLOBAL, FREE, or CELL.
         """
-        if name in self.globals:
+        if self.globals.has_key(name):
             return SC_GLOBAL
-        if name in self.cells:
+        if self.cells.has_key(name):
             return SC_CELL
-        if name in self.defs:
+        if self.defs.has_key(name):
             return SC_LOCAL
-        if self.nested and (name in self.frees or name in self.uses):
+        if self.nested and (self.frees.has_key(name) or
+                            self.uses.has_key(name)):
             return SC_FREE
         if self.nested:
             return SC_UNKNOWN
@@ -107,7 +108,8 @@ class Scope:
         free = {}
         free.update(self.frees)
         for name in self.uses.keys():
-            if name not in self.defs and name not in self.globals:
+            if not (self.defs.has_key(name) or
+                    self.globals.has_key(name)):
                 free[name] = 1
         return free.keys()
 
@@ -132,7 +134,7 @@ class Scope:
         free.
         """
         self.globals[name] = 1
-        if name in self.frees:
+        if self.frees.has_key(name):
             del self.frees[name]
         for child in self.children:
             if child.check_name(name) == SC_FREE:
@@ -186,10 +188,10 @@ class GenExprScope(Scope):
         i = self.__counter
         self.__counter += 1
         self.__super_init("generator expression<%d>"%i, module, klass)
-        self.add_param('.0')
+        self.add_param('[outmost-iterable]')
 
     def get_names(self):
-        keys = Scope.get_names(self)
+        keys = Scope.get_names()
         return keys
 
 class LambdaScope(FunctionScope):
@@ -407,8 +409,13 @@ class SymbolVisitor:
         scope.generator = 1
         self.visit(node.value, scope)
 
+def sort(l):
+    l = l[:]
+    l.sort()
+    return l
+
 def list_eq(l1, l2):
-    return sorted(l1) == sorted(l2)
+    return sort(l1) == sort(l2)
 
 if __name__ == "__main__":
     import sys
@@ -436,8 +443,8 @@ if __name__ == "__main__":
         if not list_eq(mod_names, names2):
             print
             print "oops", file
-            print sorted(mod_names)
-            print sorted(names2)
+            print sort(mod_names)
+            print sort(names2)
             sys.exit(-1)
 
         d = {}
@@ -456,6 +463,6 @@ if __name__ == "__main__":
                     if not list_eq(get_names(s.get_namespace()),
                                    l[0].get_names()):
                         print s.get_name()
-                        print sorted(get_names(s.get_namespace()))
-                        print sorted(l[0].get_names())
+                        print sort(get_names(s.get_namespace()))
+                        print sort(l[0].get_names())
                         sys.exit(-1)

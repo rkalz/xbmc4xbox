@@ -5,16 +5,12 @@ Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 
 #include "Python.h"
 
-static Py_ssize_t
-internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi)
+static int
+internal_bisect_right(PyObject *list, PyObject *item, int lo, int hi)
 {
 	PyObject *litem;
-	Py_ssize_t mid, res;
+	int mid, res;
 
-	if (lo < 0) {
-		PyErr_SetString(PyExc_ValueError, "lo must be non-negative");
-		return -1;
-	}
 	if (hi == -1) {
 		hi = PySequence_Size(list);
 		if (hi < 0)
@@ -41,18 +37,18 @@ static PyObject *
 bisect_right(PyObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *list, *item;
-	Py_ssize_t lo = 0;
-	Py_ssize_t hi = -1;
-	Py_ssize_t index;
+	int lo = 0;
+	int hi = -1;
+	int index;
 	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_right",
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:bisect_right",
 		keywords, &list, &item, &lo, &hi))
 		return NULL;
 	index = internal_bisect_right(list, item, lo, hi);
 	if (index < 0)
 		return NULL;
-	return PyInt_FromSsize_t(index);
+	return PyInt_FromLong(index);
 }
 
 PyDoc_STRVAR(bisect_right_doc,
@@ -71,22 +67,22 @@ static PyObject *
 insort_right(PyObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *list, *item, *result;
-	Py_ssize_t lo = 0;
-	Py_ssize_t hi = -1;
-	Py_ssize_t index;
+	int lo = 0;
+	int hi = -1;
+	int index;
 	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:insort_right",
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:insort_right",
 		keywords, &list, &item, &lo, &hi))
 		return NULL;
 	index = internal_bisect_right(list, item, lo, hi);
 	if (index < 0)
 		return NULL;
-	if (PyList_CheckExact(list)) {
+	if (PyList_Check(list)) {
 		if (PyList_Insert(list, index, item) < 0)
 			return NULL;
 	} else {
-		result = PyObject_CallMethod(list, "insert", "nO",
+		result = PyObject_CallMethod(list, "insert", "iO",
 					     index, item);
 		if (result == NULL)
 			return NULL;
@@ -106,16 +102,12 @@ If x is already in a, insert it to the right of the rightmost x.\n\
 Optional args lo (default 0) and hi (default len(a)) bound the\n\
 slice of a to be searched.\n");
 
-static Py_ssize_t
-internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi)
+static int
+internal_bisect_left(PyObject *list, PyObject *item, int lo, int hi)
 {
 	PyObject *litem;
-	Py_ssize_t mid, res;
+	int mid, res;
 
-	if (lo < 0) {
-		PyErr_SetString(PyExc_ValueError, "lo must be non-negative");
-		return -1;
-	}
 	if (hi == -1) {
 		hi = PySequence_Size(list);
 		if (hi < 0)
@@ -142,18 +134,18 @@ static PyObject *
 bisect_left(PyObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *list, *item;
-	Py_ssize_t lo = 0;
-	Py_ssize_t hi = -1;
-	Py_ssize_t index;
+	int lo = 0;
+	int hi = -1;
+	int index;
 	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_left",
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:bisect_left",
 		keywords, &list, &item, &lo, &hi))
 		return NULL;
 	index = internal_bisect_left(list, item, lo, hi);
 	if (index < 0)
 		return NULL;
-	return PyInt_FromSsize_t(index);
+	return PyInt_FromLong(index);
 }
 
 PyDoc_STRVAR(bisect_left_doc,
@@ -172,18 +164,18 @@ static PyObject *
 insort_left(PyObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *list, *item, *result;
-	Py_ssize_t lo = 0;
-	Py_ssize_t hi = -1;
-	Py_ssize_t index;
+	int lo = 0;
+	int hi = -1;
+	int index;
 	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:insort_left",
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:insort_left",
 		keywords, &list, &item, &lo, &hi))
 		return NULL;
 	index = internal_bisect_left(list, item, lo, hi);
 	if (index < 0)
 		return NULL;
-	if (PyList_CheckExact(list)) {
+	if (PyList_Check(list)) {
 		if (PyList_Insert(list, index, item) < 0)
 			return NULL;
 	} else {
@@ -241,3 +233,4 @@ init_bisect(void)
 
 	m = Py_InitModule3("_bisect", bisect_methods, module_doc);
 }
+

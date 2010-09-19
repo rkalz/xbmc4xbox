@@ -8,7 +8,7 @@ bitset
 newbitset(int nbits)
 {
 	int nbytes = NBYTES(nbits);
-	bitset ss = (char *)PyObject_MALLOC(sizeof(BYTE) *  nbytes);
+	bitset ss = PyMem_NEW(BYTE, nbytes);
 	
 	if (ss == NULL)
 		Py_FatalError("no mem for bitset");
@@ -22,7 +22,7 @@ newbitset(int nbits)
 void
 delbitset(bitset ss)
 {
-	PyObject_FREE(ss);
+	PyMem_DEL(ss);
 }
 
 int

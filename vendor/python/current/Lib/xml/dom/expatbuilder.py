@@ -59,7 +59,7 @@ _typeinfo_map = {
     "NMTOKENS": minidom.TypeInfo(None, "nmtokens"),
     }
 
-class ElementInfo(object):
+class ElementInfo(NewStyle):
     __slots__ = '_attr_info', '_model', 'tagName'
 
     def __init__(self, tagName, model=None):
@@ -460,7 +460,7 @@ class ExpatBuilder:
 # where allowed.
 _ALLOWED_FILTER_RETURNS = (FILTER_ACCEPT, FILTER_REJECT, FILTER_SKIP)
 
-class FilterVisibilityController(object):
+class FilterVisibilityController(NewStyle):
     """Wrapper around a DOMBuilderFilter which implements the checks
     to make the whatToShow filter attribute work."""
 
@@ -518,7 +518,7 @@ class FilterVisibilityController(object):
         }
 
 
-class FilterCrutch(object):
+class FilterCrutch(NewStyle):
     __slots__ = '_builder', '_level', '_old_start', '_old_end'
 
     def __init__(self, builder):
@@ -908,7 +908,7 @@ class InternalSubsetExtractor(ExpatBuilder):
         raise ParseEscape()
 
 
-def parse(file, namespaces=True):
+def parse(file, namespaces=1):
     """Parse a document, returning the resulting Document node.
 
     'file' may be either a file name or an open file object.
@@ -929,7 +929,7 @@ def parse(file, namespaces=True):
     return result
 
 
-def parseString(string, namespaces=True):
+def parseString(string, namespaces=1):
     """Parse a document from a string, returning the resulting
     Document node.
     """
@@ -940,7 +940,7 @@ def parseString(string, namespaces=True):
     return builder.parseString(string)
 
 
-def parseFragment(file, context, namespaces=True):
+def parseFragment(file, context, namespaces=1):
     """Parse a fragment of a document, given the context from which it
     was originally extracted.  context should be the parent of the
     node(s) which are in the fragment.
@@ -963,7 +963,7 @@ def parseFragment(file, context, namespaces=True):
     return result
 
 
-def parseFragmentString(string, context, namespaces=True):
+def parseFragmentString(string, context, namespaces=1):
     """Parse a fragment of a document from a string, given the context
     from which it was originally extracted.  context should be the
     parent of the node(s) which are in the fragment.

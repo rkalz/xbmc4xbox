@@ -66,7 +66,7 @@ clattrs = ['ADDED_ALGORITHM_ERROR', 'ALAW', 'ALGORITHM_ID',
 # This is a very inobtrusive test for the existence of the cl
 # module and all its attributes.
 
-def test_main():
+def main():
     # touch all the attributes of al without doing anything
     if verbose:
         print 'Touching cl module attributes...'
@@ -75,7 +75,4 @@ def test_main():
             print 'touching: ', attr
         getattr(cl, attr)
 
-
-
-if __name__ == '__main__':
-    test_main()
+main()

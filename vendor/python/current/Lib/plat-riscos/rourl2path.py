@@ -4,6 +4,7 @@ Do not import directly, use urllib instead."""
 
 import string
 import urllib
+import os
 
 __all__ = ["url2pathname","pathname2url"]
 

@@ -1,71 +1,43 @@
 import imp
-import unittest
-from test import test_support
+from test.test_support import TestFailed, TestSkipped
+try:
+    import thread
+except ImportError:
+    raise TestSkipped("test only valid when thread support is available")
 
+def verify_lock_state(expected):
+    if imp.lock_held() != expected:
+        raise TestFailed("expected imp.lock_held() to be %r" % expected)
 
-class LockTests(unittest.TestCase):
+def testLock():
+    LOOPS = 50
 
-    """Very basic test of import lock functions."""
+    # The import lock may already be held, e.g. if the test suite is run
+    # via "import test.autotest".
+    lock_held_at_start = imp.lock_held()
+    verify_lock_state(lock_held_at_start)
 
-    def verify_lock_state(self, expected):
-        self.failUnlessEqual(imp.lock_held(), expected,
-                             "expected imp.lock_held() to be %r" % expected)
-    def testLock(self):
-        LOOPS = 50
+    for i in range(LOOPS):
+        imp.acquire_lock()
+        verify_lock_state(True)
 
-        # The import lock may already be held, e.g. if the test suite is run
-        # via "import test.autotest".
-        lock_held_at_start = imp.lock_held()
-        self.verify_lock_state(lock_held_at_start)
+    for i in range(LOOPS):
+        imp.release_lock()
 
-        for i in range(LOOPS):
-            imp.acquire_lock()
-            self.verify_lock_state(True)
+    # The original state should be restored now.
+    verify_lock_state(lock_held_at_start)
 
-        for i in range(LOOPS):
+    if not lock_held_at_start:
+        try:
             imp.release_lock()
-
-        # The original state should be restored now.
-        self.verify_lock_state(lock_held_at_start)
-
-        if not lock_held_at_start:
-            try:
-                imp.release_lock()
-            except RuntimeError:
-                pass
-            else:
-                self.fail("release_lock() without lock should raise "
-                            "RuntimeError")
-
-class ReloadTests(unittest.TestCase):
-
-    """Very basic tests to make sure that imp.reload() operates just like
-    reload()."""
-
-    def test_source(self):
-        import os
-        imp.reload(os)
-
-    def test_extension(self):
-        import time
-        imp.reload(time)
-
-    def test_builtin(self):
-        import marshal
-        imp.reload(marshal)
-
+        except RuntimeError:
+            pass
+        else:
+            raise TestFailed("release_lock() without lock should raise "
+                             "RuntimeError")
 
 def test_main():
-    tests = [
-        ReloadTests,
-    ]
-    try:
-        import thread
-    except ImportError:
-        pass
-    else:
-        tests.append(LockTests)
-    test_support.run_unittest(*tests)
+    testLock()
 
 if __name__ == "__main__":
     test_main()

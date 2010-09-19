@@ -10,7 +10,7 @@ import time
 import os
 import stat
 import getopt
-import re
+import regex
 
 def main():
     dofile = mmdf
@@ -45,7 +45,7 @@ def main():
     if sts:
         sys.exit(sts)
 
-numeric = re.compile('[1-9][0-9]*')
+numeric = regex.compile('[1-9][0-9]*')
 
 def mh(dir):
     sts = 0

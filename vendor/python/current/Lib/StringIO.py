@@ -72,7 +72,8 @@ class StringIO:
         method is called repeatedly. This method returns the next input line,
         or raises StopIteration when EOF is hit.
         """
-        _complain_ifclosed(self.closed)
+        if self.closed:
+            raise StopIteration
         r = self.readline()
         if not r:
             raise StopIteration
@@ -137,7 +138,7 @@ class StringIO:
         return r
 
     def readline(self, length=None):
-        r"""Read one entire line from the file.
+        """Read one entire line from the file.
 
         A trailing newline character is kept in the string (but may be absent
         when a file ends with an incomplete line). If the size argument is

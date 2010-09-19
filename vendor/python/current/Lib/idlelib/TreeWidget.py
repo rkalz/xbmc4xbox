@@ -15,6 +15,7 @@
 # - optimize tree redraw after expand of subnode
 
 import os
+import sys
 from Tkinter import *
 import imp
 

@@ -80,9 +80,9 @@ class Packer(xdr.Packer):
 
 
 # Exceptions
-class BadRPCFormat(Exception): pass
-class BadRPCVersion(Exception): pass
-class GarbageArgs(Exception): pass
+BadRPCFormat = 'rpc.BadRPCFormat'
+BadRPCVersion = 'rpc.BadRPCVersion'
+GarbageArgs = 'rpc.GarbageArgs'
 
 class Unpacker(xdr.Unpacker):
 
@@ -264,13 +264,13 @@ class Client:
 
     def mkcred(self):
         # Override this to use more powerful credentials
-        if self.cred is None:
+        if self.cred == None:
             self.cred = (AUTH_NULL, make_auth_null())
         return self.cred
 
     def mkverf(self):
         # Override this to use a more powerful verifier
-        if self.verf is None:
+        if self.verf == None:
             self.verf = (AUTH_NULL, make_auth_null())
         return self.verf
 
@@ -321,7 +321,7 @@ last_resv_port_tried = None
 def bindresvport(sock, host):
     global last_resv_port_tried
     FIRST, LAST = 600, 1024 # Range of ports to try
-    if last_resv_port_tried is None:
+    if last_resv_port_tried == None:
         import os
         last_resv_port_tried = FIRST + os.getpid() % (LAST-FIRST)
     for i in range(last_resv_port_tried, LAST) + \
@@ -814,7 +814,7 @@ class UDPServer(Server):
     def session(self):
         call, host_port = self.sock.recvfrom(8192)
         reply = self.handle(call)
-        if reply is not None:
+        if reply != None:
             self.sock.sendto(reply, host_port)
 
 
