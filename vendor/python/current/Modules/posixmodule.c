@@ -13,6 +13,18 @@
 
 /* See also ../Dos/dosmodule.c */
 
+#ifdef __APPLE__
+   /*
+    * Step 1 of support for weak-linking a number of symbols existing on 
+    * OSX 10.4 and later, see the comment in the #ifdef __APPLE__ block
+    * at the end of this file for more information.
+    */
+#  pragma weak lchown
+#  pragma weak statvfs
+#  pragma weak fstatvfs
+
+#endif /* __APPLE__ */
+
 #include "Python.h"
 #include "structseq.h"
 
@@ -244,7 +256,11 @@ extern int lstat(const char *, struct stat *);
 #endif /* OS2 */
 
 #ifndef MAXPATHLEN
+#if defined(PATH_MAX) && PATH_MAX > 1024   
+#define MAXPATHLEN PATH_MAX
+#else
 #define MAXPATHLEN 1024
+#endif
 #endif /* MAXPATHLEN */
 
 #ifdef UNION_WAIT
@@ -821,6 +837,8 @@ fill_time(PyObject *v, int index, time_t sec, unsigned long nsec)
 #else
 	ival = PyInt_FromLong((long)sec);
 #endif
+	if (!ival)
+		return;
 	if (_stat_float_times) {
 		fval = PyFloat_FromDouble(sec + 1e-9*nsec);
 	} else {
@@ -1508,6 +1526,13 @@ posix_listdir(PyObject *self, PyObject *args)
 				Py_DECREF(v);
 			} while (FindNextFileW(hFindFile, &wFileData) == TRUE);
 
+			if (d && GetLastError() != ERROR_NO_MORE_FILES) {
+				Py_DECREF(d);
+				win32_error_unicode("FindNextFileW", wnamebuf);
+				FindClose(hFindFile);
+				return NULL;
+			}
+
 			if (FindClose(hFindFile) == FALSE) {
 				Py_DECREF(d);
 				return win32_error_unicode("FindClose", wnamebuf);
@@ -1561,6 +1586,13 @@ posix_listdir(PyObject *self, PyObject *args)
 		}
 		Py_DECREF(v);
 	} while (FindNextFile(hFindFile, &FileData) == TRUE);
+
+	if (d && GetLastError() != ERROR_NO_MORE_FILES) {
+		Py_DECREF(d);
+		win32_error("FindNextFileW", namebuf);
+		FindClose(hFindFile);
+		return NULL;
+	}
 
 	if (FindClose(hFindFile) == FALSE) {
 		Py_DECREF(d);
@@ -1648,6 +1680,7 @@ posix_listdir(PyObject *self, PyObject *args)
 	struct dirent *ep;
 	int arg_is_unicode = 1;
 
+	errno = 0;
 	if (!PyArg_ParseTuple(args, "U:listdir", &v)) {
 		arg_is_unicode = 0;
 		PyErr_Clear();
@@ -1698,6 +1731,12 @@ posix_listdir(PyObject *self, PyObject *args)
 			break;
 		}
 		Py_DECREF(v);
+	}
+	if (errno != 0 && d != NULL) {
+		/* readdir() returned NULL and set errno */
+		closedir(dirp);
+		Py_DECREF(d);
+		return posix_error_with_allocated_filename(name); 
 	}
 	closedir(dirp);
 	PyMem_Free(name);
@@ -1979,6 +2018,8 @@ extract_time(PyObject *t, long* sec, long* usec)
 			return -1;
 		intval = PyInt_AsLong(intobj);
 		Py_DECREF(intobj);
+		if (intval == -1 && PyErr_Occurred())
+			return -1;
 		*sec = intval;
 		*usec = (long)((tval - intval) * 1e6); /* can't exceed 1000000 */
 		if (*usec < 0)
@@ -5458,9 +5499,24 @@ posix_fdopen(PyObject *self, PyObject *args)
 			     "invalid file mode '%s'", mode);
 		return NULL;
 	}
-
 	Py_BEGIN_ALLOW_THREADS
+#if !defined(MS_WINDOWS) && defined(HAVE_FCNTL_H)
+	if (mode[0] == 'a') {
+		/* try to make sure the O_APPEND flag is set */
+		int flags;
+		flags = fcntl(fd, F_GETFL);
+		if (flags != -1)
+			fcntl(fd, F_SETFL, flags | O_APPEND);
+		fp = fdopen(fd, mode);
+		if (fp == NULL && flags != -1)
+			/* restore old mode if fdopen failed */
+			fcntl(fd, F_SETFL, flags);
+	} else {
+		fp = fdopen(fd, mode);
+	}
+#else
 	fp = fdopen(fd, mode);
+#endif
 	Py_END_ALLOW_THREADS
 	if (fp == NULL)
 		return posix_error();
@@ -6015,7 +6071,7 @@ posix_WSTOPSIG(PyObject *self, PyObject *args)
 #endif /* HAVE_SYS_WAIT_H */
 
 
-#if defined(HAVE_FSTATVFS)
+#if defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H)
 #ifdef _SCO_DS
 /* SCO OpenServer 5.0 and later requires _SVID3 before it reveals the
    needed definitions in sys/statvfs.h */
@@ -6082,10 +6138,10 @@ posix_fstatvfs(PyObject *self, PyObject *args)
 
         return _pystatvfs_fromstructstatvfs(st);
 }
-#endif /* HAVE_FSTATVFS */
+#endif /* HAVE_FSTATVFS && HAVE_SYS_STATVFS_H */
 
 
-#if defined(HAVE_STATVFS)
+#if defined(HAVE_STATVFS) && defined(HAVE_SYS_STATVFS_H)
 #include <sys/statvfs.h>
 
 PyDoc_STRVAR(posix_statvfs__doc__,
@@ -6543,12 +6599,13 @@ posix_confstr(PyObject *self, PyObject *args)
 {
     PyObject *result = NULL;
     int name;
-    char buffer[64];
+    char buffer[256];
 
     if (PyArg_ParseTuple(args, "O&:confstr", conv_confstr_confname, &name)) {
-        int len = confstr(name, buffer, sizeof(buffer));
+	int len;
 
         errno = 0;
+	len = confstr(name, buffer, sizeof(buffer));
         if (len == 0) {
             if (errno != 0)
                 posix_error();
@@ -6556,13 +6613,13 @@ posix_confstr(PyObject *self, PyObject *args)
                 result = PyString_FromString("");
         }
         else {
-            if (len >= sizeof(buffer)) {
-                result = PyString_FromStringAndSize(NULL, len);
+	    if ((unsigned int)len >= sizeof(buffer)) {
+                result = PyString_FromStringAndSize(NULL, len-1);
                 if (result != NULL)
-                    confstr(name, PyString_AS_STRING(result), len+1);
+                    confstr(name, PyString_AS_STRING(result), len);
             }
             else
-                result = PyString_FromString(buffer);
+                result = PyString_FromStringAndSize(buffer, len-1);
         }
     }
     return result;
@@ -7293,7 +7350,7 @@ win32_urandom(PyObject *self, PyObject *args)
 
 		pCryptGenRandom = (CRYPTGENRANDOM)GetProcAddress(
 						hAdvAPI32, "CryptGenRandom");
-		if (pCryptAcquireContext == NULL)
+		if (pCryptGenRandom == NULL)
 			return PyErr_Format(PyExc_NotImplementedError,
 					    "CryptGenRandom not found");
 
@@ -7567,10 +7624,10 @@ static PyMethodDef posix_methods[] = {
         {"WSTOPSIG",	posix_WSTOPSIG, METH_VARARGS, posix_WSTOPSIG__doc__},
 #endif /* WSTOPSIG */
 #endif /* HAVE_SYS_WAIT_H */
-#ifdef HAVE_FSTATVFS
+#if defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H)
 	{"fstatvfs",	posix_fstatvfs, METH_VARARGS, posix_fstatvfs__doc__},
 #endif
-#ifdef HAVE_STATVFS
+#if defined(HAVE_STATVFS) && defined(HAVE_SYS_STATVFS_H)
 	{"statvfs",	posix_statvfs, METH_VARARGS, posix_statvfs__doc__},
 #endif
 #ifdef HAVE_TMPFILE
@@ -7895,6 +7952,8 @@ INITFUNC(void)
 	m = Py_InitModule3(MODNAME,
 			   posix_methods,
 			   posix__doc__);
+	if (m == NULL)
+    		return;
 
 	/* Initialize environ dictionary */
 	v = convertenviron();
@@ -7932,4 +7991,41 @@ INITFUNC(void)
 	Py_INCREF((PyObject*) &StatVFSResultType);
 	PyModule_AddObject(m, "statvfs_result",
 			   (PyObject*) &StatVFSResultType);
+
+#ifdef __APPLE__
+      /*
+       * Step 2 of weak-linking support on Mac OS X.
+       *
+       * The code below removes functions that are not available on the
+       * currently active platform. 
+       *
+       * This block allow one to use a python binary that was build on
+       * OSX 10.4 on OSX 10.3, without loosing access to new APIs on 
+       * OSX 10.4.
+       */
+#ifdef HAVE_FSTATVFS
+      if (fstatvfs == NULL) {
+              if (PyObject_DelAttrString(m, "fstatvfs") == -1) {
+                      return;
+              }
+      }
+#endif /* HAVE_FSTATVFS */
+
+#ifdef HAVE_STATVFS
+      if (statvfs == NULL) {
+               if (PyObject_DelAttrString(m, "statvfs") == -1) {
+                       return;
+              }
+      }
+#endif /* HAVE_STATVFS */
+ 
+# ifdef HAVE_LCHOWN
+      if (lchown == NULL) {
+              if (PyObject_DelAttrString(m, "lchown") == -1) {
+                      return;
+              }
+      }
+#endif /* HAVE_LCHOWN */
+
+#endif /* __APPLE__ */
 }
