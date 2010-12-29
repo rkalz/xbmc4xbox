@@ -257,10 +257,11 @@ bool CDVDDemuxFFmpeg::Open(CDVDInputStream* pInput)
       iformat = m_dllAvFormat.av_find_input_format("mpegts");
   }
 
+  // try to abort after 30 seconds
+  m_timeout = GetTickCount() + 30000;
+
   if( m_pInput->IsStreamType(DVDSTREAM_TYPE_FFMPEG) )
   {
-    m_timeout = GetTickCount() + 10000;
-
     // special stream type that makes avformat handle file opening
     // allows internal ffmpeg protocols to be used
     if( m_dllAvFormat.av_open_input_file(&m_pFormatContext, strFile.c_str(), iformat, FFMPEG_FILE_BUFFER_SIZE, NULL) < 0 )
@@ -272,7 +273,6 @@ bool CDVDDemuxFFmpeg::Open(CDVDInputStream* pInput)
   }
   else
   {
-    m_timeout = 0;
     unsigned char* buffer = (unsigned char*)m_dllAvUtil.av_malloc(FFMPEG_FILE_BUFFER_SIZE);
     m_ioContext = m_dllAvFormat.av_alloc_put_byte(buffer, FFMPEG_FILE_BUFFER_SIZE, 0, m_pInput, dvd_file_read, NULL, dvd_file_seek);
     m_ioContext->max_packet_size = m_pInput->GetBlockSize();
@@ -362,7 +362,7 @@ bool CDVDDemuxFFmpeg::Open(CDVDInputStream* pInput)
   }
 
   // we need to know if this is matroska or avi later
-  m_bMatroska = strcmp(m_pFormatContext->iformat->name, "matroska") == 0;
+  m_bMatroska = strncmp(m_pFormatContext->iformat->name, "matroska", 8) == 0;	// for "matroska.webm"
   m_bAVI = strcmp(m_pFormatContext->iformat->name, "avi") == 0;
 
   // in combination with libdvdnav seek, av_find_stream_info wont work
@@ -898,8 +898,8 @@ void CDVDDemuxFFmpeg::AddStream(int iId)
         st->iBitRate = pStream->codec->bit_rate;
         st->iBitsPerSample = pStream->codec->bits_per_coded_sample;
 	
-        if(m_bMatroska && m_dllAvFormat.av_metadata_get(pStream->metadata, "description", NULL, 0))
-          st->m_description = m_dllAvFormat.av_metadata_get(pStream->metadata, "description", NULL, 0)->value;	
+        if(m_dllAvFormat.av_metadata_get(pStream->metadata, "title", NULL, 0))
+          st->m_description = m_dllAvFormat.av_metadata_get(pStream->metadata, "title", NULL, 0)->value;
 
         break;
       }
@@ -912,7 +912,17 @@ void CDVDDemuxFFmpeg::AddStream(int iId)
         else
           st->bVFR = false;
 
-        if(pStream->r_frame_rate.den && pStream->r_frame_rate.num)
+        // never trust pts in avi files with h264.
+        if (m_bAVI && pStream->codec->codec_id == CODEC_ID_H264)
+          st->bPTSInvalid = true;
+
+        //average fps is more accurate for mkv files
+        if (m_bMatroska && pStream->avg_frame_rate.den && pStream->avg_frame_rate.num)
+        {
+          st->iFpsRate = pStream->avg_frame_rate.num;
+          st->iFpsScale = pStream->avg_frame_rate.den;
+        }
+        else if(pStream->r_frame_rate.den && pStream->r_frame_rate.num)
         {
           st->iFpsRate = pStream->r_frame_rate.num;
           st->iFpsScale = pStream->r_frame_rate.den;
@@ -959,8 +969,8 @@ void CDVDDemuxFFmpeg::AddStream(int iId)
           if(pStream->codec)
             st->identifier = pStream->codec->sub_id;
 	    
-          if(m_bMatroska && m_dllAvFormat.av_metadata_get(pStream->metadata, "description", NULL, 0))
-            st->m_description = m_dllAvFormat.av_metadata_get(pStream->metadata, "description", NULL, 0)->value;
+          if(m_dllAvFormat.av_metadata_get(pStream->metadata, "title", NULL, 0))
+            st->m_description = m_dllAvFormat.av_metadata_get(pStream->metadata, "title", NULL, 0)->value;
 	
           break;
         }
@@ -1008,6 +1018,7 @@ void CDVDDemuxFFmpeg::AddStream(int iId)
     m_streams[iId]->iId = iId;
     m_streams[iId]->source = STREAM_SOURCE_DEMUX;
     m_streams[iId]->pPrivate = pStream;
+    m_streams[iId]->flags = (CDemuxStream::EFlags)pStream->disposition;
 
     strcpy( m_streams[iId]->language, pStream->language );
 
@@ -1018,9 +1029,6 @@ void CDVDDemuxFFmpeg::AddStream(int iId)
       memcpy(m_streams[iId]->ExtraData, pStream->codec->extradata, pStream->codec->extradata_size);
     }
 
-    //FFMPEG has an error doesn't set type properly for DTS
-    if( m_streams[iId]->codec == CODEC_ID_AC3 && (pStream->id >= 136 && pStream->id <= 143) )
-      m_streams[iId]->codec = CODEC_ID_DTS;
 
     if( m_pInput->IsStreamType(DVDSTREAM_TYPE_DVD) )
     {

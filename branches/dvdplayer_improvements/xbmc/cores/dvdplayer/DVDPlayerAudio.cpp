@@ -27,6 +27,8 @@
 #include "DVDCodecs/DVDFactoryCodec.h"
 #include "DVDPerformanceCounter.h"
 #include "utils/TimeUtils.h"
+#include "Util.h"
+
 #include <sstream>
 #include <iomanip>
 
@@ -122,6 +124,24 @@ double CPTSInputQueue::Get(__int64 bytes, bool consume)
   return DVD_NOPTS_VALUE;
 }
 
+
+class CDVDMsgAudioCodecChange : public CDVDMsg
+{
+public:
+  CDVDMsgAudioCodecChange(const CDVDStreamInfo &hints, CDVDAudioCodec* codec)
+    : CDVDMsg(GENERAL_STREAMCHANGE)
+    , m_codec(codec)
+    , m_hints(hints)
+  {}
+ ~CDVDMsgAudioCodecChange()
+  {
+    delete m_codec;
+  }
+  CDVDAudioCodec* m_codec;
+  CDVDStreamInfo  m_hints;
+};
+
+
 CDVDPlayerAudio::CDVDPlayerAudio(CDVDClock* pClock, CDVDMessageQueue& parent)
 : CThread()
 , m_messageQueue("audio")
@@ -158,21 +178,42 @@ CDVDPlayerAudio::~CDVDPlayerAudio()
 
 bool CDVDPlayerAudio::OpenStream( CDVDStreamInfo &hints )
 {
-  // should alway's be NULL!!!!, it will probably crash anyway when deleting m_pAudioCodec here.
-  if (m_pAudioCodec)
+
+  CLog::Log(LOGNOTICE, "Finding audio codec for: %i", hints.codec);
+  CDVDAudioCodec* codec = CDVDFactoryCodec::CreateAudioCodec(hints);
+  if( !codec )
   {
-    CLog::Log(LOGFATAL, "CDVDPlayerAudio::OpenStream() m_pAudioCodec != NULL");
+    CLog::Log(LOGERROR, "Unsupported audio codec");
     return false;
   }
 
-  /* try to open decoder without probing, we could actually allow us to continue here */
-  if( !OpenDecoder(hints) ) return false;
+  if(m_messageQueue.IsInited())
+    m_messageQueue.Put(new CDVDMsgAudioCodecChange(hints, codec), 0);
+  else
+  {
+    OpenStream(hints, codec);
+    m_messageQueue.Init();
+    CLog::Log(LOGNOTICE, "Creating audio thread");
+    Create();
+  }
+  return true;
+}
 
-  m_messageQueue.Init();
+void CDVDPlayerAudio::OpenStream( CDVDStreamInfo &hints, CDVDAudioCodec* codec )
+{
+  SAFE_DELETE(m_pAudioCodec);
+  m_pAudioCodec = codec;
+
+  /* store our stream hints */
+  m_streaminfo = hints;
+
+  /* update codec information from what codec gave ut */
+  m_streaminfo.channels = m_pAudioCodec->GetChannels();
+  m_streaminfo.samplerate = m_pAudioCodec->GetSampleRate();
 
   m_droptime = 0;
   m_audioClock = 0;
-  m_stalled = true;
+  m_stalled = m_messageQueue.GetPacketCount(CDVDMsg::DEMUXER_PACKET) == 0;
   m_started = false;
 
   m_error = 0;
@@ -180,10 +221,7 @@ bool CDVDPlayerAudio::OpenStream( CDVDStreamInfo &hints )
   m_errorcount = 0;
   m_syncclock = true;
   m_errortime = CurrentHostCounter();
-  CLog::Log(LOGNOTICE, "Creating audio thread");
-  Create();
 
-  return true;
 }
 
 void CDVDPlayerAudio::CloseStream(bool bWaitForBuffers)
@@ -222,36 +260,6 @@ void CDVDPlayerAudio::CloseStream(bool bWaitForBuffers)
 
   // flush any remaining pts values
   m_ptsOutput.Flush();
-}
-
-bool CDVDPlayerAudio::OpenDecoder(CDVDStreamInfo &hints, BYTE* buffer /* = NULL*/, unsigned int size /* = 0*/)
-{
-  /* close current audio codec */
-  if( m_pAudioCodec )
-  {
-    CLog::Log(LOGNOTICE, "Deleting audio codec");
-    m_pAudioCodec->Dispose();
-    SAFE_DELETE(m_pAudioCodec);
-  }
-
-  /* store our stream hints */
-  m_streaminfo = hints;
-
-  CLog::Log(LOGNOTICE, "Finding audio codec for: %i", m_streaminfo.codec);
-  m_pAudioCodec = CDVDFactoryCodec::CreateAudioCodec( m_streaminfo );
-  if( !m_pAudioCodec )
-  {
-    CLog::Log(LOGERROR, "Unsupported audio codec");
-
-    m_streaminfo.Clear();
-    return false;
-  }
-
-  /* update codec information from what codec gave ut */
-  m_streaminfo.channels = m_pAudioCodec->GetChannels();
-  m_streaminfo.samplerate = m_pAudioCodec->GetSampleRate();
-
-  return true;
 }
 
 // decode one audio frame and returns its uncompressed size
@@ -364,17 +372,6 @@ int CDVDPlayerAudio::DecodeFrame(DVDAudioFrame &audioframe, bool bDropPacket)
       m_decode.Attach((CDVDMsgDemuxerPacket*)pMsg);
       m_ptsInput.Add( m_decode.size, m_decode.dts );
     }
-    else if (pMsg->IsType(CDVDMsg::GENERAL_STREAMCHANGE))
-    {
-      CDVDMsgGeneralStreamChange* pMsgStreamChange = (CDVDMsgGeneralStreamChange*)pMsg;
-      CDVDStreamInfo* hints = pMsgStreamChange->GetStreamInfo();
-
-      /* received a stream change, reopen codec. */
-      /* we should really not do this until first packet arrives, to have a probe buffer */
-
-      /* try to open decoder, if none is found keep consuming packets */
-      OpenDecoder( *hints );
-    }
     else if (pMsg->IsType(CDVDMsg::GENERAL_SYNCHRONIZE))
     {
       ((CDVDMsgGeneralSynchronize*)pMsg)->Wait( &m_bStop, SYNCSOURCE_AUDIO );
@@ -455,6 +452,13 @@ int CDVDPlayerAudio::DecodeFrame(DVDAudioFrame &audioframe, bool bDropPacket)
       else
         m_dvdAudio.Resume();
     }
+    else if (pMsg->IsType(CDVDMsg::GENERAL_STREAMCHANGE))
+    {
+      CDVDMsgAudioCodecChange* msg(static_cast<CDVDMsgAudioCodecChange*>(pMsg));
+      OpenStream(msg->m_hints, msg->m_codec);
+      msg->m_codec = NULL;
+    }
+
     pMsg->Release();
   }
   return 0;
@@ -496,7 +500,8 @@ void CDVDPlayerAudio::Process()
       m_stalled = true;
 
       // Flush as the audio output may keep looping if we don't
-      m_dvdAudio.Flush();
+      if(m_speed == DVD_PLAYSPEED_NORMAL)
+        m_dvdAudio.Flush();
 
       continue;
     }
@@ -523,7 +528,6 @@ void CDVDPlayerAudio::Process()
       m_dvdAudio.Destroy();
       if(!m_dvdAudio.Create(audioframe, m_streaminfo.codec))
         CLog::Log(LOGERROR, "%s - failed to create audio renderer", __FUNCTION__);
-      m_messageQueue.SetMaxTimeSize(8.0 - m_dvdAudio.GetCacheTotal());
     }
 
     if( result & DECODE_FLAG_DROP )
@@ -673,7 +677,7 @@ void CDVDPlayerAudio::WaitForBuffers()
 string CDVDPlayerAudio::GetPlayerInfo()
 {
   std::ostringstream s;
-  s << "aq:"     << setw(2) << min(99,m_messageQueue.GetLevel()) << "%";
+  s << "aq:"     << setw(2) << min(99,m_messageQueue.GetLevel() + MathUtils::round_int(100.0/8.0*m_dvdAudio.GetCacheTime())) << "%";
   s << ", kB/s:" << fixed << setprecision(2) << (double)GetAudioBitrate() / 1024.0;
   return s.str();
 }

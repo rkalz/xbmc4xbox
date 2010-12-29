@@ -6,9 +6,14 @@
 	<include file="ViewsPictures.xml" />
 	<include file="IncludesCodecFlagging.xml" />
 	<include file="IncludesHomeRecentlyAdded.xml" />
+	<include file="Viewtype_Showcase.xml" />
 	
 	<include file="IncludesHomeVertical.xml" />
 	<include file="IncludesHomeHorizontal.xml" />
+
+	<include file="script.weather.com.plus/CommonValues.xml" />
+	<include file="script.weather.com.plus/Current.xml" />
+	<include file="script.weather.com.plus/WeatherPluginView.xml" />
 
 	<constant name="FanartCrossfadeTime">500</constant>
 	<constant name="IconCrossfadeTime">400</constant>
@@ -152,7 +157,7 @@
 			<posy>0</posy>
 			<width>1280</width>
 			<height>720</height>
-			<imagepath fallback="special://skin/backgrounds/scripts.jpg" background="true">$INFO[Skin.String(Home_Custom_Back_Scripts_Folder)]</imagepath>
+			<imagepath fallback="special://skin/backgrounds/addons.jpg" background="true">$INFO[Skin.String(Home_Custom_Back_Addons_Folder)]</imagepath>
 			<timeperimage>10000</timeperimage>
 			<randomize>true</randomize>
 			<fadetime>1000</fadetime>
@@ -175,7 +180,7 @@
 			<posy>0</posy>
 			<width>1280</width>
 			<height>720</height>
-			<imagepath background="true">$INFO[Skin.String(WeatherFanartDir)]$INFO[Weather.FanartCode]</imagepath>
+			<imagepath background="true">$INFO[Window(Weather).Property(Current.FanartPath)]</imagepath>
 			<timeperimage>10000</timeperimage>
 			<randomize>true</randomize>
 			<fadetime>1000</fadetime>
@@ -903,7 +908,7 @@
 		</control>
 	</include>
 	<include name="ScrollOffsetLabel">
-                <control type="group">
+		<control type="group">
 			<visible>Container.Scrolling + [StringCompare(Container.SortMethod,$LOCALIZE[551]) | StringCompare(Container.SortMethod,$LOCALIZE[561]) | StringCompare(Container.SortMethod,$LOCALIZE[558]) | StringCompare(Container.SortMethod,$LOCALIZE[557]) | StringCompare(Container.SortMethod,$LOCALIZE[556])]</visible>
 			<animation effect="slide" start="0,0" end="0,-60" time="100">Visible</animation>
 			<animation effect="slide" start="0,-60" end="0,0" delay="400" time="100">Hidden</animation>
@@ -927,9 +932,22 @@
 				<textcolor>white</textcolor>
 				<font>font30_title</font>
 			</control>
-                </control>
+		</control>
 	</include>
 	<include name="Clock">
+		<control type="label">
+			<description>low free memory label</description>
+			<posx>0</posx>
+			<posy>0</posy>
+			<width>1280</width>
+			<height>28</height>
+			<align>center</align>
+			<aligny>center</aligny>
+			<font>font12</font>
+			<textcolor>FFDD0000</textcolor>
+			<label>[B]$LOCALIZE[158]: $INFO[System.FreeMemory][/B]</label>
+			<visible>IntegerGreaterThan(system.memory(used.percent),90)</visible>
+		</control>
 		<control type="group">
 			<posx>160r</posx>
 			<posy>0</posy>

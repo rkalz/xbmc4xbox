@@ -268,7 +268,7 @@ void CGUIDialogAudioSubtitleSettings::OnSettingChanged(SettingInfo &setting)
   {
     g_stSettings.m_currentVideoSettings.m_SubtitleOn = m_subtitleVisible;
     g_application.m_pPlayer->SetSubtitleVisible(g_stSettings.m_currentVideoSettings.m_SubtitleOn);
-    if (!g_stSettings.m_currentVideoSettings.m_SubtitleCached && g_stSettings.m_currentVideoSettings.m_SubtitleOn)
+    if (g_application.GetCurrentPlayer() == EPC_MPLAYER && !g_stSettings.m_currentVideoSettings.m_SubtitleCached && g_stSettings.m_currentVideoSettings.m_SubtitleOn)
     {
       g_application.Restart(true); // cache subtitles
       Close();
@@ -367,11 +367,11 @@ void CGUIDialogAudioSubtitleSettings::OnSettingChanged(SettingInfo &setting)
               for (int i=0;i<items.Size();++i)
                 CUtil::CacheRarSubtitles(items[i]->m_strPath,strFileNameNoExtNoCase);
             }
-            g_stSettings.m_currentVideoSettings.m_SubtitleCached = false;
             g_stSettings.m_currentVideoSettings.m_SubtitleOn = true;
 
             if (g_application.GetCurrentPlayer() == EPC_MPLAYER)
             {
+              g_stSettings.m_currentVideoSettings.m_SubtitleCached = false;
               // reopen the file
               if ( g_application.PlayFile(g_application.CurrentFileItem(), true) && g_application.m_pPlayer )
               {
@@ -384,20 +384,22 @@ void CGUIDialogAudioSubtitleSettings::OnSettingChanged(SettingInfo &setting)
             {
               CStdString strSub("special://temp/subtitle.sub");
               CStdString strIdx("special://temp/subtitle.idx");
-              if(CFile::Exists(strSub)) CFile::Delete(strSub);
-              if(CFile::Exists(strIdx)) CFile::Delete(strIdx);
+              CFile::Delete(strSub);
+              CFile::Delete(strIdx);
               CFile::Rename(strSub + ".keep", strSub);
               CFile::Rename(strIdx + ".keep", strIdx);
 
-              if(g_application.m_pPlayer->AddSubtitle(strIdx))
+              int id = g_application.m_pPlayer->AddSubtitle("special://temp/subtitle.idx");
+              if(id >= 0)
               {
-                m_subtitleStream = g_application.m_pPlayer->GetSubtitleCount() - 1;
+
+                m_subtitleStream = id;
                 g_application.m_pPlayer->SetSubtitle(m_subtitleStream);
                 g_application.m_pPlayer->SetSubtitleVisible(true);
               }
-            }
 
-            Close();
+              Close();
+            }
           }
         }
       }
@@ -406,12 +408,15 @@ void CGUIDialogAudioSubtitleSettings::OnSettingChanged(SettingInfo &setting)
         m_subtitleStream = g_application.m_pPlayer->GetSubtitleCount();
         CStdString strExt;
         CUtil::GetExtension(strPath,strExt);
-        if (CFile::Cache(strPath,"z:\\subtitle.browsed"+strExt))
+        if (CFile::Cache(strPath,"special://temp/subtitle.browsed"+strExt))
         {
-          g_stSettings.m_currentVideoSettings.m_SubtitleOn = true;
-          g_application.m_pPlayer->SetSubtitleVisible(true);
-          g_application.m_pPlayer->AddSubtitle("z:\\subtitle.browsed"+strExt);
-          g_application.m_pPlayer->SetSubtitle(m_subtitleStream);
+          int id = g_application.m_pPlayer->AddSubtitle("special://temp/subtitle.browsed"+strExt);
+          if(id >= 0)
+          {
+            m_subtitleStream = id;
+            g_application.m_pPlayer->SetSubtitle(m_subtitleStream);
+            g_application.m_pPlayer->SetSubtitleVisible(true);
+          }
         }
 
         Close();
@@ -435,6 +440,8 @@ void CGUIDialogAudioSubtitleSettings::OnSettingChanged(SettingInfo &setting)
       db.EraseVideoSettings();
       db.Close();
       g_stSettings.m_defaultVideoSettings = g_stSettings.m_currentVideoSettings;
+      g_stSettings.m_defaultVideoSettings.m_SubtitleStream = -1;
+      g_stSettings.m_defaultVideoSettings.m_AudioStream = -1;
       g_settings.Save();
     }
   }

@@ -46,7 +46,6 @@ rem	CONFIG START
 	set XBE=Release_LTCG\default.xbe
 	set XBE_PATCH=tools\xbepatch\xbepatch.exe
 	
-	SET RAR="?"
 	IF EXIST "%ProgramFiles(x86)%\Winrar\rar.exe" SET RAR="%ProgramFiles(x86)%\Winrar\rar.exe"
 	IF EXIST "%ProgramFiles%\Winrar\rar.exe"      SET RAR="%ProgramFiles%\Winrar\rar.exe"
 	IF EXIST "%ProgramW6432%\Winrar\rar.exe" SET RAR="%ProgramW6432%\Winrar\rar.exe"
@@ -128,6 +127,7 @@ IF NOT EXIST Release_LTCG\default.xbe GOTO COMPILE
   xcopy media   BUILD\media   /E /Q /I /Y /EXCLUDE:exclude.txt
   xcopy plugins BUILD\plugins /E /Q /I /Y /EXCLUDE:exclude.txt
   xcopy sounds  BUILD\sounds  /E /Q /I /Y /EXCLUDE:exclude.txt
+  xcopy scripts BUILD\scripts /E /Q /I /Y /EXCLUDE:exclude.txt
 
   del exclude.txt
   ECHO ------------------------------

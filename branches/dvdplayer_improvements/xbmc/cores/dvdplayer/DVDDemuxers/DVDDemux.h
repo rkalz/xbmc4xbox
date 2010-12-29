@@ -65,6 +65,7 @@ public:
     ExtraSize = 0;
     memset(language, 0, sizeof(language));
     disabled = false;
+    flags = FLAG_NONE;
   }
 
   virtual ~CDemuxStream() {}
@@ -93,6 +94,17 @@ public:
 
   char language[4]; // ISO 639 3-letter language code (empty string if undefined)
   bool disabled; // set when stream is disabled. (when no decoder exists)
+
+  enum EFlags
+  { FLAG_NONE     = 0x0000 
+  , FLAG_DEFAULT  = 0x0001
+  , FLAG_DUB      = 0x0002
+  , FLAG_ORIGINAL = 0x0004
+  , FLAG_COMMENT  = 0x0008
+  , FLAG_LYRICS   = 0x0010
+  , FLAG_KARAOKE  = 0x0020
+  , FLAG_FORCED   = 0x0040
+  } flags;
 };
 
 class CDemuxStreamVideo : public CDemuxStream
@@ -106,6 +118,7 @@ public:
     iWidth = 0;
     fAspect = 0.0;
     bVFR = false;
+    bPTSInvalid = false;
     type = STREAM_VIDEO;
   }
 
@@ -116,6 +129,7 @@ public:
   int iWidth; // width of the stream reported by the demuxer
   float fAspect; // display aspect of stream
   bool bVFR;  // variable framerate
+  bool bPTSInvalid; // pts cannot be trusted (avi's).
 };
 
 class CDemuxStreamAudio : public CDemuxStream

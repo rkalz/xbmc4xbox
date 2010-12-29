@@ -146,6 +146,7 @@ bool CPluginDirectory::GetPluginResult(const CStdString& strPath, CFileItem &res
     if (!resultItem.HasProperty("original_listitem_url"))
       resultItem.SetProperty("original_listitem_url", resultItem.m_strPath);
     resultItem.m_strPath = newDir->m_fileResult->m_strPath;
+    resultItem.SetMimeType(newDir->m_fileResult->GetMimeType(false));
   }
   delete newDir;
 
@@ -530,9 +531,12 @@ bool CPluginDirectory::WaitOnScriptResult(const CStdString &scriptPath, const CS
     int id = g_pythonParser.getScriptId(scriptPath.c_str());
     if (id == -1)
 #endif
-    { // nope - bail
-      CLog::Log(LOGDEBUG, " %s - plugin exited prematurely - terminating", __FUNCTION__);
-      m_success = false;
+    { // check whether we exited normally
+      if (WaitForSingleObject(m_fetchComplete, 0) == WAIT_TIMEOUT)
+      { // python didn't return correctly
+        CLog::Log(LOGDEBUG, " %s - plugin exited prematurely - terminating", __FUNCTION__);
+        m_success = false;
+      }
       break;
     }
 

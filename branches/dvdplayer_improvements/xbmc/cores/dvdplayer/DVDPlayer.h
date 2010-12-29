@@ -95,6 +95,7 @@ typedef struct
   std::string  filename;
   std::string  language;
   std::string  name;
+  CDemuxStream::EFlags flags;
   int          source;
   int          id;
 } SelectionStream;
@@ -116,6 +117,7 @@ public:
   int              IndexOf (StreamType type, CDVDPlayer& p);
   int              Count   (StreamType type) { return IndexOf(type, STREAM_SOURCE_NONE, -1) + 1; }
   SelectionStream& Get     (StreamType type, int index);
+  bool             Get     (StreamType type, CDemuxStream::EFlags flag, SelectionStream& out);
 
   void             Clear   (StreamType type, StreamSource source);
   int              Source  (StreamSource source, std::string filename);
@@ -172,7 +174,7 @@ public:
   virtual bool GetSubtitleVisible();
   virtual void SetSubtitleVisible(bool bVisible);
   virtual bool GetSubtitleExtension(CStdString &strSubtitleExtension) { return false; }
-  virtual bool AddSubtitle(const CStdString& strSubPath);
+  virtual int  AddSubtitle(const CStdString& strSubPath);
 
   virtual int GetAudioStreamCount();
   virtual int GetAudioStream();
@@ -237,7 +239,7 @@ protected:
   void ProcessVideoData(CDemuxStream* pStream, DemuxPacket* pPacket);
   void ProcessSubData(CDemuxStream* pStream, DemuxPacket* pPacket);
   
-  bool AddSubtitleFile(const std::string& filename);
+  int  AddSubtitleFile(const std::string& filename, CDemuxStream::EFlags flags = CDemuxStream::FLAG_NONE);
   /**
    * one of the DVD_PLAYSPEED defines
    */
@@ -308,8 +310,6 @@ protected:
   CDVDDemux* m_pDemuxer;            // demuxer for current playing file
   CDVDDemux* m_pSubtitleDemuxer;
   
-  double m_subLastPts;
-  
   struct SDVDInfo
   {
     void Clear()
@@ -335,6 +335,8 @@ protected:
       timestamp     = 0;
       time          = 0;
       time_total    = 0;
+      time_offset   = 0;
+      dts           = DVD_NOPTS_VALUE;
       player_state  = "";
       chapter       = 0;
       chapter_count = 0;
@@ -345,9 +347,11 @@ protected:
     }
 
     double timestamp;         // last time of update
+    double time_offset;       // difference between time and pts
 
     double time;              // current playback time
     double time_total;        // total playback time
+    double dts;               // last known dts
 
     std::string player_state;  // full player state
 

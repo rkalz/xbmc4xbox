@@ -179,7 +179,8 @@ bool MP3Codec::Init(const CStdString &strFile, unsigned int filecache)
       CLog::Log(LOGERROR, "MP3Codec: Unable to determine file format of %s (corrupt start of mp3?)", strFile.c_str());
       goto error;
     }
-    if (bIsInternetStream) m_Bitrate = m_Formatdata[4];
+    if (bIsInternetStream && !m_Bitrate) //use tag bitrate if average bitrate is not available 
+      m_Bitrate = m_Formatdata[4];
   } ;
 
   return true;
@@ -227,12 +228,7 @@ int MP3Codec::ReadSamples(float *pBuffer, int numsamples, int *actualsamples)
 
 int MP3Codec::Read(int size, bool init)
 {
-  // First read in any extra info we need from our MP3
-  int nChunkSize = m_file.GetChunkSize();
-  if (nChunkSize == 0)
-    nChunkSize = DEFAULT_CHUNK_SIZE;
-
-  int inputBufferToRead = XMIN(nChunkSize, (int)(m_InputBufferSize - m_InputBufferPos));
+  int inputBufferToRead = (int)(m_InputBufferSize - m_InputBufferPos);
   if ( inputBufferToRead && !m_CallAgainWithSameBuffer && !m_eof )
   {
     if (m_file.GetLength() > 0)

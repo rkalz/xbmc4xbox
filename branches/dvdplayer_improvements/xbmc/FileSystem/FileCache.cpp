@@ -104,37 +104,18 @@ bool CFileCache::Open(const CURL& url)
   }
 
   // opening the source file.
-  if(!m_source.Open(m_sourcePath, READ_NO_CACHE | READ_TRUNCATED)) {
+  if(!m_source.Open(m_sourcePath, READ_NO_CACHE | READ_TRUNCATED | READ_CHUNKED)) {
     CLog::Log(LOGERROR,"%s - failed to open source <%s>", __FUNCTION__, m_sourcePath.c_str());
     Close();
     return false;
   }
 
   // check if source can seek
-  m_seekPossible = m_source.Seek(0, SEEK_POSSIBLE) > 0 ? true : false;
+  m_seekPossible = m_source.Seek(0, SEEK_POSSIBLE);
 
   m_readPos = 0;
   m_seekEvent.Reset();
   m_seekEnded.Reset();
-
-  CThread::Create(false);
-
-  return true;
-}
-
-bool CFileCache::Attach(IFile *pFile) {
-    CSingleLock lock(m_sync);
-
-  if (!pFile || !m_pCache)
-    return false;
-
-  m_source.Attach(pFile);
-
-  if (m_pCache->Open() != CACHE_RC_OK) {
-    CLog::Log(LOGERROR,"CFileCache::Attach - failed to open cache");
-    Close();
-    return false;
-  }
 
   CThread::Create(false);
 
@@ -149,9 +130,7 @@ void CFileCache::Process()
   }
 
   // setup read chunks size
-  int chunksize = m_source.GetChunkSize();
-  if(chunksize == 0)
-    chunksize = READ_CACHE_CHUNK_SIZE;
+  int chunksize = CFile::GetChunkSize(m_source.GetChunkSize(), READ_CACHE_CHUNK_SIZE);
 
   // create our read buffer
   auto_aptr<char> buffer(new char[chunksize]);
@@ -168,8 +147,12 @@ void CFileCache::Process()
     {
       m_seekEvent.Reset();
       CLog::Log(LOGDEBUG,"%s, request seek on source to %"PRId64, __FUNCTION__, m_seekPos);
-      if ((m_nSeekResult = m_source.Seek(m_seekPos, SEEK_SET)) != m_seekPos)
+      m_nSeekResult = m_source.Seek(m_seekPos, SEEK_SET);
+      if (m_nSeekResult != m_seekPos)
+      {
         CLog::Log(LOGERROR,"%s, error %d seeking. seek returned %"PRId64, __FUNCTION__, (int)GetLastError(), m_nSeekResult);
+        m_seekPossible = m_source.Seek(0, SEEK_POSSIBLE);
+      }
       else
         m_pCache->Reset(m_seekPos);
 

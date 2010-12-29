@@ -413,15 +413,15 @@
 					<control type="button" id="90107">
 						<include>ButtonHomeSubCommonValues</include>
 						<label>744</label>
-						<onclick>ActivateWindow(VideoFiles)</onclick>
+						<onclick>ActivateWindow(VideoFiles,root)</onclick>
 					</control>
 					<control type="button" id="90108">
 						<include>ButtonHomeSubCommonValues</include>
 						<label>14022</label>
-						<onclick>ActivateWindow(VideoLibrary)</onclick>
+						<onclick>ActivateWindow(VideoLibrary,root)</onclick>
 						<visible>Library.HasContent(Video)</visible>
 					</control>
-				</control>				
+				</control>
 				<control type="grouplist" id="9011">
 					<posx>10</posx>
 					<posy>0</posy>
@@ -461,15 +461,15 @@
 					<control type="button" id="90115">
 						<include>ButtonHomeSubCommonValues</include>
 						<label>744</label>
-						<onclick>ActivateWindow(MusicFiles)</onclick>
+						<onclick>ActivateWindow(MusicFiles,root)</onclick>
 					</control>
 					<control type="button" id="90116">
 						<include>ButtonHomeSubCommonValues</include>
 						<label>14022</label>
-						<onclick>ActivateWindow(MusicLibrary)</onclick>
+						<onclick>ActivateWindow(MusicLibrary,root)</onclick>
 						<visible>Library.HasContent(Music)</visible>
 					</control>
-				</control>			
+				</control>
 				<control type="grouplist" id="9014">
 					<posx>10</posx>
 					<posy>0</posy>
@@ -712,7 +712,7 @@
 						<onclick>ActivateWindow(VideoLibrary,TVShowActors,return)</onclick>
 					</control>
 					<control type="button" id="90175">
-						<include>ButtonMediaSubCommonValues</include>
+						<include>ButtonHomeSubCommonValues</include>
 						<label>20388</label>
 						<onclick>ActivateWindow(VideoLibrary,TVShowStudios,return)</onclick>
 					</control>
@@ -809,20 +809,6 @@
 				</itemlayout>
 				<focusedlayout height="102" width="380">
 					<control type="label">
-						<animation effect="zoom" start="65" end="100" center="380,51" time="200">Focus</animation>
-						<animation effect="zoom" start="100" end="65" center="380,51" time="200">UnFocus</animation>
-						<posx>365</posx>
-						<posy>64</posy>
-						<width>380</width>
-						<height>32</height>
-						<font>font12</font>
-						<textcolor>grey</textcolor>
-						<align>right</align>
-						<aligny>center</aligny>
-						<label>$INFO[ListItem.Label2]</label>
-						<visible>Skin.HasSetting(homepageSysteminfo)</visible>
-					</control>
-					<control type="label">
 						<posx>380</posx>
 						<posy>21</posy>
 						<width>380</width>
@@ -866,7 +852,7 @@
 						<label>8</label>
 						<onclick>ActivateWindow(Weather)</onclick>
 						<icon>special://skin/backgrounds/weather.jpg</icon>
-						<thumb>$INFO[Skin.String(WeatherFanartDir)]$INFO[Weather.FanartCode]</thumb>
+						<thumb>$INFO[Window(Weather).Property(Current.FanartPath)]</thumb>
 						<visible>!Skin.HasSetting(HomeMenuNoWeatherButton)</visible>
 						<visible>Skin.HasSetting(ShowWeatherFanart) + !IsEmpty(Skin.String(WeatherFanartDir))</visible>
 					</item>

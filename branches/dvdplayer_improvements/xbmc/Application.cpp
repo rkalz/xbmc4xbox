@@ -1208,6 +1208,7 @@ HRESULT CApplication::Initialize()
   CreateDirectory("Q:\\plugins\\video", NULL);
   CreateDirectory("Q:\\plugins\\pictures", NULL);
   CreateDirectory("Q:\\plugins\\programs", NULL);
+  CreateDirectory("Q:\\plugins\\weather", NULL);
   CreateDirectory("Q:\\language", NULL);
   CreateDirectory("Q:\\visualisations", NULL);
   CreateDirectory("Q:\\sounds", NULL);
@@ -2710,7 +2711,12 @@ bool CApplication::OnAction(CAction &action)
       // only unmute if volume is to be increased, otherwise leave muted
       if (action.id == ACTION_VOLUME_DOWN)
         return true;
-      SetVolume(1);
+      
+      if (g_stSettings.m_iPreMuteVolumeLevel == 0) 
+        SetVolume(1); 
+      else 
+      // In muted, unmute 
+        Mute();
       return true;
     }
     if (action.id == ACTION_VOLUME_UP)
@@ -3750,6 +3756,14 @@ bool CApplication::PlayFile(const CFileItem& item, bool bRestart)
     return false;
   }
 
+  if (CUtil::IsUPnP(item.m_strPath))
+  {
+    CFileItem item_new(item);
+    if (DIRECTORY::CUPnPDirectory::GetResource(item.m_strPath, item_new))
+      return PlayFile(item_new, false);
+    return false;
+  }
+
   // if we have a stacked set of files, we need to setup our stack routines for
   // "seamless" seeking and total time of the movie etc.
   // will recall with restart set to true
@@ -4242,10 +4256,11 @@ void CApplication::SaveFileState()
         if (updateListing)
         {
           CUtil::DeleteVideoDatabaseDirectoryCache();
-          CFileItemPtr msgItem(new CFileItem(*m_progressTrackingItem));
-          if (m_progressTrackingItem->HasProperty("original_listitem_url"))
-            msgItem->m_strPath = m_progressTrackingItem->GetProperty("original_listitem_url");
-          CGUIMessage message(GUI_MSG_NOTIFY_ALL, g_windowManager.GetActiveWindow(), 0, GUI_MSG_UPDATE_ITEM, 1, msgItem); // 1 to update the listing as well 
+//          CFileItemPtr msgItem(new CFileItem(*m_progressTrackingItem));
+//          if (m_progressTrackingItem->HasProperty("original_listitem_url"))
+//            msgItem->m_strPath = m_progressTrackingItem->GetProperty("original_listitem_url");
+          CGUIMessage message(GUI_MSG_NOTIFY_ALL, g_windowManager.GetActiveWindow(), 0, GUI_MSG_UPDATE, 0);
+//          CGUIMessage message(GUI_MSG_NOTIFY_ALL, g_windowManager.GetActiveWindow(), 0, GUI_MSG_UPDATE_ITEM, 1, msgItem); // 1 to update the listing as well 
           g_windowManager.SendThreadMessage(message);
         }
       }
@@ -4287,55 +4302,57 @@ void CApplication::UpdateFileState()
     m_progressTrackingItem->Reset();
   }
   else
-  if (IsPlayingVideo() || IsPlayingAudio())
   {
-    if (m_progressTrackingItem->m_strPath == "")
+    if (IsPlayingVideo() || IsPlayingAudio())
     {
-      // Init some stuff
-      *m_progressTrackingItem = CurrentFileItem();
-      m_progressTrackingPlayCountUpdate = false;
-    }
-
-    if ((m_progressTrackingItem->IsAudio() && g_advancedSettings.m_audioPlayCountMinimumPercent > 0 &&
-        GetPercentage() >= g_advancedSettings.m_audioPlayCountMinimumPercent) ||
-        (m_progressTrackingItem->IsVideo() && g_advancedSettings.m_videoPlayCountMinimumPercent > 0 &&
-        GetPercentage() >= g_advancedSettings.m_videoPlayCountMinimumPercent))
-    {
-      m_progressTrackingPlayCountUpdate = true;
-    }
-
-    if (m_progressTrackingItem->IsVideo())
-    {
-      if ((m_progressTrackingItem->IsDVDImage() ||
-           m_progressTrackingItem->IsDVDFile()    ) &&
-          m_pPlayer->GetTotalTime() > 15*60)
-
+      if (m_progressTrackingItem->m_strPath == "")
       {
-        m_progressTrackingItem->GetVideoInfoTag()->m_streamDetails.Reset();
-        m_pPlayer->GetStreamDetails(m_progressTrackingItem->GetVideoInfoTag()->m_streamDetails);
+        // Init some stuff
+        *m_progressTrackingItem = CurrentFileItem();
+        m_progressTrackingPlayCountUpdate = false;
       }
-      // Update bookmark for save
-      m_progressTrackingVideoResumeBookmark.player = CPlayerCoreFactory::GetPlayerName(m_eCurrentPlayer);
-      m_progressTrackingVideoResumeBookmark.playerState = m_pPlayer->GetPlayerState();
-      m_progressTrackingVideoResumeBookmark.thumbNailImage.Empty();
 
-      if (g_advancedSettings.m_videoIgnoreAtEnd > 0 &&
-          GetTotalTime() - GetTime() < g_advancedSettings.m_videoIgnoreAtEnd)
+      if ((m_progressTrackingItem->IsAudio() && g_advancedSettings.m_audioPlayCountMinimumPercent > 0 &&
+          GetPercentage() >= g_advancedSettings.m_audioPlayCountMinimumPercent) ||
+          (m_progressTrackingItem->IsVideo() && g_advancedSettings.m_videoPlayCountMinimumPercent > 0 &&
+          GetPercentage() >= g_advancedSettings.m_videoPlayCountMinimumPercent))
       {
-        // Delete the bookmark
-        m_progressTrackingVideoResumeBookmark.timeInSeconds = -1.0f;
+        m_progressTrackingPlayCountUpdate = true;
       }
-      else
-      if (GetTime() > g_advancedSettings.m_videoIgnoreAtStart)
+
+      if (m_progressTrackingItem->IsVideo())
       {
-        // Update the bookmark
-        m_progressTrackingVideoResumeBookmark.timeInSeconds = GetTime();
-        m_progressTrackingVideoResumeBookmark.totalTimeInSeconds = GetTotalTime();
-      }
-      else
-      {
-        // Do nothing
-        m_progressTrackingVideoResumeBookmark.timeInSeconds = 0.0f;
+        if ((m_progressTrackingItem->IsDVDImage() ||
+             m_progressTrackingItem->IsDVDFile()    ) &&
+            m_pPlayer->GetTotalTime() > 15*60)
+
+        {
+          m_progressTrackingItem->GetVideoInfoTag()->m_streamDetails.Reset();
+          m_pPlayer->GetStreamDetails(m_progressTrackingItem->GetVideoInfoTag()->m_streamDetails);
+        }
+        // Update bookmark for save
+        m_progressTrackingVideoResumeBookmark.player = CPlayerCoreFactory::GetPlayerName(m_eCurrentPlayer);
+        m_progressTrackingVideoResumeBookmark.playerState = m_pPlayer->GetPlayerState();
+        m_progressTrackingVideoResumeBookmark.thumbNailImage.Empty();
+
+        if (g_advancedSettings.m_videoIgnorePercentAtEnd > 0 &&
+            GetTotalTime() - GetTime() < 0.01f * g_advancedSettings.m_videoIgnorePercentAtEnd * GetTotalTime())
+        {
+          // Delete the bookmark
+          m_progressTrackingVideoResumeBookmark.timeInSeconds = -1.0f;
+        }
+        else
+        if (GetTime() > g_advancedSettings.m_videoIgnoreSecondsAtStart)
+        {
+          // Update the bookmark
+          m_progressTrackingVideoResumeBookmark.timeInSeconds = GetTime();
+          m_progressTrackingVideoResumeBookmark.totalTimeInSeconds = GetTotalTime();
+        }
+        else
+        {
+          // Do nothing
+          m_progressTrackingVideoResumeBookmark.timeInSeconds = 0.0f;
+        }
       }
     }
   }
@@ -4893,7 +4910,7 @@ bool CApplication::OnMessage(CGUIMessage& message)
       
       // In case playback ended due to user eg. skipping over the end, clear
       // our resume bookmark here
-      if (message.GetMessage() == GUI_MSG_PLAYBACK_ENDED && m_progressTrackingPlayCountUpdate && g_advancedSettings.m_videoIgnoreAtEnd > 0)
+      if (message.GetMessage() == GUI_MSG_PLAYBACK_ENDED && m_progressTrackingPlayCountUpdate && g_advancedSettings.m_videoIgnorePercentAtEnd > 0)
       {
         // Delete the bookmark
         m_progressTrackingVideoResumeBookmark.timeInSeconds = -1.0f;
@@ -5116,7 +5133,8 @@ void CApplication::ProcessSlow()
   CheckDelayedPlayerRestart();
 
   //  check if we can unload any unreferenced dlls or sections
-  CSectionLoader::UnloadDelayed();
+  if (!IsPlayingVideo())
+    CSectionLoader::UnloadDelayed();
 
   // Xbox Autodetection - Send in X sec PingTime Interval
   if (g_windowManager.GetActiveWindow() != WINDOW_LOGIN_SCREEN) // sorry jm ;D
@@ -5147,10 +5165,12 @@ void CApplication::ProcessSlow()
     m_bIsPaused = IsPaused();
   }
 
-  g_largeTextureManager.CleanupUnusedImages();
+  if (!IsPlayingVideo())
+    g_largeTextureManager.CleanupUnusedImages();
 
   // checks whats in the DVD drive and tries to autostart the content (xbox games, dvd, cdda, avi files...)
-  m_Autorun.HandleAutorun();
+  if (!IsPlayingVideo())
+    m_Autorun.HandleAutorun();
 
   // update upnp server/renderer states
   if(CUPnP::IsInstantiated())
@@ -5250,11 +5270,15 @@ void CApplication::Mute(void)
   { // muted - unmute.
     // In case our premutevolume is 0, return to 100% volume
     if( g_stSettings.m_iPreMuteVolumeLevel == 0 )
+    {
       SetVolume(100);
+    }
     else
+    {
       SetVolume(g_stSettings.m_iPreMuteVolumeLevel);
-
-    g_stSettings.m_iPreMuteVolumeLevel = 0;
+      g_stSettings.m_iPreMuteVolumeLevel = 0;
+    }
+    m_guiDialogVolumeBar.Show();
   }
   else
   { // mute

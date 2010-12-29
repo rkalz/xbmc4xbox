@@ -317,12 +317,10 @@
 				</control>
 			</control>
 		</control>
-		
 		<include condition="Skin.HasSetting(homepageHideRecentlyAdded)">HomeRecentlyAddedInfo</include>						
-		
 		<control type="group" id="9001">
 			<posx>520</posx>
-			<posy>310</posy>
+			<posy>315</posy>
 			<animation type="Conditional"  condition="ControlGroup(9001).HasFocus" reversible="true">
 				<effect type="zoom" start="80" end="100" center="640,360" easing="out" tween="back" time="300" />
 				<effect type="fade" start="0" end="100" time="300" />
@@ -335,19 +333,19 @@
 			<control type="image">
 				<description>background image</description>
 				<posx>-10</posx>
-				<posy>-30</posy>
+				<posy>-35</posy>
 				<width>260</width>
 				<height>300</height>
 				<texture border="40">DialogBack.png</texture>
 			</control>
 			<control type="image">
 				<posx>10</posx>
-				<posy>-20</posy>
+				<posy>-25</posy>
 				<width>240</width>
-				<height>70</height>
+				<height>50</height>
 				<aspectratio>stretch</aspectratio>
 				<texture>GlassTitleBar.png</texture>
-			</control>	
+			</control>
 			<control type="grouplist" id="9010">
 				<posx>10</posx>
 				<posy>0</posy>
@@ -405,15 +403,15 @@
 				<control type="button" id="90107">
 					<include>ButtonHomeSubCommonValues</include>
 					<label>744</label>
-					<onclick>ActivateWindow(VideoFiles)</onclick>
+					<onclick>ActivateWindow(VideoFiles,root)</onclick>
 				</control>
 				<control type="button" id="90108">
 					<include>ButtonHomeSubCommonValues</include>
 					<label>14022</label>
-					<onclick>ActivateWindow(VideoLibrary)</onclick>
+					<onclick>ActivateWindow(VideoLibrary,root)</onclick>
 					<visible>Library.HasContent(Video)</visible>
 				</control>
-			</control>				
+			</control>
 			<control type="grouplist" id="9011">
 				<posx>10</posx>
 				<posy>0</posy>
@@ -453,15 +451,15 @@
 				<control type="button" id="90115">
 					<include>ButtonHomeSubCommonValues</include>
 					<label>744</label>
-					<onclick>ActivateWindow(MusicFiles)</onclick>
+					<onclick>ActivateWindow(MusicFiles,root)</onclick>
 				</control>
 				<control type="button" id="90116">
 					<include>ButtonHomeSubCommonValues</include>
 					<label>14022</label>
-					<onclick>ActivateWindow(MusicLibrary)</onclick>
+					<onclick>ActivateWindow(MusicLibrary,root)</onclick>
 					<visible>Library.HasContent(Music)</visible>
 				</control>
-			</control>			
+			</control>
 			<control type="grouplist" id="9014">
 				<posx>10</posx>
 				<posy>0</posy>
@@ -704,7 +702,7 @@
 					<onclick>ActivateWindow(VideoLibrary,TVShowActors,return)</onclick>
 				</control>
 				<control type="button" id="90175">
-					<include>ButtonMediaSubCommonValues</include>
+					<include>ButtonHomeSubCommonValues</include>
 					<label>20388</label>
 					<onclick>ActivateWindow(VideoLibrary,TVShowStudios,return)</onclick>
 				</control>
@@ -757,13 +755,12 @@
 					<onclick>ActivateWindow(GameSaves)</onclick>
 				</control>
 			</control>	
-		</control>
-			
+		</control>	
 		<control type="group">
 			<control type="image">
-				<description>media info background image</description>
-				<animation effect="slide" end="0,100" time="300" tween="quadratic" easing="out">WindowClose</animation>
-				<animation effect="slide" start="0,100" time="300" tween="quadratic" easing="out">WindowOpen</animation>
+				<description>Main menu background image</description>
+				<animation effect="slide" end="0,200" time="300" tween="quadratic" easing="out">WindowClose</animation>
+				<animation effect="slide" start="0,200" time="300" tween="quadratic" easing="out">WindowOpen</animation>
 				<posx>0</posx>
 				<posy>176r</posy>
 				<width>1280</width>
@@ -861,7 +858,7 @@
 						<label>8</label>
 						<onclick>ActivateWindow(Weather)</onclick>
 						<icon>special://skin/backgrounds/weather.jpg</icon>
-						<thumb>$INFO[Skin.String(WeatherFanartDir)]$INFO[Weather.FanartCode]</thumb>
+						<thumb>$INFO[Window(Weather).Property(Current.FanartPath)]</thumb>
 						<visible>!Skin.HasSetting(HomeMenuNoWeatherButton)</visible>
 						<visible>Skin.HasSetting(ShowWeatherFanart) + !IsEmpty(Skin.String(WeatherFanartDir))</visible>
 					</item>

@@ -41,6 +41,23 @@
 
 using namespace std;
 
+class CDVDMsgVideoCodecChange : public CDVDMsg
+{
+public:
+  CDVDMsgVideoCodecChange(const CDVDStreamInfo &hints, CDVDVideoCodec* codec)
+    : CDVDMsg(GENERAL_STREAMCHANGE)
+    , m_codec(codec)
+    , m_hints(hints)
+  {}
+ ~CDVDMsgVideoCodecChange()
+  {
+    delete m_codec;
+  }
+  CDVDVideoCodec* m_codec;
+  CDVDStreamInfo  m_hints;
+};
+
+
 CDVDPlayerVideo::CDVDPlayerVideo( CDVDClock* pClock
                                 , CDVDOverlayContainer* pOverlayContainer
                                 , CDVDMessageQueue& parent)
@@ -107,7 +124,29 @@ double CDVDPlayerVideo::GetOutputDelay()
 
 bool CDVDPlayerVideo::OpenStream( CDVDStreamInfo &hint )
 {
+  CLog::Log(LOGNOTICE, "Creating video codec with codec id: %i", hint.codec);
+  CDVDVideoCodec* codec = CDVDFactoryCodec::CreateVideoCodec( hint );
+  if(!codec)
+  {
+    CLog::Log(LOGERROR, "Unsupported video codec");
+    return false;
+  }
 
+  if(m_messageQueue.IsInited())
+    m_messageQueue.Put(new CDVDMsgVideoCodecChange(hint, codec), 0);
+  else
+  {
+    OpenStream(hint, codec);
+    CLog::Log(LOGNOTICE, "Creating video thread");
+    m_messageQueue.Init();
+    Create();
+  }
+  return true;
+}
+
+void CDVDPlayerVideo::OpenStream(CDVDStreamInfo &hint, CDVDVideoCodec* codec)
+{
+  //reported fps is usually not completely correct
   if (hint.fpsrate && hint.fpsscale)
   {
     m_fFrameRate = (float)hint.fpsrate / hint.fpsscale;
@@ -135,33 +174,14 @@ bool CDVDPlayerVideo::OpenStream( CDVDStreamInfo &hint )
   // use aspect in stream if available
   m_fForcedAspectRatio = hint.aspect;
 
-  // should alway's be NULL!!!!, it will probably crash anyway when deleting m_pVideoCodec here.
   if (m_pVideoCodec)
-  {
-    CLog::Log(LOGFATAL, "CDVDPlayerVideo::OpenStream() m_pVideoCodec != NULL");
-    return false;
-  }
+    delete m_pVideoCodec;
 
-  CLog::Log(LOGNOTICE, "Creating video codec with codec id: %i", hint.codec);
-  m_pVideoCodec = CDVDFactoryCodec::CreateVideoCodec( hint );
-
-  if( !m_pVideoCodec )
-  {
-    CLog::Log(LOGERROR, "Unsupported video codec");
-    return false;
-  }
-
+  m_pVideoCodec = codec;
   m_hints   = hint;
-  m_stalled = false;
+  m_stalled = m_messageQueue.GetPacketCount(CDVDMsg::DEMUXER_PACKET) == 0;
   m_started = false;
   m_codecname = m_pVideoCodec->GetName();
-
-  m_messageQueue.Init();
-
-  CLog::Log(LOGNOTICE, "Creating video thread");
-  Create();
-
-  return true;
 }
 
 void CDVDPlayerVideo::CloseStream(bool bWaitForBuffers)
@@ -355,6 +375,12 @@ void CDVDPlayerVideo::Process()
     {
       if(m_started)
         m_messageParent.Put(new CDVDMsgInt(CDVDMsg::PLAYER_STARTED, DVDPLAYER_VIDEO));
+    }
+    else if (pMsg->IsType(CDVDMsg::GENERAL_STREAMCHANGE))
+    {
+      CDVDMsgVideoCodecChange* msg(static_cast<CDVDMsgVideoCodecChange*>(pMsg));
+      OpenStream(msg->m_hints, msg->m_codec);
+      msg->m_codec = NULL;
     }
 
     if (pMsg->IsType(CDVDMsg::DEMUXER_PACKET))
@@ -950,7 +976,7 @@ int CDVDPlayerVideo::OutputPicture(DVDVideoPicture* pPicture, double pts)
 
   // video device might not be done yet
   while (index < 0 && !CThread::m_bStop &&
-         CDVDClock::GetAbsoluteClock() < iCurrentClock + iSleepTime )
+         CDVDClock::GetAbsoluteClock() < iCurrentClock + iSleepTime + DVD_MSEC_TO_TIME(500) )
   {
     Sleep(1);
     index = g_renderManager.GetImage(&image);
@@ -983,7 +1009,8 @@ int CDVDPlayerVideo::OutputPicture(DVDVideoPicture* pPicture, double pts)
 std::string CDVDPlayerVideo::GetPlayerInfo()
 {
   std::ostringstream s;
-  s << "vq:"     << setw(2) << min(99,m_messageQueue.GetLevel()) << "%";
+  s << "fr:"     << fixed << setprecision(3) << m_fFrameRate;
+  s << ", vq:"   << setw(2) << min(99,m_messageQueue.GetLevel()) << "%";
   s << ", dc:"   << m_codecname;
   s << ", Mb/s:" << fixed << setprecision(2) << (double)GetVideoBitrate() / (1024.0*1024.0);
   s << ", drop:" << m_iDroppedFrames;
