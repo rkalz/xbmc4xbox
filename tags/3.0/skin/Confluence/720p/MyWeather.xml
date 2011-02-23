@@ -1,0 +1,5 @@
+<window id="2600">
+    <include>TWC.View</include>
+    <!--include condition="StringCompare(Weather.Plugin,script.weather.com.plus)">TWC.View</include>
+    <include condition="!StringCompare(Weather.Plugin,script.weather.com.plus)">WeatherStandardView</include-->
+</window>
