@@ -36,15 +36,17 @@ public:
   ~CHttpHeader();
 
   void Parse(CStdString strData);
-  CStdString GetValue(CStdString strParam);
+  CStdString GetValue(CStdString strParam) const;
   
-  void GetHeader(CStdString& strHeader);
+  void GetHeader(CStdString& strHeader) const;
   
   CStdString GetMimeType() { return GetValue(HTTPHEADER_CONTENT_TYPE); }
+  CStdString GetProtoLine() { return m_protoLine; }
 
   void Clear();
   
 protected:
   HeaderParams m_params;
+  CStdString   m_protoLine;
 };
 

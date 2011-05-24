@@ -11,10 +11,6 @@
 	<include file="IncludesHomeVertical.xml" />
 	<include file="IncludesHomeHorizontal.xml" />
 
-	<include file="script.weather.com.plus/CommonValues.xml" />
-	<include file="script.weather.com.plus/Current.xml" />
-	<include file="script.weather.com.plus/WeatherPluginView.xml" />
-
 	<constant name="FanartCrossfadeTime">500</constant>
 	<constant name="IconCrossfadeTime">400</constant>
 
@@ -180,7 +176,7 @@
 			<posy>0</posy>
 			<width>1280</width>
 			<height>720</height>
-			<imagepath background="true">$INFO[Window(Weather).Property(Current.FanartPath)]</imagepath>
+			<imagepath background="true">$INFO[Skin.String(WeatherFanartDir)]$INFO[Weather.FanartCode]</imagepath>
 			<timeperimage>10000</timeperimage>
 			<randomize>true</randomize>
 			<fadetime>1000</fadetime>

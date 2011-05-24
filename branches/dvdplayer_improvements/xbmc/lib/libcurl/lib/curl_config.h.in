@@ -57,6 +57,9 @@
 /* to disable TFTP */
 #undef CURL_DISABLE_TFTP
 
+/* to disable TLS-SRP authentication */
+#undef CURL_DISABLE_TLS_SRP
+
 /* to disable verbose strings */
 #undef CURL_DISABLE_VERBOSE_STRINGS
 
@@ -177,6 +180,15 @@
 /* Define to 1 if you have the freeifaddrs function. */
 #undef HAVE_FREEIFADDRS
 
+/* Define to 1 if you have the fsetxattr function. */
+#undef HAVE_FSETXATTR
+
+/* fsetxattr() takes 5 args */
+#undef HAVE_FSETXATTR_5
+
+/* fsetxattr() takes 6 args */
+#undef HAVE_FSETXATTR_6
+
 /* Define to 1 if you have the ftruncate function. */
 #undef HAVE_FTRUNCATE
 
@@ -254,6 +266,9 @@
 
 /* Define to 1 if you have a working gmtime_r function. */
 #undef HAVE_GMTIME_R
+
+/* if you have the function gnutls_srp_verifier */
+#undef HAVE_GNUTLS_SRP
 
 /* if you have the gssapi libraries */
 #undef HAVE_GSSAPI
@@ -396,6 +411,9 @@
 
 /* Define to 1 if you have the `libssh2_scp_send64' function. */
 #undef HAVE_LIBSSH2_SCP_SEND64
+
+/* Define to 1 if you have the `libssh2_session_handshake' function. */
+#undef HAVE_LIBSSH2_SESSION_HANDSHAKE
 
 /* Define to 1 if you have the `libssh2_version' function. */
 #undef HAVE_LIBSSH2_VERSION
@@ -584,6 +602,9 @@
 /* Define this if you have the SPNEGO library fbopenssl */
 #undef HAVE_SPNEGO
 
+/* if you have the function SRP_Calc_client_key */
+#undef HAVE_SSLEAY_SRP
+
 /* Define to 1 if you have the `SSL_get_shutdown' function. */
 #undef HAVE_SSL_GET_SHUTDOWN
 
@@ -700,6 +721,9 @@
 
 /* Define to 1 if you have the <sys/utime.h> header file. */
 #undef HAVE_SYS_UTIME_H
+
+/* Define to 1 if you have the <sys/xattr.h> header file. */
+#undef HAVE_SYS_XATTR_H
 
 /* Define to 1 if you have the <termios.h> header file. */
 #undef HAVE_TERMIOS_H
@@ -927,8 +951,14 @@
 /* Define to enable c-ares support */
 #undef USE_ARES
 
+/* if axTLS is enabled */
+#undef USE_AXTLS
+
 /* Define to disable non-blocking sockets. */
 #undef USE_BLOCKING_SOCKETS
+
+/* if CyaSSL is enabled */
+#undef USE_CYASSL
 
 /* if GnuTLS is enabled */
 #undef USE_GNUTLS
@@ -960,9 +990,16 @@
 /* if you want POSIX threaded DNS lookup */
 #undef USE_THREADS_POSIX
 
+/* Use TLS-SRP authentication */
+#undef USE_TLS_SRP
+
+/* Define to 1 if you are building a Windows target with large file support.
+   */
+#undef USE_WIN32_LARGE_FILES
+
 /* Define to 1 if you are building a Windows target without large file
    support. */
-#undef USE_WIN32_LARGE_FILES
+#undef USE_WIN32_SMALL_FILES
 
 /* to enable SSPI support */
 #undef USE_WINDOWS_SSPI

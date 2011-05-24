@@ -855,12 +855,11 @@ void CDVDPlayer::Process()
   SetEvent(m_hReadyEvent);
 
   // make sure all selected stream have data on startup
-  // Use full caching for Xbox since it sometimes experiences weird A/V desync
-  // at start
-#ifdef _XBOX  
-  SetCaching(CACHESTATE_FULL);
-#else
   SetCaching(CACHESTATE_INIT);
+
+#ifdef _XBOX
+  // Let things settle else we may get A/V desync issues
+  Sleep(1500);
 #endif
 
   while (!m_bAbortRequest)
@@ -1241,11 +1240,12 @@ bool CDVDPlayer::CheckStartCaching(CCurrentStream& current)
   if((current.type == STREAM_AUDIO && m_dvdPlayerAudio.IsStalled())
   || (current.type == STREAM_VIDEO && m_dvdPlayerVideo.IsStalled()))
   {
+/*
     // don't start caching if it's only a single stream that has run dry
     if(m_dvdPlayerAudio.m_messageQueue.GetLevel() > 50
     || m_dvdPlayerVideo.m_messageQueue.GetLevel() > 50)
       return false;
-
+*/
     if(m_pInputStream->IsStreamType(DVDSTREAM_TYPE_HTSP)
     || m_pInputStream->IsStreamType(DVDSTREAM_TYPE_TV))
       SetCaching(CACHESTATE_INIT);
@@ -2391,8 +2391,12 @@ bool CDVDPlayer::OpenAudioStream(int iStream, int source)
   m_CurrentAudio.stream = (void*)pStream;
   m_CurrentAudio.started = false;
 
+  /* we are potentially going to be waiting on this */
+  m_dvdPlayerAudio.SendMessage(new CDVDMsg(CDVDMsg::PLAYER_STARTED), 1);
+
   /* audio normally won't consume full cpu, so let it have prio */
-  m_dvdPlayerAudio.SetPriority(GetThreadPriority(*this)+1);
+//  m_dvdPlayerAudio.SetPriority(GetThreadPriority(*this)+1);
+  m_dvdPlayerAudio.SetPriority(GetThreadPriority(*this));
 
   return true;
 }
@@ -2441,6 +2445,9 @@ bool CDVDPlayer::OpenVideoStream(int iStream, int source)
   m_CurrentVideo.hint = hint;
   m_CurrentVideo.stream = (void*)pStream;
   m_CurrentVideo.started = false;
+
+  /* we are potentially going to be waiting on this */
+  m_dvdPlayerVideo.SendMessage(new CDVDMsg(CDVDMsg::PLAYER_STARTED), 1);
 
   /* use same priority for video thread as demuxing thread, as */
   /* otherwise demuxer will starve if video consumes the full cpu */
@@ -2867,6 +2874,20 @@ bool CDVDPlayer::OnAction(const CAction &action)
     {
       switch (action.id)
       {
+      case ACTION_NEXT_ITEM:
+      case ACTION_PAGE_UP:
+        THREAD_ACTION(action);
+        CLog::Log(LOGDEBUG, " - pushed next in menu, stream will decide");
+        pStream->OnNext();
+        g_infoManager.SetDisplayAfterSeek();
+        return true;
+      case ACTION_PREV_ITEM:
+      case ACTION_PAGE_DOWN:
+        THREAD_ACTION(action);
+        CLog::Log(LOGDEBUG, " - pushed prev in menu, stream will decide");
+        pStream->OnPrevious();
+        g_infoManager.SetDisplayAfterSeek();
+        return true;
       case ACTION_PREVIOUS_MENU:
         {
           THREAD_ACTION(action);
@@ -3050,16 +3071,15 @@ bool CDVDPlayer::GetCurrentSubtitle(CStdString& strSubtitle)
   if (m_pInputStream && m_pInputStream->IsStreamType(DVDSTREAM_TYPE_DVD))
     return false;
 
-  bool result = m_dvdPlayerSubtitle.GetCurrentSubtitle(strSubtitle, pts - m_dvdPlayerVideo.GetSubtitleDelay());
+  m_dvdPlayerSubtitle.GetCurrentSubtitle(strSubtitle, pts - m_dvdPlayerVideo.GetSubtitleDelay());
   
   // In case we stalled, don't output any subs
   if (m_dvdPlayerVideo.IsStalled() || m_dvdPlayerAudio.IsStalled())
-  {
-    strSubtitle = "";
-    return false;
-  }
+    strSubtitle = m_lastSub;
+  else
+    m_lastSub = strSubtitle;
     
-  return result;
+  return !strSubtitle.IsEmpty();
 }
 
 CStdString CDVDPlayer::GetPlayerState()

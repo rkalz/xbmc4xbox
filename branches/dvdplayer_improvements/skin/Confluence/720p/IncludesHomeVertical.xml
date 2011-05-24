@@ -320,7 +320,7 @@
 			</control>
 		</control>
 		
-		<include condition="Skin.HasSetting(homepageHideRecentlyAdded)">HomeRecentlyAddedInfo</include>
+		<include condition="Skin.HasSetting(homepageRecentlyAdded)">HomeRecentlyAddedInfo</include>
 		
 		<control type="group">
 			<animation effect="slide" end="-370,0" time="500" tween="quadratic" easing="out">WindowClose</animation>
@@ -852,7 +852,7 @@
 						<label>8</label>
 						<onclick>ActivateWindow(Weather)</onclick>
 						<icon>special://skin/backgrounds/weather.jpg</icon>
-						<thumb>$INFO[Window(Weather).Property(Current.FanartPath)]</thumb>
+						<thumb>$INFO[Skin.String(WeatherFanartDir)]$INFO[Weather.FanartCode]</thumb>
 						<visible>!Skin.HasSetting(HomeMenuNoWeatherButton)</visible>
 						<visible>Skin.HasSetting(ShowWeatherFanart) + !IsEmpty(Skin.String(WeatherFanartDir))</visible>
 					</item>

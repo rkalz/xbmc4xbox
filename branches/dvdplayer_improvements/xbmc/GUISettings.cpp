@@ -224,7 +224,11 @@ void CGUISettings::Initialize()
   // My Weather settings
   AddGroup(2, 8);
   AddCategory(2, "weather", 16000);
-  AddString(5, "weather.plugin", 8, DEFAULT_WEATHER_PLUGIN, SPIN_CONTROL_TEXT, true);
+  AddString(1, "weather.areacode1", 14019, "USNY0996 - New York, NY", BUTTON_CONTROL_STANDARD);
+  AddString(2, "weather.areacode2", 14020, "UKXX0085 - London, United Kingdom", BUTTON_CONTROL_STANDARD);
+  AddString(3, "weather.areacode3", 14021, "JAXX0085 - Tokyo, Japan", BUTTON_CONTROL_STANDARD);
+  AddSeparator(4, "weather.sep1");
+  AddString(5, "weather.plugin", 23000, "", SPIN_CONTROL_TEXT, true);
   AddString(6, "weather.pluginsettings", 23001, "", BUTTON_CONTROL_STANDARD, true);
 
   // My Music Settings
@@ -416,7 +420,7 @@ void CGUISettings::Initialize()
   AddBool(8, "videoplayer.soften", 215, false);
   AddFloat(9, "videoplayer.errorinaspect", 22021, 3.0f, 0.0f, 1.0f, 20.0f);
   AddSeparator(11, "videoplayer.sep2");
-  AddInt(12, "videoplayer.defaultplayer", 22030, PLAYER_MPLAYER, PLAYER_MPLAYER, 1, PLAYER_DVDPLAYER, SPIN_CONTROL_TEXT);
+  AddInt(12, "videoplayer.defaultplayer", 22030, PLAYER_DVDPLAYER, PLAYER_MPLAYER, 1, PLAYER_DVDPLAYER, SPIN_CONTROL_TEXT);
   AddBool(13, "videoplayer.allcodecs", 22025, false);
   AddBool(14, "videoplayer.fast", 22026, false);
 

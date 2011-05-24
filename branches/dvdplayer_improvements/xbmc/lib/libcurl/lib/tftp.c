@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -166,7 +166,7 @@ typedef struct tftp_state_data {
 static CURLcode tftp_rx(tftp_state_data_t *state, tftp_event_t event) ;
 static CURLcode tftp_tx(tftp_state_data_t *state, tftp_event_t event) ;
 static CURLcode tftp_connect(struct connectdata *conn, bool *done);
-static CURLcode tftp_disconnect(struct connectdata *conn);
+static CURLcode tftp_disconnect(struct connectdata *conn, bool dead_connection);
 static CURLcode tftp_do(struct connectdata *conn, bool *done);
 static CURLcode tftp_done(struct connectdata *conn,
                           CURLcode, bool premature);
@@ -196,7 +196,8 @@ const struct Curl_handler Curl_handler_tftp = {
   ZERO_NULL,                            /* perform_getsock */
   tftp_disconnect,                      /* disconnect */
   PORT_TFTP,                            /* defport */
-  PROT_TFTP                             /* protocol */
+  CURLPROTO_TFTP,                       /* protocol */
+  PROTOPT_NONE                          /* flags */
 };
 
 /**********************************************************
@@ -218,7 +219,7 @@ static CURLcode tftp_set_timeouts(tftp_state_data_t *state)
   time(&state->start_time);
 
   /* Compute drop-dead time */
-  timeout_ms = Curl_timeleft(state->conn, NULL, start);
+  timeout_ms = Curl_timeleft(state->conn->data, NULL, start);
 
   if(timeout_ms < 0) {
     /* time-out, bail out, go home */
@@ -738,7 +739,7 @@ static CURLcode tftp_tx(tftp_state_data_t *state, tftp_event_t event)
         }
         else {
           /* Re-send the data packet */
-          sbytes = sendto(state->sockfd, (void *)&state->spacket,
+          sbytes = sendto(state->sockfd, (void *)&state->spacket.data,
                           4+state->sbytes, SEND_4TH_ARG,
                           (struct sockaddr *)&state->remote_addr,
                           state->remote_addrlen);
@@ -925,9 +926,10 @@ static CURLcode tftp_state_machine(tftp_state_data_t *state,
  * The disconnect callback
  *
  **********************************************************/
-static CURLcode tftp_disconnect(struct connectdata *conn)
+static CURLcode tftp_disconnect(struct connectdata *conn, bool dead_connection)
 {
   tftp_state_data_t *state = conn->proto.tftpc;
+  (void) dead_connection;
 
   /* done, free dynamically allocated pkt buffers */
   if(state) {
@@ -1274,7 +1276,7 @@ static CURLcode tftp_easy_statemach(struct connectdata *conn)
     else {
 
       if(rc==0) {
-        /* A timeout occured, but our timeout is variable, so maybe
+        /* A timeout occurred, but our timeout is variable, so maybe
            just continue? */
         long rtms = state->retry_time * 1000;
         if (Curl_tvdiff(k->now, transaction_start) > rtms) {

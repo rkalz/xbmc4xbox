@@ -62,6 +62,7 @@
 #include "FileSystem/File.h"
 #include "PlayList.h"
 #include "AdvancedSettings.h"
+#include "Util.h"
 
 // stuff for current song
 #ifdef HAS_FILESYSTEM
@@ -436,7 +437,7 @@ int CGUIInfoManager::TranslateSingleString(const CStdString &strCondition)
     else if (strTest.Left(15).Equals("system.getbool("))
       return AddMultiInfo(GUIInfo(bNegate ? -SYSTEM_GET_BOOL : SYSTEM_GET_BOOL, ConditionalStringParameter(strTest.Mid(15,strTest.size()-16)), 0));
     else if (strTest.Left(15).Equals("system.setting(")) 
- 	  return AddMultiInfo(GUIInfo(bNegate ? -SYSTEM_SETTING : SYSTEM_SETTING, ConditionalStringParameter(strTest.Mid(15,strTest.size()-16)), 0));
+      return AddMultiInfo(GUIInfo(bNegate ? -SYSTEM_SETTING : SYSTEM_SETTING, ConditionalStringParameter(strTest.Mid(15,strTest.size()-16)), 0));
   }
   // library test conditions
   else if (strTest.Left(7).Equals("library"))
@@ -1323,7 +1324,7 @@ CStdString CGUIInfoManager::GetLabel(int info, int contextWindow)
       if (window)
       {
         strLabel = CURL(((CGUIMediaWindow*)window)->CurrentDirectory().m_strPath).GetWithoutUserDetails();
-	if (info==CONTAINER_FOLDERNAME)
+        if (info==CONTAINER_FOLDERNAME)
         {
           CUtil::RemoveSlashAtEnd(strLabel);
           strLabel=CUtil::GetFileName(strLabel);
@@ -2984,7 +2985,7 @@ CStdString CGUIInfoManager::GetMusicLabel(int item)
       }
       CStdString strBitrate = "";
       if (m_MusicBitrate > 0)
-        strBitrate.Format("%i", m_MusicBitrate);
+        strBitrate.Format("%i", MathUtils::round_int((double)m_MusicBitrate / 1000.0));
       return strBitrate;
     }
     break;
@@ -3167,7 +3168,7 @@ CStdString CGUIInfoManager::GetVideoLabel(int item)
       break;
     case VIDEOPLAYER_PLOT:
       return m_currentFile->GetVideoInfoTag()->m_strPlot;
-	case VIDEOPLAYER_TRAILER:
+    case VIDEOPLAYER_TRAILER:
       return m_currentFile->GetVideoInfoTag()->m_strTrailer;
     case VIDEOPLAYER_PLOT_OUTLINE:
       return m_currentFile->GetVideoInfoTag()->m_strPlotOutline;

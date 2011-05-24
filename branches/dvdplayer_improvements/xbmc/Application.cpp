@@ -231,7 +231,6 @@ using namespace EVENTSERVER;
  #else
   #pragma comment (lib,"../../xbmc/lib/libGoAhead/goahead_win32d.lib") // SECTIONNAME=LIBHTTP
   #pragma comment (lib,"../../xbmc/lib/sqLite/libSQLite3_win32d.lib")
-  #pragma comment (lib,"../../xbmc/lib/libshout/libshout_win32d.lib" )
   #pragma comment (lib,"../../xbmc/lib/libcdio/libcdio_win32d.lib" )
   #pragma comment (lib,"../../xbmc/lib/libiconv/libiconvd.lib")
   #pragma comment (lib,"../../xbmc/lib/libfribidi/libfribidid.lib")
@@ -251,14 +250,12 @@ using namespace EVENTSERVER;
   #pragma comment (lib,"xbmc/lib/libGoAhead/goahead.lib")
   #pragma comment (lib,"xbmc/lib/sqLite/libSQLite3.lib")
   #pragma comment (lib,"xbmc/lib/libcdio/libcdio.lib")
-  #pragma comment (lib,"xbmc/lib/libshout/libshout.lib")
   #pragma comment (lib,"xbmc/lib/libiconv/libiconv.lib")
   #pragma comment (lib,"xbmc/lib/libfribidi/libfribidi.lib")
   #pragma comment (lib,"xbmc/lib/libpcre/libpcre.lib")
  #else
   #pragma comment (lib,"../../xbmc/lib/libGoAhead/goahead_win32.lib")
   #pragma comment (lib,"../../xbmc/lib/sqLite/libSQLite3_win32.lib")
-  #pragma comment (lib,"../../xbmc/lib/libshout/libshout_win32.lib" )
   #pragma comment (lib,"../../xbmc/lib/libcdio/libcdio_win32.lib" )
   #pragma comment (lib,"../../xbmc/lib/libiconv/libiconv.lib")
   #pragma comment (lib,"../../xbmc/lib/libfribidi/libfribidi.lib")
@@ -1208,7 +1205,6 @@ HRESULT CApplication::Initialize()
   CreateDirectory("Q:\\plugins\\video", NULL);
   CreateDirectory("Q:\\plugins\\pictures", NULL);
   CreateDirectory("Q:\\plugins\\programs", NULL);
-  CreateDirectory("Q:\\plugins\\weather", NULL);
   CreateDirectory("Q:\\language", NULL);
   CreateDirectory("Q:\\visualisations", NULL);
   CreateDirectory("Q:\\sounds", NULL);
@@ -5016,7 +5012,11 @@ bool CApplication::OnMessage(CGUIMessage& message)
         CFileItem item(message.GetStringParam(), false);
         if (item.IsPythonScript())
         { // a python script
-          g_pythonParser.evalFile(item.m_strPath.c_str());
+          unsigned int argc = 1;
+          char ** argv = new char*[argc];
+          argv[0] = (char*)item.m_strPath.c_str();
+          g_pythonParser.evalFile(argv[0], argc, (const char**)argv);
+          delete [] argv;
         }
         else if (item.IsXBE())
         { // an XBE

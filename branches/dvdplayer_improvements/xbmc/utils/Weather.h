@@ -72,7 +72,6 @@ public:
   int GetArea() const { return m_iCurWeather; };
   CStdString GetAreaCode(const CStdString &codeAndCity) const;
   CStdString GetAreaCity(const CStdString &codeAndCity) const;
-  unsigned int GetMaxLocations();
 
   day_forcast m_dfForcast[NUM_DAYS];
   bool m_bImagesOkay;
@@ -91,7 +90,7 @@ protected:
   std::map<CStdString, int> m_localizedTokens;
   typedef std::map<CStdString, int>::const_iterator ilocalizedTokens;
 
-  char m_szLocation[10][100];
+  char m_szLocation[3][100];
 
   // Last updated
   char m_szLastUpdateTime[256];
@@ -108,8 +107,6 @@ protected:
   char m_szNAIcon[256];
 
   unsigned int m_iCurWeather;
-  int m_MaxLocations;
-
 };
 
 extern CWeather g_weatherManager;

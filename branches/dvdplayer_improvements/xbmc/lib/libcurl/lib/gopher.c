@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -78,6 +78,7 @@
 #include "rawstr.h"
 #include "select.h"
 #include "url.h"
+#include "warnless.h"
 
 #define _MPRINTF_REPLACE /* use our functions only */
 #include <curl/mprintf.h>
@@ -112,7 +113,8 @@ const struct Curl_handler Curl_handler_gopher = {
   ZERO_NULL,                            /* perform_getsock */
   ZERO_NULL,                            /* disconnect */
   PORT_GOPHER,                          /* defport */
-  PROT_GOPHER                           /* protocol */
+  CURLPROTO_GOPHER,                     /* protocol */
+  PROTOPT_NONE                          /* flags */
 };
 
 static CURLcode gopher_do(struct connectdata *conn, bool *done)
@@ -156,7 +158,7 @@ static CURLcode gopher_do(struct connectdata *conn, bool *done)
 
   /* We use Curl_write instead of Curl_sendf to make sure the entire buffer is
      sent, which could be sizeable with long selectors. */
-  k = strlen(sel);
+  k = curlx_uztosz(strlen(sel));
 
   for(;;) {
     result = Curl_write(conn, sockfd, sel, k, &amount);

@@ -70,7 +70,8 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am__objects_1 = main.$(OBJEXT) hugehelp.$(OBJEXT) urlglob.$(OBJEXT) \
 	writeout.$(OBJEXT) writeenv.$(OBJEXT) getpass.$(OBJEXT) \
-	homedir.$(OBJEXT) curlutil.$(OBJEXT) os-specific.$(OBJEXT)
+	homedir.$(OBJEXT) curlutil.$(OBJEXT) os-specific.$(OBJEXT) \
+	xattr.$(OBJEXT)
 am__objects_2 = strtoofft.$(OBJEXT) strdup.$(OBJEXT) rawstr.$(OBJEXT) \
 	nonblock.$(OBJEXT)
 am__objects_3 =
@@ -116,6 +117,7 @@ CROSSCOMPILING_FALSE = @CROSSCOMPILING_FALSE@
 CROSSCOMPILING_TRUE = @CROSSCOMPILING_TRUE@
 CURLDEBUG_FALSE = @CURLDEBUG_FALSE@
 CURLDEBUG_TRUE = @CURLDEBUG_TRUE@
+CURLVERSION = @CURLVERSION@
 CURL_CA_BUNDLE = @CURL_CA_BUNDLE@
 CURL_CFLAG_EXTRAS = @CURL_CFLAG_EXTRAS@
 CURL_DISABLE_DICT = @CURL_DISABLE_DICT@
@@ -148,11 +150,13 @@ ENABLE_SHARED = @ENABLE_SHARED@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 GREP = @GREP@
+HAVE_GNUTLS_SRP = @HAVE_GNUTLS_SRP@
 HAVE_LDAP_SSL = @HAVE_LDAP_SSL@
 HAVE_LIBZ = @HAVE_LIBZ@
 HAVE_LIBZ_FALSE = @HAVE_LIBZ_FALSE@
 HAVE_LIBZ_TRUE = @HAVE_LIBZ_TRUE@
 HAVE_PK11_CREATEGENERICOBJECT = @HAVE_PK11_CREATEGENERICOBJECT@
+HAVE_SSLEAY_SRP = @HAVE_SSLEAY_SRP@
 IDN_ENABLED = @IDN_ENABLED@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -173,6 +177,7 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
+MANIFEST_TOOL = @MANIFEST_TOOL@
 MANOPT = @MANOPT@
 MIMPURE_FALSE = @MIMPURE_FALSE@
 MIMPURE_TRUE = @MIMPURE_TRUE@
@@ -217,6 +222,8 @@ SUPPORT_FEATURES = @SUPPORT_FEATURES@
 SUPPORT_PROTOCOLS = @SUPPORT_PROTOCOLS@
 TEST_SERVER_LIBS = @TEST_SERVER_LIBS@
 USE_ARES = @USE_ARES@
+USE_AXTLS = @USE_AXTLS@
+USE_CYASSL = @USE_CYASSL@
 USE_EMBEDDED_ARES_FALSE = @USE_EMBEDDED_ARES_FALSE@
 USE_EMBEDDED_ARES_TRUE = @USE_EMBEDDED_ARES_TRUE@
 USE_GNUTLS = @USE_GNUTLS@
@@ -231,6 +238,7 @@ USE_SSLEAY = @USE_SSLEAY@
 USE_WINDOWS_SSPI = @USE_WINDOWS_SSPI@
 VERSION = @VERSION@
 VERSIONNUM = @VERSIONNUM@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
@@ -265,7 +273,6 @@ libexecdir = @libexecdir@
 libext = @libext@
 localedir = @localedir@
 localstatedir = @localstatedir@
-lt_ECHO = @lt_ECHO@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
@@ -331,11 +338,12 @@ CURLX_ONES = $(top_srcdir)/lib/strtoofft.c \
 	$(top_srcdir)/lib/nonblock.c
 
 CURL_CFILES = main.c hugehelp.c urlglob.c writeout.c writeenv.c \
-	getpass.c homedir.c curlutil.c os-specific.c
+	getpass.c homedir.c curlutil.c os-specific.c xattr.c
 
 CURL_HFILES = hugehelp.h setup.h config-win32.h config-mac.h \
 	config-riscos.h urlglob.h version.h os-specific.h \
-	writeout.h writeenv.h getpass.h homedir.h curlutil.h
+	writeout.h writeenv.h getpass.h homedir.h curlutil.h \
+	xattr.h
 
 curl_SOURCES = $(CURL_CFILES) $(CURLX_ONES) $(CURL_HFILES)
 curl_LDADD = $(top_builddir)/lib/libcurl.la @CURL_LIBS@
@@ -343,7 +351,7 @@ curl_DEPENDENCIES = $(top_builddir)/lib/libcurl.la
 BUILT_SOURCES = hugehelp.c
 CLEANFILES = hugehelp.c
 EXTRA_DIST = mkhelp.pl makefile.dj Makefile.vc6 Makefile.b32 Makefile.m32 \
-	Makefile.riscos curl_config.h.in macos/curl.mcp.xml.sit.hqx	  \
+	curl_config.h.in macos/curl.mcp.xml.sit.hqx			  \
 	macos/MACINSTALL.TXT macos/src/curl_GUSIConfig.cpp vc6curlsrc.dsp \
 	macos/src/macos_main.cpp config-amigaos.h makefile.amiga curl.rc  \
 	Makefile.netware Makefile.inc Makefile.Watcom vc6curlsrc.dsw      \
@@ -455,6 +463,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/urlglob.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writeenv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writeout.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xattr.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

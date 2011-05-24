@@ -35,8 +35,6 @@
 #include "GUIDialogSelect.h"
 #include "DateTime.h"
 #include "FileSystem/Directory.h"
-#include "ScriptSettings.h"
-#include "GUIDialogPluginSettings.h"
 
 using namespace std;
 using namespace DIRECTORY;
@@ -72,7 +70,7 @@ using namespace DIRECTORY;
 #define PARTNER_ID    "1004124588"   //weather.com partner id
 #define PARTNER_KEY    "079f24145f208494"  //weather.com partner key
 
-#define MAX_LOCATION   10
+#define MAX_LOCATION   3
 #define LOCALIZED_TOKEN_FIRSTID   370
 #define LOCALIZED_TOKEN_LASTID   395
 #define LOCALIZED_TOKEN_FIRSTID2 1396
@@ -84,9 +82,9 @@ FIXME'S
 */
 
 // USE THESE FOR ZIP
+//#define WEATHER_BASE_PATH "Z:\\weather\\"
 //#define WEATHER_USE_ZIP 1
 //#define WEATHER_USE_RAR 0
-//#define WEATHER_BASE_PATH "special://temp/weather/"
 //#define WEATHER_SOURCE_FILE "special://xbmc/media/weather.zip"
 
 // OR THESE FOR RAR
@@ -99,11 +97,10 @@ CWeather g_weatherManager;
 
 void CBackgroundWeatherLoader::GetInformation()
 {
-  //if (!g_network.IsAvailable())
-  //  return;
+  if (!g_network.IsAvailable())
+    return;
 
-  //CWeather *callback = (CWeather *)m_callback;
-  /*
+  CWeather *callback = (CWeather *)m_callback;
   // Download our weather
   CLog::Log(LOGINFO, "WEATHER: Downloading weather");
   XFILE::CFileCurl httpUtil;
@@ -131,7 +128,6 @@ void CBackgroundWeatherLoader::GetInformation()
   }
   else
     CLog::Log(LOGERROR, "WEATHER: Weather download failed!");
-  */
 }
 
 CWeather::CWeather(void) : CInfoLoader("weather")
@@ -672,8 +668,8 @@ const char *CWeather::TranslateInfo(int info)
 }
 
 DWORD CWeather::TimeToNextRefreshInMs()
-{ // 15 minutes
-  return 15 * 60 * 1000;
+{ // 30 minutes
+  return 30 * 60 * 1000;
 }
 
 CStdString CWeather::GetAreaCity(const CStdString &codeAndCity) const
@@ -698,28 +694,11 @@ char *CWeather::GetLocation(int iLocation)
 {
   if (strlen(m_szLocation[iLocation]) == 0)
   {
-    CStdString cScriptPath = "special://home/plugins/weather/" + g_guiSettings.GetString("weather.plugin");
-    CScriptSettings* settings = new CScriptSettings();
-    settings->Clear();
-    settings->Load(cScriptPath);
     CStdString setting;
-    setting.Format("town%i", iLocation + 1);
-    strcpy(m_szLocation[iLocation], settings->Get(setting).c_str());
+    setting.Format("weather.areacode%i", iLocation + 1);
+    strcpy(m_szLocation[iLocation], GetAreaCity(g_guiSettings.GetString(setting)).c_str());
   }
   return m_szLocation[iLocation];
-}
-
-unsigned int CWeather::GetMaxLocations()
-{
-  if (m_MaxLocations == -1)
-  {
-    CStdString cScriptPath = "special://home/plugins/weather/" + g_guiSettings.GetString("weather.plugin");
-    CScriptSettings* settings = new CScriptSettings();
-    settings->Clear();
-    settings->Load(cScriptPath);
-    m_MaxLocations = atoi(settings->Get("maxlocations")) + 1;
-  }
-  return m_MaxLocations;
 }
 
 void CWeather::Reset()
@@ -748,7 +727,6 @@ void CWeather::Reset()
   {
     strcpy(m_szLocation[i], "");
   }
-  m_MaxLocations = -1;
 }
 
 bool CWeather::IsFetched()

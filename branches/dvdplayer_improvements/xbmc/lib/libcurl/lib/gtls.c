@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -78,6 +78,7 @@ static void tls_log_func(int level, const char *str)
 }
 #endif
 static bool gtls_inited = FALSE;
+
 /*
  * Custom push and pull callback functions used by GNU TLS to read and write
  * to the socket.  These functions are simple wrappers to send() and recv()
@@ -85,15 +86,54 @@ static bool gtls_inited = FALSE;
  * We use custom functions rather than the GNU TLS defaults because it allows
  * us to get specific about the fourth "flags" argument, and to use arbitrary
  * private data with gnutls_transport_set_ptr if we wish.
+ *
+ * When these custom push and pull callbacks fail, GNU TLS checks its own
+ * session-specific error variable, and when not set also its own global
+ * errno variable, in order to take appropriate action. GNU TLS does not
+ * require that the transport is actually a socket. This implies that for
+ * Windows builds these callbacks should ideally set the session-specific
+ * error variable using function gnutls_transport_set_errno or as a last
+ * resort global errno variable using gnutls_transport_set_global_errno,
+ * with a transport agnostic error value. This implies that some winsock
+ * error translation must take place in these callbacks.
  */
+
+#ifdef USE_WINSOCK
+#  define gtls_EINTR  4
+#  define gtls_EIO    5
+#  define gtls_EAGAIN 11
+static int gtls_mapped_sockerrno(void)
+{
+  switch(SOCKERRNO) {
+  case WSAEWOULDBLOCK:
+    return gtls_EAGAIN;
+  case WSAEINTR:
+    return gtls_EINTR;
+  default:
+    break;
+  }
+  return gtls_EIO;
+}
+#endif
+
 static ssize_t Curl_gtls_push(void *s, const void *buf, size_t len)
 {
-  return swrite(GNUTLS_POINTER_TO_INT_CAST(s), buf, len);
+  ssize_t ret = swrite(GNUTLS_POINTER_TO_INT_CAST(s), buf, len);
+#ifdef USE_WINSOCK
+  if(ret < 0)
+    gnutls_transport_set_global_errno(gtls_mapped_sockerrno());
+#endif
+  return ret;
 }
 
 static ssize_t Curl_gtls_pull(void *s, void *buf, size_t len)
 {
-  return sread(GNUTLS_POINTER_TO_INT_CAST(s), buf, len);
+  ssize_t ret = sread(GNUTLS_POINTER_TO_INT_CAST(s), buf, len);
+#ifdef USE_WINSOCK
+  if(ret < 0)
+    gnutls_transport_set_global_errno(gtls_mapped_sockerrno());
+#endif
+  return ret;
 }
 
 /* Curl_gtls_init()
@@ -130,13 +170,12 @@ static void showtime(struct SessionHandle *data,
                      const char *text,
                      time_t stamp)
 {
-  struct tm *tm;
-#ifdef HAVE_GMTIME_R
   struct tm buffer;
-  tm = (struct tm *)gmtime_r(&stamp, &buffer);
-#else
-  tm = gmtime(&stamp);
-#endif
+  const struct tm *tm = &buffer;
+  CURLcode result = Curl_gmtime(stamp, &buffer);
+  if(result)
+    return;
+
   snprintf(data->state.buffer,
            BUFSIZE,
            "\t %s: %s, %02d %s %4d %02d:%02d:%02d GMT\n",
@@ -196,9 +235,9 @@ static CURLcode handshake(struct connectdata *conn,
   int rc;
   int what;
 
-  while(1) {
+  for(;;) {
     /* check allowed time left */
-    timeout_ms = Curl_timeleft(conn, NULL, duringconnect);
+    timeout_ms = Curl_timeleft(data, NULL, duringconnect);
 
     if(timeout_ms < 0) {
       /* no need to continue if time already is up */
@@ -216,19 +255,18 @@ static CURLcode handshake(struct connectdata *conn,
         connssl->connecting_state?sockfd:CURL_SOCKET_BAD;
 
       what = Curl_socket_ready(readfd, writefd,
-                               nonblocking?0:(int)timeout_ms);
+                               nonblocking?0:(int)timeout_ms?1000:timeout_ms);
       if(what < 0) {
         /* fatal error */
         failf(data, "select/poll on SSL socket, errno: %d", SOCKERRNO);
         return CURLE_SSL_CONNECT_ERROR;
       }
       else if(0 == what) {
-        if(nonblocking) {
+        if(nonblocking)
           return CURLE_OK;
-        }
-        else {
+        else if(timeout_ms) {
           /* timeout */
-          failf(data, "SSL connection timeout");
+          failf(data, "SSL connection timeout at %ld", timeout_ms);
           return CURLE_OPERATION_TIMEDOUT;
         }
       }
@@ -241,12 +279,14 @@ static CURLcode handshake(struct connectdata *conn,
       connssl->connecting_state =
         gnutls_record_get_direction(session)?
         ssl_connect_2_writing:ssl_connect_2_reading;
-      if(nonblocking) {
+      if(nonblocking)
         return CURLE_OK;
-      }
-    } else if (rc < 0) {
+    }
+    else if (rc < 0) {
       failf(data, "gnutls_handshake() failed: %s", gnutls_strerror(rc));
-    } else {
+      return CURLE_SSL_CONNECT_ERROR;
+    }
+    else {
       /* Reset our connect state machine */
       connssl->connecting_state = ssl_connect_1;
       return CURLE_OK;
@@ -304,6 +344,29 @@ gtls_connect_step1(struct connectdata *conn,
     failf(data, "gnutls_cert_all_cred() failed: %s", gnutls_strerror(rc));
     return CURLE_SSL_CONNECT_ERROR;
   }
+
+#ifdef USE_TLS_SRP
+  if(data->set.ssl.authtype == CURL_TLSAUTH_SRP) {
+    infof(data, "Using TLS-SRP username: %s\n", data->set.ssl.username);
+
+    rc = gnutls_srp_allocate_client_credentials(
+           &conn->ssl[sockindex].srp_client_cred);
+    if(rc != GNUTLS_E_SUCCESS) {
+      failf(data, "gnutls_srp_allocate_client_cred() failed: %s",
+            gnutls_strerror(rc));
+      return CURLE_OUT_OF_MEMORY;
+    }
+
+    rc = gnutls_srp_set_client_credentials(conn->ssl[sockindex].srp_client_cred,
+                                           data->set.ssl.username,
+                                           data->set.ssl.password);
+    if(rc != GNUTLS_E_SUCCESS) {
+      failf(data, "gnutls_srp_set_client_cred() failed: %s",
+            gnutls_strerror(rc));
+      return CURLE_BAD_FUNCTION_ARGUMENT;
+    }
+  }
+#endif
 
   if(data->set.ssl.CAfile) {
     /* set the trusted CA cert bundle file */
@@ -390,9 +453,18 @@ gtls_connect_step1(struct connectdata *conn,
     }
   }
 
+#ifdef USE_TLS_SRP
   /* put the credentials to the current session */
-  rc = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE,
-                              conn->ssl[sockindex].cred);
+  if(data->set.ssl.authtype == CURL_TLSAUTH_SRP) {
+    rc = gnutls_credentials_set(session, GNUTLS_CRD_SRP,
+                                conn->ssl[sockindex].srp_client_cred);
+    if (rc != GNUTLS_E_SUCCESS) {
+      failf(data, "gnutls_credentials_set() failed: %s", gnutls_strerror(rc));
+    }
+  } else
+#endif
+    rc = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE,
+                                conn->ssl[sockindex].cred);
 
   /* set the connection handle (file descriptor for the socket) */
   gnutls_transport_set_ptr(session,
@@ -442,6 +514,7 @@ gtls_connect_step3(struct connectdata *conn,
   int rc;
   int incache;
   void *ssl_sessionid;
+  CURLcode result = CURLE_OK;
 
   /* This function will return the peer's raw certificate (chain) as sent by
      the peer. These certificates are in raw format (DER encoded for
@@ -454,8 +527,21 @@ gtls_connect_step3(struct connectdata *conn,
     if(data->set.ssl.verifypeer ||
        data->set.ssl.verifyhost ||
        data->set.ssl.issuercert) {
-      failf(data, "failed to get server cert");
-      return CURLE_PEER_FAILED_VERIFICATION;
+#ifdef USE_TLS_SRP
+      if(data->set.ssl.authtype == CURL_TLSAUTH_SRP
+         && data->set.ssl.username != NULL
+         && !data->set.ssl.verifypeer
+         && gnutls_cipher_get(session)) {
+        /* no peer cert, but auth is ok if we have SRP user and cipher and no
+           peer verify */
+      }
+      else {
+#endif
+        failf(data, "failed to get server cert");
+        return CURLE_PEER_FAILED_VERIFICATION;
+#ifdef USE_TLS_SRP
+      }
+#endif
     }
     infof(data, "\t common name: WARNING couldn't obtain\n");
   }
@@ -488,8 +574,10 @@ gtls_connect_step3(struct connectdata *conn,
     else
       infof(data, "\t server certificate verification OK\n");
   }
-  else
+  else {
     infof(data, "\t server certificate verification SKIPPED\n");
+    goto after_server_cert_verification;
+  }
 
   /* initialize an X.509 certificate structure. */
   gnutls_x509_crt_init(&x509_cert);
@@ -619,6 +707,8 @@ gtls_connect_step3(struct connectdata *conn,
 
   gnutls_x509_crt_deinit(x509_cert);
 
+after_server_cert_verification:
+
   /* compression algorithm (if any) */
   ptr = gnutls_compression_get_name(gnutls_compression_get(session));
   /* the *_get_name() says "NULL" if GNUTLS_COMP_NULL is returned */
@@ -660,11 +750,17 @@ gtls_connect_step3(struct connectdata *conn,
       }
 
       /* store this session id */
-      return Curl_ssl_addsessionid(conn, connect_sessionid, connect_idsize);
+      result = Curl_ssl_addsessionid(conn, connect_sessionid, connect_idsize);
+      if(result) {
+        free(connect_sessionid);
+        result = CURLE_OUT_OF_MEMORY;
+      }
     }
+    else
+      result = CURLE_OUT_OF_MEMORY;
   }
 
-  return CURLE_OK;
+  return result;
 }
 
 
@@ -772,6 +868,12 @@ static void close_one(struct connectdata *conn,
     gnutls_certificate_free_credentials(conn->ssl[idx].cred);
     conn->ssl[idx].cred = NULL;
   }
+#ifdef USE_TLS_SRP
+  if (conn->ssl[idx].srp_client_cred) {
+    gnutls_srp_free_client_credentials(conn->ssl[idx].srp_client_cred);
+    conn->ssl[idx].srp_client_cred = NULL;
+  }
+#endif
 }
 
 void Curl_gtls_close(struct connectdata *conn, int sockindex)
@@ -840,6 +942,12 @@ int Curl_gtls_shutdown(struct connectdata *conn, int sockindex)
     gnutls_deinit(conn->ssl[sockindex].session);
   }
   gnutls_certificate_free_credentials(conn->ssl[sockindex].cred);
+
+#ifdef USE_TLS_SRP
+  if(data->set.ssl.authtype == CURL_TLSAUTH_SRP
+     && data->set.ssl.username != NULL)
+    gnutls_srp_free_client_credentials(conn->ssl[sockindex].srp_client_cred);
+#endif
 
   conn->ssl[sockindex].cred = NULL;
   conn->ssl[sockindex].session = NULL;
