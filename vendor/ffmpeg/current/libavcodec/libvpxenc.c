@@ -36,13 +36,13 @@
  * One encoded frame returned from the library.
  */
 struct FrameListData {
-    void *buf;                       /**≤ compressed data buffer */
-    size_t sz;                       /**≤ length of compressed data */
-    int64_t pts;                     /**≤ time stamp to show frame
+    void *buf;                       /**< compressed data buffer */
+    size_t sz;                       /**< length of compressed data */
+    int64_t pts;                     /**< time stamp to show frame
                                           (in timebase units) */
-    unsigned long duration;          /**≤ duration to show frame
+    unsigned long duration;          /**< duration to show frame
                                           (in timebase units) */
-    uint32_t flags;                  /**≤ flags for this frame */
+    uint32_t flags;                  /**< flags for this frame */
     struct FrameListData *next;
 };
 
@@ -72,6 +72,7 @@ static const char *ctlidstr[] = {
     [VP8E_SET_ARNR_MAXFRAMES]    = "VP8E_SET_ARNR_MAXFRAMES",
     [VP8E_SET_ARNR_STRENGTH]     = "VP8E_SET_ARNR_STRENGTH",
     [VP8E_SET_ARNR_TYPE]         = "VP8E_SET_ARNR_TYPE",
+    [VP8E_SET_CQ_LEVEL]          = "VP8E_SET_CQ_LEVEL",
 };
 
 static av_cold void log_encoder_error(AVCodecContext *avctx, const char *desc)
@@ -234,12 +235,30 @@ static av_cold int vp8_init(AVCodecContext *avctx)
     if (avctx->rc_min_rate == avctx->rc_max_rate &&
         avctx->rc_min_rate == avctx->bit_rate)
         enccfg.rc_end_usage = VPX_CBR;
+    else if (avctx->crf)
+        enccfg.rc_end_usage = VPX_CQ;
     enccfg.rc_target_bitrate = av_rescale_rnd(avctx->bit_rate, 1, 1000,
                                               AV_ROUND_NEAR_INF);
 
     enccfg.rc_min_quantizer = avctx->qmin;
     enccfg.rc_max_quantizer = avctx->qmax;
     enccfg.rc_dropframe_thresh = avctx->frame_skip_threshold;
+
+    //0-100 (0 => CBR, 100 => VBR)
+    enccfg.rc_2pass_vbr_bias_pct           = round(avctx->qcompress * 100);
+    enccfg.rc_2pass_vbr_minsection_pct     =
+        avctx->rc_min_rate * 100LL / avctx->bit_rate;
+    if (avctx->rc_max_rate)
+        enccfg.rc_2pass_vbr_maxsection_pct =
+            avctx->rc_max_rate * 100LL / avctx->bit_rate;
+
+    if (avctx->rc_buffer_size)
+        enccfg.rc_buf_sz         =
+            avctx->rc_buffer_size * 1000LL / avctx->bit_rate;
+    if (avctx->rc_initial_buffer_occupancy)
+        enccfg.rc_buf_initial_sz =
+            avctx->rc_initial_buffer_occupancy * 1000LL / avctx->bit_rate;
+    enccfg.rc_buf_optimal_sz     = enccfg.rc_buf_sz * 5 / 6;
 
     //_enc_init() will balk if kf_min_dist differs from max w/VPX_KF_AUTO
     if (avctx->keyint_min == avctx->gop_size)
@@ -294,6 +313,9 @@ static av_cold int vp8_init(AVCodecContext *avctx)
     av_log(avctx, AV_LOG_DEBUG, "vpx_codec_control\n");
     codecctl_int(avctx, VP8E_SET_CPUUSED,           cpuused);
     codecctl_int(avctx, VP8E_SET_NOISE_SENSITIVITY, avctx->noise_reduction);
+    codecctl_int(avctx, VP8E_SET_TOKEN_PARTITIONS,  av_log2(avctx->slices));
+    codecctl_int(avctx, VP8E_SET_STATIC_THRESHOLD,  avctx->mb_threshold);
+    codecctl_int(avctx, VP8E_SET_CQ_LEVEL,          (int)avctx->crf);
 
     //provide dummy value to initialize wrapper, values will be updated each _encode()
     vpx_img_wrap(&ctx->rawimg, VPX_IMG_FMT_I420, avctx->width, avctx->height, 1,
@@ -336,9 +358,9 @@ static int storeframe(AVCodecContext *avctx, struct FrameListData *cx_frame,
         coded_frame->key_frame = !!(cx_frame->flags & VPX_FRAME_IS_KEY);
 
         if (coded_frame->key_frame)
-            coded_frame->pict_type = FF_I_TYPE;
+            coded_frame->pict_type = AV_PICTURE_TYPE_I;
         else
-            coded_frame->pict_type = FF_P_TYPE;
+            coded_frame->pict_type = AV_PICTURE_TYPE_P;
     } else {
         av_log(avctx, AV_LOG_ERROR,
                "Compressed frame larger than storage provided! (%zu/%d)\n",
@@ -477,7 +499,7 @@ static int vp8_encode(AVCodecContext *avctx, uint8_t *buf, int buf_size,
     return coded_size;
 }
 
-AVCodec libvpx_encoder = {
+AVCodec ff_libvpx_encoder = {
     "libvpx",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_VP8,

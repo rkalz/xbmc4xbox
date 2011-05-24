@@ -111,7 +111,7 @@ static int rv30_decode_mb_info(RV34DecContext *r)
         av_log(s->avctx, AV_LOG_ERROR, "dquant needed\n");
         code -= 6;
     }
-    if(s->pict_type != FF_B_TYPE)
+    if(s->pict_type != AV_PICTURE_TYPE_B)
         return rv30_p_types[code];
     else
         return rv30_b_types[code];
@@ -266,7 +266,7 @@ static av_cold int rv30_decode_init(AVCodecContext *avctx)
     return 0;
 }
 
-AVCodec rv30_decoder = {
+AVCodec ff_rv30_decoder = {
     "rv30",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_RV30,

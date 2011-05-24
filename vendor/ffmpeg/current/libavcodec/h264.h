@@ -39,8 +39,8 @@
 #define interlaced_dct interlaced_dct_is_a_bad_name
 #define mb_intra mb_intra_is_not_initialized_see_mb_type
 
-#define LUMA_DC_BLOCK_INDEX   25
-#define CHROMA_DC_BLOCK_INDEX 26
+#define LUMA_DC_BLOCK_INDEX   24
+#define CHROMA_DC_BLOCK_INDEX 25
 
 #define CHROMA_DC_COEFF_TOKEN_VLC_BITS 8
 #define COEFF_TOKEN_VLC_BITS           8
@@ -108,6 +108,7 @@
  */
 #define DELAYED_PIC_REF 4
 
+#define QP_MAX_NUM (51 + 2*6)           // The maximum supported qp
 
 /* NAL unit types */
 enum {
@@ -209,6 +210,7 @@ typedef struct SPS{
     int bit_depth_luma;                ///< bit_depth_luma_minus8 + 8
     int bit_depth_chroma;              ///< bit_depth_chroma_minus8 + 8
     int residual_color_transform_flag; ///< residual_colour_transform_flag
+    int constraint_set_flags;          ///< constraint_set[0-3]_flag
 }SPS;
 
 /**
@@ -264,6 +266,7 @@ typedef struct MMCO{
 typedef struct H264Context{
     MpegEncContext s;
     H264DSPContext h264dsp;
+    int pixel_shift;    ///< 0 for 8-bit H264, 1 for high-bit-depth H264
     int chroma_qp[2]; //QPc
 
     int qp_thresh;      ///< QP threshold to skip loopfilter
@@ -295,7 +298,7 @@ typedef struct H264Context{
     unsigned int top_samples_available;
     unsigned int topright_samples_available;
     unsigned int left_samples_available;
-    uint8_t (*top_borders[2])[16+2*8];
+    uint8_t (*top_borders[2])[(16+2*8)*2];
 
     /**
      * non zero coeff count cache.
@@ -352,8 +355,8 @@ typedef struct H264Context{
      */
     PPS pps; //FIXME move to Picture perhaps? (->no) do we need that?
 
-    uint32_t dequant4_buffer[6][52][16]; //FIXME should these be moved down?
-    uint32_t dequant8_buffer[2][52][64];
+    uint32_t dequant4_buffer[6][QP_MAX_NUM+1][16]; //FIXME should these be moved down?
+    uint32_t dequant8_buffer[2][QP_MAX_NUM+1][64];
     uint32_t (*dequant4_coeff[6])[16];
     uint32_t (*dequant8_coeff[2])[64];
 
@@ -391,9 +394,9 @@ typedef struct H264Context{
     /**
      * num_ref_idx_l0/1_active_minus1 + 1
      */
+    uint8_t *list_counts;            ///< Array of list_count per MB specifying the slice type
     unsigned int ref_count[2];   ///< counts frames or fields, depending on current mb mode
     unsigned int list_count;
-    uint8_t *list_counts;            ///< Array of list_count per MB specifying the slice type
     Picture ref_list[2][48];         /**< 0..15: frame refs, 16..47: mbaff field refs.
                                           Reordered version of default_ref_list
                                           according to picture reordering in slice header */
@@ -405,8 +408,9 @@ typedef struct H264Context{
     GetBitContext *intra_gb_ptr;
     GetBitContext *inter_gb_ptr;
 
-    DECLARE_ALIGNED(16, DCTELEM, mb)[16*24];
-    DCTELEM mb_padding[256];        ///< as mb is addressed by scantable[i] and scantable is uint8_t we can either check that i is not too large or ensure that there is some unused stuff after mb
+    DECLARE_ALIGNED(16, DCTELEM, mb)[16*24*2]; ///< as a dct coeffecient is int32_t in high depth, we need to reserve twice the space.
+    DECLARE_ALIGNED(16, DCTELEM, mb_luma_dc)[16*2];
+    DCTELEM mb_padding[256*2];        ///< as mb is addressed by scantable[i] and scantable is uint8_t we can either check that i is not too large or ensure that there is some unused stuff after mb
 
     /**
      * Cabac
@@ -502,7 +506,9 @@ typedef struct H264Context{
     Picture *long_ref[32];
     Picture default_ref_list[2][32]; ///< base reference list for all slices of a coded picture
     Picture *delayed_pic[MAX_DELAYED_PIC_COUNT+2]; //FIXME size?
+    Picture *next_output_pic;
     int outputed_poc;
+    int next_outputed_poc;
 
     /**
      * memory management control operations buffer.
@@ -588,21 +594,10 @@ typedef struct H264Context{
     // Timestamp stuff
     int sei_buffering_period_present;  ///< Buffering period SEI flag
     int initial_cpb_removal_delay[32]; ///< Initial timestamps for CPBs
-
-    //SVQ3 specific fields
-    int halfpel_flag;
-    int thirdpel_flag;
-    int unknown_svq3_flag;
-    int next_slice_index;
-    uint32_t svq3_watermark_key;
 }H264Context;
 
 
-extern const uint8_t ff_h264_chroma_qp[52];
-
-void ff_svq3_luma_dc_dequant_idct_c(DCTELEM *block, int qp);
-
-void ff_svq3_add_idct_c(uint8_t *dst, DCTELEM *block, int stride, int qp, int dc);
+extern const uint8_t ff_h264_chroma_qp[3][QP_MAX_NUM+1]; ///< One chroma qp table for each supported bit depth (8, 9, 10).
 
 /**
  * Decode SEI
@@ -613,6 +608,11 @@ int ff_h264_decode_sei(H264Context *h);
  * Decode SPS
  */
 int ff_h264_decode_seq_parameter_set(H264Context *h);
+
+/**
+ * compute profile from sps
+ */
+int ff_h264_get_profile(SPS *sps);
 
 /**
  * Decode PPS
@@ -627,12 +627,6 @@ int ff_h264_decode_picture_parameter_set(H264Context *h, int bit_length);
  * @return decoded bytes, might be src+1 if no escapes
  */
 const uint8_t *ff_h264_decode_nal(H264Context *h, const uint8_t *src, int *dst_length, int *consumed, int length);
-
-/**
- * Identify the exact end of the bitstream
- * @return the length of the trailing, or 0 if damaged
- */
-int ff_h264_decode_rbsp_trailing(H264Context *h, const uint8_t *src);
 
 /**
  * Free any data that may have been allocated in the H264 context like SPS, PPS etc.
@@ -716,6 +710,12 @@ void ff_h264_filter_mb( H264Context *h, int mb_x, int mb_y, uint8_t *img_y, uint
 void ff_h264_reset_sei(H264Context *h);
 
 
+void ff_hl_motion(H264Context *h, uint8_t *dest_y, uint8_t *dest_cb, uint8_t *dest_cr,
+                      qpel_mc_func (*qpix_put)[16], h264_chroma_mc_func (*chroma_put),
+                      qpel_mc_func (*qpix_avg)[16], h264_chroma_mc_func (*chroma_avg),
+                      h264_weight_func *weight_op, h264_biweight_func *weight_avg);
+
+
 /*
 o-o o-o
  / / /
@@ -725,8 +725,20 @@ o-o o-o
  / / /
 o-o o-o
 */
+
+/* Scan8 organization:
+ *   0 1 2 3 4 5 6 7
+ * 0   u u y y y y y
+ * 1 u U U y Y Y Y Y
+ * 2 u U U y Y Y Y Y
+ * 3   v v y Y Y Y Y
+ * 4 v V V y Y Y Y Y
+ * 5 v V V   DYDUDV
+ * DY/DU/DV are for luma/chroma DC.
+ */
+
 //This table must be here because scan8[constant] must be known at compiletime
-static const uint8_t scan8[16 + 2*4]={
+static const uint8_t scan8[16 + 2*4 + 3]={
  4+1*8, 5+1*8, 4+2*8, 5+2*8,
  6+1*8, 7+1*8, 6+2*8, 7+2*8,
  4+3*8, 5+3*8, 4+4*8, 5+4*8,
@@ -735,6 +747,7 @@ static const uint8_t scan8[16 + 2*4]={
  1+2*8, 2+2*8,
  1+4*8, 2+4*8,
  1+5*8, 2+5*8,
+ 4+5*8, 5+5*8, 6+5*8
 };
 
 static av_always_inline uint32_t pack16to32(int a, int b){
@@ -987,7 +1000,6 @@ static void fill_decode_caches(H264Context *h, int mb_type){
     }
     }
 
-#if 1
     if(IS_INTER(mb_type) || (IS_DIRECT(mb_type) && h->direct_spatial_mv_pred)){
         int list;
         for(list=0; list<h->list_count; list++){
@@ -1099,7 +1111,7 @@ static void fill_decode_caches(H264Context *h, int mb_type){
                 }
                 AV_ZERO16(h->mvd_cache [list][scan8[4 ]]);
                 AV_ZERO16(h->mvd_cache [list][scan8[12]]);
-                if(h->slice_type_nos == FF_B_TYPE){
+                if(h->slice_type_nos == AV_PICTURE_TYPE_B){
                     fill_rectangle(&h->direct_cache[scan8[0]], 4, 4, 8, MB_TYPE_16x16>>1, 1);
 
                     if(IS_DIRECT(top_type)){
@@ -1162,7 +1174,6 @@ static void fill_decode_caches(H264Context *h, int mb_type){
             }
         }
     }
-#endif
 
         h->neighbor_transform_size= !!IS_8x8DCT(top_type) + !!IS_8x8DCT(left_type[0]);
 }
@@ -1237,7 +1248,7 @@ static inline void write_back_motion(H264Context *h, int mb_type){
         }
     }
 
-    if(h->slice_type_nos == FF_B_TYPE && CABAC){
+    if(h->slice_type_nos == AV_PICTURE_TYPE_B && CABAC){
         if(IS_8X8(mb_type)){
             uint8_t *direct_table = &h->direct_table[4*h->mb_xy];
             direct_table[1] = h->sub_mb_type[1]>>1;
@@ -1268,7 +1279,7 @@ static void av_unused decode_mb_skip(H264Context *h){
     if(MB_FIELD)
         mb_type|= MB_TYPE_INTERLACED;
 
-    if( h->slice_type_nos == FF_B_TYPE )
+    if( h->slice_type_nos == AV_PICTURE_TYPE_B )
     {
         // just for fill_caches. pred_direct_motion will set the real mb_type
         mb_type|= MB_TYPE_L0L1|MB_TYPE_DIRECT2|MB_TYPE_SKIP;

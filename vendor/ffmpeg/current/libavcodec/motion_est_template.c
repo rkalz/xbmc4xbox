@@ -634,25 +634,6 @@ static int funny_diamond_search(MpegEncContext * s, int *best, int dmin,
 
         if(x!=best[0] || y!=best[1])
             dia_size=0;
-#if 0
-{
-int dx, dy, i;
-static int stats[8*8];
-dx= FFABS(x-best[0]);
-dy= FFABS(y-best[1]);
-if(dy>dx){
-    dx^=dy; dy^=dx; dx^=dy;
-}
-stats[dy*8 + dx] ++;
-if(256*256*256*64 % (stats[0]+1)==0){
-    for(i=0; i<64; i++){
-        if((i&7)==0) printf("\n");
-        printf("%8d ", stats[i]);
-    }
-    printf("\n");
-}
-}
-#endif
     }
     return dmin;
 }
@@ -985,22 +966,6 @@ static int var_diamond_search(MpegEncContext * s, int *best, int dmin,
 
         if(x!=best[0] || y!=best[1])
             dia_size=0;
-#if 0
-{
-int dx, dy, i;
-static int stats[8*8];
-dx= FFABS(x-best[0]);
-dy= FFABS(y-best[1]);
-stats[dy*8 + dx] ++;
-if(256*256*256*64 % (stats[0]+1)==0){
-    for(i=0; i<64; i++){
-        if((i&7)==0) printf("\n");
-        printf("%6d ", stats[i]);
-    }
-    printf("\n");
-}
-}
-#endif
     }
     return dmin;
 }
@@ -1072,7 +1037,7 @@ static av_always_inline int epzs_motion_search_internal(MpegEncContext * s, int 
     score_map[0]= dmin;
 
     //FIXME precalc first term below?
-    if((s->pict_type == FF_B_TYPE && !(c->flags & FLAG_DIRECT)) || s->flags&CODEC_FLAG_MV0)
+    if((s->pict_type == AV_PICTURE_TYPE_B && !(c->flags & FLAG_DIRECT)) || s->flags&CODEC_FLAG_MV0)
         dmin += (mv_penalty[pred_x] + mv_penalty[pred_y])*penalty_factor;
 
     /* first line */

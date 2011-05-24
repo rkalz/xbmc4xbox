@@ -68,7 +68,7 @@ static AVStream *add_audio_stream(AVFormatContext *oc, enum CodecID codec_id)
     c->codec_type = AVMEDIA_TYPE_AUDIO;
 
     /* put sample parameters */
-    c->sample_fmt = SAMPLE_FMT_S16;
+    c->sample_fmt = AV_SAMPLE_FMT_S16;
     c->bit_rate = 64000;
     c->sample_rate = 44100;
     c->channels = 2;
@@ -442,26 +442,16 @@ int main(int argc, char **argv)
 
     filename = argv[1];
 
-    /* auto detect the output format from the name. default is
-       mpeg. */
-    fmt = av_guess_format(NULL, filename, NULL);
-    if (!fmt) {
-        printf("Could not deduce output format from file extension: using MPEG.\n");
-        fmt = av_guess_format("mpeg", NULL, NULL);
-    }
-    if (!fmt) {
-        fprintf(stderr, "Could not find suitable output format\n");
-        exit(1);
-    }
-
     /* allocate the output media context */
-    oc = avformat_alloc_context();
+    avformat_alloc_output_context2(&oc, NULL, NULL, filename);
     if (!oc) {
-        fprintf(stderr, "Memory error\n");
+        printf("Could not deduce output format from file extension: using MPEG.\n");
+        avformat_alloc_output_context2(&oc, NULL, "mpeg", filename);
+    }
+    if (!oc) {
         exit(1);
     }
-    oc->oformat = fmt;
-    snprintf(oc->filename, sizeof(oc->filename), "%s", filename);
+    fmt= oc->oformat;
 
     /* add the audio and video streams using the default format codecs
        and initialize the codecs */
@@ -474,14 +464,7 @@ int main(int argc, char **argv)
         audio_st = add_audio_stream(oc, fmt->audio_codec);
     }
 
-    /* set the output parameters (must be done even if no
-       parameters). */
-    if (av_set_parameters(oc, NULL) < 0) {
-        fprintf(stderr, "Invalid output format parameters\n");
-        exit(1);
-    }
-
-    dump_format(oc, 0, filename, 1);
+    av_dump_format(oc, 0, filename, 1);
 
     /* now that all the parameters are set, we can open the audio and
        video codecs and allocate the necessary encode buffers */
@@ -492,7 +475,7 @@ int main(int argc, char **argv)
 
     /* open the output file, if needed */
     if (!(fmt->flags & AVFMT_NOFILE)) {
-        if (url_fopen(&oc->pb, filename, URL_WRONLY) < 0) {
+        if (avio_open(&oc->pb, filename, AVIO_FLAG_WRITE) < 0) {
             fprintf(stderr, "Could not open '%s'\n", filename);
             exit(1);
         }
@@ -545,7 +528,7 @@ int main(int argc, char **argv)
 
     if (!(fmt->flags & AVFMT_NOFILE)) {
         /* close the output file */
-        url_fclose(oc->pb);
+        avio_close(oc->pb);
     }
 
     /* free the stream */

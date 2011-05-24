@@ -142,7 +142,7 @@ static const uint8_t string_table[256] = {
         break;\
       /* add child nodes */\
       list[n++] = list[i];\
-      list[n++] = list[i] + (((level & 1) ? pitch : 1) << ((level / 2) + 1));\
+      list[n++] = list[i] + (((level & 1) ? pitch : 1) << ((level >> 1) + 1));\
     }
 
 #define SVQ1_ADD_CODEBOOK()\
@@ -202,7 +202,7 @@ static const uint8_t string_table[256] = {
         entries[j] = (((bit_cache >> (4*(stages - j - 1))) & 0xF) + 16*j) << (level + 1);\
       }\
       mean -= (stages * 128);\
-      n4    = ((mean + (mean >> 31)) << 16) | (mean & 0xFFFF);
+      n4    = (mean << 16) + mean;
 
 static int svq1_decode_block_intra (GetBitContext *bitbuf, uint8_t *pixels, int pitch ) {
   uint32_t    bit_cache;
@@ -378,13 +378,6 @@ static int svq1_motion_inter_block (MpegEncContext *s, GetBitContext *bitbuf,
   if(x + (mv.x >> 1)<0)
      mv.x= 0;
 
-#if 0
-  int w= (s->width+15)&~15;
-  int h= (s->height+15)&~15;
-  if(x + (mv.x >> 1)<0 || y + (mv.y >> 1)<0 || x + (mv.x >> 1) + 16 > w || y + (mv.y >> 1) + 16> h)
-      av_log(s->avctx, AV_LOG_INFO, "%d %d %d %d\n", x, y, x + (mv.x >> 1), y + (mv.y >> 1));
-#endif
-
   src = &previous[(x + (mv.x >> 1)) + (y + (mv.y >> 1))*pitch];
   dst = current;
 
@@ -461,12 +454,6 @@ static int svq1_motion_inter_4v_block (MpegEncContext *s, GetBitContext *bitbuf,
     if(x + (mvx >> 1)<0)
        mvx= 0;
 
-#if 0
-  int w= (s->width+15)&~15;
-  int h= (s->height+15)&~15;
-  if(x + (mvx >> 1)<0 || y + (mvy >> 1)<0 || x + (mvx >> 1) + 8 > w || y + (mvy >> 1) + 8> h)
-      av_log(s->avctx, AV_LOG_INFO, "%d %d %d %d\n", x, y, x + (mvx >> 1), y + (mvy >> 1));
-#endif
     src = &previous[(x + (mvx >> 1)) + (y + (mvy >> 1))*pitch];
     dst = current;
 
@@ -576,7 +563,7 @@ static int svq1_decode_frame_header (GetBitContext *bitbuf,MpegEncContext *s) {
   if(s->pict_type==4)
       return -1;
 
-  if (s->pict_type == FF_I_TYPE) {
+  if (s->pict_type == AV_PICTURE_TYPE_I) {
 
     /* unknown fields */
     if (s->f_code == 0x50 || s->f_code == 0x60) {
@@ -682,11 +669,10 @@ static int svq1_decode_frame(AVCodecContext *avctx,
 
   //FIXME this avoids some confusion for "B frames" without 2 references
   //this should be removed after libavcodec can handle more flexible picture types & ordering
-  if(s->pict_type==FF_B_TYPE && s->last_picture_ptr==NULL) return buf_size;
+  if(s->pict_type==AV_PICTURE_TYPE_B && s->last_picture_ptr==NULL) return buf_size;
 
-  if(avctx->hurry_up && s->pict_type==FF_B_TYPE) return buf_size;
-  if(  (avctx->skip_frame >= AVDISCARD_NONREF && s->pict_type==FF_B_TYPE)
-     ||(avctx->skip_frame >= AVDISCARD_NONKEY && s->pict_type!=FF_I_TYPE)
+  if(  (avctx->skip_frame >= AVDISCARD_NONREF && s->pict_type==AV_PICTURE_TYPE_B)
+     ||(avctx->skip_frame >= AVDISCARD_NONKEY && s->pict_type!=AV_PICTURE_TYPE_I)
      || avctx->skip_frame >= AVDISCARD_ALL)
       return buf_size;
 
@@ -713,13 +699,13 @@ static int svq1_decode_frame(AVCodecContext *avctx,
 
     current  = s->current_picture.data[i];
 
-    if(s->pict_type==FF_B_TYPE){
+    if(s->pict_type==AV_PICTURE_TYPE_B){
         previous = s->next_picture.data[i];
     }else{
         previous = s->last_picture.data[i];
     }
 
-    if (s->pict_type == FF_I_TYPE) {
+    if (s->pict_type == AV_PICTURE_TYPE_I) {
       /* keyframe */
       for (y=0; y < height; y+=16) {
         for (x=0; x < width; x+=16) {
@@ -833,7 +819,7 @@ static av_cold int svq1_decode_end(AVCodecContext *avctx)
 }
 
 
-AVCodec svq1_decoder = {
+AVCodec ff_svq1_decoder = {
     "svq1",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_SVQ1,

@@ -21,54 +21,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-// TODO: move these #define and enum to a better header...
+#ifndef AVCODEC_VP8DATA_H
+#define AVCODEC_VP8DATA_H
 
-#define VP8_MAX_QUANT 127
-
-enum dct_token {
-    DCT_0,
-    DCT_1,
-    DCT_2,
-    DCT_3,
-    DCT_4,
-    DCT_CAT1,
-    DCT_CAT2,
-    DCT_CAT3,
-    DCT_CAT4,
-    DCT_CAT5,
-    DCT_CAT6,
-    DCT_EOB,
-
-    NUM_DCT_TOKENS
-};
-
+#include "vp8.h"
 #include "h264pred.h"
-
-// used to signal 4x4 intra pred in luma MBs
-#define MODE_I4x4 4
-
-enum inter_mvmode {
-    VP8_MVMODE_NEAREST = MODE_I4x4 + 1,
-    VP8_MVMODE_NEAR,
-    VP8_MVMODE_ZERO,
-    VP8_MVMODE_NEW,
-    VP8_MVMODE_SPLIT
-};
-
-enum inter_submvmode {
-    VP8_SUBMVMODE_LEFT4X4,
-    VP8_SUBMVMODE_TOP4X4,
-    VP8_SUBMVMODE_ZERO4X4,
-    VP8_SUBMVMODE_NEW4X4
-};
-
-enum inter_splitmvmode {
-    VP8_SPLITMVMODE_16x8 = 0,    ///< 2 16x8 blocks (vertical)
-    VP8_SPLITMVMODE_8x16,        ///< 2 8x16 blocks (horizontal)
-    VP8_SPLITMVMODE_8x8,         ///< 2x2 blocks of 8x8px each
-    VP8_SPLITMVMODE_4x4,         ///< 4x4 blocks of 4x4px each
-    VP8_SPLITMVMODE_NONE,        ///< (only used in prediction) no split MVs
-};
 
 static const uint8_t vp8_pred4x4_mode[] =
 {
@@ -103,23 +60,6 @@ static const int vp8_mode_contexts[6][4] = {
     { 234, 188, 128,  28 },
 };
 
-static const int8_t vp8_pred16x16_tree_mvinter[4][2] = {
-    { -VP8_MVMODE_ZERO,      1 },           // '0'
-     { -VP8_MVMODE_NEAREST,  2 },           // '10'
-      { -VP8_MVMODE_NEAR,    3 },           // '110'
-       { -VP8_MVMODE_NEW, -VP8_MVMODE_SPLIT } // '1110', '1111'
-};
-
-static const int8_t vp8_small_mvtree[7][2] = {
-    {  1, 4 },
-     {  2, 3 },
-      { -0, -1 },                           // '000', '001'
-      { -2, -3 },                           // '010', '011'
-     {  5,  6 },
-      { -4, -5 },                           // '100', '101'
-      { -6, -7 }                            // '110', '111'
-};
-
 static const uint8_t vp8_mbsplits[5][16] = {
     {  0,  0,  0,  0,  0,  0,  0,  0,
        1,  1,  1,  1,  1,  1,  1,  1  },
@@ -139,12 +79,6 @@ static const uint8_t vp8_mbfirstidx[4][16] = {
        8,  9, 10, 11, 12, 13, 14, 15 }
 };
 
-static const int8_t vp8_mbsplit_tree[3][2] = {
-    { -VP8_SPLITMVMODE_4x4,  1 },           // '0' - 16 individual MVs
-     { -VP8_SPLITMVMODE_8x8,  2 },          // '10' - quarter-based MVs
-      { -VP8_SPLITMVMODE_16x8,              // '110' - top/bottom MVs
-        -VP8_SPLITMVMODE_8x16 }             // '111' - left/right MVs
-};
 static const uint8_t vp8_mbsplit_count[4] = {   2,   2,   4,  16 };
 static const uint8_t vp8_mbsplit_prob[3]  = { 110, 111, 150 };
 
@@ -154,12 +88,6 @@ static const uint8_t vp8_submv_prob[5][3] = {
     { 179, 121,   1 },
     { 223,   1,  34 },
     { 208,   1,   1 }
-};
-
-static const int8_t vp8_submv_ref_tree[3][2] = {
-    { -VP8_SUBMVMODE_LEFT4X4, 1 },          // '0'
-     { -VP8_SUBMVMODE_TOP4X4, 2 },          // '10'
-      { -VP8_SUBMVMODE_ZERO4X4, -VP8_SUBMVMODE_NEW4X4 } // '110', '111'
 };
 
 static const uint8_t vp8_pred16x16_prob_intra[4] = { 145, 156, 163, 128 };
@@ -329,19 +257,18 @@ static const uint8_t vp8_coeff_band[16] =
     0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7
 };
 
-static const int8_t vp8_coeff_tree[NUM_DCT_TOKENS-1][2] =
+/* Inverse of vp8_coeff_band: mappings of bands to coefficient indexes.
+ * Each list is -1-terminated. */
+static const int8_t vp8_coeff_band_indexes[8][10] =
 {
-    { -DCT_EOB, 1 },                // '0'
-     { -DCT_0, 2 },                 // '10'
-      { -DCT_1, 3 },                // '110'
-       { 4, 6 },
-        { -DCT_2, 5 },              // '11100'
-         { -DCT_3, -DCT_4 },        // '111010', '111011'
-        { 7, 8 },
-         { -DCT_CAT1, -DCT_CAT2 },  // '111100', '111101'
-         { 9, 10 },
-          { -DCT_CAT3, -DCT_CAT4 }, // '1111100', '1111101'
-          { -DCT_CAT5, -DCT_CAT6 }, // '1111110', '1111111'
+    {0, -1},
+    {1, -1},
+    {2, -1},
+    {3, -1},
+    {5, -1},
+    {6, -1},
+    {4, 7, 8, 9, 10, 11, 12, 13, 14, -1},
+    {15, -1}
 };
 
 static const uint8_t vp8_dct_cat1_prob[] = { 159, 0 };
@@ -351,17 +278,14 @@ static const uint8_t vp8_dct_cat4_prob[] = { 176, 155, 140, 135, 0 };
 static const uint8_t vp8_dct_cat5_prob[] = { 180, 157, 141, 134, 130, 0 };
 static const uint8_t vp8_dct_cat6_prob[] = { 254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0 };
 
-static const uint8_t * const vp8_dct_cat_prob[6] =
+// only used for cat3 and above; cat 1 and 2 are referenced directly
+const uint8_t * const ff_vp8_dct_cat_prob[] =
 {
-    vp8_dct_cat1_prob,
-    vp8_dct_cat2_prob,
     vp8_dct_cat3_prob,
     vp8_dct_cat4_prob,
     vp8_dct_cat5_prob,
     vp8_dct_cat6_prob,
 };
-
-static const uint8_t vp8_dct_cat_offset[6] = { 5, 7, 11, 19, 35, 67 };
 
 static const uint8_t vp8_token_default_probs[4][8][3][NUM_DCT_TOKENS-1] =
 {
@@ -760,3 +684,5 @@ static const uint8_t vp8_mv_default_prob[2][19] = {
       204, 170, 119, 235, 140, 230, 228,
       128, 130, 130,  74, 148, 180, 203, 236, 254, 254 }
 };
+
+#endif /* AVCODEC_VP8DATA_H */

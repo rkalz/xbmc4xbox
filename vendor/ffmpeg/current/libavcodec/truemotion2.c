@@ -185,8 +185,7 @@ static int tm2_build_huff_table(TM2Context *ctx, TM2Codes *code)
 
 static void tm2_free_codes(TM2Codes *code)
 {
-    if(code->recode)
-        av_free(code->recode);
+    av_free(code->recode);
     if(code->vlc.table)
         free_vlc(&code->vlc);
 }
@@ -260,7 +259,8 @@ static int tm2_read_deltas(TM2Context *ctx, int stream_id) {
     return 0;
 }
 
-static int tm2_read_stream(TM2Context *ctx, const uint8_t *buf, int stream_id) {
+static int tm2_read_stream(TM2Context *ctx, const uint8_t *buf, int stream_id, int buf_size)
+{
     int i;
     int cur = 0;
     int skip = 0;
@@ -273,6 +273,11 @@ static int tm2_read_stream(TM2Context *ctx, const uint8_t *buf, int stream_id) {
 
     if(len == 0)
         return 4;
+
+    if (len >= INT_MAX/4-1 || len < 0 || len > buf_size) {
+        av_log(ctx->avctx, AV_LOG_ERROR, "Error, invalid stream size.\n");
+        return -1;
+    }
 
     toks = AV_RB32(buf); buf += 4; cur += 4;
     if(toks & 1) {
@@ -313,8 +318,13 @@ static int tm2_read_stream(TM2Context *ctx, const uint8_t *buf, int stream_id) {
     len = AV_RB32(buf); buf += 4; cur += 4;
     if(len > 0) {
         init_get_bits(&ctx->gb, buf, (skip - cur) * 8);
-        for(i = 0; i < toks; i++)
+        for(i = 0; i < toks; i++) {
+            if (get_bits_left(&ctx->gb) <= 0) {
+                av_log(ctx->avctx, AV_LOG_ERROR, "Incorrect number of tokens: %i\n", toks);
+                return -1;
+            }
             ctx->tokens[stream_id][i] = tm2_get_token(&ctx->gb, &codes);
+        }
     } else {
         for(i = 0; i < toks; i++)
             ctx->tokens[stream_id][i] = codes.recode[0];
@@ -788,7 +798,7 @@ static int decode_frame(AVCodecContext *avctx,
     }
 
     for(i = 0; i < TM2_NUM_STREAMS; i++){
-        t = tm2_read_stream(l, swbuf + skip, tm2_stream_order[i]);
+        t = tm2_read_stream(l, swbuf + skip, tm2_stream_order[i], buf_size);
         if(t == -1){
             av_free(swbuf);
             return -1;
@@ -797,9 +807,9 @@ static int decode_frame(AVCodecContext *avctx,
     }
     p->key_frame = tm2_decode_blocks(l, p);
     if(p->key_frame)
-        p->pict_type = FF_I_TYPE;
+        p->pict_type = AV_PICTURE_TYPE_I;
     else
-        p->pict_type = FF_P_TYPE;
+        p->pict_type = AV_PICTURE_TYPE_P;
 
     l->cur = !l->cur;
     *data_size = sizeof(AVFrame);
@@ -821,6 +831,7 @@ static av_cold int decode_init(AVCodecContext *avctx){
     l->avctx = avctx;
     l->pic.data[0]=NULL;
     avctx->pix_fmt = PIX_FMT_BGR24;
+    avcodec_get_frame_defaults(&l->pic);
 
     dsputil_init(&l->dsp, avctx);
 
@@ -848,13 +859,10 @@ static av_cold int decode_end(AVCodecContext *avctx){
     AVFrame *pic = &l->pic;
     int i;
 
-    if(l->last)
-        av_free(l->last);
-    if(l->clast)
-        av_free(l->clast);
+    av_free(l->last);
+    av_free(l->clast);
     for(i = 0; i < TM2_NUM_STREAMS; i++)
-        if(l->tokens[i])
-            av_free(l->tokens[i]);
+        av_free(l->tokens[i]);
     if(l->Y1){
         av_free(l->Y1);
         av_free(l->U1);
@@ -870,7 +878,7 @@ static av_cold int decode_end(AVCodecContext *avctx){
     return 0;
 }
 
-AVCodec truemotion2_decoder = {
+AVCodec ff_truemotion2_decoder = {
     "truemotion2",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_TRUEMOTION2,

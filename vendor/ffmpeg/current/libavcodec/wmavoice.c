@@ -36,8 +36,9 @@
 #include "acelp_filters.h"
 #include "lsp.h"
 #include "libavutil/lzo.h"
-#include "avfft.h"
-#include "fft.h"
+#include "dct.h"
+#include "rdft.h"
+#include "sinewin.h"
 
 #define MAX_BLOCKS           8   ///< maximum number of blocks per frame
 #define MAX_LSPS             16  ///< maximum filter order
@@ -256,7 +257,7 @@ typedef struct {
     /**
      * @}
      * @defgroup post_filter Postfilter values
-     * Varibales used for postfilter implementation, mostly history for
+     * Variables used for postfilter implementation, mostly history for
      * smoothing and so on, and context variables for FFT/iFFT.
      * @{
      */
@@ -274,11 +275,11 @@ typedef struct {
                                   ///< by postfilter
     float denoise_filter_cache[MAX_FRAMESIZE];
     int   denoise_filter_cache_size; ///< samples in #denoise_filter_cache
-    DECLARE_ALIGNED(16, float, tilted_lpcs_pf)[0x80];
+    DECLARE_ALIGNED(32, float, tilted_lpcs_pf)[0x80];
                                   ///< aligned buffer for LPC tilting
-    DECLARE_ALIGNED(16, float, denoise_coeffs_pf)[0x80];
+    DECLARE_ALIGNED(32, float, denoise_coeffs_pf)[0x80];
                                   ///< aligned buffer for denoise coefficients
-    DECLARE_ALIGNED(16, float, synth_filter_out_buf)[0x80 + MAX_LSPS_ALIGN16];
+    DECLARE_ALIGNED(32, float, synth_filter_out_buf)[0x80 + MAX_LSPS_ALIGN16];
                                   ///< aligned buffer for postfilter speech
                                   ///< synthesis
     /**
@@ -314,7 +315,7 @@ static av_cold int decode_vbmtree(GetBitContext *gb, int8_t vbm_tree[25])
     };
     int cntr[8], n, res;
 
-    memset(vbm_tree, 0xff, sizeof(vbm_tree));
+    memset(vbm_tree, 0xff, sizeof(vbm_tree[0]) * 25);
     memset(cntr,     0,    sizeof(cntr));
     for (n = 0; n < 17; n++) {
         res = get_bits(gb, 3);
@@ -425,7 +426,7 @@ static av_cold int wmavoice_decode_init(AVCodecContext *ctx)
                                   2 * (s->block_conv_table[1] - 2 * s->min_pitch_val);
     s->block_pitch_nbits        = av_ceil_log2(s->block_pitch_range);
 
-    ctx->sample_fmt             = SAMPLE_FMT_FLT;
+    ctx->sample_fmt             = AV_SAMPLE_FMT_FLT;
 
     return 0;
 }
@@ -558,7 +559,7 @@ static void calc_input_response(WMAVoiceContext *s, float *lpcs,
     int n, idx;
 
     /* Create frequency power spectrum of speech input (i.e. RDFT of LPCs) */
-    ff_rdft_calc(&s->rdft, lpcs);
+    s->rdft.rdft_calc(&s->rdft, lpcs);
 #define log_range(var, assign) do { \
         float tmp = log10f(assign);  var = tmp; \
         max       = FFMAX(max, tmp); min = FFMIN(min, tmp); \
@@ -582,14 +583,14 @@ static void calc_input_response(WMAVoiceContext *s, float *lpcs,
                                                           (5.0 / 14.7));
     angle_mul = gain_mul * (8.0 * M_LN10 / M_PI);
     for (n = 0; n <= 64; n++) {
-        float pow;
+        float pwr;
 
         idx = FFMAX(0, lrint((max - lpcs[n]) * irange) - 1);
-        pow = wmavoice_denoise_power_table[s->denoise_strength][idx];
-        lpcs[n] = angle_mul * pow;
+        pwr = wmavoice_denoise_power_table[s->denoise_strength][idx];
+        lpcs[n] = angle_mul * pwr;
 
         /* 70.57 =~ 1/log10(1.0331663) */
-        idx = (pow * gain_mul - 0.0295) * 70.570526123;
+        idx = (pwr * gain_mul - 0.0295) * 70.570526123;
         if (idx > 127) { // fallback if index falls outside table range
             coeffs[n] = wmavoice_energy_table[127] *
                         powf(1.0331663, idx - 127);
@@ -601,8 +602,8 @@ static void calc_input_response(WMAVoiceContext *s, float *lpcs,
      * is a sinus input) by doing a phase shift (in theory, H(sin())=cos()).
      * Hilbert_Transform(RDFT(x)) = Laplace_Transform(x), which calculates the
      * "moment" of the LPCs in this filter. */
-    ff_dct_calc(&s->dct, lpcs);
-    ff_dct_calc(&s->dst, lpcs);
+    s->dct.dct_calc(&s->dct, lpcs);
+    s->dst.dct_calc(&s->dst, lpcs);
 
     /* Split out the coefficient indexes into phase/magnitude pairs */
     idx = 255 + av_clip(lpcs[64],               -255, 255);
@@ -623,7 +624,7 @@ static void calc_input_response(WMAVoiceContext *s, float *lpcs,
     coeffs[1] = last_coeff;
 
     /* move into real domain */
-    ff_rdft_calc(&s->irdft, coeffs);
+    s->irdft.rdft_calc(&s->irdft, coeffs);
 
     /* tilt correction and normalize scale */
     memset(&coeffs[remainder], 0, sizeof(coeffs[0]) * (128 - remainder));
@@ -693,8 +694,8 @@ static void wiener_denoise(WMAVoiceContext *s, int fcb_type,
         /* apply coefficients (in frequency spectrum domain), i.e. complex
          * number multiplication */
         memset(&synth_pf[size], 0, sizeof(synth_pf[0]) * (128 - size));
-        ff_rdft_calc(&s->rdft, synth_pf);
-        ff_rdft_calc(&s->rdft, coeffs);
+        s->rdft.rdft_calc(&s->rdft, synth_pf);
+        s->rdft.rdft_calc(&s->rdft, coeffs);
         synth_pf[0] *= coeffs[0];
         synth_pf[1] *= coeffs[1];
         for (n = 1; n < 64; n++) {
@@ -702,7 +703,7 @@ static void wiener_denoise(WMAVoiceContext *s, int fcb_type,
             synth_pf[n * 2]     = v1 * coeffs[n * 2] - v2 * coeffs[n * 2 + 1];
             synth_pf[n * 2 + 1] = v2 * coeffs[n * 2] + v1 * coeffs[n * 2 + 1];
         }
-        ff_rdft_calc(&s->irdft, synth_pf);
+        s->irdft.rdft_calc(&s->irdft, synth_pf);
     }
 
     /* merge filter output with the history of previous runs */
@@ -1033,7 +1034,8 @@ static void aw_parse_coords(WMAVoiceContext *s, GetBitContext *gb,
 static void aw_pulse_set2(WMAVoiceContext *s, GetBitContext *gb,
                           int block_idx, AMRFixed *fcb)
 {
-    uint16_t use_mask[7]; // only 5 are used, rest is padding
+    uint16_t use_mask_mem[9]; // only 5 are used, rest is padding
+    uint16_t *use_mask = use_mask_mem + 2;
     /* in this function, idx is the index in the 80-bit (+ padding) use_mask
      * bit-array. Since use_mask consists of 16-bit values, the lower 4 bits
      * of idx are the position of the bit within a particular item in the
@@ -1065,6 +1067,7 @@ static void aw_pulse_set2(WMAVoiceContext *s, GetBitContext *gb,
     /* aw_pulse_set1() already applies pulses around pulse_off (to be exactly,
      * in the range of [pulse_off, pulse_off + s->aw_pulse_range], and thus
      * we exclude that range from being pulsed again in this function. */
+    memset(&use_mask[-2], 0, 2 * sizeof(use_mask[0]));
     memset( use_mask,   -1, 5 * sizeof(use_mask[0]));
     memset(&use_mask[5], 0, 2 * sizeof(use_mask[0]));
     if (s->aw_n_pulses[block_idx] > 0)
@@ -2016,7 +2019,7 @@ static av_cold void wmavoice_flush(AVCodecContext *ctx)
     }
 }
 
-AVCodec wmavoice_decoder = {
+AVCodec ff_wmavoice_decoder = {
     "wmavoice",
     AVMEDIA_TYPE_AUDIO,
     CODEC_ID_WMAVOICE,

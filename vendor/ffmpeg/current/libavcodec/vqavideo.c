@@ -68,6 +68,7 @@
 #include <string.h>
 
 #include "libavutil/intreadwrite.h"
+#include "libavutil/imgutils.h"
 #include "avcodec.h"
 
 #define PALETTE_COUNT 256
@@ -147,7 +148,7 @@ static av_cold int vqa_decode_init(AVCodecContext *avctx)
     s->vqa_version = vqa_header[0];
     s->width = AV_RL16(&vqa_header[6]);
     s->height = AV_RL16(&vqa_header[8]);
-    if(avcodec_check_dimensions(avctx, s->width, s->height)){
+    if(av_image_check_size(s->width, s->height, 0, avctx)){
         s->width= s->height= 0;
         return -1;
     }
@@ -186,6 +187,7 @@ static av_cold int vqa_decode_init(AVCodecContext *avctx)
         (s->height / s->vector_height) * 2;
     s->decode_buffer = av_malloc(s->decode_buffer_size);
 
+    avcodec_get_frame_defaults(&s->frame);
     s->frame.data[0] = NULL;
 
     return 0;
@@ -463,8 +465,6 @@ static void vqa_decode_chunk(VqaContext *s)
             switch (s->vqa_version) {
 
             case 1:
-/* still need sample media for this case (only one game, "Legend of
- * Kyrandia III : Malcolm's Revenge", is known to use this version) */
                 lobyte = s->decode_buffer[lobytes * 2];
                 hibyte = s->decode_buffer[(lobytes * 2) + 1];
                 vector_index = ((hibyte << 8) | lobyte) >> 3;
@@ -608,7 +608,7 @@ static av_cold int vqa_decode_end(AVCodecContext *avctx)
     return 0;
 }
 
-AVCodec vqa_decoder = {
+AVCodec ff_vqa_decoder = {
     "vqavideo",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_WS_VQA,

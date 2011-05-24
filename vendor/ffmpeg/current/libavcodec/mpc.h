@@ -52,6 +52,7 @@ typedef struct {
 
 typedef struct {
     DSPContext dsp;
+    MPADSPContext mpadsp;
     GetBitContext gb;
     int IS, MSS, gapless;
     int lastframelen;
@@ -72,6 +73,6 @@ typedef struct {
 } MPCContext;
 
 void ff_mpc_init(void);
-void ff_mpc_dequantize_and_synth(MPCContext *c, int maxband, void *dst);
+void ff_mpc_dequantize_and_synth(MPCContext *c, int maxband, void *dst, int channels);
 
 #endif /* AVCODEC_MPC_H */

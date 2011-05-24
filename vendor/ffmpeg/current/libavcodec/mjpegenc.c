@@ -156,7 +156,7 @@ static void jpeg_put_comments(MpegEncContext *s)
     int size;
     uint8_t *ptr;
 
-    if (s->aspect_ratio_info /* && !lossless */)
+    if (s->avctx->sample_aspect_ratio.num /* && !lossless */)
     {
     /* JFIF header */
     put_marker(p, APP0);
@@ -441,9 +441,11 @@ void ff_mjpeg_encode_mb(MpegEncContext *s, DCTELEM block[6][64])
         encode_block(s, block[5], 5);
         encode_block(s, block[7], 7);
     }
+
+    s->i_tex_bits += get_bits_diff(s);
 }
 
-AVCodec mjpeg_encoder = {
+AVCodec ff_mjpeg_encoder = {
     "mjpeg",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_MJPEG,
