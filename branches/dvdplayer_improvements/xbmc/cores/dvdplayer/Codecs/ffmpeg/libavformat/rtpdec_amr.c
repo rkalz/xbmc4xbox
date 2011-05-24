@@ -20,7 +20,7 @@
  */
 
 #include "avformat.h"
-#include "rtpdec_amr.h"
+#include "rtpdec_formats.h"
 #include "libavutil/avstring.h"
 
 static const uint8_t frame_sizes_nb[16] = {
@@ -191,8 +191,8 @@ RTPDynamicProtocolHandler ff_amr_nb_dynamic_handler = {
     .codec_type       = AVMEDIA_TYPE_AUDIO,
     .codec_id         = CODEC_ID_AMR_NB,
     .parse_sdp_a_line = amr_parse_sdp_line,
-    .open             = amr_new_context,
-    .close            = amr_free_context,
+    .alloc            = amr_new_context,
+    .free             = amr_free_context,
     .parse_packet     = amr_handle_packet,
 };
 
@@ -201,8 +201,8 @@ RTPDynamicProtocolHandler ff_amr_wb_dynamic_handler = {
     .codec_type       = AVMEDIA_TYPE_AUDIO,
     .codec_id         = CODEC_ID_AMR_WB,
     .parse_sdp_a_line = amr_parse_sdp_line,
-    .open             = amr_new_context,
-    .close            = amr_free_context,
+    .alloc            = amr_new_context,
+    .free             = amr_free_context,
     .parse_packet     = amr_handle_packet,
 };
 

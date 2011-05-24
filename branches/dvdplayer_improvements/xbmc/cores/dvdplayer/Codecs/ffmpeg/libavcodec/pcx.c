@@ -22,6 +22,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "libavutil/imgutils.h"
 #include "avcodec.h"
 #include "bytestream.h"
 #include "get_bits.h"
@@ -142,7 +143,7 @@ static int pcx_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
     if (p->data[0])
         avctx->release_buffer(avctx, p);
 
-    if (avcodec_check_dimensions(avctx, w, h))
+    if (av_image_check_size(w, h, 0, avctx))
         return -1;
     if (w != avctx->width || h != avctx->height)
         avcodec_set_dimensions(avctx, w, h);
@@ -151,7 +152,7 @@ static int pcx_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
         return -1;
     }
 
-    p->pict_type = FF_I_TYPE;
+    p->pict_type = AV_PICTURE_TYPE_I;
 
     ptr    = p->data[0];
     stride = p->linesize[0];
@@ -246,7 +247,7 @@ static av_cold int pcx_end(AVCodecContext *avctx) {
     return 0;
 }
 
-AVCodec pcx_decoder = {
+AVCodec ff_pcx_decoder = {
     "pcx",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_PCX,

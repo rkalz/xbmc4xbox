@@ -1,7 +1,6 @@
 /*
- * Ported to FFmpeg from MPlayer libmpcodecs/unsharp.c
- * Original copyright (C) 2002 Remi Guyomarch <rguyom@pobox.com>
- * Port copyright (C) 2010 Daniel G. Taylor <dan@programmer-art.org>
+ * Original copyright (c) 2002 Remi Guyomarch <rguyom@pobox.com>
+ * Port copyright (c) 2010 Daniel G. Taylor <dan@programmer-art.org>
  * Relicensed to the LGPL with permission from Remi Guyomarch.
  *
  * This file is part of FFmpeg.
@@ -23,7 +22,8 @@
 
 /**
  * @file
- * blur / sharpen filter
+ * blur / sharpen filter, ported to FFmpeg from MPlayer
+ * libmpcodecs/unsharp.c.
  *
  * This code is based on:
  *
@@ -63,7 +63,7 @@ typedef struct {
     FilterParam chroma; ///< chroma parameters (width, height, amount)
 } UnsharpContext;
 
-static void unsharpen(uint8_t *dst, uint8_t *src, int dst_stride, int src_stride, int width, int height, FilterParam *fp)
+static void unsharpen(uint8_t *dst, const uint8_t *src, int dst_stride, int src_stride, int width, int height, FilterParam *fp)
 {
     uint32_t **sc = fp->sc;
     uint32_t sr[(MAX_SIZE * MAX_SIZE) - 1], tmp1, tmp2;
@@ -96,7 +96,7 @@ static void unsharpen(uint8_t *dst, uint8_t *src, int dst_stride, int src_stride
                 tmp1 = sc[z + 1][x + fp->steps_x] + tmp2; sc[z + 1][x + fp->steps_x] = tmp2;
             }
             if (x >= fp->steps_x && y >= fp->steps_y) {
-                uint8_t* srx = src - fp->steps_y * src_stride + x - fp->steps_x;
+                const uint8_t* srx = src - fp->steps_y * src_stride + x - fp->steps_x;
                 uint8_t* dsx = dst - fp->steps_y * dst_stride + x - fp->steps_x;
 
                 res = (int32_t)*srx + ((((int32_t) * srx - (int32_t)((tmp1 + fp->halfscale) >> fp->scalebits)) * fp->amount) >> 16);
@@ -132,6 +132,14 @@ static av_cold int init(AVFilterContext *ctx, const char *args, void *opaque)
     if (args)
         sscanf(args, "%d:%d:%lf:%d:%d:%lf", &lmsize_x, &lmsize_y, &lamount,
                                             &cmsize_x, &cmsize_y, &camount);
+
+    if ((lamount && (lmsize_x < 2 || lmsize_y < 2)) ||
+        (camount && (cmsize_x < 2 || cmsize_y < 2))) {
+        av_log(ctx, AV_LOG_ERROR,
+               "Invalid value <2 for lmsize_x:%d or lmsize_y:%d or cmsize_x:%d or cmsize_y:%d\n",
+               lmsize_x, lmsize_y, cmsize_x, cmsize_y);
+        return AVERROR(EINVAL);
+    }
 
     set_filter_param(&unsharp->luma,   lmsize_x, lmsize_y, lamount);
     set_filter_param(&unsharp->chroma, cmsize_x, cmsize_y, camount);
@@ -195,17 +203,17 @@ static av_cold void uninit(AVFilterContext *ctx)
 static void end_frame(AVFilterLink *link)
 {
     UnsharpContext *unsharp = link->dst->priv;
-    AVFilterPicRef *in  = link->cur_pic;
-    AVFilterPicRef *out = link->dst->outputs[0]->outpic;
+    AVFilterBufferRef *in  = link->cur_buf;
+    AVFilterBufferRef *out = link->dst->outputs[0]->out_buf;
 
     unsharpen(out->data[0], in->data[0], out->linesize[0], in->linesize[0], link->w,            link->h,             &unsharp->luma);
     unsharpen(out->data[1], in->data[1], out->linesize[1], in->linesize[1], CHROMA_WIDTH(link), CHROMA_HEIGHT(link), &unsharp->chroma);
     unsharpen(out->data[2], in->data[2], out->linesize[2], in->linesize[2], CHROMA_WIDTH(link), CHROMA_HEIGHT(link), &unsharp->chroma);
 
-    avfilter_unref_pic(in);
+    avfilter_unref_buffer(in);
     avfilter_draw_slice(link->dst->outputs[0], 0, link->h, 1);
     avfilter_end_frame(link->dst->outputs[0]);
-    avfilter_unref_pic(out);
+    avfilter_unref_buffer(out);
 }
 
 static void draw_slice(AVFilterLink *link, int y, int h, int slice_dir)

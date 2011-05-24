@@ -146,9 +146,6 @@ static int ir2_decode_frame(AVCodecContext *avctx,
     AVFrame * const p= (AVFrame*)&s->picture;
     int start;
 
-    if(p->data[0])
-        avctx->release_buffer(avctx, p);
-
     p->reference = 1;
     p->buffer_hints = FF_BUFFER_HINTS_VALID | FF_BUFFER_HINTS_PRESERVE | FF_BUFFER_HINTS_REUSABLE;
     if (avctx->reget_buffer(avctx, p)) {
@@ -195,6 +192,7 @@ static av_cold int ir2_decode_init(AVCodecContext *avctx){
     Ir2Context * const ic = avctx->priv_data;
     static VLC_TYPE vlc_tables[1 << CODE_VLC_BITS][2];
 
+    avcodec_get_frame_defaults(&ic->picture);
     ic->avctx = avctx;
 
     avctx->pix_fmt= PIX_FMT_YUV410P;
@@ -224,7 +222,7 @@ static av_cold int ir2_decode_end(AVCodecContext *avctx){
     return 0;
 }
 
-AVCodec indeo2_decoder = {
+AVCodec ff_indeo2_decoder = {
     "indeo2",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_INDEO2,

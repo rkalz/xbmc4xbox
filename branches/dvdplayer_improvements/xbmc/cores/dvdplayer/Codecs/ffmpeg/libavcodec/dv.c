@@ -948,7 +948,7 @@ static int dv_encode_video_segment(AVCodecContext *avctx, void *arg)
     int mb_x, mb_y, c_offset, linesize, y_stride;
     uint8_t*  y_ptr;
     uint8_t*  dif;
-    uint8_t   scratch[64];
+    LOCAL_ALIGNED_8(uint8_t, scratch, [64]);
     EncBlockInfo  enc_blks[5*DV_MAX_BPM];
     PutBitContext pbs[5*DV_MAX_BPM];
     PutBitContext* pb;
@@ -1081,6 +1081,8 @@ static int dvvideo_decode_frame(AVCodecContext *avctx,
     const uint8_t *buf = avpkt->data;
     int buf_size = avpkt->size;
     DVVideoContext *s = avctx->priv_data;
+    const uint8_t* vsc_pack;
+    int apt, is16_9;
 
     s->sys = ff_dv_frame_profile(s->sys, buf, buf_size);
     if (!s->sys || buf_size < s->sys->frame_size || dv_init_dynamic_tables(s->sys)) {
@@ -1091,9 +1093,10 @@ static int dvvideo_decode_frame(AVCodecContext *avctx,
     if (s->picture.data[0])
         avctx->release_buffer(avctx, &s->picture);
 
+    avcodec_get_frame_defaults(&s->picture);
     s->picture.reference = 0;
     s->picture.key_frame = 1;
-    s->picture.pict_type = FF_I_TYPE;
+    s->picture.pict_type = AV_PICTURE_TYPE_I;
     avctx->pix_fmt   = s->sys->pix_fmt;
     avctx->time_base = s->sys->time_base;
     avcodec_set_dimensions(avctx, s->sys->width, s->sys->height);
@@ -1113,6 +1116,14 @@ static int dvvideo_decode_frame(AVCodecContext *avctx,
     /* return image */
     *data_size = sizeof(AVFrame);
     *(AVFrame*)data = s->picture;
+
+    /* Determine the codec's sample_aspect ratio from the packet */
+    vsc_pack = buf + 80*5 + 48 + 5;
+    if ( *vsc_pack == dv_video_control ) {
+        apt = buf[4] & 0x07;
+        is16_9 = (vsc_pack && ((vsc_pack[2] & 0x07) == 0x02 || (!apt && (vsc_pack[2] & 0x07) == 0x07)));
+        avctx->sample_aspect_ratio = s->sys->sar[is16_9];
+    }
 
     return s->sys->frame_size;
 }
@@ -1254,7 +1265,7 @@ static int dvvideo_encode_frame(AVCodecContext *c, uint8_t *buf, int buf_size,
     c->pix_fmt           = s->sys->pix_fmt;
     s->picture           = *((AVFrame *)data);
     s->picture.key_frame = 1;
-    s->picture.pict_type = FF_I_TYPE;
+    s->picture.pict_type = AV_PICTURE_TYPE_I;
 
     s->buf = buf;
     c->execute(c, dv_encode_video_segment, s->sys->work_chunks, NULL,
@@ -1280,20 +1291,21 @@ static int dvvideo_close(AVCodecContext *c)
 
 
 #if CONFIG_DVVIDEO_ENCODER
-AVCodec dvvideo_encoder = {
+AVCodec ff_dvvideo_encoder = {
     "dvvideo",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_DVVIDEO,
     sizeof(DVVideoContext),
     dvvideo_init_encoder,
     dvvideo_encode_frame,
+    .capabilities = CODEC_CAP_SLICE_THREADS,
     .pix_fmts  = (const enum PixelFormat[]) {PIX_FMT_YUV411P, PIX_FMT_YUV422P, PIX_FMT_YUV420P, PIX_FMT_NONE},
     .long_name = NULL_IF_CONFIG_SMALL("DV (Digital Video)"),
 };
 #endif // CONFIG_DVVIDEO_ENCODER
 
 #if CONFIG_DVVIDEO_DECODER
-AVCodec dvvideo_decoder = {
+AVCodec ff_dvvideo_decoder = {
     "dvvideo",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_DVVIDEO,
@@ -1302,7 +1314,7 @@ AVCodec dvvideo_decoder = {
     NULL,
     dvvideo_close,
     dvvideo_decode_frame,
-    CODEC_CAP_DR1,
+    CODEC_CAP_DR1 | CODEC_CAP_SLICE_THREADS,
     NULL,
     .max_lowres = 3,
     .long_name = NULL_IF_CONFIG_SMALL("DV (Digital Video)"),

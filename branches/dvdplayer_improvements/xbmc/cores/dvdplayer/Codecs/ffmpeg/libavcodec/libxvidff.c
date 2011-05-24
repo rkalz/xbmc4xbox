@@ -25,12 +25,10 @@
  * @author Adam Thayer (krevnik@comcast.net)
  */
 
-/* needed for mkstemp() */
-#define _XOPEN_SOURCE 600
-
 #include <xvid.h>
 #include <unistd.h>
 #include "avcodec.h"
+#include "libavutil/cpu.h"
 #include "libavutil/intreadwrite.h"
 #include "libxvid_internal.h"
 #if !HAVE_MKSTEMP
@@ -44,35 +42,33 @@
 #define BUFFER_REMAINING(x)         (BUFFER_SIZE - strlen(x))
 #define BUFFER_CAT(x)               (&((x)[strlen(x)]))
 
-/* For PPC Use */
-int has_altivec(void);
-
 /**
  * Structure for the private Xvid context.
  * This stores all the private context for the codec.
  */
 struct xvid_context {
-    void *encoder_handle;          /** Handle for Xvid encoder */
-    int xsize, ysize;              /** Frame size */
-    int vop_flags;                 /** VOP flags for Xvid encoder */
-    int vol_flags;                 /** VOL flags for Xvid encoder */
-    int me_flags;                  /** Motion Estimation flags */
-    int qscale;                    /** Do we use constant scale? */
-    int quicktime_format;          /** Are we in a QT-based format? */
-    AVFrame encoded_picture;       /** Encoded frame information */
-    char *twopassbuffer;           /** Character buffer for two-pass */
-    char *old_twopassbuffer;       /** Old character buffer (two-pass) */
-    char *twopassfile;             /** second pass temp file name */
-    unsigned char *intra_matrix;   /** P-Frame Quant Matrix */
-    unsigned char *inter_matrix;   /** I-Frame Quant Matrix */
+    void *encoder_handle;          /**< Handle for Xvid encoder */
+    int xsize;                     /**< Frame x size */
+    int ysize;                     /**< Frame y size */
+    int vop_flags;                 /**< VOP flags for Xvid encoder */
+    int vol_flags;                 /**< VOL flags for Xvid encoder */
+    int me_flags;                  /**< Motion Estimation flags */
+    int qscale;                    /**< Do we use constant scale? */
+    int quicktime_format;          /**< Are we in a QT-based format? */
+    AVFrame encoded_picture;       /**< Encoded frame information */
+    char *twopassbuffer;           /**< Character buffer for two-pass */
+    char *old_twopassbuffer;       /**< Old character buffer (two-pass) */
+    char *twopassfile;             /**< second pass temp file name */
+    unsigned char *intra_matrix;   /**< P-Frame Quant Matrix */
+    unsigned char *inter_matrix;   /**< I-Frame Quant Matrix */
 };
 
 /**
  * Structure for the private first-pass plugin.
  */
 struct xvid_ff_pass1 {
-    int     version;                /** Xvid version */
-    struct xvid_context *context;        /** Pointer to private context */
+    int     version;                /**< Xvid version */
+    struct xvid_context *context;   /**< Pointer to private context */
 };
 
 /* Prototypes - See function implementation for details */
@@ -214,7 +210,7 @@ static av_cold int xvid_encode_init(AVCodecContext *avctx)  {
 #if ARCH_PPC
     /* Xvid's PPC support is borked, use libavcodec to detect */
 #if HAVE_ALTIVEC
-    if( has_altivec() ) {
+    if (av_get_cpu_flags() & AV_CPU_FLAG_ALTIVEC) {
         xvid_gbl_init.cpu_flags = XVID_CPU_FORCE | XVID_CPU_ALTIVEC;
     } else
 #endif
@@ -450,11 +446,15 @@ static int xvid_encode_frame(AVCodecContext *avctx,
     xvid_enc_frame.vop_flags = x->vop_flags;
     xvid_enc_frame.vol_flags = x->vol_flags;
     xvid_enc_frame.motion = x->me_flags;
-    xvid_enc_frame.type = XVID_TYPE_AUTO;
+    xvid_enc_frame.type =
+        picture->pict_type == AV_PICTURE_TYPE_I ? XVID_TYPE_IVOP :
+        picture->pict_type == AV_PICTURE_TYPE_P ? XVID_TYPE_PVOP :
+        picture->pict_type == AV_PICTURE_TYPE_B ? XVID_TYPE_BVOP :
+                                          XVID_TYPE_AUTO;
 
     /* Pixel aspect ratio setting */
-    if (avctx->sample_aspect_ratio.num < 1 || avctx->sample_aspect_ratio.num > 255 ||
-        avctx->sample_aspect_ratio.den < 1 || avctx->sample_aspect_ratio.den > 255) {
+    if (avctx->sample_aspect_ratio.num < 0 || avctx->sample_aspect_ratio.num > 255 ||
+        avctx->sample_aspect_ratio.den < 0 || avctx->sample_aspect_ratio.den > 255) {
         av_log(avctx, AV_LOG_ERROR, "Invalid pixel aspect ratio %i/%i\n",
                avctx->sample_aspect_ratio.num, avctx->sample_aspect_ratio.den);
         return -1;
@@ -490,13 +490,13 @@ static int xvid_encode_frame(AVCodecContext *avctx,
     if( 0 <= xerr ) {
         p->quality = xvid_enc_stats.quant * FF_QP2LAMBDA;
         if( xvid_enc_stats.type == XVID_TYPE_PVOP )
-            p->pict_type = FF_P_TYPE;
+            p->pict_type = AV_PICTURE_TYPE_P;
         else if( xvid_enc_stats.type == XVID_TYPE_BVOP )
-            p->pict_type = FF_B_TYPE;
+            p->pict_type = AV_PICTURE_TYPE_B;
         else if( xvid_enc_stats.type == XVID_TYPE_SVOP )
-            p->pict_type = FF_S_TYPE;
+            p->pict_type = AV_PICTURE_TYPE_S;
         else
-            p->pict_type = FF_I_TYPE;
+            p->pict_type = AV_PICTURE_TYPE_I;
         if( xvid_enc_frame.out_flags & XVID_KEYFRAME ) {
             p->key_frame = 1;
             if( x->quicktime_format )
@@ -524,18 +524,14 @@ static av_cold int xvid_encode_close(AVCodecContext *avctx) {
 
     xvid_encore(x->encoder_handle, XVID_ENC_DESTROY, NULL, NULL);
 
-    if( avctx->extradata != NULL )
-        av_freep(&avctx->extradata);
+    av_freep(&avctx->extradata);
     if( x->twopassbuffer != NULL ) {
         av_free(x->twopassbuffer);
         av_free(x->old_twopassbuffer);
     }
-    if( x->twopassfile != NULL )
-        av_free(x->twopassfile);
-    if( x->intra_matrix != NULL )
-        av_free(x->intra_matrix);
-    if( x->inter_matrix != NULL )
-        av_free(x->inter_matrix);
+    av_free(x->twopassfile);
+    av_free(x->intra_matrix);
+    av_free(x->inter_matrix);
 
     return 0;
 }
@@ -811,7 +807,7 @@ int xvid_ff_2pass(void *ref, int cmd, void *p1, void *p2) {
 /**
  * Xvid codec definition for libavcodec.
  */
-AVCodec libxvid_encoder = {
+AVCodec ff_libxvid_encoder = {
     "libxvid",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_MPEG4,

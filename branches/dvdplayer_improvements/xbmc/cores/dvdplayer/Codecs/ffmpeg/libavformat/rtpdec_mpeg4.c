@@ -27,7 +27,7 @@
  * @author Romain Degez
  */
 
-#include "rtpdec_mpeg4.h"
+#include "rtpdec_formats.h"
 #include "internal.h"
 #include "libavutil/avstring.h"
 #include "libavcodec/get_bits.h"
@@ -60,35 +60,6 @@ struct PayloadContext
     int au_headers_length_bytes;
     int cur_au_index;
 };
-
-/* return the length and optionally the data */
-static int hex_to_data(uint8_t *data, const char *p)
-{
-    int c, len, v;
-
-    len = 0;
-    v = 1;
-    for (;;) {
-        p += strspn(p, SPACE_CHARS);
-        if (*p == '\0')
-            break;
-        c = toupper((unsigned char) *p++);
-        if (c >= '0' && c <= '9')
-            c = c - '0';
-        else if (c >= 'A' && c <= 'F')
-            c = c - 'A' + 10;
-        else
-            break;
-        v = (v << 4) | c;
-        if (v & 0x100) {
-            if (data)
-                data[len] = v;
-            len++;
-            v = 1;
-        }
-    }
-    return len;
-}
 
 typedef struct {
     const char *str;
@@ -139,14 +110,13 @@ static void free_context(PayloadContext * data)
 static int parse_fmtp_config(AVCodecContext * codec, char *value)
 {
     /* decode the hexa encoded parameter */
-    int len = hex_to_data(NULL, value);
-    if (codec->extradata)
-        av_free(codec->extradata);
+    int len = ff_hex_to_data(NULL, value);
+    av_free(codec->extradata);
     codec->extradata = av_mallocz(len + FF_INPUT_BUFFER_PADDING_SIZE);
     if (!codec->extradata)
         return AVERROR(ENOMEM);
     codec->extradata_size = len;
-    hex_to_data(codec->extradata, value);
+    ff_hex_to_data(codec->extradata, value);
     return 0;
 }
 
@@ -265,8 +235,8 @@ RTPDynamicProtocolHandler ff_mp4v_es_dynamic_handler = {
     .codec_type         = AVMEDIA_TYPE_VIDEO,
     .codec_id           = CODEC_ID_MPEG4,
     .parse_sdp_a_line   = parse_sdp_line,
-    .open               = NULL,
-    .close              = NULL,
+    .alloc              = NULL,
+    .free               = NULL,
     .parse_packet       = NULL
 };
 
@@ -275,7 +245,7 @@ RTPDynamicProtocolHandler ff_mpeg4_generic_dynamic_handler = {
     .codec_type         = AVMEDIA_TYPE_AUDIO,
     .codec_id           = CODEC_ID_AAC,
     .parse_sdp_a_line   = parse_sdp_line,
-    .open               = new_context,
-    .close              = free_context,
+    .alloc              = new_context,
+    .free               = free_context,
     .parse_packet       = aac_parse_packet
 };

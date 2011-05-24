@@ -35,8 +35,6 @@
  * and Edouard Gomez <ed.gomez@free.fr>.
  */
 
-#define _XOPEN_SOURCE 600
-
 #include "config.h"
 #include "libavformat/avformat.h"
 #include <time.h>
@@ -92,19 +90,20 @@ x11grab_read_header(AVFormatContext *s1, AVFormatParameters *ap)
     int x_off = 0;
     int y_off = 0;
     int use_shm;
-    char *param, *offset;
+    char *dpyname, *offset;
 
-    param = av_strdup(s1->filename);
-    offset = strchr(param, '+');
+    dpyname = av_strdup(s1->filename);
+    offset = strchr(dpyname, '+');
     if (offset) {
         sscanf(offset, "%d,%d", &x_off, &y_off);
         x11grab->nomouse= strstr(offset, "nomouse");
         *offset= 0;
     }
 
-    av_log(s1, AV_LOG_INFO, "device: %s -> display: %s x: %d y: %d width: %d height: %d\n", s1->filename, param, x_off, y_off, ap->width, ap->height);
+    av_log(s1, AV_LOG_INFO, "device: %s -> display: %s x: %d y: %d width: %d height: %d\n", s1->filename, dpyname, x_off, y_off, ap->width, ap->height);
 
-    dpy = XOpenDisplay(param);
+    dpy = XOpenDisplay(dpyname);
+    av_freep(&dpyname);
     if(!dpy) {
         av_log(s1, AV_LOG_ERROR, "Could not open X display.\n");
         return AVERROR(EIO);
@@ -122,7 +121,7 @@ x11grab_read_header(AVFormatContext *s1, AVFormatParameters *ap)
     av_set_pts_info(st, 64, 1, 1000000); /* 64 bits pts in us */
 
     use_shm = XShmQueryExtension(dpy);
-    av_log(s1, AV_LOG_INFO, "shared memory extension %s found\n", use_shm ? "" : "not");
+    av_log(s1, AV_LOG_INFO, "shared memory extension%s found\n", use_shm ? "" : " not");
 
     if(use_shm) {
         int scr = XDefaultScreen(dpy);
@@ -256,7 +255,16 @@ paint_mouse_pointer(XImage *image, struct x11_grab *s)
     int x, y;
     int line, column;
     int to_line, to_column;
-    int image_addr, xcim_addr;
+    int pixstride = image->bits_per_pixel >> 3;
+    /* Warning: in its insanity, xlib provides unsigned image data through a
+     * char* pointer, so we have to make it uint8_t to make things not break.
+     * Anyone who performs further investigation of the xlib API likely risks
+     * permanent brain damage. */
+    uint8_t *pix = image->data;
+
+    /* Code doesn't currently support 16-bit or PAL8 */
+    if (image->bits_per_pixel != 24 && image->bits_per_pixel != 32)
+        return;
 
     xcim = XFixesGetCursorImage(dpy);
 
@@ -268,14 +276,22 @@ paint_mouse_pointer(XImage *image, struct x11_grab *s)
 
     for (line = FFMAX(y, y_off); line < to_line; line++) {
         for (column = FFMAX(x, x_off); column < to_column; column++) {
-            xcim_addr = (line - y) * xcim->width + column - x;
+            int  xcim_addr = (line - y) * xcim->width + column - x;
+            int image_addr = ((line - y_off) * width + column - x_off) * pixstride;
+            int r = (uint8_t)(xcim->pixels[xcim_addr] >>  0);
+            int g = (uint8_t)(xcim->pixels[xcim_addr] >>  8);
+            int b = (uint8_t)(xcim->pixels[xcim_addr] >> 16);
+            int a = (uint8_t)(xcim->pixels[xcim_addr] >> 24);
 
-            if ((unsigned char)(xcim->pixels[xcim_addr] >> 24) != 0) { // skip fully transparent pixel
-                image_addr = ((line - y_off) * width + column - x_off) * 4;
-
-                image->data[image_addr] = (unsigned char)(xcim->pixels[xcim_addr] >> 0);
-                image->data[image_addr+1] = (unsigned char)(xcim->pixels[xcim_addr] >> 8);
-                image->data[image_addr+2] = (unsigned char)(xcim->pixels[xcim_addr] >> 16);
+            if (a == 255) {
+                pix[image_addr+0] = r;
+                pix[image_addr+1] = g;
+                pix[image_addr+2] = b;
+            } else if (a) {
+                /* pixel values from XFixesGetCursorImage come premultiplied by alpha */
+                pix[image_addr+0] = r + (pix[image_addr+0]*(255-a) + 255/2) / 255;
+                pix[image_addr+1] = g + (pix[image_addr+1]*(255-a) + 255/2) / 255;
+                pix[image_addr+2] = b + (pix[image_addr+2]*(255-a) + 255/2) / 255;
             }
         }
     }
@@ -369,10 +385,9 @@ x11grab_read_packet(AVFormatContext *s1, AVPacket *pkt)
         nanosleep(&ts, NULL);
     }
 
-    if (av_new_packet(pkt, s->frame_size) < 0) {
-        return AVERROR(EIO);
-    }
-
+    av_init_packet(pkt);
+    pkt->data = image->data;
+    pkt->size = s->frame_size;
     pkt->pts = curtime;
 
     if(s->use_shm) {
@@ -389,9 +404,6 @@ x11grab_read_packet(AVFormatContext *s1, AVPacket *pkt)
         paint_mouse_pointer(image, s);
     }
 
-
-    /* XXX: avoid memcpy */
-    memcpy(pkt->data, image->data, s->frame_size);
     return s->frame_size;
 }
 
@@ -425,7 +437,7 @@ x11grab_read_close(AVFormatContext *s1)
 }
 
 /** x11 grabber device demuxer declaration */
-AVInputFormat x11_grab_device_demuxer =
+AVInputFormat ff_x11_grab_device_demuxer =
 {
     "x11grab",
     NULL_IF_CONFIG_SMALL("X11grab"),

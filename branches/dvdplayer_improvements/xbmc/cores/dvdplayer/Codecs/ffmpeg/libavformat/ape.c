@@ -151,7 +151,7 @@ static void ape_dumpinfo(AVFormatContext * s, APEContext * ape_ctx)
 
 static int ape_read_header(AVFormatContext * s, AVFormatParameters * ap)
 {
-    ByteIOContext *pb = s->pb;
+    AVIOContext *pb = s->pb;
     APEContext *ape = s->priv_data;
     AVStream *st;
     uint32_t tag;
@@ -159,14 +159,14 @@ static int ape_read_header(AVFormatContext * s, AVFormatParameters * ap)
     int total_blocks;
     int64_t pts;
 
-    /* TODO: Skip any leading junk such as id3v2 tags */
-    ape->junklength = 0;
+    /* Skip any leading junk such as id3v2 tags */
+    ape->junklength = avio_tell(pb);
 
-    tag = get_le32(pb);
+    tag = avio_rl32(pb);
     if (tag != MKTAG('M', 'A', 'C', ' '))
         return -1;
 
-    ape->fileversion = get_le16(pb);
+    ape->fileversion = avio_rl16(pb);
 
     if (ape->fileversion < APE_MIN_VERSION || ape->fileversion > APE_MAX_VERSION) {
         av_log(s, AV_LOG_ERROR, "Unsupported file version - %d.%02d\n", ape->fileversion / 1000, (ape->fileversion % 1000) / 10);
@@ -174,50 +174,50 @@ static int ape_read_header(AVFormatContext * s, AVFormatParameters * ap)
     }
 
     if (ape->fileversion >= 3980) {
-        ape->padding1             = get_le16(pb);
-        ape->descriptorlength     = get_le32(pb);
-        ape->headerlength         = get_le32(pb);
-        ape->seektablelength      = get_le32(pb);
-        ape->wavheaderlength      = get_le32(pb);
-        ape->audiodatalength      = get_le32(pb);
-        ape->audiodatalength_high = get_le32(pb);
-        ape->wavtaillength        = get_le32(pb);
-        get_buffer(pb, ape->md5, 16);
+        ape->padding1             = avio_rl16(pb);
+        ape->descriptorlength     = avio_rl32(pb);
+        ape->headerlength         = avio_rl32(pb);
+        ape->seektablelength      = avio_rl32(pb);
+        ape->wavheaderlength      = avio_rl32(pb);
+        ape->audiodatalength      = avio_rl32(pb);
+        ape->audiodatalength_high = avio_rl32(pb);
+        ape->wavtaillength        = avio_rl32(pb);
+        avio_read(pb, ape->md5, 16);
 
         /* Skip any unknown bytes at the end of the descriptor.
            This is for future compatibility */
         if (ape->descriptorlength > 52)
-            url_fseek(pb, ape->descriptorlength - 52, SEEK_CUR);
+            avio_skip(pb, ape->descriptorlength - 52);
 
         /* Read header data */
-        ape->compressiontype      = get_le16(pb);
-        ape->formatflags          = get_le16(pb);
-        ape->blocksperframe       = get_le32(pb);
-        ape->finalframeblocks     = get_le32(pb);
-        ape->totalframes          = get_le32(pb);
-        ape->bps                  = get_le16(pb);
-        ape->channels             = get_le16(pb);
-        ape->samplerate           = get_le32(pb);
+        ape->compressiontype      = avio_rl16(pb);
+        ape->formatflags          = avio_rl16(pb);
+        ape->blocksperframe       = avio_rl32(pb);
+        ape->finalframeblocks     = avio_rl32(pb);
+        ape->totalframes          = avio_rl32(pb);
+        ape->bps                  = avio_rl16(pb);
+        ape->channels             = avio_rl16(pb);
+        ape->samplerate           = avio_rl32(pb);
     } else {
         ape->descriptorlength = 0;
         ape->headerlength = 32;
 
-        ape->compressiontype      = get_le16(pb);
-        ape->formatflags          = get_le16(pb);
-        ape->channels             = get_le16(pb);
-        ape->samplerate           = get_le32(pb);
-        ape->wavheaderlength      = get_le32(pb);
-        ape->wavtaillength        = get_le32(pb);
-        ape->totalframes          = get_le32(pb);
-        ape->finalframeblocks     = get_le32(pb);
+        ape->compressiontype      = avio_rl16(pb);
+        ape->formatflags          = avio_rl16(pb);
+        ape->channels             = avio_rl16(pb);
+        ape->samplerate           = avio_rl32(pb);
+        ape->wavheaderlength      = avio_rl32(pb);
+        ape->wavtaillength        = avio_rl32(pb);
+        ape->totalframes          = avio_rl32(pb);
+        ape->finalframeblocks     = avio_rl32(pb);
 
         if (ape->formatflags & MAC_FORMAT_FLAG_HAS_PEAK_LEVEL) {
-            url_fseek(pb, 4, SEEK_CUR); /* Skip the peak level */
+            avio_skip(pb, 4); /* Skip the peak level */
             ape->headerlength += 4;
         }
 
         if (ape->formatflags & MAC_FORMAT_FLAG_HAS_SEEK_ELEMENTS) {
-            ape->seektablelength = get_le32(pb);
+            ape->seektablelength = avio_rl32(pb);
             ape->headerlength += 4;
             ape->seektablelength *= sizeof(int32_t);
         } else
@@ -239,12 +239,21 @@ static int ape_read_header(AVFormatContext * s, AVFormatParameters * ap)
 
         /* Skip any stored wav header */
         if (!(ape->formatflags & MAC_FORMAT_FLAG_CREATE_WAV_HEADER))
-            url_fskip(pb, ape->wavheaderlength);
+            avio_skip(pb, ape->wavheaderlength);
     }
 
+    if(!ape->totalframes){
+        av_log(s, AV_LOG_ERROR, "No frames in the file!\n");
+        return AVERROR(EINVAL);
+    }
     if(ape->totalframes > UINT_MAX / sizeof(APEFrame)){
         av_log(s, AV_LOG_ERROR, "Too many frames: %d\n", ape->totalframes);
         return -1;
+    }
+    if (ape->seektablelength && (ape->seektablelength / sizeof(*ape->seektable)) < ape->totalframes) {
+        av_log(s, AV_LOG_ERROR, "Number of seek entries is less than number of frames: %zd vs. %d\n",
+               ape->seektablelength / sizeof(*ape->seektable), ape->totalframes);
+        return AVERROR_INVALIDDATA;
     }
     ape->frames       = av_malloc(ape->totalframes * sizeof(APEFrame));
     if(!ape->frames)
@@ -260,14 +269,14 @@ static int ape_read_header(AVFormatContext * s, AVFormatParameters * ap)
     if (ape->seektablelength > 0) {
         ape->seektable = av_malloc(ape->seektablelength);
         for (i = 0; i < ape->seektablelength / sizeof(uint32_t); i++)
-            ape->seektable[i] = get_le32(pb);
+            ape->seektable[i] = avio_rl32(pb);
     }
 
     ape->frames[0].pos     = ape->firstframe;
     ape->frames[0].nblocks = ape->blocksperframe;
     ape->frames[0].skip    = 0;
     for (i = 1; i < ape->totalframes; i++) {
-        ape->frames[i].pos      = ape->seektable[i]; //ape->frames[i-1].pos + ape->blocksperframe;
+        ape->frames[i].pos      = ape->seektable[i] + ape->junklength; //ape->frames[i-1].pos + ape->blocksperframe;
         ape->frames[i].nblocks  = ape->blocksperframe;
         ape->frames[i - 1].size = ape->frames[i].pos - ape->frames[i - 1].pos;
         ape->frames[i].skip     = (ape->frames[i].pos - ape->frames[0].pos) & 3;
@@ -287,9 +296,9 @@ static int ape_read_header(AVFormatContext * s, AVFormatParameters * ap)
     ape_dumpinfo(s, ape);
 
     /* try to read APE tags */
-    if (!url_is_streamed(pb)) {
+    if (pb->seekable) {
         ff_ape_parse_tag(s);
-        url_fseek(pb, 0, SEEK_SET);
+        avio_seek(pb, 0, SEEK_SET);
     }
 
     av_log(s, AV_LOG_DEBUG, "Decoding file - v%d.%02d, compression level %d\n", ape->fileversion / 1000, (ape->fileversion % 1000) / 10, ape->compressiontype);
@@ -342,7 +351,7 @@ static int ape_read_packet(AVFormatContext * s, AVPacket * pkt)
     if (ape->currentframe > ape->totalframes)
         return AVERROR(EIO);
 
-    url_fseek (s->pb, ape->frames[ape->currentframe].pos, SEEK_SET);
+    avio_seek (s->pb, ape->frames[ape->currentframe].pos, SEEK_SET);
 
     /* Calculate how many blocks there are in this frame */
     if (ape->currentframe == (ape->totalframes - 1))
@@ -355,7 +364,7 @@ static int ape_read_packet(AVFormatContext * s, AVPacket * pkt)
 
     AV_WL32(pkt->data    , nblocks);
     AV_WL32(pkt->data + 4, ape->frames[ape->currentframe].skip);
-    ret = get_buffer(s->pb, pkt->data + extra_size, ape->frames[ape->currentframe].size);
+    ret = avio_read(s->pb, pkt->data + extra_size, ape->frames[ape->currentframe].size);
 
     pkt->pts = ape->frames[ape->currentframe].pts;
     pkt->stream_index = 0;
@@ -391,7 +400,7 @@ static int ape_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp
     return 0;
 }
 
-AVInputFormat ape_demuxer = {
+AVInputFormat ff_ape_demuxer = {
     "ape",
     NULL_IF_CONFIG_SMALL("Monkey's Audio"),
     sizeof(APEContext),

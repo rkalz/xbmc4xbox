@@ -24,9 +24,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#define _BSD_SOURCE 1
-#define _NETBSD_SOURCE
-
 #include "libavformat/avformat.h"
 #if HAVE_DEV_BKTR_IOCTL_METEOR_H && HAVE_DEV_BKTR_IOCTL_BT848_H
 # include <dev/bktr/ioctl_meteor.h>
@@ -314,7 +311,7 @@ static int grab_read_close(AVFormatContext *s1)
     return 0;
 }
 
-AVInputFormat bktr_demuxer = {
+AVInputFormat ff_bktr_demuxer = {
     "bktr",
     NULL_IF_CONFIG_SMALL("video grab"),
     sizeof(VideoData),

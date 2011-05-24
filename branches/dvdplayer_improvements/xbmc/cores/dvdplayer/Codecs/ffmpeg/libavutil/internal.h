@@ -39,24 +39,10 @@
 #include "timer.h"
 
 #ifndef attribute_align_arg
-#if ARCH_X86_32 && (!defined(__ICC) || __ICC > 1110) && AV_GCC_VERSION_AT_LEAST(4,2)
+#if ARCH_X86_32 && AV_GCC_VERSION_AT_LEAST(4,2)
 #    define attribute_align_arg __attribute__((force_align_arg_pointer))
 #else
 #    define attribute_align_arg
-#endif
-#endif
-
-
-/**
- * Mark a variable as used and prevent the compiler from optimizing it away.
- * This is useful for asm that accesses varibles in ways that the compiler does not
- * understand
- */
-#ifndef attribute_used
-#if AV_GCC_VERSION_AT_LEAST(3,1)
-#    define attribute_used __attribute__((used))
-#else
-#    define attribute_used
 #endif
 #endif
 
@@ -114,13 +100,6 @@
 
 /* debug stuff */
 
-/* dprintf macros */
-#ifdef DEBUG
-#    define dprintf(pctx, ...) av_log(pctx, AV_LOG_DEBUG, __VA_ARGS__)
-#else
-#    define dprintf(pctx, ...)
-#endif
-
 #define av_abort()      do { av_log(NULL, AV_LOG_ERROR, "Abort at %s:%d\n", __FILE__, __LINE__); abort(); } while (0)
 
 /* math */
@@ -158,6 +137,8 @@
 #define sprintf sprintf_is_forbidden_due_to_security_issues_use_snprintf
 #undef  strcat
 #define strcat strcat_is_forbidden_due_to_security_issues_use_av_strlcat
+#undef  strncpy
+#define strncpy strncpy_is_forbidden_due_to_security_issues_use_av_strlcpy
 #undef  exit
 #define exit exit_is_forbidden
 #ifndef LIBAVFORMAT_BUILD
@@ -202,7 +183,6 @@
 #   define NULL_IF_CONFIG_SMALL(x) x
 #endif
 
-
 /**
  * Define a function with only the non-default version specified.
  *
@@ -229,6 +209,17 @@
     __asm__ (".symver ff_" #name "," EXTERN_PREFIX #name "@" ver);      \
     type ff_##name args;                                                \
     type ff_##name args
+#endif
+
+/**
+ * Returns NULL if a threading library has not been enabled.
+ * Used to disable threading functions in AVCodec definitions
+ * when not needed.
+ */
+#if HAVE_THREADS
+#   define ONLY_IF_THREADS_ENABLED(x) x
+#else
+#   define ONLY_IF_THREADS_ENABLED(x) NULL
 #endif
 
 #endif /* AVUTIL_INTERNAL_H */

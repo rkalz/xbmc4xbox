@@ -19,8 +19,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#ifndef AVFILTER_VSRC_BUFFER_H
+#define AVFILTER_VSRC_BUFFER_H
+
+/**
+ * @file
+ * memory buffer source API for video
+ */
+
 #include "avfilter.h"
 
-int av_vsrc_buffer_add_frame(AVFilterContext *buffer_filter, AVFrame *frame,
-                             int64_t pts, AVRational pixel_aspect);
+/**
+ * Add video buffer data in picref to buffer_src.
+ *
+ * @param buffer_src pointer to a buffer source context
+ * @return >= 0 in case of success, a negative AVERROR code in case of
+ * failure
+ */
+int av_vsrc_buffer_add_video_buffer_ref(AVFilterContext *buffer_src, AVFilterBufferRef *picref);
 
+#endif /* AVFILTER_VSRC_BUFFER_H */

@@ -24,6 +24,8 @@
  * RV40 decoder
  */
 
+#include "libavutil/imgutils.h"
+
 #include "avcodec.h"
 #include "dsputil.h"
 #include "mpegvideo.h"
@@ -142,7 +144,7 @@ static int rv40_parse_slice_header(RV34DecContext *r, GetBitContext *gb, SliceIn
     si->pts = get_bits(gb, 13);
     if(!si->type || !get_bits1(gb))
         rv40_parse_picture_size(gb, &w, &h);
-    if(avcodec_check_dimensions(r->s.avctx, w, h) < 0)
+    if(av_image_check_size(w, h, 0, r->s.avctx) < 0)
         return -1;
     si->width  = w;
     si->height = h;
@@ -251,7 +253,7 @@ static int rv40_decode_mb_info(RV34DecContext *r)
             prev_type = i;
         }
     }
-    if(s->pict_type == FF_P_TYPE){
+    if(s->pict_type == AV_PICTURE_TYPE_P){
         prev_type = block_num_to_ptype_vlc_num[prev_type];
         q = get_vlc2(gb, ptype_vlc[prev_type].table, PTYPE_VLC_BITS, 1);
         if(q < PBTYPE_ESCAPE)
@@ -666,7 +668,7 @@ static av_cold int rv40_decode_init(AVCodecContext *avctx)
     return 0;
 }
 
-AVCodec rv40_decoder = {
+AVCodec ff_rv40_decoder = {
     "rv40",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_RV40,

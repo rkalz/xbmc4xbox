@@ -17,7 +17,7 @@
 ;*
 ;* You should have received a copy of the GNU Lesser General Public
 ;* License along with FFmpeg; if not, write to the Free Software
-;* 51, Inc., Foundation Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+;* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 ;******************************************************************************
 
 %include "x86inc.asm"
@@ -145,6 +145,10 @@ filter_h6_shuf3: db 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8,  9, 9, 10, 10, 11
 pw_20091: times 4 dw 20091
 pw_17734: times 4 dw 17734
 
+pb_27_63: times 8 db 27, 63
+pb_18_63: times 8 db 18, 63
+pb_9_63:  times 8 db  9, 63
+
 cextern pb_1
 cextern pw_3
 cextern pb_3
@@ -207,7 +211,7 @@ cglobal put_vp8_epel%1_h6_ssse3, 6, 6, %2
     ; go to next line
     add       r0, r1
     add       r2, r3
-    dec       r4            ; next row
+    dec      r4d            ; next row
     jg .nextrow
     REP_RET
 
@@ -238,7 +242,7 @@ cglobal put_vp8_epel%1_h4_ssse3, 6, 6, %3
     ; go to next line
     add       r0, r1
     add       r2, r3
-    dec       r4            ; next row
+    dec      r4d            ; next row
     jg .nextrow
     REP_RET
 
@@ -277,7 +281,7 @@ cglobal put_vp8_epel%1_v4_ssse3, 7, 7, %2
     ; go to next line
     add        r0, r1
     add        r2, r3
-    dec        r4                          ; next row
+    dec       r4d                          ; next row
     jg .nextrow
     REP_RET
 
@@ -324,7 +328,7 @@ cglobal put_vp8_epel%1_v6_ssse3, 7, 7, %2
     ; go to next line
     add        r0, r1
     add        r2, r3
-    dec        r4                          ; next row
+    dec       r4d                          ; next row
     jg .nextrow
     REP_RET
 %endmacro
@@ -377,7 +381,7 @@ cglobal put_vp8_epel4_h4_mmxext, 6, 6
     ; go to next line
     add        r0, r1
     add        r2, r3
-    dec        r4                          ; next row
+    dec       r4d                          ; next row
     jg .nextrow
     REP_RET
 
@@ -434,52 +438,109 @@ cglobal put_vp8_epel4_h6_mmxext, 6, 6
     ; go to next line
     add        r0, r1
     add        r2, r3
-    dec        r4                          ; next row
+    dec       r4d                          ; next row
     jg .nextrow
     REP_RET
 
-; 4x4 block, H-only 4-tap filter
 INIT_XMM
-cglobal put_vp8_epel8_h4_sse2, 6, 6, 8
+cglobal put_vp8_epel8_h4_sse2, 6, 6, 10
+    shl      r5d, 5
+%ifdef PIC
+    lea      r11, [fourtap_filter_v_m]
+%endif
+    lea       r5, [fourtap_filter_v+r5-32]
+    pxor      m7, m7
+    mova      m4, [pw_64]
+    mova      m5, [r5+ 0]
+    mova      m6, [r5+16]
+%ifdef m8
+    mova      m8, [r5+32]
+    mova      m9, [r5+48]
+%endif
+.nextrow
+    movq      m0, [r2-1]
+    movq      m1, [r2-0]
+    movq      m2, [r2+1]
+    movq      m3, [r2+2]
+    punpcklbw m0, m7
+    punpcklbw m1, m7
+    punpcklbw m2, m7
+    punpcklbw m3, m7
+    pmullw    m0, m5
+    pmullw    m1, m6
+%ifdef m8
+    pmullw    m2, m8
+    pmullw    m3, m9
+%else
+    pmullw    m2, [r5+32]
+    pmullw    m3, [r5+48]
+%endif
+    paddsw    m0, m1
+    paddsw    m2, m3
+    paddsw    m0, m2
+    paddsw    m0, m4
+    psraw     m0, 7
+    packuswb  m0, m7
+    movh    [r0], m0        ; store
+
+    ; go to next line
+    add       r0, r1
+    add       r2, r3
+    dec      r4d            ; next row
+    jg .nextrow
+    REP_RET
+
+cglobal put_vp8_epel8_h6_sse2, 6, 6, 14
+    lea      r5d, [r5*3]
     shl      r5d, 4
 %ifdef PIC
-    lea      r11, [fourtap_filter_hw_m]
+    lea      r11, [sixtap_filter_v_m]
 %endif
-    mova      m5, [fourtap_filter_hw+r5-16] ; set up 4tap filter in words
-    mova      m6, [fourtap_filter_hw+r5]
+    lea       r5, [sixtap_filter_v+r5-96]
     pxor      m7, m7
-
+    mova      m6, [pw_64]
+%ifdef m8
+    mova      m8, [r5+ 0]
+    mova      m9, [r5+16]
+    mova     m10, [r5+32]
+    mova     m11, [r5+48]
+    mova     m12, [r5+64]
+    mova     m13, [r5+80]
+%endif
 .nextrow
-    movh      m0, [r2-1]
-    punpcklbw m0, m7        ; ABCDEFGH
-    mova      m1, m0
-    mova      m2, m0
-    mova      m3, m0
-    psrldq    m1, 2         ; BCDEFGH
-    psrldq    m2, 4         ; CDEFGH
-    psrldq    m3, 6         ; DEFGH
-    punpcklwd m0, m1        ; ABBCCDDE
-    punpcklwd m2, m3        ; CDDEEFFG
-    pmaddwd   m0, m5
-    pmaddwd   m2, m6
-    paddd     m0, m2
-
-    movh      m1, [r2+3]
-    punpcklbw m1, m7        ; ABCDEFGH
-    mova      m2, m1
-    mova      m3, m1
-    mova      m4, m1
-    psrldq    m2, 2         ; BCDEFGH
-    psrldq    m3, 4         ; CDEFGH
-    psrldq    m4, 6         ; DEFGH
-    punpcklwd m1, m2        ; ABBCCDDE
-    punpcklwd m3, m4        ; CDDEEFFG
-    pmaddwd   m1, m5
-    pmaddwd   m3, m6
-    paddd     m1, m3
-
-    packssdw  m0, m1
-    paddsw    m0, [pw_64]
+    movq      m0, [r2-2]
+    movq      m1, [r2-1]
+    movq      m2, [r2-0]
+    movq      m3, [r2+1]
+    movq      m4, [r2+2]
+    movq      m5, [r2+3]
+    punpcklbw m0, m7
+    punpcklbw m1, m7
+    punpcklbw m2, m7
+    punpcklbw m3, m7
+    punpcklbw m4, m7
+    punpcklbw m5, m7
+%ifdef m8
+    pmullw    m0, m8
+    pmullw    m1, m9
+    pmullw    m2, m10
+    pmullw    m3, m11
+    pmullw    m4, m12
+    pmullw    m5, m13
+%else
+    pmullw    m0, [r5+ 0]
+    pmullw    m1, [r5+16]
+    pmullw    m2, [r5+32]
+    pmullw    m3, [r5+48]
+    pmullw    m4, [r5+64]
+    pmullw    m5, [r5+80]
+%endif
+    paddsw    m1, m4
+    paddsw    m0, m5
+    paddsw    m1, m2
+    paddsw    m0, m3
+    paddsw    m0, m1
+    paddsw    m0, m6
     psraw     m0, 7
     packuswb  m0, m7
     movh    [r0], m0        ; store
@@ -487,74 +548,7 @@ cglobal put_vp8_epel8_h4_sse2, 6, 6, 8
     ; go to next line
     add       r0, r1
     add       r2, r3
-    dec       r4            ; next row
-    jg .nextrow
-    REP_RET
-
-cglobal put_vp8_epel8_h6_sse2, 6, 6, 8
-    lea      r5d, [r5*3]
-%ifdef PIC
-    lea      r11, [sixtap_filter_hw_m]
-%endif
-    lea       r5, [sixtap_filter_hw+r5*8]
-    pxor      m7, m7
-
-.nextrow
-    movu      m0, [r2-2]
-    mova      m6, m0
-    mova      m4, m0
-    punpcklbw m0, m7        ; ABCDEFGHI
-    mova      m1, m0
-    mova      m2, m0
-    mova      m3, m0
-    psrldq    m1, 2         ; BCDEFGH
-    psrldq    m2, 4         ; CDEFGH
-    psrldq    m3, 6         ; DEFGH
-    psrldq    m4, 4
-    punpcklbw m4, m7        ; EFGH
-    mova      m5, m4
-    psrldq    m5, 2         ; FGH
-    punpcklwd m0, m1        ; ABBCCDDE
-    punpcklwd m2, m3        ; CDDEEFFG
-    punpcklwd m4, m5        ; EFFGGHHI
-    pmaddwd   m0, [r5-48]
-    pmaddwd   m2, [r5-32]
-    pmaddwd   m4, [r5-16]
-    paddd     m0, m2
-    paddd     m0, m4
-
-    psrldq    m6, 4
-    mova      m4, m6
-    punpcklbw m6, m7        ; ABCDEFGHI
-    mova      m1, m6
-    mova      m2, m6
-    mova      m3, m6
-    psrldq    m1, 2         ; BCDEFGH
-    psrldq    m2, 4         ; CDEFGH
-    psrldq    m3, 6         ; DEFGH
-    psrldq    m4, 4
-    punpcklbw m4, m7        ; EFGH
-    mova      m5, m4
-    psrldq    m5, 2         ; FGH
-    punpcklwd m6, m1        ; ABBCCDDE
-    punpcklwd m2, m3        ; CDDEEFFG
-    punpcklwd m4, m5        ; EFFGGHHI
-    pmaddwd   m6, [r5-48]
-    pmaddwd   m2, [r5-32]
-    pmaddwd   m4, [r5-16]
-    paddd     m6, m2
-    paddd     m6, m4
-
-    packssdw  m0, m6
-    paddsw    m0, [pw_64]
-    psraw     m0, 7
-    packuswb  m0, m7
-    movh    [r0], m0        ; store
-
-    ; go to next line
-    add       r0, r1
-    add       r2, r3
-    dec       r4            ; next row
+    dec      r4d            ; next row
     jg .nextrow
     REP_RET
 
@@ -607,7 +601,7 @@ cglobal put_vp8_epel%2_v4_%1, 7, 7, %3
     ; go to next line
     add       r0, r1
     add       r2, r3
-    dec       r4                           ; next row
+    dec      r4d                           ; next row
     jg .nextrow
     REP_RET
 
@@ -672,7 +666,7 @@ cglobal put_vp8_epel%2_v6_%1, 7, 7, %3
     ; go to next line
     add       r0, r1
     add       r2, r3
-    dec       r4                           ; next row
+    dec      r4d                           ; next row
     jg .nextrow
     REP_RET
 %endmacro
@@ -724,7 +718,7 @@ cglobal put_vp8_bilinear%2_v_%1, 7,7,%3
 
     lea       r0, [r0+r1*2]
     lea       r2, [r2+r3*2]
-    sub       r4, 2
+    sub      r4d, 2
     jg .nextrow
     REP_RET
 
@@ -770,7 +764,7 @@ cglobal put_vp8_bilinear%2_h_%1, 7,7,%3
 
     lea       r0, [r0+r1*2]
     lea       r2, [r2+r3*2]
-    sub       r4, 2
+    sub      r4d, 2
     jg .nextrow
     REP_RET
 %endmacro
@@ -813,7 +807,7 @@ cglobal put_vp8_bilinear%1_v_ssse3, 7,7
 
     lea       r0, [r0+r1*2]
     lea       r2, [r2+r3*2]
-    sub       r4, 2
+    sub      r4d, 2
     jg .nextrow
     REP_RET
 
@@ -849,7 +843,7 @@ cglobal put_vp8_bilinear%1_h_ssse3, 7,7
 
     lea       r0, [r0+r1*2]
     lea       r2, [r2+r3*2]
-    sub       r4, 2
+    sub      r4d, 2
     jg .nextrow
     REP_RET
 %endmacro
@@ -900,74 +894,189 @@ cglobal put_vp8_pixels16_sse, 5,5,2
     REP_RET
 
 ;-----------------------------------------------------------------------------
-; IDCT functions:
-;
 ; void vp8_idct_dc_add_<opt>(uint8_t *dst, DCTELEM block[16], int stride);
 ;-----------------------------------------------------------------------------
 
+%macro ADD_DC 4
+    %4        m2, [r0+%3]
+    %4        m3, [r0+r2+%3]
+    %4        m4, [r1+%3]
+    %4        m5, [r1+r2+%3]
+    paddusb   m2, %1
+    paddusb   m3, %1
+    paddusb   m4, %1
+    paddusb   m5, %1
+    psubusb   m2, %2
+    psubusb   m3, %2
+    psubusb   m4, %2
+    psubusb   m5, %2
+    %4    [r0+%3], m2
+    %4 [r0+r2+%3], m3
+    %4    [r1+%3], m4
+    %4 [r1+r2+%3], m5
+%endmacro
+
+INIT_MMX
 cglobal vp8_idct_dc_add_mmx, 3, 3
     ; load data
-    movd       mm0, [r1]
+    movd       m0, [r1]
 
     ; calculate DC
-    paddw      mm0, [pw_4]
-    pxor       mm1, mm1
-    psraw      mm0, 3
-    psubw      mm1, mm0
-    packuswb   mm0, mm0
-    packuswb   mm1, mm1
-    punpcklbw  mm0, mm0
-    punpcklbw  mm1, mm1
-    punpcklwd  mm0, mm0
-    punpcklwd  mm1, mm1
+    paddw      m0, [pw_4]
+    pxor       m1, m1
+    psraw      m0, 3
+    movd      [r1], m1
+    psubw      m1, m0
+    packuswb   m0, m0
+    packuswb   m1, m1
+    punpcklbw  m0, m0
+    punpcklbw  m1, m1
+    punpcklwd  m0, m0
+    punpcklwd  m1, m1
 
     ; add DC
-    lea         r1, [r0+r2*2]
-    movd       mm2, [r0]
-    movd       mm3, [r0+r2]
-    movd       mm4, [r1]
-    movd       mm5, [r1+r2]
-    paddusb    mm2, mm0
-    paddusb    mm3, mm0
-    paddusb    mm4, mm0
-    paddusb    mm5, mm0
-    psubusb    mm2, mm1
-    psubusb    mm3, mm1
-    psubusb    mm4, mm1
-    psubusb    mm5, mm1
-    movd      [r0], mm2
-    movd   [r0+r2], mm3
-    movd      [r1], mm4
-    movd   [r1+r2], mm5
+    lea        r1, [r0+r2*2]
+    ADD_DC     m0, m1, 0, movh
     RET
 
+INIT_XMM
 cglobal vp8_idct_dc_add_sse4, 3, 3, 6
     ; load data
-    movd       xmm0, [r1]
-    lea          r1, [r0+r2*2]
-    pxor       xmm1, xmm1
-    movq       xmm2, [pw_4]
+    movd       m0, [r1]
+    pxor       m1, m1
 
     ; calculate DC
-    paddw      xmm0, xmm2
-    movd       xmm2, [r0]
-    movd       xmm3, [r0+r2]
-    movd       xmm4, [r1]
-    movd       xmm5, [r1+r2]
-    psraw      xmm0, 3
-    pshuflw    xmm0, xmm0, 0
-    punpcklqdq xmm0, xmm0
-    punpckldq  xmm2, xmm3
-    punpckldq  xmm4, xmm5
-    punpcklbw  xmm2, xmm1
-    punpcklbw  xmm4, xmm1
-    paddw      xmm2, xmm0
-    paddw      xmm4, xmm0
-    packuswb   xmm2, xmm4
-    movd       [r0], xmm2
-    pextrd  [r0+r2], xmm2, 1
-    pextrd     [r1], xmm2, 2
-    pextrd  [r1+r2], xmm2, 3
+    paddw      m0, [pw_4]
+    movd     [r1], m1
+    lea        r1, [r0+r2*2]
+    movd       m2, [r0]
+    movd       m3, [r0+r2]
+    movd       m4, [r1]
+    movd       m5, [r1+r2]
+    psraw      m0, 3
+    pshuflw    m0, m0, 0
+    punpcklqdq m0, m0
+    punpckldq  m2, m3
+    punpckldq  m4, m5
+    punpcklbw  m2, m1
+    punpcklbw  m4, m1
+    paddw      m2, m0
+    paddw      m4, m0
+    packuswb   m2, m4
+    movd      [r0], m2
+    pextrd [r0+r2], m2, 1
+    pextrd    [r1], m2, 2
+    pextrd [r1+r2], m2, 3
+    RET
+
+;-----------------------------------------------------------------------------
+; void vp8_idct_dc_add4y_<opt>(uint8_t *dst, DCTELEM block[4][16], int stride);
+;-----------------------------------------------------------------------------
+
+INIT_MMX
+cglobal vp8_idct_dc_add4y_mmx, 3, 3
+    ; load data
+    movd      m0, [r1+32*0] ; A
+    movd      m1, [r1+32*2] ; C
+    punpcklwd m0, [r1+32*1] ; A B
+    punpcklwd m1, [r1+32*3] ; C D
+    punpckldq m0, m1        ; A B C D
+    pxor      m6, m6
+
+    ; calculate DC
+    paddw     m0, [pw_4]
+    movd [r1+32*0], m6
+    movd [r1+32*1], m6
+    movd [r1+32*2], m6
+    movd [r1+32*3], m6
+    psraw     m0, 3
+    psubw     m6, m0
+    packuswb  m0, m0
+    packuswb  m6, m6
+    punpcklbw m0, m0 ; AABBCCDD
+    punpcklbw m6, m6 ; AABBCCDD
+    movq      m1, m0
+    movq      m7, m6
+    punpcklbw m0, m0 ; AAAABBBB
+    punpckhbw m1, m1 ; CCCCDDDD
+    punpcklbw m6, m6 ; AAAABBBB
+    punpckhbw m7, m7 ; CCCCDDDD
+
+    ; add DC
+    lea       r1, [r0+r2*2]
+    ADD_DC    m0, m6, 0, mova
+    ADD_DC    m1, m7, 8, mova
+    RET
+
+INIT_XMM
+cglobal vp8_idct_dc_add4y_sse2, 3, 3, 6
+    ; load data
+    movd      m0, [r1+32*0] ; A
+    movd      m1, [r1+32*2] ; C
+    punpcklwd m0, [r1+32*1] ; A B
+    punpcklwd m1, [r1+32*3] ; C D
+    punpckldq m0, m1        ; A B C D
+    pxor      m1, m1
+
+    ; calculate DC
+    paddw     m0, [pw_4]
+    movd [r1+32*0], m1
+    movd [r1+32*1], m1
+    movd [r1+32*2], m1
+    movd [r1+32*3], m1
+    psraw     m0, 3
+    psubw     m1, m0
+    packuswb  m0, m0
+    packuswb  m1, m1
+    punpcklbw m0, m0
+    punpcklbw m1, m1
+    punpcklbw m0, m0
+    punpcklbw m1, m1
+
+    ; add DC
+    lea       r1, [r0+r2*2]
+    ADD_DC    m0, m1, 0, mova
+    RET
+
+;-----------------------------------------------------------------------------
+; void vp8_idct_dc_add4uv_<opt>(uint8_t *dst, DCTELEM block[4][16], int stride);
+;-----------------------------------------------------------------------------
+
+INIT_MMX
+cglobal vp8_idct_dc_add4uv_mmx, 3, 3
+    ; load data
+    movd      m0, [r1+32*0] ; A
+    movd      m1, [r1+32*2] ; C
+    punpcklwd m0, [r1+32*1] ; A B
+    punpcklwd m1, [r1+32*3] ; C D
+    punpckldq m0, m1        ; A B C D
+    pxor      m6, m6
+
+    ; calculate DC
+    paddw     m0, [pw_4]
+    movd [r1+32*0], m6
+    movd [r1+32*1], m6
+    movd [r1+32*2], m6
+    movd [r1+32*3], m6
+    psraw     m0, 3
+    psubw     m6, m0
+    packuswb  m0, m0
+    packuswb  m6, m6
+    punpcklbw m0, m0 ; AABBCCDD
+    punpcklbw m6, m6 ; AABBCCDD
+    movq      m1, m0
+    movq      m7, m6
+    punpcklbw m0, m0 ; AAAABBBB
+    punpckhbw m1, m1 ; CCCCDDDD
+    punpcklbw m6, m6 ; AAAABBBB
+    punpckhbw m7, m7 ; CCCCDDDD
+
+    ; add DC
+    lea       r1, [r0+r2*2]
+    ADD_DC    m0, m6, 0, mova
+    lea       r0, [r0+r2*4]
+    lea       r1, [r1+r2*4]
+    ADD_DC    m1, m7, 0, mova
     RET
 
 ;-----------------------------------------------------------------------------
@@ -997,23 +1106,35 @@ cglobal vp8_idct_dc_add_sse4, 3, 3, 6
 ;           %5/%6 are temporary registers
 ;           we assume m6/m7 have constant words 20091/17734 loaded in them
 %macro VP8_IDCT_TRANSFORM4x4_1D 6
-    SUMSUB_BA           m%3, m%1, m%5     ;t0, t1
+    SUMSUB_BA         w, %3,  %1,  %5     ;t0, t1
     VP8_MULTIPLY_SUMSUB m%2, m%4, m%5,m%6 ;t2, t3
-    SUMSUB_BA           m%4, m%3, m%5     ;tmp0, tmp3
-    SUMSUB_BA           m%2, m%1, m%5     ;tmp1, tmp2
+    SUMSUB_BA         w, %4,  %3,  %5     ;tmp0, tmp3
+    SUMSUB_BA         w, %2,  %1,  %5     ;tmp1, tmp2
     SWAP                 %4,  %1
     SWAP                 %4,  %3
 %endmacro
 
 INIT_MMX
-cglobal vp8_idct_add_mmx, 3, 3
+%macro VP8_IDCT_ADD 1
+cglobal vp8_idct_add_%1, 3, 3
     ; load block data
-    movq         m0, [r1]
-    movq         m1, [r1+8]
+    movq         m0, [r1+ 0]
+    movq         m1, [r1+ 8]
     movq         m2, [r1+16]
     movq         m3, [r1+24]
     movq         m6, [pw_20091]
     movq         m7, [pw_17734]
+%ifidn %1, sse
+    xorps      xmm0, xmm0
+    movaps  [r1+ 0], xmm0
+    movaps  [r1+16], xmm0
+%else
+    pxor         m4, m4
+    movq    [r1+ 0], m4
+    movq    [r1+ 8], m4
+    movq    [r1+16], m4
+    movq    [r1+24], m4
+%endif
 
     ; actual IDCT
     VP8_IDCT_TRANSFORM4x4_1D 0, 1, 2, 3, 4, 5
@@ -1029,34 +1150,59 @@ cglobal vp8_idct_add_mmx, 3, 3
     STORE_DIFFx2 m2, m3, m6, m7, m4, 3, r1, r2
 
     RET
+%endmacro
+
+VP8_IDCT_ADD mmx
+VP8_IDCT_ADD sse
 
 ;-----------------------------------------------------------------------------
 ; void vp8_luma_dc_wht_mmxext(DCTELEM block[4][4][16], DCTELEM dc[16])
 ;-----------------------------------------------------------------------------
 
-%macro SCATTER_WHT 1
-    pextrw r1d, m0, %1
-    pextrw r2d, m1, %1
-    mov [r0+2*16*0], r1w
-    mov [r0+2*16*1], r2w
-    pextrw r1d, m2, %1
-    pextrw r2d, m3, %1
-    mov [r0+2*16*2], r1w
-    mov [r0+2*16*3], r2w
+%macro SCATTER_WHT 3
+    movd  r1d, m%1
+    movd  r2d, m%2
+    mov [r0+2*16*(0+%3)], r1w
+    mov [r0+2*16*(1+%3)], r2w
+    shr   r1d, 16
+    shr   r2d, 16
+    psrlq m%1, 32
+    psrlq m%2, 32
+    mov [r0+2*16*(4+%3)], r1w
+    mov [r0+2*16*(5+%3)], r2w
+    movd  r1d, m%1
+    movd  r2d, m%2
+    mov [r0+2*16*(8+%3)], r1w
+    mov [r0+2*16*(9+%3)], r2w
+    shr   r1d, 16
+    shr   r2d, 16
+    mov [r0+2*16*(12+%3)], r1w
+    mov [r0+2*16*(13+%3)], r2w
 %endmacro
 
 %macro HADAMARD4_1D 4
-    SUMSUB_BADC m%2, m%1, m%4, m%3
-    SUMSUB_BADC m%4, m%2, m%3, m%1
+    SUMSUB_BADC w, %2, %1, %4, %3
+    SUMSUB_BADC w, %4, %2, %3, %1
     SWAP %1, %4, %3
 %endmacro
 
-INIT_MMX
-cglobal vp8_luma_dc_wht_mmxext, 2,3
+%macro VP8_DC_WHT 1
+cglobal vp8_luma_dc_wht_%1, 2,3
     movq          m0, [r1]
     movq          m1, [r1+8]
     movq          m2, [r1+16]
     movq          m3, [r1+24]
+%ifidn %1, sse
+    xorps      xmm0, xmm0
+    movaps  [r1+ 0], xmm0
+    movaps  [r1+16], xmm0
+%else
+    pxor         m4, m4
+    movq    [r1+ 0], m4
+    movq    [r1+ 8], m4
+    movq    [r1+16], m4
+    movq    [r1+24], m4
+%endif
     HADAMARD4_1D  0, 1, 2, 3
     TRANSPOSE4x4W 0, 1, 2, 3, 4
     paddw         m0, [pw_3]
@@ -1065,14 +1211,14 @@ cglobal vp8_luma_dc_wht_mmxext, 2,3
     psraw         m1, 3
     psraw         m2, 3
     psraw         m3, 3
-    SCATTER_WHT   0
-    add           r0, 2*16*4
-    SCATTER_WHT   1
-    add           r0, 2*16*4
-    SCATTER_WHT   2
-    add           r0, 2*16*4
-    SCATTER_WHT   3
+    SCATTER_WHT   0, 1, 0
+    SCATTER_WHT   2, 3, 2
     RET
+%endmacro
+
+INIT_MMX
+VP8_DC_WHT mmx
+VP8_DC_WHT sse
 
 ;-----------------------------------------------------------------------------
 ; void vp8_h/v_loop_filter_simple_<opt>(uint8_t *dst, int stride, int flim);
@@ -1196,7 +1342,7 @@ cglobal vp8_luma_dc_wht_mmxext, 2,3
     psrldq        m%2, 4
 %if %10 == 8
     movd    [%5+%8*2], m%1
-    movd           %5, m%3
+    movd          %5d, m%3
 %endif
     psrldq        m%3, 4
     psrldq        m%4, 4
@@ -1224,37 +1370,123 @@ cglobal vp8_luma_dc_wht_mmxext, 2,3
     movd    [%7+%9*2], m%4
 %endmacro
 
-%macro SPLATB_REG 3
-    movd           %1, %2
-    punpcklbw      %1, %1
-%if mmsize == 16 ; sse2
-    punpcklwd      %1, %1
-    pshufd         %1, %1, 0x0
-%elifidn %3, mmx
-    punpcklwd      %1, %1
-    punpckldq      %1, %1
-%else ; mmxext
-    pshufw         %1, %1, 0x0
-%endif
+; write 4 or 8 words in the mmx/xmm registers as 8 lines
+; 1 and 2 are the registers to write, this can be the same (for SSE2)
+; for pre-SSE4:
+; 3 is a general-purpose register that we will clobber
+; for SSE4:
+; 3 is a pointer to the destination's 5th line
+; 4 is a pointer to the destination's 4th line
+; 5/6 is -stride and +stride
+%macro WRITE_2x4W 6
+    movd            %3d, %1
+    punpckhdq        %1, %1
+    mov       [%4+%5*4], %3w
+    shr              %3, 16
+    add              %4, %6
+    mov       [%4+%5*4], %3w
+
+    movd            %3d, %1
+    add              %4, %5
+    mov       [%4+%5*2], %3w
+    shr              %3, 16
+    mov       [%4+%5  ], %3w
+
+    movd            %3d, %2
+    punpckhdq        %2, %2
+    mov       [%4     ], %3w
+    shr              %3, 16
+    mov       [%4+%6  ], %3w
+
+    movd            %3d, %2
+    add              %4, %6
+    mov       [%4+%6  ], %3w
+    shr              %3, 16
+    mov       [%4+%6*2], %3w
+    add              %4, %5
 %endmacro
 
-%macro SIMPLE_LOOPFILTER 3
-cglobal vp8_%2_loop_filter_simple_%1, 3, %3
-%ifidn %2, h
-    mov            r5, rsp          ; backup stack pointer
-    and           rsp, ~(mmsize-1)  ; align stack
-%endif
+%macro WRITE_8W_SSE2 5
+    movd            %2d, %1
+    psrldq           %1, 4
+    mov       [%3+%4*4], %2w
+    shr              %2, 16
+    add              %3, %5
+    mov       [%3+%4*4], %2w
+
+    movd            %2d, %1
+    psrldq           %1, 4
+    add              %3, %4
+    mov       [%3+%4*2], %2w
+    shr              %2, 16
+    mov       [%3+%4  ], %2w
+
+    movd            %2d, %1
+    psrldq           %1, 4
+    mov       [%3     ], %2w
+    shr              %2, 16
+    mov       [%3+%5  ], %2w
+
+    movd            %2d, %1
+    add              %3, %5
+    mov       [%3+%5  ], %2w
+    shr              %2, 16
+    mov       [%3+%5*2], %2w
+%endmacro
+
+%macro WRITE_8W_SSE4 5
+    pextrw    [%3+%4*4], %1, 0
+    pextrw    [%2+%4*4], %1, 1
+    pextrw    [%3+%4*2], %1, 2
+    pextrw    [%3+%4  ], %1, 3
+    pextrw    [%3     ], %1, 4
+    pextrw    [%2     ], %1, 5
+    pextrw    [%2+%5  ], %1, 6
+    pextrw    [%2+%5*2], %1, 7
+%endmacro
+
+%macro SPLATB_REG_MMX 2-3
+    movd           %1, %2d
+    punpcklbw      %1, %1
+    punpcklwd      %1, %1
+    punpckldq      %1, %1
+%endmacro
+
+%macro SPLATB_REG_MMXEXT 2-3
+    movd           %1, %2d
+    punpcklbw      %1, %1
+    pshufw         %1, %1, 0x0
+%endmacro
+
+%macro SPLATB_REG_SSE2 2-3
+    movd           %1, %2d
+    punpcklbw      %1, %1
+    pshuflw        %1, %1, 0x0
+    punpcklqdq     %1, %1
+%endmacro
+
+%macro SPLATB_REG_SSSE3 3
+    movd           %1, %2d
+    pshufb         %1, %3
+%endmacro
+
+%macro SIMPLE_LOOPFILTER 4
+cglobal vp8_%2_loop_filter_simple_%1, 3, %3, %4
 %if mmsize == 8 ; mmx/mmxext
     mov            r3, 2
 %endif
-    SPLATB_REG     m7, r2, %1       ; splat "flim" into register
+%ifnidn %1, sse2
+%if mmsize == 16
+    pxor           m0, m0
+%endif
+%endif
+    SPLATB_REG     m7, r2, m0       ; splat "flim" into register
 
     ; set up indexes to address 4 rows
     mov            r2, r1
     neg            r1
 %ifidn %2, h
     lea            r0, [r0+4*r2-2]
-    sub           rsp, mmsize*2     ; (aligned) storage space for saving p1/q1
 %endif
 
 %if mmsize == 8 ; mmx / mmxext
@@ -1275,9 +1507,6 @@ cglobal vp8_%2_loop_filter_simple_%1, 3, %3
     READ_16x4_INTERLEAVED 0, 1, 2, 3, 4, 5, 6, r0, r4, r1, r2, r3
 %endif
     TRANSPOSE4x4W         0, 1, 2, 3, 4
-
-    mova        [rsp], m0           ; store p1
-    mova [rsp+mmsize], m3           ; store q1
 %endif
 
     ; simple_limit
@@ -1348,17 +1577,21 @@ cglobal vp8_%2_loop_filter_simple_%1, 3, %3
     mova         [r0], m4
     mova      [r0+r1], m6
 %else ; h
-    mova           m0, [rsp]        ; p1
-    SWAP            2, 4            ; p0
-    SWAP            1, 6            ; q0
-    mova           m3, [rsp+mmsize] ; q1
+    inc           r0
+    SBUTTERFLY    bw, 6, 4, 0
 
-    TRANSPOSE4x4B  0, 1, 2, 3, 4
 %if mmsize == 16 ; sse2
-    add            r3, r1           ; change from r4*8*stride to r0+8*stride
-    WRITE_4x4D 0, 1, 2, 3, r0, r4, r3, r1, r2, 16
+%ifidn %1, sse4
+    inc            r4
+%endif
+    WRITE_8W       m6, r4, r0, r1, r2
+    lea            r4, [r3+r1+1]
+%ifidn %1, sse4
+    inc            r3
+%endif
+    WRITE_8W       m4, r3, r4, r1, r2
 %else ; mmx/mmxext
-    WRITE_4x2D 0, 1, 2, 3, r0, r4, r1, r2
+    WRITE_2x4W     m6, m4, r4, r0, r1, r2
 %endif
 %endif
 
@@ -1367,32 +1600,33 @@ cglobal vp8_%2_loop_filter_simple_%1, 3, %3
 %ifidn %2, v
     add            r0, 8            ; advance 8 cols = pixels
 %else ; h
-    lea            r0, [r0+r2*8]    ; advance 8 rows = lines
+    lea            r0, [r0+r2*8-1]  ; advance 8 rows = lines
 %endif
     dec            r3
     jg .next8px
-%ifidn %2, v
     REP_RET
-%else ; h
-    mov           rsp, r5           ; restore stack pointer
-    RET
-%endif
 %else ; sse2
-%ifidn %2, h
-    mov           rsp, r5           ; restore stack pointer
-%endif
     RET
 %endif
 %endmacro
 
 INIT_MMX
-SIMPLE_LOOPFILTER mmx,    v, 4
-SIMPLE_LOOPFILTER mmx,    h, 6
-SIMPLE_LOOPFILTER mmxext, v, 4
-SIMPLE_LOOPFILTER mmxext, h, 6
+%define SPLATB_REG SPLATB_REG_MMX
+SIMPLE_LOOPFILTER mmx,    v, 4, 0
+SIMPLE_LOOPFILTER mmx,    h, 5, 0
+%define SPLATB_REG SPLATB_REG_MMXEXT
+SIMPLE_LOOPFILTER mmxext, v, 4, 0
+SIMPLE_LOOPFILTER mmxext, h, 5, 0
 INIT_XMM
-SIMPLE_LOOPFILTER sse2,   v, 3
-SIMPLE_LOOPFILTER sse2,   h, 6
+%define SPLATB_REG SPLATB_REG_SSE2
+%define WRITE_8W   WRITE_8W_SSE2
+SIMPLE_LOOPFILTER sse2,   v, 3, 8
+SIMPLE_LOOPFILTER sse2,   h, 5, 8
+%define SPLATB_REG SPLATB_REG_SSSE3
+SIMPLE_LOOPFILTER ssse3,  v, 3, 8
+SIMPLE_LOOPFILTER ssse3,  h, 5, 8
+%define WRITE_8W   WRITE_8W_SSE4
+SIMPLE_LOOPFILTER sse4,   h, 5, 8
 
 ;-----------------------------------------------------------------------------
 ; void vp8_h/v_loop_filter<size>_inner_<opt>(uint8_t *dst, [uint8_t *v,] int stride,
@@ -1428,11 +1662,17 @@ cglobal vp8_%2_loop_filter16y_inner_%1, 5, %3, %5
 %define stack_reg   hev_thr_reg
 %endif
 
+%ifnidn %1, sse2
+%if mmsize == 16
+    pxor             m7, m7
+%endif
+%endif
+
 %ifndef m8 ; mmx/mmxext or sse2 on x86-32
     ; splat function arguments
-    SPLATB_REG       m0, E_reg, %1   ; E
-    SPLATB_REG       m1, I_reg, %1   ; I
-    SPLATB_REG       m2, hev_thr_reg, %1 ; hev_thresh
+    SPLATB_REG       m0, E_reg, m7   ; E
+    SPLATB_REG       m1, I_reg, m7   ; I
+    SPLATB_REG       m2, hev_thr_reg, m7 ; hev_thresh
 
     ; align stack
     mov       stack_reg, rsp         ; backup stack pointer
@@ -1465,9 +1705,9 @@ cglobal vp8_%2_loop_filter16y_inner_%1, 5, %3, %5
 %define q0backup m8
 
     ; splat function arguments
-    SPLATB_REG   flim_E, E_reg, %1   ; E
-    SPLATB_REG   flim_I, I_reg, %1   ; I
-    SPLATB_REG  hev_thr, hev_thr_reg, %1 ; hev_thresh
+    SPLATB_REG   flim_E, E_reg, m7   ; E
+    SPLATB_REG   flim_I, I_reg, m7   ; I
+    SPLATB_REG  hev_thr, hev_thr_reg, m7 ; hev_thresh
 %endif
 
 %if mmsize == 8 && %4 == 16 ; mmx/mmxext
@@ -1879,17 +2119,20 @@ cglobal vp8_%2_loop_filter16y_inner_%1, 5, %3, %5
 %endmacro
 
 INIT_MMX
-INNER_LOOPFILTER mmx,    v, 6, 16, 8
-INNER_LOOPFILTER mmx,    h, 6, 16, 8
-INNER_LOOPFILTER mmxext, v, 6, 16, 8
-INNER_LOOPFILTER mmxext, h, 6, 16, 8
+%define SPLATB_REG SPLATB_REG_MMX
+INNER_LOOPFILTER mmx,    v, 6, 16, 0
+INNER_LOOPFILTER mmx,    h, 6, 16, 0
+INNER_LOOPFILTER mmx,    v, 6,  8, 0
+INNER_LOOPFILTER mmx,    h, 6,  8, 0
 
-INNER_LOOPFILTER mmx,    v, 6,  8, 8
-INNER_LOOPFILTER mmx,    h, 6,  8, 8
-INNER_LOOPFILTER mmxext, v, 6,  8, 8
-INNER_LOOPFILTER mmxext, h, 6,  8, 8
+%define SPLATB_REG SPLATB_REG_MMXEXT
+INNER_LOOPFILTER mmxext, v, 6, 16, 0
+INNER_LOOPFILTER mmxext, h, 6, 16, 0
+INNER_LOOPFILTER mmxext, v, 6,  8, 0
+INNER_LOOPFILTER mmxext, h, 6,  8, 0
 
 INIT_XMM
+%define SPLATB_REG SPLATB_REG_SSE2
 INNER_LOOPFILTER sse2,   v, 5, 16, 13
 %ifdef m8
 INNER_LOOPFILTER sse2,   h, 5, 16, 13
@@ -1899,56 +2142,20 @@ INNER_LOOPFILTER sse2,   h, 6, 16, 13
 INNER_LOOPFILTER sse2,   v, 6,  8, 13
 INNER_LOOPFILTER sse2,   h, 6,  8, 13
 
+%define SPLATB_REG SPLATB_REG_SSSE3
+INNER_LOOPFILTER ssse3,  v, 5, 16, 13
+%ifdef m8
+INNER_LOOPFILTER ssse3,  h, 5, 16, 13
+%else
+INNER_LOOPFILTER ssse3,  h, 6, 16, 13
+%endif
+INNER_LOOPFILTER ssse3,  v, 6,  8, 13
+INNER_LOOPFILTER ssse3,  h, 6,  8, 13
+
 ;-----------------------------------------------------------------------------
 ; void vp8_h/v_loop_filter<size>_mbedge_<opt>(uint8_t *dst, [uint8_t *v,] int stride,
 ;                                            int flimE, int flimI, int hev_thr);
 ;-----------------------------------------------------------------------------
-
-; write 4 or 8 words in the mmx/xmm registers as 8 lines
-; 1 and 2 are the registers to write, this can be the same (for SSE2)
-; 3 is a general-purpose register that we will clobber
-; 4 is a pointer to the destination's 4th line
-; 5 is -stride and +stride
-%macro WRITE_8W 6
-    movd             %3, %1
-%if mmsize == 8
-    punpckhdq        %1, %1
-%else
-    psrldq           %1, 4
-%endif
-    mov       [%4+%5*4], %3w
-    shr              %3, 16
-    add              %4, %6
-    mov       [%4+%5*4], %3w
-
-    movd             %3, %1
-%if mmsize == 16
-    psrldq           %1, 4
-%endif
-    add              %4, %5
-    mov       [%4+%5*2], %3w
-    shr              %3, 16
-    mov       [%4+%5  ], %3w
-
-    movd             %3, %2
-%if mmsize == 8
-    punpckhdq        %2, %2
-%else
-    psrldq           %2, 4
-%endif
-    mov       [%4     ], %3w
-    shr              %3, 16
-    mov       [%4+%6  ], %3w
-
-    movd             %3, %2
-    add              %4, %6
-    mov       [%4+%6  ], %3w
-    shr              %3, 16
-    mov       [%4+%6*2], %3w
-%if mmsize == 8
-    add              %4, %5
-%endif
-%endmacro
 
 %macro MBEDGE_LOOPFILTER 5
 %if %4 == 8 ; chroma
@@ -1979,20 +2186,35 @@ cglobal vp8_%2_loop_filter16y_mbedge_%1, 5, %3, %5
 %define stack_reg   hev_thr_reg
 %endif
 
+%define ssse3_or_higher 0
+%ifnidn %1, sse2
+%if mmsize == 16
+%define ssse3_or_higher 1
+%endif
+%endif
+
+%if ssse3_or_higher
+    pxor             m7, m7
+%endif
+
 %ifndef m8 ; mmx/mmxext or sse2 on x86-32
     ; splat function arguments
-    SPLATB_REG       m0, E_reg, %1   ; E
-    SPLATB_REG       m1, I_reg, %1   ; I
-    SPLATB_REG       m2, hev_thr_reg, %1 ; hev_thresh
+    SPLATB_REG       m0, E_reg, m7   ; E
+    SPLATB_REG       m1, I_reg, m7   ; I
+    SPLATB_REG       m2, hev_thr_reg, m7 ; hev_thresh
 
     ; align stack
     mov       stack_reg, rsp         ; backup stack pointer
     and             rsp, ~(mmsize-1) ; align stack
+%if mmsize == 16
+    sub             rsp, mmsize * 7
+%else
     sub             rsp, mmsize * 8  ; stack layout: [0]=E, [1]=I, [2]=hev_thr
                                      ;               [3]=hev() result
                                      ;               [4]=filter tmp result
                                      ;               [5]/[6] = p2/q2 backup
                                      ;               [7]=lim_res sign result
+%endif
 
 %define flim_E   [rsp]
 %define flim_I   [rsp+mmsize]
@@ -2003,7 +2225,11 @@ cglobal vp8_%2_loop_filter16y_mbedge_%1, 5, %3, %5
 %define q0backup [rsp+mmsize*4]
 %define p2backup [rsp+mmsize*5]
 %define q2backup [rsp+mmsize*6]
+%if mmsize == 16
+%define lim_sign [rsp]
+%else
 %define lim_sign [rsp+mmsize*7]
+%endif
 
     mova         flim_E, m0
     mova         flim_I, m1
@@ -2020,12 +2246,12 @@ cglobal vp8_%2_loop_filter16y_mbedge_%1, 5, %3, %5
 %define q0backup m8
 %define p2backup m13
 %define q2backup m14
-%define lim_sign m15
+%define lim_sign m9
 
     ; splat function arguments
-    SPLATB_REG   flim_E, E_reg, %1   ; E
-    SPLATB_REG   flim_I, I_reg, %1   ; I
-    SPLATB_REG  hev_thr, hev_thr_reg, %1 ; hev_thresh
+    SPLATB_REG   flim_E, E_reg, m7   ; E
+    SPLATB_REG   flim_I, I_reg, m7   ; I
+    SPLATB_REG  hev_thr, hev_thr_reg, m7 ; hev_thresh
 %endif
 
 %if mmsize == 8 && %4 == 16 ; mmx/mmxext
@@ -2366,7 +2592,11 @@ cglobal vp8_%2_loop_filter16y_mbedge_%1, 5, %3, %5
     paddusb          m4, m1          ; q0-f1
 
     ; filter_mbedge (m2-m5 = p1-q1; lim_res carries w)
+%if ssse3_or_higher
+    mova             m7, [pb_1]
+%else
     mova             m7, [pw_63]
+%endif
 %ifdef m8
     SWAP              1, 8
 %else
@@ -2375,15 +2605,40 @@ cglobal vp8_%2_loop_filter16y_mbedge_%1, 5, %3, %5
     pxor             m0, m0
     mova             m6, m1
     pcmpgtb          m0, m1         ; which are negative
+%if ssse3_or_higher
+    punpcklbw        m6, m7         ; interleave with "1" for rounding
+    punpckhbw        m1, m7
+%else
     punpcklbw        m6, m0         ; signed byte->word
     punpckhbw        m1, m0
+%endif
     mova       lim_sign, m0
+%if ssse3_or_higher
+    mova             m7, [pb_27_63]
+%ifndef m8
+    mova        lim_res, m1
+%endif
+%ifdef m10
+    SWAP              0, 10         ; don't lose lim_sign copy
+%endif
+    mova             m0, m7
+    pmaddubsw        m7, m6
+    SWAP              6, 7
+    pmaddubsw        m0, m1
+    SWAP              1, 0
+%ifdef m10
+    SWAP              0, 10
+%else
+    mova             m0, lim_sign
+%endif
+%else
     mova       mask_res, m6         ; backup for later in filter
     mova        lim_res, m1
     pmullw          m6, [pw_27]
     pmullw          m1, [pw_27]
     paddw           m6, m7
     paddw           m1, m7
+%endif
     psraw           m6, 7
     psraw           m1, 7
     packsswb        m6, m1          ; a0
@@ -2391,18 +2646,39 @@ cglobal vp8_%2_loop_filter16y_mbedge_%1, 5, %3, %5
     psubb           m1, m6
     pand            m1, m0          ; -a0
     pandn           m0, m6          ; +a0
+%if ssse3_or_higher
+    mova            m6, [pb_18_63]  ; pipelining
+%endif
     psubusb         m3, m1
     paddusb         m4, m1
     paddusb         m3, m0          ; p0+a0
     psubusb         m4, m0          ; q0-a0
 
+%if ssse3_or_higher
+    SWAP             6, 7
+%ifdef m10
+    SWAP             1, 10
+%else
+    mova            m1, lim_res
+%endif
+    mova            m0, m7
+    pmaddubsw       m7, m6
+    SWAP             6, 7
+    pmaddubsw       m0, m1
+    SWAP             1, 0
+%ifdef m10
+    SWAP             0, 10
+%endif
+    mova            m0, lim_sign
+%else
     mova            m6, mask_res
     mova            m1, lim_res
-    mova            m0, lim_sign
     pmullw          m6, [pw_18]
     pmullw          m1, [pw_18]
     paddw           m6, m7
     paddw           m1, m7
+%endif
+    mova            m0, lim_sign
     psraw           m6, 7
     psraw           m1, 7
     packsswb        m6, m1          ; a1
@@ -2410,11 +2686,27 @@ cglobal vp8_%2_loop_filter16y_mbedge_%1, 5, %3, %5
     psubb           m1, m6
     pand            m1, m0          ; -a1
     pandn           m0, m6          ; +a1
+%if ssse3_or_higher
+    mova            m6, [pb_9_63]
+%endif
     psubusb         m2, m1
     paddusb         m5, m1
     paddusb         m2, m0          ; p1+a1
     psubusb         m5, m0          ; q1-a1
 
+%if ssse3_or_higher
+    SWAP             6, 7
+%ifdef m10
+    SWAP             1, 10
+%else
+    mova            m1, lim_res
+%endif
+    mova            m0, m7
+    pmaddubsw       m7, m6
+    SWAP             6, 7
+    pmaddubsw       m0, m1
+    SWAP             1, 0
+%else
 %ifdef m8
     SWAP             6, 12
     SWAP             1, 8
@@ -2426,8 +2718,9 @@ cglobal vp8_%2_loop_filter16y_mbedge_%1, 5, %3, %5
     pmullw          m1, [pw_9]
     paddw           m6, m7
     paddw           m1, m7
-%ifdef m15
-    SWAP             7, 15
+%endif
+%ifdef m9
+    SWAP             7, 9
 %else
     mova            m7, lim_sign
 %endif
@@ -2479,14 +2772,20 @@ cglobal vp8_%2_loop_filter16y_mbedge_%1, 5, %3, %5
 %if mmsize == 8 ; mmx/mmxext (h)
     WRITE_4x2D        1, 2, 3, 4, dst_reg, dst2_reg, mstride_reg, stride_reg
     add         dst_reg, 4
-    WRITE_8W         m5, m6, dst2_reg, dst_reg, mstride_reg, stride_reg
+    WRITE_2x4W       m5, m6, dst2_reg, dst_reg, mstride_reg, stride_reg
 %else ; sse2 (h)
     lea        dst8_reg, [dst8_reg+mstride_reg+1]
     WRITE_4x4D        1, 2, 3, 4, dst_reg, dst2_reg, dst8_reg, mstride_reg, stride_reg, %4
-    add         dst_reg, 4
-    add        dst8_reg, 4
-    WRITE_8W         m5, m5, dst2_reg, dst_reg,  mstride_reg, stride_reg
-    WRITE_8W         m6, m6, dst2_reg, dst8_reg, mstride_reg, stride_reg
+    lea         dst_reg, [dst2_reg+mstride_reg+4]
+    lea        dst8_reg, [dst8_reg+mstride_reg+4]
+%ifidn %1, sse4
+    add        dst2_reg, 4
+%endif
+    WRITE_8W         m5, dst2_reg, dst_reg,  mstride_reg, stride_reg
+%ifidn %1, sse4
+    lea        dst2_reg, [dst8_reg+ stride_reg]
+%endif
+    WRITE_8W         m6, dst2_reg, dst8_reg, mstride_reg, stride_reg
 %endif
 %endif
 
@@ -2516,22 +2815,44 @@ cglobal vp8_%2_loop_filter16y_mbedge_%1, 5, %3, %5
 %endmacro
 
 INIT_MMX
-MBEDGE_LOOPFILTER mmx,    v, 6, 16, 8
-MBEDGE_LOOPFILTER mmx,    h, 6, 16, 8
-MBEDGE_LOOPFILTER mmxext, v, 6, 16, 8
-MBEDGE_LOOPFILTER mmxext, h, 6, 16, 8
+%define SPLATB_REG SPLATB_REG_MMX
+MBEDGE_LOOPFILTER mmx,    v, 6, 16, 0
+MBEDGE_LOOPFILTER mmx,    h, 6, 16, 0
+MBEDGE_LOOPFILTER mmx,    v, 6,  8, 0
+MBEDGE_LOOPFILTER mmx,    h, 6,  8, 0
 
-MBEDGE_LOOPFILTER mmx,    v, 6,  8, 8
-MBEDGE_LOOPFILTER mmx,    h, 6,  8, 8
-MBEDGE_LOOPFILTER mmxext, v, 6,  8, 8
-MBEDGE_LOOPFILTER mmxext, h, 6,  8, 8
+%define SPLATB_REG SPLATB_REG_MMXEXT
+MBEDGE_LOOPFILTER mmxext, v, 6, 16, 0
+MBEDGE_LOOPFILTER mmxext, h, 6, 16, 0
+MBEDGE_LOOPFILTER mmxext, v, 6,  8, 0
+MBEDGE_LOOPFILTER mmxext, h, 6,  8, 0
 
 INIT_XMM
-MBEDGE_LOOPFILTER sse2,   v, 5, 16, 16
+%define SPLATB_REG SPLATB_REG_SSE2
+%define WRITE_8W   WRITE_8W_SSE2
+MBEDGE_LOOPFILTER sse2,   v, 5, 16, 15
 %ifdef m8
-MBEDGE_LOOPFILTER sse2,   h, 5, 16, 16
+MBEDGE_LOOPFILTER sse2,   h, 5, 16, 15
 %else
-MBEDGE_LOOPFILTER sse2,   h, 6, 16, 16
+MBEDGE_LOOPFILTER sse2,   h, 6, 16, 15
 %endif
-MBEDGE_LOOPFILTER sse2,   v, 6,  8, 16
-MBEDGE_LOOPFILTER sse2,   h, 6,  8, 16
+MBEDGE_LOOPFILTER sse2,   v, 6,  8, 15
+MBEDGE_LOOPFILTER sse2,   h, 6,  8, 15
+
+%define SPLATB_REG SPLATB_REG_SSSE3
+MBEDGE_LOOPFILTER ssse3,  v, 5, 16, 15
+%ifdef m8
+MBEDGE_LOOPFILTER ssse3,  h, 5, 16, 15
+%else
+MBEDGE_LOOPFILTER ssse3,  h, 6, 16, 15
+%endif
+MBEDGE_LOOPFILTER ssse3,  v, 6,  8, 15
+MBEDGE_LOOPFILTER ssse3,  h, 6,  8, 15
+
+%define WRITE_8W   WRITE_8W_SSE4
+%ifdef m8
+MBEDGE_LOOPFILTER sse4,   h, 5, 16, 15
+%else
+MBEDGE_LOOPFILTER sse4,   h, 6, 16, 15
+%endif
+MBEDGE_LOOPFILTER sse4,   h, 6,  8, 15
