@@ -1,8 +1,6 @@
 OBJS-$(CONFIG_MLP_DECODER)             += x86/mlpdsp.o
 OBJS-$(CONFIG_TRUEHD_DECODER)          += x86/mlpdsp.o
 
-YASM-OBJS-$(CONFIG_DCT)                += x86/dct32_sse.o
-
 YASM-OBJS-FFT-$(HAVE_AMD3DNOW)         += x86/fft_3dn.o
 YASM-OBJS-FFT-$(HAVE_AMD3DNOWEXT)      += x86/fft_3dn2.o
 YASM-OBJS-FFT-$(HAVE_SSE)              += x86/fft_sse.o
@@ -23,7 +21,11 @@ YASM-OBJS-$(CONFIG_VC1_DECODER)        += x86/vc1dsp_yasm.o
 MMX-OBJS-$(CONFIG_AC3DSP)              += x86/ac3dsp_mmx.o
 YASM-OBJS-$(CONFIG_AC3DSP)             += x86/ac3dsp.o
 MMX-OBJS-$(CONFIG_CAVS_DECODER)        += x86/cavsdsp_mmx.o
-MMX-OBJS-$(CONFIG_MPEGAUDIODSP)        += x86/mpegaudiodec_mmx.o
+MMX-OBJS-$(CONFIG_MP1FLOAT_DECODER)    += x86/mpegaudiodec_mmx.o
+MMX-OBJS-$(CONFIG_MP2FLOAT_DECODER)    += x86/mpegaudiodec_mmx.o
+MMX-OBJS-$(CONFIG_MP3FLOAT_DECODER)    += x86/mpegaudiodec_mmx.o
+MMX-OBJS-$(CONFIG_MP3ON4FLOAT_DECODER) += x86/mpegaudiodec_mmx.o
+MMX-OBJS-$(CONFIG_MP3ADUFLOAT_DECODER) += x86/mpegaudiodec_mmx.o
 MMX-OBJS-$(CONFIG_PNG_DECODER)         += x86/png_mmx.o
 MMX-OBJS-$(CONFIG_ENCODERS)            += x86/dsputilenc_mmx.o
 YASM-OBJS-$(CONFIG_ENCODERS)           += x86/dsputilenc_yasm.o
@@ -57,3 +59,4 @@ OBJS-$(HAVE_MMX)                       += x86/dnxhd_mmx.o               \
                                           x86/mpegvideo_mmx.o           \
                                           x86/simple_idct_mmx.o         \
 
+MMX-OBJS-$(CONFIG_DCT)                 += x86/dct32_sse.o

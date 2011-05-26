@@ -104,7 +104,6 @@ void avcodec_register_all(void)
     REGISTER_DECODER (EIGHTBPS, eightbps);
     REGISTER_DECODER (EIGHTSVX_EXP, eightsvx_exp);
     REGISTER_DECODER (EIGHTSVX_FIB, eightsvx_fib);
-    REGISTER_DECODER (EIGHTSVX_RAW, eightsvx_raw);
     REGISTER_DECODER (ESCAPE124, escape124);
     REGISTER_ENCDEC  (FFV1, ffv1);
     REGISTER_ENCDEC  (FFVHUFF, ffvhuff);
@@ -131,7 +130,6 @@ void avcodec_register_all(void)
     REGISTER_DECODER (INDEO3, indeo3);
     REGISTER_DECODER (INDEO5, indeo5);
     REGISTER_DECODER (INTERPLAY_VIDEO, interplay_video);
-    REGISTER_DECODER (JPEG2000, jpeg2000);
     REGISTER_ENCDEC  (JPEGLS, jpegls);
     REGISTER_DECODER (JV, jv);
     REGISTER_DECODER (KGV1, kgv1);

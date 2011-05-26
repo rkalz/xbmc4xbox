@@ -52,7 +52,6 @@ typedef struct {
 
 typedef struct {
     DSPContext dsp;
-    MPADSPContext mpadsp;
     GetBitContext gb;
     int IS, MSS, gapless;
     int lastframelen;

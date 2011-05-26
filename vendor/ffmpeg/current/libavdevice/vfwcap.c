@@ -29,6 +29,8 @@
  * Remove this when MinGW incorporates them. */
 #define HWND_MESSAGE                ((HWND)-3)
 
+#define BI_RGB                      0
+
 /* End of missing MinGW defines */
 
 struct vfw_ctx {

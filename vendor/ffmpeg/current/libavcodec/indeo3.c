@@ -1,4 +1,7 @@
 /*
+ * Intel Indeo 3 (IV31, IV32, etc.) video decoder for ffmpeg
+ * written, produced, and directed by Alan Smithee
+ *
  * This file is part of FFmpeg.
  *
  * FFmpeg is free software; you can redistribute it and/or
@@ -16,14 +19,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-/**
- * @file
- * Intel Indeo 3 (IV31, IV32, etc.) video decoder for FFmpeg
- * written, produced, and directed by Alan Smithee
- *
- * For some documentation see:
- * http://wiki.multimedia.cx/index.php?title=Indeo_3
- */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "libavutil/imgutils.h"
 #include "avcodec.h"
@@ -1136,9 +1134,6 @@ static av_cold int indeo3_decode_end(AVCodecContext *avctx)
     Indeo3DecodeContext *s = avctx->priv_data;
 
     iv_free_func(s);
-
-    if (s->frame.data[0])
-        avctx->release_buffer(avctx, &s->frame);
 
     return 0;
 }

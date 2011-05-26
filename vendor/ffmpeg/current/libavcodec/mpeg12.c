@@ -2342,7 +2342,6 @@ static int decode_chunks(AVCodecContext *avctx,
             if(s2->pict_type != AV_PICTURE_TYPE_B || avctx->skip_frame <= AVDISCARD_DEFAULT){
                 if(HAVE_THREADS && avctx->active_thread_type&FF_THREAD_SLICE){
                     int i;
-                    assert(avctx->thread_count > 1);
 
                     avctx->execute(avctx, slice_decode_thread,  &s2->thread_context[0], NULL, s->slice_count, sizeof(void*));
                     for(i=0; i<s->slice_count; i++)
@@ -2477,10 +2476,18 @@ static int decode_chunks(AVCodecContext *avctx,
                 /* Skip P-frames if we do not have a reference frame or we have an invalid header. */
                     if(s2->pict_type==AV_PICTURE_TYPE_P && !s->sync) break;
                 }
+#if FF_API_HURRY_UP
+                /* Skip B-frames if we are in a hurry. */
+                if(avctx->hurry_up && s2->pict_type==FF_B_TYPE) break;
+#endif
                 if(  (avctx->skip_frame >= AVDISCARD_NONREF && s2->pict_type==AV_PICTURE_TYPE_B)
                     ||(avctx->skip_frame >= AVDISCARD_NONKEY && s2->pict_type!=AV_PICTURE_TYPE_I)
                     || avctx->skip_frame >= AVDISCARD_ALL)
                     break;
+#if FF_API_HURRY_UP
+                /* Skip everything if we are in a hurry>=5. */
+                if(avctx->hurry_up>=5) break;
+#endif
 
                 if (!s->mpeg_enc_ctx_allocated) break;
 
@@ -2511,7 +2518,6 @@ static int decode_chunks(AVCodecContext *avctx,
 
                 if(HAVE_THREADS && avctx->active_thread_type&FF_THREAD_SLICE){
                     int threshold= (s2->mb_height*s->slice_count + avctx->thread_count/2) / avctx->thread_count;
-                    assert(avctx->thread_count > 1);
                     if(threshold <= mb_y){
                         MpegEncContext *thread_context= s2->thread_context[s->slice_count];
 

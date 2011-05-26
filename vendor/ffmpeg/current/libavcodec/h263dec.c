@@ -604,10 +604,18 @@ retry:
 
     /* skip B-frames if we don't have reference frames */
     if(s->last_picture_ptr==NULL && (s->pict_type==AV_PICTURE_TYPE_B || s->dropable)) return get_consumed_bytes(s, buf_size);
+#if FF_API_HURRY_UP
+    /* skip b frames if we are in a hurry */
+    if(avctx->hurry_up && s->pict_type==FF_B_TYPE) return get_consumed_bytes(s, buf_size);
+#endif
     if(   (avctx->skip_frame >= AVDISCARD_NONREF && s->pict_type==AV_PICTURE_TYPE_B)
        || (avctx->skip_frame >= AVDISCARD_NONKEY && s->pict_type!=AV_PICTURE_TYPE_I)
        ||  avctx->skip_frame >= AVDISCARD_ALL)
         return get_consumed_bytes(s, buf_size);
+#if FF_API_HURRY_UP
+    /* skip everything if we are in a hurry>=5 */
+    if(avctx->hurry_up>=5) return get_consumed_bytes(s, buf_size);
+#endif
 
     if(s->next_p_frame_damaged){
         if(s->pict_type==AV_PICTURE_TYPE_B)
@@ -681,17 +689,21 @@ retry:
 frame_end:
     /* divx 5.01+ bistream reorder stuff */
     if(s->codec_id==CODEC_ID_MPEG4 && s->divx_packed){
-        int current_pos= s->gb.buffer == s->bitstream_buffer ? 0 : (get_bits_count(&s->gb)>>3);
+        int current_pos= get_bits_count(&s->gb)>>3;
         int startcode_found=0;
 
         if(buf_size - current_pos > 5){
             int i;
-            for(i=current_pos; i<buf_size-4; i++){
+            for(i=current_pos; i<buf_size-3; i++){
                 if(buf[i]==0 && buf[i+1]==0 && buf[i+2]==1 && buf[i+3]==0xB6){
-                    startcode_found=!(buf[i+4]&0x40);
+                    startcode_found=1;
                     break;
                 }
             }
+        }
+        if(s->gb.buffer == s->bitstream_buffer && buf_size>7 && s->xvid_build>=0){ //xvid style
+            startcode_found=1;
+            current_pos=0;
         }
 
         if(startcode_found){

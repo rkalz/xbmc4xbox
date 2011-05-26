@@ -316,7 +316,7 @@ int ff_alloc_picture(MpegEncContext *s, Picture *pic, int shared){
     s->prev_pict_types[0]= s->dropable ? AV_PICTURE_TYPE_B : s->pict_type;
     if(pic->age < PREV_PICT_TYPES_BUFFER_SIZE && s->prev_pict_types[pic->age] == AV_PICTURE_TYPE_B)
         pic->age= INT_MAX; // Skipped MBs in B-frames are quite rare in MPEG-1/2 and it is a bit tricky to skip them anyway.
-    pic->owner2 = NULL;
+    pic->owner2 = s;
 
     return 0;
 fail: //for the FF_ALLOCZ_OR_GOTO macro
@@ -955,7 +955,7 @@ void ff_release_unused_pictures(MpegEncContext *s, int remove_current)
     /* release non reference frames */
     for(i=0; i<s->picture_count; i++){
         if(s->picture[i].data[0] && !s->picture[i].reference
-           && (!s->picture[i].owner2 || s->picture[i].owner2 == s)
+           && s->picture[i].owner2 == s
            && (remove_current || &s->picture[i] != s->current_picture_ptr)
            /*&& s->picture[i].type!=FF_BUFFER_TYPE_SHARED*/){
             free_frame_buffer(s, &s->picture[i]);
@@ -1137,6 +1137,9 @@ int MPV_frame_start(MpegEncContext *s, AVCodecContext *avctx)
         }
     }
 
+#if FF_API_HURRY_UP
+    s->hurry_up= s->avctx->hurry_up;
+#endif
     s->error_recognition= avctx->error_recognition;
 
     /* set dequantizer, we can't do it during init as it might change for mpeg4
@@ -1722,10 +1725,8 @@ static av_always_inline void mpeg_motion_lowres(MpegEncContext *s,
     if(!CONFIG_GRAY || !(s->flags&CODEC_FLAG_GRAY)){
         uvsx= (uvsx << 2) >> lowres;
         uvsy= (uvsy << 2) >> lowres;
-        if(h >> s->chroma_y_shift){
-            pix_op[op_index](dest_cb, ptr_cb, uvlinesize, h >> s->chroma_y_shift, uvsx, uvsy);
-            pix_op[op_index](dest_cr, ptr_cr, uvlinesize, h >> s->chroma_y_shift, uvsx, uvsy);
-        }
+        pix_op[op_index](dest_cb, ptr_cb, uvlinesize, h >> s->chroma_y_shift, uvsx, uvsy);
+        pix_op[op_index](dest_cr, ptr_cr, uvlinesize, h >> s->chroma_y_shift, uvsx, uvsy);
     }
     //FIXME h261 lowres loop filter
 }
@@ -2147,6 +2148,9 @@ void MPV_decode_mb_internal(MpegEncContext *s, DCTELEM block[12][64],
             }
 
             /* skip dequant / idct if we are really late ;) */
+#if FF_API_HURRY_UP
+            if(s->hurry_up>1) goto skip_idct;
+#endif
             if(s->avctx->skip_idct){
                 if(  (s->avctx->skip_idct >= AVDISCARD_NONREF && s->pict_type == AV_PICTURE_TYPE_B)
                    ||(s->avctx->skip_idct >= AVDISCARD_NONKEY && s->pict_type != AV_PICTURE_TYPE_I)
