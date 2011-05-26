@@ -21,7 +21,6 @@
 
 //#define DEBUG
 
-#include "libavutil/bswap.h"
 #include "libavutil/common.h"
 #include "libavutil/avstring.h"
 #include "libavcodec/mpegaudio.h"
@@ -358,14 +357,15 @@ static int asf_read_stream_properties(AVFormatContext *s, int64_t size)
         /* This is true for all paletted codecs implemented in ffmpeg */
         if (st->codec->extradata_size && (st->codec->bits_per_coded_sample <= 8)) {
             int av_unused i;
+            st->codec->palctrl = av_mallocz(sizeof(AVPaletteControl));
 #if HAVE_BIGENDIAN
             for (i = 0; i < FFMIN(st->codec->extradata_size, AVPALETTE_SIZE)/4; i++)
-                asf_st->palette[i] = av_bswap32(((uint32_t*)st->codec->extradata)[i]);
+                st->codec->palctrl->palette[i] = av_bswap32(((uint32_t*)st->codec->extradata)[i]);
 #else
-            memcpy(asf_st->palette, st->codec->extradata,
-                   FFMIN(st->codec->extradata_size, AVPALETTE_SIZE));
+            memcpy(st->codec->palctrl->palette, st->codec->extradata,
+                    FFMIN(st->codec->extradata_size, AVPALETTE_SIZE));
 #endif
-            asf_st->palette_changed = 1;
+            st->codec->palctrl->palette_changed = 1;
         }
 
         st->codec->codec_tag = tag1;
@@ -849,10 +849,7 @@ static int asf_read_frame_header(AVFormatContext *s, AVIOContext *pb){
     }
     if (asf->packet_flags & 0x01) {
         DO_2BITS(asf->packet_segsizetype >> 6, asf->packet_frag_size, 0); // 0 is illegal
-        if (rsize > asf->packet_size_left) {
-            av_log(s, AV_LOG_ERROR, "packet_replic_size is invalid\n");
-            return -1;
-        } else if(asf->packet_frag_size > asf->packet_size_left - rsize){
+        if(asf->packet_frag_size > asf->packet_size_left - rsize){
             if (asf->packet_frag_size > asf->packet_size_left - rsize + asf->packet_padsize) {
                 av_log(s, AV_LOG_ERROR, "packet_frag_size is invalid (%d-%d)\n", asf->packet_size_left, rsize);
                 return -1;
@@ -971,17 +968,6 @@ static int ff_asf_parse_packet(AVFormatContext *s, AVIOContext *pb, AVPacket *pk
             asf_st->pkt.stream_index = asf->stream_index;
             asf_st->pkt.pos =
             asf_st->packet_pos= asf->packet_pos;
-            if (asf_st->pkt.data && asf_st->palette_changed) {
-                uint8_t *pal;
-                pal = av_packet_new_side_data(pkt, AV_PKT_DATA_PALETTE,
-                                              AVPALETTE_SIZE);
-                if (!pal) {
-                    av_log(s, AV_LOG_ERROR, "Cannot append palette to packet\n");
-                } else {
-                    memcpy(pal, asf_st->palette, AVPALETTE_SIZE);
-                    asf_st->palette_changed = 0;
-                }
-            }
 //printf("new packet: stream:%d key:%d packet_key:%d audio:%d size:%d\n",
 //asf->stream_index, asf->packet_key_frame, asf_st->pkt.flags & AV_PKT_FLAG_KEY,
 //s->streams[asf->stream_index]->codec->codec_type == AVMEDIA_TYPE_AUDIO, asf->packet_obj_size);
@@ -1138,7 +1124,13 @@ static void asf_reset_header(AVFormatContext *s)
 
 static int asf_read_close(AVFormatContext *s)
 {
+    int i;
     asf_reset_header(s);
+
+    for(i=0;i<s->nb_streams;i++) {
+        AVStream *st = s->streams[i];
+        av_free(st->codec->palctrl);
+    }
 
     return 0;
 }
@@ -1265,22 +1257,21 @@ static int asf_read_seek(AVFormatContext *s, int stream_index, int64_t pts, int 
     if (!asf->index_read)
         asf_build_simple_index(s, stream_index);
 
-    if((asf->index_read && st->index_entries)){
+    if(!(asf->index_read && st->index_entries)){
+        if(av_seek_frame_binary(s, stream_index, pts, flags)<0)
+            return -1;
+    }else{
         index= av_index_search_timestamp(st, pts, flags);
-        if(index >= 0) {
-            /* find the position */
-            pos = st->index_entries[index].pos;
+        if(index<0)
+            return -1;
 
-            /* do the seek */
-            av_log(s, AV_LOG_DEBUG, "SEEKTO: %"PRId64"\n", pos);
-            avio_seek(s->pb, pos, SEEK_SET);
-            asf_reset_header(s);
-            return 0;
-        }
+        /* find the position */
+        pos = st->index_entries[index].pos;
+
+        /* do the seek */
+        av_log(s, AV_LOG_DEBUG, "SEEKTO: %"PRId64"\n", pos);
+        avio_seek(s->pb, pos, SEEK_SET);
     }
-    /* no index or seeking by index failed */
-    if(av_seek_frame_binary(s, stream_index, pts, flags)<0)
-        return -1;
     asf_reset_header(s);
     return 0;
 }
@@ -1295,5 +1286,4 @@ AVInputFormat ff_asf_demuxer = {
     asf_read_close,
     asf_read_seek,
     asf_read_pts,
-    .flags = AVFMT_NOBINSEARCH | AVFMT_NOGENSEARCH,
 };

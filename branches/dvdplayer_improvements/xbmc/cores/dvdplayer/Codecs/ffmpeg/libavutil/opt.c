@@ -261,7 +261,7 @@ static int av_get_number(void *obj, const char *name, const AVOption **o_out, do
 {
     const AVOption *o= av_find_opt(obj, name, NULL, 0, 0);
     void *dst;
-    if (!o || (o->offset<=0 && o->type != FF_OPT_TYPE_CONST))
+    if (!o || o->offset<=0)
         goto error;
 
     dst= ((uint8_t*)obj) + o->offset;
@@ -277,7 +277,6 @@ static int av_get_number(void *obj, const char *name, const AVOption **o_out, do
     case FF_OPT_TYPE_RATIONAL:  *intnum= ((AVRational*)dst)->num;
                                 *den   = ((AVRational*)dst)->den;
                                                         return 0;
-    case FF_OPT_TYPE_CONST:     *intnum= o->default_val.dbl;return 0;
     }
 error:
     *den=*intnum=0;
@@ -313,8 +312,7 @@ int64_t av_get_int(void *obj, const char *name, const AVOption **o_out)
     double num=1;
     int den=1;
 
-    if (av_get_number(obj, name, o_out, &num, &den, &intnum) < 0)
-        return -1;
+    av_get_number(obj, name, o_out, &num, &den, &intnum);
     return num*intnum/den;
 }
 

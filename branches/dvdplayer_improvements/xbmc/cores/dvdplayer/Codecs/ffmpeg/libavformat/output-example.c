@@ -443,10 +443,10 @@ int main(int argc, char **argv)
     filename = argv[1];
 
     /* allocate the output media context */
-    avformat_alloc_output_context2(&oc, NULL, NULL, filename);
+    oc = avformat_alloc_output_context(NULL, NULL, filename);
     if (!oc) {
         printf("Could not deduce output format from file extension: using MPEG.\n");
-        avformat_alloc_output_context2(&oc, NULL, "mpeg", filename);
+        oc = avformat_alloc_output_context("mpeg", NULL, filename);
     }
     if (!oc) {
         exit(1);
@@ -475,7 +475,7 @@ int main(int argc, char **argv)
 
     /* open the output file, if needed */
     if (!(fmt->flags & AVFMT_NOFILE)) {
-        if (avio_open(&oc->pb, filename, AVIO_FLAG_WRITE) < 0) {
+        if (avio_open(&oc->pb, filename, AVIO_WRONLY) < 0) {
             fprintf(stderr, "Could not open '%s'\n", filename);
             exit(1);
         }

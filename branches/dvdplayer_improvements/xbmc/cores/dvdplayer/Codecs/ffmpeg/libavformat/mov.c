@@ -718,7 +718,7 @@ static int mov_read_enda(MOVContext *c, AVIOContext *pb, MOVAtom atom)
         return 0;
     st = c->fc->streams[c->fc->nb_streams-1];
 
-    little_endian = avio_rb16(pb) & 0xFF;
+    little_endian = avio_rb16(pb);
     av_dlog(c->fc, "enda %d\n", little_endian);
     if (little_endian == 1) {
         switch (st->codec->codec_id) {
@@ -1030,6 +1030,7 @@ int ff_mov_read_stsd_entries(MOVContext *c, AVIOContext *pb, int entries)
                 unsigned int color_start, color_count, color_end;
                 unsigned char r, g, b;
 
+                st->codec->palctrl = av_malloc(sizeof(*st->codec->palctrl));
                 if (color_greyscale) {
                     int color_index, color_dec;
                     /* compute the greyscale palette */
@@ -1039,7 +1040,7 @@ int ff_mov_read_stsd_entries(MOVContext *c, AVIOContext *pb, int entries)
                     color_dec = 256 / (color_count - 1);
                     for (j = 0; j < color_count; j++) {
                         r = g = b = color_index;
-                        sc->palette[j] =
+                        st->codec->palctrl->palette[j] =
                             (r << 16) | (g << 8) | (b);
                         color_index -= color_dec;
                         if (color_index < 0)
@@ -1060,7 +1061,7 @@ int ff_mov_read_stsd_entries(MOVContext *c, AVIOContext *pb, int entries)
                         r = color_table[j * 3 + 0];
                         g = color_table[j * 3 + 1];
                         b = color_table[j * 3 + 2];
-                        sc->palette[j] =
+                        st->codec->palctrl->palette[j] =
                             (r << 16) | (g << 8) | (b);
                     }
                 } else {
@@ -1082,12 +1083,12 @@ int ff_mov_read_stsd_entries(MOVContext *c, AVIOContext *pb, int entries)
                             avio_r8(pb);
                             b = avio_r8(pb);
                             avio_r8(pb);
-                            sc->palette[j] =
+                            st->codec->palctrl->palette[j] =
                                 (r << 16) | (g << 8) | (b);
                         }
                     }
                 }
-                sc->has_palette = 1;
+                st->codec->palctrl->palette_changed = 1;
             }
         } else if(st->codec->codec_type==AVMEDIA_TYPE_AUDIO) {
             int bits_per_sample, flags;
@@ -1527,7 +1528,7 @@ static void mov_build_index(MOVContext *mov, AVStream *st)
         int rescaled = sc->time_offset < 0 ? av_rescale(sc->time_offset, sc->time_scale, mov->time_scale) : sc->time_offset;
         current_dts = -rescaled;
         if (sc->ctts_data && sc->stts_data &&
-            sc->ctts_data[0].duration / FFMAX(sc->stts_data[0].duration, 1) > 16) {
+            sc->ctts_data[0].duration / sc->stts_data[0].duration > 16) {
             /* more than 16 frames delay, dts are likely wrong
                this happens with files created by iMovie */
             sc->wrong_dts = 1;
@@ -1689,13 +1690,13 @@ static void mov_build_index(MOVContext *mov, AVStream *st)
     }
 }
 
-static int mov_open_dref(AVIOContext **pb, const char *src, MOVDref *ref)
+static int mov_open_dref(AVIOContext **pb, char *src, MOVDref *ref)
 {
     /* try relative path, we do not try the absolute because it can leak information about our
        system to an attacker */
     if (ref->nlvl_to > 0 && ref->nlvl_from > 0) {
         char filename[1024];
-        const char *src_path;
+        char *src_path;
         int i, l;
 
         /* find a source dir */
@@ -1724,7 +1725,7 @@ static int mov_open_dref(AVIOContext **pb, const char *src, MOVDref *ref)
 
             av_strlcat(filename, ref->path + l + 1, 1024);
 
-            if (!avio_open(pb, filename, AVIO_FLAG_READ))
+            if (!avio_open(pb, filename, AVIO_RDONLY))
                 return 0;
         }
     }
@@ -2465,17 +2466,6 @@ static int mov_read_packet(AVFormatContext *s, AVPacket *pkt)
         ret = av_get_packet(sc->pb, pkt, sample->size);
         if (ret < 0)
             return ret;
-        if (sc->has_palette) {
-            uint8_t *pal;
-
-            pal = av_packet_new_side_data(pkt, AV_PKT_DATA_PALETTE, AVPALETTE_SIZE);
-            if (!pal) {
-                av_log(mov->fc, AV_LOG_ERROR, "Cannot append palette to packet\n");
-            } else {
-                memcpy(pal, sc->palette, AVPALETTE_SIZE);
-                sc->has_palette = 0;
-            }
-        }
 #if CONFIG_DV_DEMUXER
         if (mov->dv_demux && sc->dv_audio_container) {
             dv_produce_packet(mov->dv_demux, pkt, pkt->data, pkt->size, pkt->pos);

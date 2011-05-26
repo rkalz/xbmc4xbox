@@ -77,13 +77,8 @@
 #define MATROSKA_ID_TRACKNUMBER 0xD7
 #define MATROSKA_ID_TRACKUID   0x73C5
 #define MATROSKA_ID_TRACKTYPE  0x83
-#define MATROSKA_ID_TRACKVIDEO     0xE0
-#define MATROSKA_ID_TRACKAUDIO     0xE1
-#define MATROSKA_ID_TRACKOPERATION 0xE2
-#define MATROSKA_ID_TRACKCOMBINEPLANES 0xE3
-#define MATROSKA_ID_TRACKPLANE         0xE4
-#define MATROSKA_ID_TRACKPLANEUID      0xE5
-#define MATROSKA_ID_TRACKPLANETYPE     0xE6
+#define MATROSKA_ID_TRACKAUDIO 0xE1
+#define MATROSKA_ID_TRACKVIDEO 0xE0
 #define MATROSKA_ID_CODECID    0x86
 #define MATROSKA_ID_CODECPRIVATE 0x63A2
 #define MATROSKA_ID_CODECNAME  0x258688
@@ -116,7 +111,7 @@
 #define MATROSKA_ID_VIDEOPIXELCROPR 0x54DD
 #define MATROSKA_ID_VIDEODISPLAYUNIT 0x54B2
 #define MATROSKA_ID_VIDEOFLAGINTERLACED 0x9A
-#define MATROSKA_ID_VIDEOSTEREOMODE 0x53B8
+#define MATROSKA_ID_VIDEOSTEREOMODE 0x53B9
 #define MATROSKA_ID_VIDEOASPECTRATIO 0x54B3
 #define MATROSKA_ID_VIDEOCOLORSPACE 0x2EB524
 
@@ -243,10 +238,5 @@ typedef struct CodecMime{
 extern const CodecTags ff_mkv_codec_tags[];
 extern const CodecMime ff_mkv_mime_tags[];
 extern const AVMetadataConv ff_mkv_metadata_conv[];
-extern const char const *matroska_video_stereo_mode[];
-extern const char const *matroska_video_stereo_plane[];
-
-#define MATROSKA_VIDEO_STEREO_MODE_COUNT  15
-#define MATROSKA_VIDEO_STEREO_PLANE_COUNT  3
 
 #endif /* AVFORMAT_MATROSKA_H */
