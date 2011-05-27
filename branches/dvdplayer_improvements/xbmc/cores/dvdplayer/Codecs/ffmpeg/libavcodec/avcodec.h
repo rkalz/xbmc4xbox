@@ -357,6 +357,10 @@ enum CodecID {
     CODEC_ID_SRT,
     CODEC_ID_MICRODVD,
 
+    /* data codecs */
+    CODEC_ID_VBI_DATA= 0x17500,
+    CODEC_ID_VBI_TELETEXT,
+
     /* other specific kind of codecs (generally used for attachments) */
     CODEC_ID_TTF= 0x18000,
 

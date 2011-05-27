@@ -52,6 +52,7 @@ xbmc_configure ()
   --disable-amd3dnow \
   --disable-amd3dnowext \
   --disable-ssse3 \
+  --disable-avx \
   --disable-armv5te \
   --disable-armv6 \
   --disable-armv6t2 \
