@@ -1241,7 +1241,7 @@ void CDVDPlayer::HandlePlaySpeed()
       {
         CLog::Log(LOGDEBUG, "CDVDPlayer::Process - Seeking to catch up");
         __int64 iTime = (__int64)DVD_TIME_TO_MSEC(m_clock.GetClock() + m_State.time_offset + 500000.0 * m_playSpeed / DVD_PLAYSPEED_NORMAL);
-       m_messenger.Put(new CDVDMsgPlayerSeek(iTime, (GetPlaySpeed() < 0), true, false, false, true));
+        m_messenger.Put(new CDVDMsgPlayerSeek(iTime, (GetPlaySpeed() < 0), true, false, false, true));
       }
     }
   }
