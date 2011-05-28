@@ -423,8 +423,6 @@ bool CDVDDemuxFFmpeg::Open(CDVDInputStream* pInput)
   m_bMatroska = strncmp(m_pFormatContext->iformat->name, "matroska", 8) == 0;	// for "matroska.webm"
   m_bAVI = strcmp(m_pFormatContext->iformat->name, "avi") == 0;
 
-  // in combination with libdvdnav seek, av_find_stream_info wont work
-  // so we do this for files only
   if (streaminfo)
   {
     /* too speed up dvd switches, only analyse very short */
@@ -1264,10 +1262,10 @@ void CDVDDemuxFFmpeg::GetStreamCodecName(int iStreamId, CStdString &strName)
       // fourccs have to be 4 characters
       if (strlen(fourcc) == 4)
       {
-      strName = fourcc;
-      strName.MakeLower();
+        strName = fourcc;
+        strName.MakeLower();
         return;
-    }
+      }
     }
 
     if (m_dllAvCodec.IsLoaded())
