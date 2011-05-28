@@ -75,6 +75,10 @@ public:
     VIDEO_NOSKIP,                   // next pictures is not to be skipped by the video renderer
     VIDEO_SET_ASPECT,               // set aspectratio of video
 
+    // audio related messages
+
+    AUDIO_SILENCE,
+
     // subtitle related messages
     SUBTITLE_CLUTCHANGE
   };
