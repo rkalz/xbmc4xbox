@@ -2659,15 +2659,15 @@ void CDVDPlayer::FlushBuffers(bool queued, double pts, bool accurate)
       msg->Wait(&m_bStop, 0);
       msg->Release();
 
+      // purge any pending PLAYER_STARTED messages
+      m_messenger.Flush(CDVDMsg::PLAYER_STARTED);
+
       // we should now wait for init cache
       SetCaching(CACHESTATE_INIT);
       m_CurrentAudio.started    = false;
       m_CurrentVideo.started    = false;
       m_CurrentSubtitle.started = false;
     }
-
-    // purge any pending PLAYER_STARTED messages
-    m_messenger.Flush(CDVDMsg::PLAYER_STARTED);
 
     if(pts != DVD_NOPTS_VALUE)
       m_clock.Discontinuity(pts);
