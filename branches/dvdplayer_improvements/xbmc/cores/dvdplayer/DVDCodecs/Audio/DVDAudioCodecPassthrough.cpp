@@ -375,7 +375,7 @@ int CDVDAudioCodecPassthrough::Decode(BYTE* pData, int iSize)
 #endif
 #ifdef USE_LIBDTS_DECODER
   if(m_Codec == CODEC_ID_DTS)
-+  {
+  {
     m_OutputSize = PaddDTSData(frame, framesize, m_OutputBuffer);
     return len;
   }
