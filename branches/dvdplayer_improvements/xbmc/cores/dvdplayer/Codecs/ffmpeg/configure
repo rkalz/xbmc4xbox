@@ -3096,7 +3096,8 @@ elif enabled ccc; then
 elif enabled gcc; then
     check_cflags -fno-tree-vectorize
     check_cflags -Werror=implicit-function-declaration
-    check_cflags -Wno-unused
+    check_cflags -Werror=missing-prototypes
+    check_cflags -std=gnu99
 elif enabled llvm_gcc; then
     check_cflags -mllvm -stack-alignment=16
 elif enabled clang; then

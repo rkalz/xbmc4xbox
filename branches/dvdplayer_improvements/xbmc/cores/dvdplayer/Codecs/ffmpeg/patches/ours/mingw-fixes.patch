@@ -2,12 +2,11 @@ Index: configure
 ===================================================================
 --- a/configure	(revision 30864)
 +++ b/configure	(working copy)
-@@ -3096,7 +3096,7 @@
- elif enabled gcc; then
+@@ -3097,6 +3097,7 @@
      check_cflags -fno-tree-vectorize
      check_cflags -Werror=implicit-function-declaration
--    check_cflags -Werror=missing-prototypes
-+    check_cflags -Wno-unused
+     check_cflags -Werror=missing-prototypes
++    check_cflags -std=gnu99
  elif enabled llvm_gcc; then
      check_cflags -mllvm -stack-alignment=16
  elif enabled clang; then
