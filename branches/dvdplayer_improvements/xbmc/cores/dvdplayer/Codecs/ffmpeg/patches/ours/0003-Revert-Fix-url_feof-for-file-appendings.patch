@@ -1,7 +1,7 @@
-From 98e492720e3ee5d289f413fe8940f006b5dfac62 Mon Sep 17 00:00:00 2001
+From 7879db650cbdd9fbd2f52a76c0d4dfb7648de23e Mon Sep 17 00:00:00 2001
 From: Jools Wills <jools@oxfordinspire.co.uk>
-Date: Mon, 6 Jun 2011 04:11:30 +0100
-Subject: [PATCH 1/2] Revert "Fix url_feof() for file appendings." - causes playback break on dvd isos with menu at start
+Date: Sun, 12 Jun 2011 00:13:53 +0100
+Subject: [PATCH 3/3] Revert "Fix url_feof() for file appendings."
 
 This reverts commit 3bd624b4ee355328382295af411f5343b1329f43.
 ---

@@ -1,0 +1,134 @@
+From 1cf77fa29ec25dddb5bc86e452a540d9cb7a21c0 Mon Sep 17 00:00:00 2001
+From: Jools Wills <jools@oxfordinspire.co.uk>
+Date: Sun, 12 Jun 2011 00:11:39 +0100
+Subject: [PATCH 2/3] Revert "avi: try to synchronize the points in time of the starts of streams after seeking."
+
+This reverts commit fbfcc8f1b71b51ff87f09e269d22328be5594f40.
+
+Conflicts:
+
+	libavformat/avidec.c
+---
+ libavformat/avidec.c    |   25 ++++++++++++-------------
+ tests/ref/seek/lavf_avi |   16 ++++++++--------
+ 2 files changed, 20 insertions(+), 21 deletions(-)
+
+diff --git a/libavformat/avidec.c b/libavformat/avidec.c
+index 2491687..b6c138f 100644
+--- a/libavformat/avidec.c
++++ b/libavformat/avidec.c
+@@ -55,8 +55,6 @@ typedef struct AVIStream {
+     AVFormatContext *sub_ctx;
+     AVPacket sub_pkt;
+     uint8_t *sub_buffer;
+-
+-    int64_t seek_pos;
+ } AVIStream;
+ 
+ typedef struct {
+@@ -1030,12 +1028,6 @@ resync:
+             ast->packet_size= 0;
+         }
+ 
+-        if(!avi->non_interleaved && pkt->pos >= 0 && ast->seek_pos > pkt->pos){
+-            av_free_packet(pkt);
+-            goto resync;
+-        }
+-        ast->seek_pos= 0;
+-
+         return size;
+     }
+ 
+@@ -1301,7 +1293,7 @@ static int avi_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp
+     AVIContext *avi = s->priv_data;
+     AVStream *st;
+     int i, index;
+-    int64_t pos, pos_min;
++    int64_t pos;
+     AVIStream *ast;
+ 
+     if (!avi->index_loaded) {
+@@ -1338,7 +1330,6 @@ static int avi_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp
+         return 0;
+     }
+ 
+-    pos_min= pos;
+     for(i = 0; i < s->nb_streams; i++) {
+         AVStream *st2 = s->streams[i];
+         AVIStream *ast2 = st2->priv_data;
+@@ -1362,13 +1353,21 @@ static int avi_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp
+                 flags | AVSEEK_FLAG_BACKWARD);
+         if(index<0)
+             index=0;
+-        ast2->seek_pos= st2->index_entries[index].pos;
+-        pos_min= FFMIN(pos_min,ast2->seek_pos);
++
++        if(!avi->non_interleaved){
++            while(index>0 && st2->index_entries[index].pos > pos)
++                index--;
++            while(index+1 < st2->nb_index_entries && st2->index_entries[index].pos < pos)
++                index++;
++        }
++
++//        av_log(s, AV_LOG_DEBUG, "%"PRId64" %d %"PRId64"\n", timestamp, index, st2->index_entries[index].timestamp);
++        /* extract the current frame number */
+         ast2->frame_offset = st2->index_entries[index].timestamp;
+     }
+ 
+     /* do the seek */
+-    avio_seek(s->pb, pos_min, SEEK_SET);
++    avio_seek(s->pb, pos, SEEK_SET);
+     avi->stream_index= -1;
+     return 0;
+ }
+diff --git a/tests/ref/seek/lavf_avi b/tests/ref/seek/lavf_avi
+index 6253960..964f0b8 100644
+--- a/tests/ref/seek/lavf_avi
++++ b/tests/ref/seek/lavf_avi
+@@ -8,27 +8,27 @@ ret: 0         st: 0 flags:1 dts: 0.960000 pts: 0.960000 pos: 301466 size: 27864
+ ret:-1         st: 0 flags:1  ts:-0.320000
+ ret:-1         st: 1 flags:0  ts: 2.586122
+ ret: 0         st: 1 flags:1  ts: 1.462857
+-ret: 0         st: 0 flags:1 dts: 0.960000 pts: 0.960000 pos: 301466 size: 27864
++ret: 0         st: 1 flags:1 dts: 1.018776 pts: 1.018776 pos: 329774 size:   209
+ ret: 0         st:-1 flags:0  ts: 0.365002
+-ret: 0         st: 1 flags:1 dts: 0.470204 pts: 0.470204 pos: 155948 size:   209
++ret: 0         st: 0 flags:1 dts: 0.480000 pts: 0.480000 pos: 156166 size: 27955
+ ret:-1         st:-1 flags:1  ts:-0.740831
+ ret:-1         st: 0 flags:0  ts: 2.160000
+ ret: 0         st: 0 flags:1  ts: 1.040000
+ ret: 0         st: 0 flags:1 dts: 0.960000 pts: 0.960000 pos: 301466 size: 27864
+ ret: 0         st: 1 flags:0  ts:-0.052245
+-ret: 0         st: 0 flags:1 dts: 0.000000 pts: 0.000000 pos:   9908 size: 27867
++ret: 0         st: 1 flags:1 dts: 0.000000 pts: 0.000000 pos:  37784 size:   208
+ ret: 0         st: 1 flags:1  ts: 2.847347
+-ret: 0         st: 0 flags:1 dts: 0.960000 pts: 0.960000 pos: 301466 size: 27864
++ret: 0         st: 1 flags:1 dts: 1.018776 pts: 1.018776 pos: 329774 size:   209
+ ret:-1         st:-1 flags:0  ts: 1.730004
+ ret: 0         st:-1 flags:1  ts: 0.624171
+-ret: 0         st: 1 flags:1 dts: 0.470204 pts: 0.470204 pos: 155948 size:   209
++ret: 0         st: 0 flags:1 dts: 0.480000 pts: 0.480000 pos: 156166 size: 27955
+ ret: 0         st: 0 flags:0  ts:-0.480000
+ ret: 0         st: 0 flags:1 dts: 0.000000 pts: 0.000000 pos:   9908 size: 27867
+ ret: 0         st: 0 flags:1  ts: 2.400000
+ ret: 0         st: 0 flags:1 dts: 0.960000 pts: 0.960000 pos: 301466 size: 27864
+ ret:-1         st: 1 flags:0  ts: 1.306122
+ ret: 0         st: 1 flags:1  ts: 0.208980
+-ret: 0         st: 0 flags:1 dts: 0.000000 pts: 0.000000 pos:   9908 size: 27867
++ret: 0         st: 1 flags:1 dts: 0.208980 pts: 0.208980 pos:  92800 size:   209
+ ret: 0         st:-1 flags:0  ts:-0.904994
+ ret: 0         st: 0 flags:1 dts: 0.000000 pts: 0.000000 pos:   9908 size: 27867
+ ret: 0         st:-1 flags:1  ts: 1.989173
+@@ -38,7 +38,7 @@ ret: 0         st: 0 flags:1 dts: 0.960000 pts: 0.960000 pos: 301466 size: 27864
+ ret:-1         st: 0 flags:1  ts:-0.240000
+ ret:-1         st: 1 flags:0  ts: 2.664490
+ ret: 0         st: 1 flags:1  ts: 1.567347
+-ret: 0         st: 0 flags:1 dts: 0.960000 pts: 0.960000 pos: 301466 size: 27864
++ret: 0         st: 1 flags:1 dts: 1.018776 pts: 1.018776 pos: 329774 size:   209
+ ret: 0         st:-1 flags:0  ts: 0.460008
+-ret: 0         st: 1 flags:1 dts: 0.470204 pts: 0.470204 pos: 155948 size:   209
++ret: 0         st: 0 flags:1 dts: 0.480000 pts: 0.480000 pos: 156166 size: 27955
+ ret:-1         st:-1 flags:1  ts:-0.645825
+-- 
+1.7.4.1
+

@@ -51,7 +51,7 @@ Index: ffmpeg/libavformat/avidec.c
      }
  
      /* do the seek */
--    avio_seek(s->pb, pos_min, SEEK_SET);
+-    avio_seek(s->pb, pos, SEEK_SET);
 +    if(avio_seek(s->pb, pos, SEEK_SET) < 0)
 +        return -1;
      avi->stream_index= -1;

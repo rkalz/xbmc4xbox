@@ -55,8 +55,6 @@ typedef struct AVIStream {
     AVFormatContext *sub_ctx;
     AVPacket sub_pkt;
     uint8_t *sub_buffer;
-
-    int64_t seek_pos;
 } AVIStream;
 
 typedef struct {
@@ -1038,12 +1036,6 @@ resync:
             ast->packet_size= 0;
         }
 
-        if(!avi->non_interleaved && pkt->pos >= 0 && ast->seek_pos > pkt->pos){
-            av_free_packet(pkt);
-            goto resync;
-        }
-        ast->seek_pos= 0;
-
         return size;
     }
 
@@ -1309,7 +1301,7 @@ static int avi_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp
     AVIContext *avi = s->priv_data;
     AVStream *st;
     int i, index;
-    int64_t pos, pos_min;
+    int64_t pos;
     AVIStream *ast;
 
     if (!avi->index_loaded) {
@@ -1348,7 +1340,6 @@ static int avi_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp
         return 0;
     }
 
-    pos_min= pos;
     for(i = 0; i < s->nb_streams; i++) {
         AVStream *st2 = s->streams[i];
         AVIStream *ast2 = st2->priv_data;
@@ -1372,8 +1363,16 @@ static int avi_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp
                 flags | AVSEEK_FLAG_BACKWARD);
         if(index<0)
             index=0;
-        ast2->seek_pos= st2->index_entries[index].pos;
-        pos_min= FFMIN(pos_min,ast2->seek_pos);
+
+        if(!avi->non_interleaved){
+            while(index>0 && st2->index_entries[index].pos > pos)
+                index--;
+            while(index+1 < st2->nb_index_entries && st2->index_entries[index].pos < pos)
+                index++;
+        }
+
+//        av_log(s, AV_LOG_DEBUG, "%"PRId64" %d %"PRId64"\n", timestamp, index, st2->index_entries[index].timestamp);
+        /* extract the current frame number */
         ast2->frame_offset = st2->index_entries[index].timestamp;
     }
 
