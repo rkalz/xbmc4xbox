@@ -293,8 +293,11 @@ bool CDVDDemuxFFmpeg::Open(CDVDInputStream* pInput)
     if(m_ioContext->max_packet_size)
       m_ioContext->max_packet_size *= FFMPEG_FILE_BUFFER_SIZE / m_ioContext->max_packet_size;
 
-    if(m_pInput->Seek(0, SEEK_POSSIBLE) == 0)
+    if(m_pInput->Seek(0, SEEK_POSSIBLE) == 0) {
       m_ioContext->is_streamed = 1;
+      // normally ffmpeg sets the new "seekable" flag based on the value of is_streamed in ffio_fdopen but since we use our own vfs, we need to set it here also
+      m_ioContext->seekable = 0;
+    }
 
     if( iformat == NULL )
     {
