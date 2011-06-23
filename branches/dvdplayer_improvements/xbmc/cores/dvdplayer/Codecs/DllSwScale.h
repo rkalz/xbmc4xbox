@@ -1,5 +1,6 @@
 #pragma once
 #include "DynamicDll.h"
+#include "DllAvUtil.h"
 
 extern "C" {
 #ifndef HAVE_MMX
@@ -18,7 +19,6 @@ extern "C" {
 #pragma warning(disable:4244)
 #endif
 
-#include "Codecs/ffmpeg/libavutil/avutil.h"
 #include "Codecs/ffmpeg/libswscale/swscale.h"
 #include "Codecs/ffmpeg/libswscale/rgb2rgb.h"
 }
@@ -91,6 +91,17 @@ public:
     RESOLVE_METHOD(sws_rgb2rgb_init)
     RESOLVE_METHOD(sws_freeContext)
   END_METHOD_RESOLVE()
+
+  /* dependency of libswscale */
+  DllAvUtil m_dllAvUtil;
+
+public:
+  virtual bool Load()
+  {
+    if (!m_dllAvUtil.Load())
+      return false;
+    return DllDynamic::Load();
+  }
 };
 
 #endif

@@ -4374,6 +4374,9 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 				<File
 					RelativePath=".\xbmc\cores\dvdplayer\Codecs\DllSwScale.h">
 				</File>
+				<File
+					RelativePath=".\xbmc\cores\dvdplayer\Codecs\DllAvUtil.h">
+				</File>
 			</Filter>
 			<Filter
 				Name="playercorefactory"

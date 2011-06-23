@@ -253,6 +253,11 @@ public:
     RESOLVE_METHOD(av_write_trailer)
     RESOLVE_METHOD(av_write_frame)
   END_METHOD_RESOLVE()
+
+  /* dependencies of libavformat */
+  DllAvCodec m_dllAvCodec;
+  // DllAvUtil loaded implicitely by m_dllAvCodec
+
 public:
   void av_register_all()
   {
@@ -263,6 +268,12 @@ public:
   {
     CSingleLock lock(DllAvCodec::m_critSection);
     return(av_find_stream_info_dont_call(ic));
+  }
+  virtual bool Load()
+  {
+    if (!m_dllAvCodec.Load())
+      return false;
+    return DllDynamic::Load();
   }
 };
 
