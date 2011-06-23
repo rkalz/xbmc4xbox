@@ -470,6 +470,8 @@ bool CGUIWindowFileManager::Update(int iList, const CStdString &strDirectory)
     pItem->SetIconImage("DefaultAddSource.png");
     pItem->SetLabel(strLabel);
     pItem->SetLabelPreformated(true);
+    pItem->m_bIsFolder = true;
+    pItem->SetSpecialSort(SORT_ON_BOTTOM);
     m_vecItems[iList]->Add(pItem);
   }
   else if (items.IsEmpty() || g_guiSettings.GetBool("filelists.showparentdiritems"))
@@ -711,7 +713,7 @@ bool CGUIWindowFileManager::DoProcessFile(int iAction, const CStdString& strFile
   {
   case ACTION_COPY:
     {
-      CLog::Log(LOGDEBUG,"FileManager: copy %s->%s\n", strFile.c_str(), strDestFile.c_str());
+      CLog::Log(LOGDEBUG,"FileManager: copy %s -> %s\n", strFile.c_str(), strDestFile.c_str());
 
       CAsyncFileCopy copier;
       if (!copier.Copy(strFile, strDestFile, g_localizeStrings.Get(115)))
@@ -722,7 +724,7 @@ bool CGUIWindowFileManager::DoProcessFile(int iAction, const CStdString& strFile
 
   case ACTION_MOVE:
     {
-      CLog::Log(LOGDEBUG,"FileManager: move %s->%s\n", strFile.c_str(), strDestFile.c_str());
+      CLog::Log(LOGDEBUG,"FileManager: move %s -> %s\n", strFile.c_str(), strDestFile.c_str());
 
       if (strFile[1] == ':' && strFile[0] == strDestFile[0])
       {
@@ -838,6 +840,10 @@ bool CGUIWindowFileManager::DoProcess(int iAction, CFileItemList & items, const 
       CStdString strNoSlash = pItem->m_strPath;
       CUtil::RemoveSlashAtEnd(strNoSlash);
       CStdString strFileName = CUtil::GetFileName(strNoSlash);
+
+      // URL Decode for cases where source uses URL encoding and target does not
+      if ( CUtil::IsInternetStream(pItem->m_strPath, true) && !CUtil::IsInternetStream(strDestFile, true) )
+        CUtil::URLDecode(strFileName);
 
       // special case for upnp
       if (CUtil::IsUPnP(items.m_strPath) || CUtil::IsUPnP(pItem->m_strPath))
