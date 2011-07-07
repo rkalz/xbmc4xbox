@@ -103,6 +103,8 @@ void CDVDClock::Discontinuity(double currentPts)
 {
   CExclusiveLock lock(m_critSection);
   QueryPerformanceCounter(&m_startClock);
+  if(m_pauseClock.QuadPart)
+    m_pauseClock.QuadPart = m_startClock.QuadPart;
   m_iDisc = currentPts;
   m_bReset = false;
 }
