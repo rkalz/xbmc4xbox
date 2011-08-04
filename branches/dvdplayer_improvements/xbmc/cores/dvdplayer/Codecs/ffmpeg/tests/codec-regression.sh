@@ -12,14 +12,13 @@ set -e
 eval do_$test=y
 
 rm -f "$logfile"
-rm -f "$benchfile"
 
 # generate reference for quality check
 if [ -n "$do_vref" ]; then
-do_ffmpeg_nocheck $raw_ref -f image2 -vcodec pgmyuv -i $raw_src -an -f rawvideo $target_path/$raw_ref
+do_ffmpeg $raw_ref -f image2 -vcodec pgmyuv -i $raw_src -an -f rawvideo
 fi
 if [ -n "$do_aref" ]; then
-do_ffmpeg_nocheck $pcm_ref -ab 128k -ac 2 -ar 44100 -f s16le -i $pcm_src -f wav $target_path/$pcm_ref
+do_ffmpeg $pcm_ref -ab 128k -ac 2 -ar 44100 -f s16le -i $pcm_src -f wav
 fi
 
 if [ -n "$do_mpeg" ] ; then
@@ -225,17 +224,17 @@ fi
 if [ -n "$do_dnxhd_1080i" ] ; then
 # FIXME: interlaced raw DNxHD decoding is broken
 do_video_encoding dnxhd-1080i.mov "-vcodec dnxhd -flags +ildct -s hd1080 -b 120M -pix_fmt yuv422p -vframes 5 -an"
-do_video_decoding "-r 25" "-s cif -pix_fmt yuv420p"
+do_video_decoding "" "-s cif -pix_fmt yuv420p"
 fi
 
 if [ -n "$do_dnxhd_720p" ] ; then
 do_video_encoding dnxhd-720p.dnxhd "-s hd720 -b 90M -pix_fmt yuv422p -vframes 5 -an"
-do_video_decoding "-r 25" "-s cif -pix_fmt yuv420p"
+do_video_decoding "" "-s cif -pix_fmt yuv420p"
 fi
 
 if [ -n "$do_dnxhd_720p_rd" ] ; then
 do_video_encoding dnxhd-720p-rd.dnxhd "-threads 4 -mbd rd -s hd720 -b 90M -pix_fmt yuv422p -vframes 5 -an"
-do_video_decoding "-r 25" "-s cif -pix_fmt yuv420p"
+do_video_decoding "" "-s cif -pix_fmt yuv420p"
 fi
 
 if [ -n "$do_svq1" ] ; then

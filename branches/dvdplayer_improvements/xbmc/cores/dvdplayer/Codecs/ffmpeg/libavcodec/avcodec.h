@@ -213,6 +213,7 @@ enum CodecID {
     CODEC_ID_PRORES,
     CODEC_ID_JV,
     CODEC_ID_DFA,
+    CODEC_ID_8SVX_RAW,
 
     /* various PCM "codecs" */
     CODEC_ID_PCM_S16LE= 0x10000,
@@ -356,10 +357,6 @@ enum CodecID {
     CODEC_ID_DVB_TELETEXT,
     CODEC_ID_SRT,
     CODEC_ID_MICRODVD,
-
-    /* data codecs */
-    CODEC_ID_VBI_DATA= 0x17500,
-    CODEC_ID_VBI_TELETEXT,
 
     /* other specific kind of codecs (generally used for attachments) */
     CODEC_ID_TTF= 0x18000,
@@ -712,6 +709,10 @@ typedef struct RcOverride{
  * Codec supports slice-based (or partition-based) multithreading.
  */
 #define CODEC_CAP_SLICE_THREADS    0x2000
+/**
+ * Codec is lossless.
+ */
+#define CODEC_CAP_LOSSLESS         0x80000000
 
 //The following defines may change, don't expect compatibility if you use them.
 #define MB_TYPE_INTRA4x4   0x0001
@@ -2694,7 +2695,7 @@ typedef struct AVCodecContext {
     /**
      * Audio channel layout.
      * - encoding: set by user.
-     * - decoding: set by libavcodec.
+     * - decoding: set by user, may be overwritten by libavcodec.
      */
     int64_t channel_layout;
 
@@ -2964,6 +2965,14 @@ typedef struct AVCodecContext {
     enum AVAudioServiceType audio_service_type;
 
     /**
+     * desired sample format
+     * - encoding: Not used.
+     * - decoding: Set by user.
+     * Decoder will decode to this format if it can.
+     */
+    enum AVSampleFormat request_sample_fmt;
+
+    /**
      * Current statistics for PTS correction.
      * - decoding: maintained and used by libavcodec, not intended to be used by user apps
      * - encoding: unused
@@ -2973,13 +2982,6 @@ typedef struct AVCodecContext {
     int64_t pts_correction_last_pts;       /// PTS of the last frame
     int64_t pts_correction_last_dts;       /// DTS of the last frame
 
-    /**
-     * desired sample format
-     * - encoding: Not used.
-     * - decoding: Set by user.
-     * Decoder will decode to this format if it can.
-     */
-    enum AVSampleFormat request_sample_fmt;
 
 } AVCodecContext;
 
@@ -3454,12 +3456,16 @@ int avpicture_layout(const AVPicture* src, enum PixelFormat pix_fmt, int width, 
 int avpicture_get_size(enum PixelFormat pix_fmt, int width, int height);
 void avcodec_get_chroma_sub_sample(enum PixelFormat pix_fmt, int *h_shift, int *v_shift);
 
+#if FF_API_GET_PIX_FMT_NAME
 /**
  * Return the short name for a pixel format.
  *
  * \see av_get_pix_fmt(), av_get_pix_fmt_string().
+ * @deprecated Deprecated in favor of av_get_pix_fmt_name().
  */
+attribute_deprecated
 const char *avcodec_get_pix_fmt_name(enum PixelFormat pix_fmt);
+#endif
 
 void avcodec_set_dimensions(AVCodecContext *s, int width, int height);
 

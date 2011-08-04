@@ -28,7 +28,7 @@
 #include <string.h>
 #include "libavutil/intreadwrite.h"
 #include "libavutil/avstring.h"
-#include "libavformat/internal.h"
+#include "internal.h"
 #include "mms.h"
 #include "asf.h"
 #include "http.h"
@@ -231,7 +231,7 @@ static int mmsh_open(URLContext *h, const char *uri, int flags)
         host, sizeof(host), &port, path, sizeof(path), location);
     if (port<0)
         port = 80; // default mmsh protocol port
-    ff_url_join(httpname, sizeof(httpname), "http", NULL, host, port, path);
+    ff_url_join(httpname, sizeof(httpname), "http", NULL, host, port, "%s", path);
 
     if (ffurl_alloc(&mms->mms_hd, httpname, AVIO_RDONLY) < 0) {
         return AVERROR(EIO);
@@ -244,7 +244,7 @@ static int mmsh_open(URLContext *h, const char *uri, int flags)
              "Pragma: no-cache,rate=1.000000,stream-time=0,"
              "stream-offset=0:0,request-context=%u,max-duration=0\r\n"
              CLIENTGUID
-             "Connection: Close\r\n\r\n",
+             "Connection: Close\r\n",
              host, port, mmsh->request_seq++);
     ff_http_set_headers(mms->mms_hd, headers);
 
@@ -284,7 +284,7 @@ static int mmsh_open(URLContext *h, const char *uri, int flags)
                    CLIENTGUID
                    "Pragma: stream-switch-count=%d\r\n"
                    "Pragma: stream-switch-entry=%s\r\n"
-                   "Connection: Close\r\n\r\n",
+                   "Connection: Close\r\n",
                    host, port, mmsh->request_seq++, mms->stream_num, stream_selection);
     av_freep(&stream_selection);
     if (err < 0) {

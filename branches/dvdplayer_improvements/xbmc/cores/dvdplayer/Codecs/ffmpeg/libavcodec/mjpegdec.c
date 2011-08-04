@@ -881,9 +881,12 @@ static int mjpeg_decode_scan(MJpegDecodeContext *s, int nb_components, int Ah, i
                 }
             }
 
-            if (s->restart_interval && !--s->restart_count) {
+            if (s->restart_interval && show_bits(&s->gb, 8) == 0xFF){/* skip RSTn */
+                --s->restart_count;
                 align_get_bits(&s->gb);
-                skip_bits(&s->gb, 16); /* skip RSTn */
+                while(show_bits(&s->gb, 8) == 0xFF)
+                    skip_bits(&s->gb, 8);
+                skip_bits(&s->gb, 8);
                 for (i=0; i<nb_components; i++) /* reset dc */
                     s->last_dc[i] = 1024;
             }
@@ -990,8 +993,11 @@ int ff_mjpeg_decode_sos(MJpegDecodeContext *s,
 
     predictor= get_bits(&s->gb, 8); /* JPEG Ss / lossless JPEG predictor /JPEG-LS NEAR */
     ilv= get_bits(&s->gb, 8);    /* JPEG Se / JPEG-LS ILV */
-    prev_shift = get_bits(&s->gb, 4); /* Ah */
-    point_transform= get_bits(&s->gb, 4); /* Al */
+    if(s->avctx->codec_tag != AV_RL32("CJPG")){
+        prev_shift = get_bits(&s->gb, 4); /* Ah */
+        point_transform= get_bits(&s->gb, 4); /* Al */
+    }else
+        prev_shift= point_transform= 0;
 
     for(i=0;i<nb_components;i++)
         s->last_dc[i] = 1024;
@@ -1011,8 +1017,8 @@ int ff_mjpeg_decode_sos(MJpegDecodeContext *s,
     }
 
     if(s->avctx->debug & FF_DEBUG_PICT_INFO)
-        av_log(s->avctx, AV_LOG_DEBUG, "%s %s p:%d >>:%d ilv:%d bits:%d %s\n", s->lossless ? "lossless" : "sequential DCT", s->rgb ? "RGB" : "",
-               predictor, point_transform, ilv, s->bits,
+        av_log(s->avctx, AV_LOG_DEBUG, "%s %s p:%d >>:%d ilv:%d bits:%d skip:%d %s\n", s->lossless ? "lossless" : "sequential DCT", s->rgb ? "RGB" : "",
+               predictor, point_transform, ilv, s->bits, s->mjpb_skiptosod,
                s->pegasus_rct ? "PRCT" : (s->rct ? "RCT" : ""));
 
 

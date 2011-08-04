@@ -169,7 +169,6 @@ Set frame rate (Hz value, fraction or abbreviation), (default = 25).
 Set frame size. The format is @samp{wxh} (ffserver default = 160x128).
 There is no default for input streams,
 for output streams it is set by default to the size of the source stream.
-If the input file has video streams with different resolutions, the behaviour is undefined.
 The following abbreviations are recognized:
 @table @samp
 @item sqcif
@@ -402,7 +401,10 @@ and the following constants are available:
 @end table
 
 @item -rc_override @var{override}
-rate control override for specific intervals
+Rate control override for specific intervals, formated as "int,int,int"
+list separated with slashes. Two first values are the beginning and
+end frame numbers, last one is quantizer to use if positive, or quality
+factor if negative.
 @item -me_method @var{method}
 Set motion estimation method to @var{method}.
 Available methods are (from lowest to best quality):
@@ -554,10 +556,8 @@ The timestamps must be specified in ascending order.
 @item -aframes @var{number}
 Set the number of audio frames to record.
 @item -ar @var{freq}
-Set the audio sampling frequency. For input streams it is set by
-default to 44100 Hz, for output streams it is set by default to the
-frequency of the input stream. If the input file has audio streams
-with different frequencies, the behaviour is undefined.
+Set the audio sampling frequency. there is no default for input streams,
+for output streams it is set by default to the frequency of the input stream.
 @item -ab @var{bitrate}
 Set the audio bitrate in bit/s (default = 64k).
 @item -aq @var{q}
@@ -565,8 +565,7 @@ Set the audio quality (codec-specific, VBR).
 @item -ac @var{channels}
 Set the number of audio channels. For input streams it is set by
 default to 1, for output streams it is set by default to the same
-number of audio channels in input. If the input file has audio streams
-with different channel count, the behaviour is undefined.
+number of audio channels in input.
 @item -an
 Disable audio recording.
 @item -acodec @var{codec}
@@ -813,6 +812,7 @@ following rules:
 First ffmpeg searches for a file named @var{arg}.ffpreset in the
 directories @file{$FFMPEG_DATADIR} (if set), and @file{$HOME/.ffmpeg}, and in
 the datadir defined at configuration time (usually @file{PREFIX/share/ffmpeg})
+or in a @file{ffpresets} folder along the executable on win32,
 in that order. For example, if the argument is @code{libx264-max}, it will
 search for the file @file{libx264-max.ffpreset}.
 
@@ -1042,6 +1042,7 @@ file to which you want to add them.
 @c man end EXAMPLES
 
 @include eval.texi
+@include decoders.texi
 @include encoders.texi
 @include demuxers.texi
 @include muxers.texi

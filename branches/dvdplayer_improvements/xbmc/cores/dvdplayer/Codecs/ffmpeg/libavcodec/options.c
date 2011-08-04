@@ -37,6 +37,25 @@ static const char* context_to_name(void* ptr) {
         return "NULL";
 }
 
+static const AVOption *opt_find(void *obj, const char *name, const char *unit, int opt_flags, int search_flags)
+{
+    AVCodecContext *s = obj;
+    AVCodec        *c = NULL;
+
+    if (s->priv_data) {
+        if (s->codec->priv_class)
+            return av_opt_find(s->priv_data, name, unit, opt_flags, search_flags);
+        return NULL;
+    }
+
+    while ((c = av_codec_next(c))) {
+        const AVOption *o;
+        if (c->priv_class && (o = av_opt_find(&c->priv_class, name, unit, opt_flags, search_flags)))
+            return o;
+    }
+    return NULL;
+}
+
 #define OFFSET(x) offsetof(AVCodecContext,x)
 #define DEFAULT 0 //should be NAN but it does not work as it is not a constant in glibc as required by ANSI/ISO C
 //these names are too long to be readable
@@ -353,8 +372,8 @@ static const AVOption options[]={
 {"brd_scale", "downscales frames for dynamic B-frame decision", OFFSET(brd_scale), FF_OPT_TYPE_INT, {.dbl = DEFAULT }, 0, 10, V|E},
 {"crf", "enables constant quality mode, and selects the quality (x264/VP8)", OFFSET(crf), FF_OPT_TYPE_FLOAT, {.dbl = DEFAULT }, 0, 63, V|E},
 {"cqp", "constant quantization parameter rate control method", OFFSET(cqp), FF_OPT_TYPE_INT, {.dbl = -1 }, INT_MIN, INT_MAX, V|E},
-{"keyint_min", "minimum interval between IDR-frames (x264)", OFFSET(keyint_min), FF_OPT_TYPE_INT, {.dbl = 25 }, INT_MIN, INT_MAX, V|E},
-{"refs", "reference frames to consider for motion compensation (Snow)", OFFSET(refs), FF_OPT_TYPE_INT, {.dbl = 1 }, INT_MIN, INT_MAX, V|E},
+{"keyint_min", "minimum interval between IDR-frames", OFFSET(keyint_min), FF_OPT_TYPE_INT, {.dbl = 25 }, INT_MIN, INT_MAX, V|E},
+{"refs", "reference frames to consider for motion compensation", OFFSET(refs), FF_OPT_TYPE_INT, {.dbl = 1 }, INT_MIN, INT_MAX, V|E},
 {"chromaoffset", "chroma qp offset from luma", OFFSET(chromaoffset), FF_OPT_TYPE_INT, {.dbl = DEFAULT }, INT_MIN, INT_MAX, V|E},
 {"bframebias", "influences how often B-frames are used", OFFSET(bframebias), FF_OPT_TYPE_INT, {.dbl = DEFAULT }, INT_MIN, INT_MAX, V|E},
 {"trellis", "rate-distortion optimal quantization", OFFSET(trellis), FF_OPT_TYPE_INT, {.dbl = DEFAULT }, INT_MIN, INT_MAX, V|A|E},
@@ -442,7 +461,12 @@ static const AVOption options[]={
 {"em", "Emergency",          0, FF_OPT_TYPE_CONST, {.dbl = AV_AUDIO_SERVICE_TYPE_EMERGENCY },         INT_MIN, INT_MAX, A|E, "audio_service_type"},
 {"vo", "Voice Over",         0, FF_OPT_TYPE_CONST, {.dbl = AV_AUDIO_SERVICE_TYPE_VOICE_OVER },        INT_MIN, INT_MAX, A|E, "audio_service_type"},
 {"ka", "Karaoke",            0, FF_OPT_TYPE_CONST, {.dbl = AV_AUDIO_SERVICE_TYPE_KARAOKE },           INT_MIN, INT_MAX, A|E, "audio_service_type"},
-{"request_sample_fmt", "sample format audio decoders should prefer", OFFSET(request_sample_fmt), FF_OPT_TYPE_INT, {.dbl = AV_SAMPLE_FMT_NONE }, AV_SAMPLE_FMT_NONE, AV_SAMPLE_FMT_NB-1, A|D},
+{"request_sample_fmt", "sample format audio decoders should prefer", OFFSET(request_sample_fmt), FF_OPT_TYPE_INT, {.dbl = AV_SAMPLE_FMT_NONE }, AV_SAMPLE_FMT_NONE, AV_SAMPLE_FMT_NB-1, A|D, "request_sample_fmt"},
+{"u8" , "8-bit unsigned integer", 0, FF_OPT_TYPE_CONST, {.dbl = AV_SAMPLE_FMT_U8  }, INT_MIN, INT_MAX, A|D, "request_sample_fmt"},
+{"s16", "16-bit signed integer",  0, FF_OPT_TYPE_CONST, {.dbl = AV_SAMPLE_FMT_S16 }, INT_MIN, INT_MAX, A|D, "request_sample_fmt"},
+{"s32", "32-bit signed integer",  0, FF_OPT_TYPE_CONST, {.dbl = AV_SAMPLE_FMT_S32 }, INT_MIN, INT_MAX, A|D, "request_sample_fmt"},
+{"flt", "32-bit float",           0, FF_OPT_TYPE_CONST, {.dbl = AV_SAMPLE_FMT_FLT }, INT_MIN, INT_MAX, A|D, "request_sample_fmt"},
+{"dbl", "64-bit double",          0, FF_OPT_TYPE_CONST, {.dbl = AV_SAMPLE_FMT_DBL }, INT_MIN, INT_MAX, A|D, "request_sample_fmt"},
 {NULL},
 };
 
@@ -453,7 +477,7 @@ static const AVOption options[]={
 #undef D
 #undef DEFAULT
 
-static const AVClass av_codec_context_class = { "AVCodecContext", context_to_name, options, LIBAVUTIL_VERSION_INT, OFFSET(log_level_offset) };
+static const AVClass av_codec_context_class = { "AVCodecContext", context_to_name, options, LIBAVUTIL_VERSION_INT, OFFSET(log_level_offset), .opt_find = opt_find};
 
 void avcodec_get_context_defaults2(AVCodecContext *s, enum AVMediaType codec_type){
     int flags=0;
