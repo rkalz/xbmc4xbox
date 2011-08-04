@@ -36,6 +36,7 @@
 #include "libavformat/avio_internal.h"
 #include "libavutil/avstring.h"
 #include "libavutil/lfg.h"
+#include "libavutil/dict.h"
 #include "libavutil/random_seed.h"
 #include "libavutil/parseutils.h"
 #include "libavcodec/opt.h"
@@ -206,7 +207,7 @@ typedef struct FFStream {
     char filename[1024];     /* stream filename */
     struct FFStream *feed;   /* feed we are using (can be null if
                                 coming from file) */
-    AVFormatParameters *ap_in; /* input parameters */
+    AVDictionary *in_opts;   /* input parameters */
     AVInputFormat *ifmt;       /* if non NULL, force input format */
     AVOutputFormat *fmt;
     IPAddressACL *acl;
@@ -856,7 +857,7 @@ static void close_connection(HTTPContext *c)
         ctx = c->rtp_ctx[i];
         if (ctx) {
             av_write_trailer(ctx);
-            av_metadata_free(&ctx->metadata);
+            av_dict_free(&ctx->metadata);
             av_free(ctx->streams[0]);
             av_free(ctx);
         }
@@ -1762,7 +1763,7 @@ static int http_parse_request(HTTPContext *c)
                 }
             }
 
-#ifdef DEBUG_WMP
+#ifdef DEBUG
             http_log("\nGot request:\n%s\n", c->buffer);
 #endif
 
@@ -1792,7 +1793,7 @@ static int http_parse_request(HTTPContext *c)
         return 0;
     }
 
-#ifdef DEBUG_WMP
+#ifdef DEBUG
     if (strcmp(stream->filename + strlen(stream->filename) - 4, ".asf") == 0)
         http_log("\nGot request:\n%s\n", c->buffer);
 #endif
@@ -2127,7 +2128,7 @@ static int open_input_stream(HTTPContext *c, const char *info)
 {
     char buf[128];
     char input_filename[1024];
-    AVFormatContext *s;
+    AVFormatContext *s = NULL;
     int buf_size, i, ret;
     int64_t stream_pos;
 
@@ -2158,8 +2159,7 @@ static int open_input_stream(HTTPContext *c, const char *info)
         return -1;
 
     /* open stream */
-    if ((ret = av_open_input_file(&s, input_filename, c->stream->ifmt,
-                                  buf_size, c->stream->ap_in)) < 0) {
+    if ((ret = avformat_open_input(&s, input_filename, c->stream->ifmt, &c->stream->in_opts)) < 0) {
         http_log("could not open %s: %d\n", input_filename, ret);
         return -1;
     }
@@ -2226,10 +2226,10 @@ static int http_prepare_data(HTTPContext *c)
     switch(c->state) {
     case HTTPSTATE_SEND_DATA_HEADER:
         memset(&c->fmt_ctx, 0, sizeof(c->fmt_ctx));
-        av_metadata_set2(&c->fmt_ctx.metadata, "author"   , c->stream->author   , 0);
-        av_metadata_set2(&c->fmt_ctx.metadata, "comment"  , c->stream->comment  , 0);
-        av_metadata_set2(&c->fmt_ctx.metadata, "copyright", c->stream->copyright, 0);
-        av_metadata_set2(&c->fmt_ctx.metadata, "title"    , c->stream->title    , 0);
+        av_dict_set(&c->fmt_ctx.metadata, "author"   , c->stream->author   , 0);
+        av_dict_set(&c->fmt_ctx.metadata, "comment"  , c->stream->comment  , 0);
+        av_dict_set(&c->fmt_ctx.metadata, "copyright", c->stream->copyright, 0);
+        av_dict_set(&c->fmt_ctx.metadata, "title"    , c->stream->title    , 0);
 
         for(i=0;i<c->stream->nb_streams;i++) {
             AVStream *st;
@@ -2269,12 +2269,11 @@ static int http_prepare_data(HTTPContext *c)
         c->fmt_ctx.preload   = (int)(0.5*AV_TIME_BASE);
         c->fmt_ctx.max_delay = (int)(0.7*AV_TIME_BASE);
 
-        av_set_parameters(&c->fmt_ctx, NULL);
-        if (av_write_header(&c->fmt_ctx) < 0) {
+        if (avformat_write_header(&c->fmt_ctx, NULL) < 0) {
             http_log("Error writing output header\n");
             return -1;
         }
-        av_metadata_free(&c->fmt_ctx.metadata);
+        av_dict_free(&c->fmt_ctx.metadata);
 
         len = avio_close_dyn_buf(c->fmt_ctx.pb, &c->pb_buffer);
         c->buffer_ptr = c->pb_buffer;
@@ -2710,10 +2709,13 @@ static int http_receive_data(HTTPContext *c)
             }
         } else {
             /* We have a header in our hands that contains useful data */
-            AVFormatContext *s = NULL;
+            AVFormatContext *s = avformat_alloc_context();
             AVIOContext *pb;
             AVInputFormat *fmt_in;
             int i;
+
+            if (!s)
+                goto fail;
 
             /* use feed output format name to find corresponding input format */
             fmt_in = av_find_input_format(feed->fmt->name);
@@ -2724,7 +2726,8 @@ static int http_receive_data(HTTPContext *c)
                                     0, NULL, NULL, NULL, NULL);
             pb->seekable = 0;
 
-            if (av_open_input_stream(&s, pb, c->stream->feed_filename, fmt_in, NULL) < 0) {
+            s->pb = pb;
+            if (avformat_open_input(&s, c->stream->feed_filename, fmt_in, NULL) < 0) {
                 av_free(pb);
                 goto fail;
             }
@@ -2929,8 +2932,8 @@ static int prepare_sdp_description(FFStream *stream, uint8_t **pbuffer,
     if (avc == NULL) {
         return -1;
     }
-    av_metadata_set2(&avc->metadata, "title",
-                     stream->title[0] ? stream->title : "No Title", 0);
+    av_dict_set(&avc->metadata, "title",
+               stream->title[0] ? stream->title : "No Title", 0);
     avc->nb_streams = stream->nb_streams;
     if (stream->is_multicast) {
         snprintf(avc->filename, 1024, "rtp://%s:%d?multicast=1?ttl=%d",
@@ -3280,7 +3283,6 @@ static void rtsp_cmd_pause(HTTPContext *c, const char *url, RTSPMessageHeader *h
 static void rtsp_cmd_teardown(HTTPContext *c, const char *url, RTSPMessageHeader *h)
 {
     HTTPContext *rtp_c;
-    char session_id[32];
 
     rtp_c = find_rtp_session_with_url(url, h->session_id);
     if (!rtp_c) {
@@ -3288,16 +3290,14 @@ static void rtsp_cmd_teardown(HTTPContext *c, const char *url, RTSPMessageHeader
         return;
     }
 
-    av_strlcpy(session_id, rtp_c->session_id, sizeof(session_id));
-
-    /* abort the session */
-    close_connection(rtp_c);
-
     /* now everything is OK, so we can send the connection parameters */
     rtsp_reply_header(c, RTSP_STATUS_OK);
     /* session ID */
-    avio_printf(c->pb, "Session: %s\r\n", session_id);
+    avio_printf(c->pb, "Session: %s\r\n", rtp_c->session_id);
     avio_printf(c->pb, "\r\n");
+
+    /* abort the session */
+    close_connection(rtp_c);
 }
 
 
@@ -3447,8 +3447,7 @@ static int rtp_new_av_stream(HTTPContext *c,
         /* XXX: close stream */
         goto fail;
     }
-    av_set_parameters(ctx, NULL);
-    if (av_write_header(ctx) < 0) {
+    if (avformat_write_header(ctx, NULL) < 0) {
     fail:
         if (h)
             url_close(h);
@@ -3602,28 +3601,25 @@ static void extract_mpeg4_header(AVFormatContext *infile)
 static void build_file_streams(void)
 {
     FFStream *stream, *stream_next;
-    AVFormatContext *infile;
     int i, ret;
 
     /* gather all streams */
     for(stream = first_stream; stream != NULL; stream = stream_next) {
+        AVFormatContext *infile = NULL;
         stream_next = stream->next;
         if (stream->stream_type == STREAM_TYPE_LIVE &&
             !stream->feed) {
             /* the stream comes from a file */
             /* try to open the file */
             /* open stream */
-            stream->ap_in = av_mallocz(sizeof(AVFormatParameters));
             if (stream->fmt && !strcmp(stream->fmt->name, "rtp")) {
                 /* specific case : if transport stream output to RTP,
                    we use a raw transport stream reader */
-                stream->ap_in->mpeg2ts_raw = 1;
-                stream->ap_in->mpeg2ts_compute_pcr = 1;
+                av_dict_set(&stream->in_opts, "mpeg2ts_compute_pcr", "1", 0);
             }
 
             http_log("Opening file '%s'\n", stream->feed_filename);
-            if ((ret = av_open_input_file(&infile, stream->feed_filename,
-                                          stream->ifmt, 0, stream->ap_in)) < 0) {
+            if ((ret = avformat_open_input(&infile, stream->feed_filename, stream->ifmt, &stream->in_opts)) < 0) {
                 http_log("Could not open '%s': %d\n", stream->feed_filename, ret);
                 /* remove stream (no need to spend more time on it) */
             fail:
@@ -3683,10 +3679,10 @@ static void build_feed_streams(void)
 
         if (url_exist(feed->feed_filename)) {
             /* See if it matches */
-            AVFormatContext *s;
+            AVFormatContext *s = NULL;
             int matches = 0;
 
-            if (av_open_input_file(&s, feed->feed_filename, NULL, FFM_PACKET_SIZE, NULL) >= 0) {
+            if (avformat_open_input(&s, feed->feed_filename, NULL, NULL) >= 0) {
                 /* Now see if it matches */
                 if (s->nb_streams == feed->nb_streams) {
                     matches = 1;
@@ -3953,7 +3949,7 @@ static int ffserver_opt_default(const char *opt, const char *arg,
                        AVCodecContext *avctx, int type)
 {
     int ret = 0;
-    const AVOption *o = av_find_opt(avctx, opt, NULL, type, type);
+    const AVOption *o = av_opt_find(avctx, opt, NULL, type, 0);
     if(o)
         ret = av_set_string3(avctx, opt, arg, 1, NULL);
     return ret;

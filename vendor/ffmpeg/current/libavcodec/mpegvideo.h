@@ -480,7 +480,7 @@ typedef struct MpegEncContext {
     int last_bits; ///< temp var used for calculating the above vars
 
     /* error concealment / resync */
-    int error_count;
+    int error_count, error_occurred;
     uint8_t *error_status_table;       ///< table of the error status of each MB
 #define VP_START            1          ///< current MB is the first after a resync marker
 #define AC_ERROR            2
@@ -848,4 +848,3 @@ void ff_wmv2_encode_mb(MpegEncContext * s,
                        int motion_x, int motion_y);
 
 #endif /* AVCODEC_MPEGVIDEO_H */
-

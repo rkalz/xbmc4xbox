@@ -27,7 +27,6 @@
 #include "internal.h"
 #include "isom.h"
 #include "riff.h"
-#include "avio_internal.h"
 #include "libavcodec/mpeg4audio.h"
 #include "libavcodec/mpegaudiodata.h"
 
@@ -58,6 +57,7 @@ const AVCodecTag ff_mp4_obj_type[] = {
     { CODEC_ID_VC1       , 0xA3 },
     { CODEC_ID_DIRAC     , 0xA4 },
     { CODEC_ID_AC3       , 0xA5 },
+    { CODEC_ID_DTS       , 0xA9 }, /* mp4ra.org */
     { CODEC_ID_VORBIS    , 0xDD }, /* non standard, gpac uses it */
     { CODEC_ID_DVD_SUBTITLE, 0xE0 }, /* non standard, see unsupported-embedded-subs-2.mp4 */
     { CODEC_ID_QCELP     , 0xE1 },
@@ -245,6 +245,8 @@ const AVCodecTag codec_movaudio_tags[] = {
     { CODEC_ID_AAC, MKTAG('m', 'p', '4', 'a') }, /* MPEG-4 AAC */
     { CODEC_ID_AC3, MKTAG('a', 'c', '-', '3') }, /* ETSI TS 102 366 Annex F */
     { CODEC_ID_AC3, MKTAG('s', 'a', 'c', '3') }, /* Nero Recode */
+    { CODEC_ID_DTS, MKTAG('d', 't', 's', 'c') }, /* mp4ra.org */
+    { CODEC_ID_DTS, MKTAG('D', 'T', 'S', ' ') }, /* non standard */
 
     { CODEC_ID_AMR_NB, MKTAG('s', 'a', 'm', 'r') }, /* AMR-NB 3gp */
     { CODEC_ID_AMR_WB, MKTAG('s', 'a', 'w', 'b') }, /* AMR-WB 3gp */
@@ -460,16 +462,18 @@ void ff_mov_read_chan(AVFormatContext *s, int64_t size, AVCodecContext *codec)
     uint32_t layout_tag;
     AVIOContext *pb = s->pb;
     const MovChannelLayout *layouts = mov_channel_layout;
-    if (size != 12) {
+    layout_tag = avio_rb32(pb);
+    size -= 4;
+    if (layout_tag == 0) { //< kCAFChannelLayoutTag_UseChannelDescriptions
         // Channel descriptions not implemented
         av_log_ask_for_sample(s, "Unimplemented container channel layout.\n");
         avio_skip(pb, size);
         return;
     }
-    layout_tag = avio_rb32(pb);
     if (layout_tag == 0x10000) { //< kCAFChannelLayoutTag_UseChannelBitmap
         codec->channel_layout = avio_rb32(pb);
-        avio_skip(pb, 4);
+        size -= 4;
+        avio_skip(pb, size);
         return;
     }
     while (layouts->channel_layout) {
@@ -481,18 +485,13 @@ void ff_mov_read_chan(AVFormatContext *s, int64_t size, AVCodecContext *codec)
     }
     if (!codec->channel_layout)
         av_log(s, AV_LOG_WARNING, "Unknown container channel layout.\n");
-    avio_skip(pb, 8);
+    avio_skip(pb, size);
 }
 
-void ff_mov_write_chan(AVFormatContext *s, int64_t channel_layout,
-                       const char *chunk_type)
+void ff_mov_write_chan(AVIOContext *pb, int64_t channel_layout)
 {
-    AVIOContext *pb = s->pb;
     const MovChannelLayout *layouts;
     uint32_t layout_tag = 0;
-
-    if (!channel_layout)
-        return;
 
     for (layouts = mov_channel_layout; layouts->channel_layout; layouts++)
         if (channel_layout == layouts->channel_layout) {
@@ -500,8 +499,6 @@ void ff_mov_write_chan(AVFormatContext *s, int64_t channel_layout,
             break;
         }
 
-    ffio_wfourcc(pb, chunk_type);
-    avio_wb64(pb, 12);             //< mChunkSize
     if (layout_tag) {
         avio_wb32(pb, layout_tag); //< mChannelLayoutTag
         avio_wb32(pb, 0);          //< mChannelBitmap

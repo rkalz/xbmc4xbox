@@ -28,6 +28,7 @@
 #include "libavutil/avstring.h"
 #include "libavutil/intreadwrite.h"
 #include "libavutil/opt.h"
+#include "libavutil/dict.h"
 #include "avformat.h"
 #include "internal.h"
 #include <unistd.h>
@@ -474,6 +475,11 @@ static int applehttp_read_header(AVFormatContext *s, AVFormatParameters *ap)
         if (v->n_segments == 0)
             continue;
 
+        if (!(v->ctx = avformat_alloc_context())) {
+            ret = AVERROR(ENOMEM);
+            goto fail;
+        }
+
         v->index  = i;
         v->needed = 1;
         v->parent = s;
@@ -492,8 +498,8 @@ static int applehttp_read_header(AVFormatContext *s, AVFormatParameters *ap)
                                     NULL, 0, 0);
         if (ret < 0)
             goto fail;
-        ret = av_open_input_stream(&v->ctx, &v->pb, v->segments[0]->url,
-                                   in_fmt, NULL);
+        v->ctx->pb       = &v->pb;
+        ret = avformat_open_input(&v->ctx, v->segments[0]->url, in_fmt, NULL);
         if (ret < 0)
             goto fail;
         v->stream_offset = stream_offset;
@@ -507,7 +513,7 @@ static int applehttp_read_header(AVFormatContext *s, AVFormatParameters *ap)
             }
             avcodec_copy_context(st->codec, v->ctx->streams[j]->codec);
             if (v->bandwidth)
-                av_metadata_set2(&st->metadata, "variant_bitrate", bitrate_str,
+                av_dict_set(&st->metadata, "variant_bitrate", bitrate_str,
                                  0);
         }
         stream_offset += v->ctx->nb_streams;
