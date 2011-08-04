@@ -7,11 +7,11 @@ Subject: [PATCH 21/36] fixed: when playing mpegts over rtp/rtsp/sdp, lavf must s
  libavformat/mpegts.c |    3 +++
  1 files changed, 3 insertions(+), 0 deletions(-)
 
-diff --git a/libavformat/mpegts.c b/libavformat/mpegts.c
-index c355852..3f7098f 100644
---- a/libavformat/mpegts.c
-+++ b/libavformat/mpegts.c
-@@ -1817,6 +1817,9 @@ MpegTSContext *ff_mpegts_parse_open(AVFormatContext *s)
+Index: ffmpeg/libavformat/mpegts.c
+===================================================================
+--- ffmpeg.orig/libavformat/mpegts.c	2011-08-04 20:51:42.899361400 +0100
++++ ffmpeg/libavformat/mpegts.c	2011-08-04 20:51:47.536028600 +0100
+@@ -1868,6 +1868,9 @@
      ts->raw_packet_size = TS_PACKET_SIZE;
      ts->stream = s;
      ts->auto_guess = 1;
@@ -21,6 +21,3 @@ index c355852..3f7098f 100644
      return ts;
  }
  
--- 
-1.7.3
-

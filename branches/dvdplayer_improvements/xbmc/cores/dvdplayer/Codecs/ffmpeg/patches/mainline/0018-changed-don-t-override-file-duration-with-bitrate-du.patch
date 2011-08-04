@@ -7,11 +7,11 @@ Subject: [PATCH 18/36] changed: don't override file duration with bitrate durati
  libavformat/utils.c |    8 +++++---
  1 files changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/libavformat/utils.c b/libavformat/utils.c
-index 26072c4..ad5fb83 100644
---- a/libavformat/utils.c
-+++ b/libavformat/utils.c
-@@ -1788,6 +1788,8 @@ static int av_has_duration(AVFormatContext *ic)
+Index: ffmpeg/libavformat/utils.c
+===================================================================
+--- ffmpeg.orig/libavformat/utils.c	2011-08-04 20:51:45.252745400 +0100
++++ ffmpeg/libavformat/utils.c	2011-08-04 20:51:45.823566200 +0100
+@@ -1896,6 +1896,8 @@
  {
      int i;
      AVStream *st;
@@ -20,7 +20,7 @@ index 26072c4..ad5fb83 100644
  
      for(i = 0;i < ic->nb_streams; i++) {
          st = ic->streams[i];
-@@ -1838,14 +1840,14 @@ static void av_update_stream_timings(AVFormatContext *ic)
+@@ -1953,14 +1955,14 @@
                  duration = end_time - start_time;
          }
      }
@@ -38,6 +38,3 @@ index 26072c4..ad5fb83 100644
  }
  
  static void fill_all_stream_timings(AVFormatContext *ic)
--- 
-1.7.3
-

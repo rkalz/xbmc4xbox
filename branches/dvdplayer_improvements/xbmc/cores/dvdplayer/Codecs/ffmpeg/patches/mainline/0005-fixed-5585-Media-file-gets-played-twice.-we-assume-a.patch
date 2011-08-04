@@ -7,11 +7,11 @@ Subject: [PATCH 05/36] fixed: #5585 Media file gets played twice. we assume avi 
  libavformat/avidec.c |    5 ++++-
  1 files changed, 4 insertions(+), 1 deletions(-)
 
-diff --git a/libavformat/avidec.c b/libavformat/avidec.c
-index 6b3e927..3d223b7 100644
---- a/libavformat/avidec.c
-+++ b/libavformat/avidec.c
-@@ -898,7 +898,8 @@ static int avi_read_packet(AVFormatContext *s, AVPacket *pkt)
+Index: ffmpeg/libavformat/avidec.c
+===================================================================
+--- ffmpeg.orig/libavformat/avidec.c	2011-08-04 20:51:35.949367800 +0100
++++ ffmpeg/libavformat/avidec.c	2011-08-04 20:51:39.784883000 +0100
+@@ -919,7 +919,8 @@
          if(i>=0){
              int64_t pos= best_st->index_entries[i].pos;
              pos += best_ast->packet_size - best_ast->remaining;
@@ -21,7 +21,7 @@ index 6b3e927..3d223b7 100644
  //        av_log(s, AV_LOG_DEBUG, "pos=%"PRId64"\n", pos);
  
              assert(best_ast->remaining <= best_ast->packet_size);
-@@ -908,6 +909,8 @@ static int avi_read_packet(AVFormatContext *s, AVPacket *pkt)
+@@ -929,6 +930,8 @@
                  best_ast->packet_size=
                  best_ast->remaining= best_st->index_entries[i].size;
          }
@@ -30,6 +30,3 @@ index 6b3e927..3d223b7 100644
      }
  
  resync:
--- 
-1.7.3
-

@@ -8,13 +8,13 @@ git-svn-id: https://xbmc.svn.sourceforge.net/svnroot/xbmc/trunk@35598 568bbfeb-2
  libavformat/mov.c |    4 ++--
  1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/libavformat/mov.c b/libavformat/mov.c
-index a48000f..18ecbb9 100644
---- a/libavformat/mov.c
-+++ b/libavformat/mov.c
-@@ -2386,8 +2386,8 @@ static AVIndexEntry *mov_find_next_sample(AVFormatContext *s, AVStream **st)
-             if (!sample || (url_is_streamed(s->pb) && current_sample->pos < sample->pos) ||
-                 (!url_is_streamed(s->pb) &&
+Index: ffmpeg/libavformat/mov.c
+===================================================================
+--- ffmpeg.orig/libavformat/mov.c	2011-08-04 20:46:24.454520300 +0100
++++ ffmpeg/libavformat/mov.c	2011-08-04 20:51:52.362969400 +0100
+@@ -2440,8 +2440,8 @@
+             if (!sample || (!s->pb->seekable && current_sample->pos < sample->pos) ||
+                 (s->pb->seekable &&
                   ((msc->pb != s->pb && dts < best_dts) || (msc->pb == s->pb &&
 -                 ((FFABS(best_dts - dts) <= AV_TIME_BASE && current_sample->pos < sample->pos) ||
 -                  (FFABS(best_dts - dts) > AV_TIME_BASE && dts < best_dts)))))) {
@@ -23,6 +23,3 @@ index a48000f..18ecbb9 100644
                  sample = current_sample;
                  best_dts = dts;
                  *st = avst;
--- 
-1.7.3
-

@@ -7,11 +7,11 @@ Subject: [PATCH 16/36] changed: only require first packet to be known for all au
  libavformat/utils.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/libavformat/utils.c b/libavformat/utils.c
-index 9fffaef..ddb0ae3 100644
---- a/libavformat/utils.c
-+++ b/libavformat/utils.c
-@@ -2263,7 +2263,7 @@ int av_find_stream_info(AVFormatContext *ic)
+Index: ffmpeg/libavformat/utils.c
+===================================================================
+--- ffmpeg.orig/libavformat/utils.c	2011-08-04 20:51:41.066726200 +0100
++++ ffmpeg/libavformat/utils.c	2011-08-04 20:51:44.701953400 +0100
+@@ -2391,7 +2391,7 @@
                  break;
              if(st->parser && st->parser->parser->split && !st->codec->extradata)
                  break;
@@ -20,6 +20,3 @@ index 9fffaef..ddb0ae3 100644
                  break;
          }
          if (i == ic->nb_streams) {
--- 
-1.7.3
-

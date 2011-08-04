@@ -7,11 +7,11 @@ Subject: [PATCH 24/36] get accurate estimate from the PTSes
  libavformat/utils.c |   41 +++++++++++++++++++++++++++++++++++++++++
  1 files changed, 41 insertions(+), 0 deletions(-)
 
-diff --git a/libavformat/utils.c b/libavformat/utils.c
-index ad5fb83..fe3b453 100644
---- a/libavformat/utils.c
-+++ b/libavformat/utils.c
-@@ -1982,6 +1982,43 @@ static void av_estimate_timings_from_pts(AVFormatContext *ic, int64_t old_offset
+Index: ffmpeg/libavformat/utils.c
+===================================================================
+--- ffmpeg.orig/libavformat/utils.c	2011-08-04 20:51:45.833580600 +0100
++++ ffmpeg/libavformat/utils.c	2011-08-04 20:51:49.308577400 +0100
+@@ -2098,6 +2098,43 @@
      }
  }
  
@@ -55,7 +55,7 @@ index ad5fb83..fe3b453 100644
  static void av_estimate_timings(AVFormatContext *ic, int64_t old_offset)
  {
      int64_t file_size;
-@@ -2005,6 +2042,10 @@ static void av_estimate_timings(AVFormatContext *ic, int64_t old_offset)
+@@ -2121,6 +2158,10 @@
          /* at least one component has timings - we use them for all
             the components */
          fill_all_stream_timings(ic);
@@ -66,6 +66,3 @@ index ad5fb83..fe3b453 100644
      } else {
          av_log(ic, AV_LOG_WARNING, "Estimating duration from bitrate, this may be inaccurate\n");
          /* less precise: use bitrate info */
--- 
-1.7.3
-

@@ -7,11 +7,11 @@ Subject: [PATCH 04/36] support seeking in nuv files
  libavformat/nuv.c |   84 +++++++++++++++++++++++++++++++++++++++++++++++++++++
  1 files changed, 84 insertions(+), 0 deletions(-)
 
-diff --git a/libavformat/nuv.c b/libavformat/nuv.c
-index 58a00df..04b256c 100644
---- a/libavformat/nuv.c
-+++ b/libavformat/nuv.c
-@@ -218,12 +218,18 @@ static int nuv_packet(AVFormatContext *s, AVPacket *pkt) {
+Index: ffmpeg/libavformat/nuv.c
+===================================================================
+--- ffmpeg.orig/libavformat/nuv.c	2011-08-04 20:46:49.234520200 +0100
++++ ffmpeg/libavformat/nuv.c	2011-08-04 20:51:39.023788600 +0100
+@@ -218,12 +218,18 @@
                  ret = av_new_packet(pkt, copyhdrsize + size);
                  if (ret < 0)
                      return ret;
@@ -28,9 +28,9 @@ index 58a00df..04b256c 100644
 +                    av_add_index_entry(st, pkt->pos, pkt->pts, size + HDRSIZE, 0, AVINDEX_KEYFRAME);
 +                }
                  memcpy(pkt->data, hdr, copyhdrsize);
-                 ret = get_buffer(pb, pkt->data + copyhdrsize, size);
+                 ret = avio_read(pb, pkt->data + copyhdrsize, size);
                  if (ret < 0) {
-@@ -257,6 +263,83 @@ static int nuv_packet(AVFormatContext *s, AVPacket *pkt) {
+@@ -257,6 +263,83 @@
      return AVERROR(EIO);
  }
  
@@ -114,13 +114,10 @@ index 58a00df..04b256c 100644
  AVInputFormat ff_nuv_demuxer = {
      "nuv",
      NULL_IF_CONFIG_SMALL("NuppelVideo format"),
-@@ -266,5 +349,6 @@ AVInputFormat ff_nuv_demuxer = {
+@@ -266,5 +349,6 @@
      nuv_packet,
      NULL,
      NULL,
 +    nuv_read_dts,
      .flags = AVFMT_GENERIC_INDEX,
  };
--- 
-1.7.3
-

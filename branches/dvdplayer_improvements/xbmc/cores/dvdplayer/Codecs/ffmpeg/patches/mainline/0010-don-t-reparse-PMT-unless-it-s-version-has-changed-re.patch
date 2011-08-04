@@ -7,11 +7,11 @@ Subject: [PATCH 10/36] don't reparse PMT unless it's version has changed readded
  libavformat/mpegts.c |   10 ++++++++++
  1 files changed, 10 insertions(+), 0 deletions(-)
 
-diff --git a/libavformat/mpegts.c b/libavformat/mpegts.c
-index 74b0886..c355852 100644
---- a/libavformat/mpegts.c
-+++ b/libavformat/mpegts.c
-@@ -73,6 +73,7 @@ typedef struct MpegTSSectionFilter {
+Index: ffmpeg/libavformat/mpegts.c
+===================================================================
+--- ffmpeg.orig/libavformat/mpegts.c	2011-08-04 20:51:42.298497400 +0100
++++ ffmpeg/libavformat/mpegts.c	2011-08-04 20:51:42.899361400 +0100
+@@ -72,6 +72,7 @@
  struct MpegTSFilter {
      int pid;
      int last_cc; /* last cc code (-1 if first packet) */
@@ -19,7 +19,7 @@ index 74b0886..c355852 100644
      enum MpegTSFilterType type;
      union {
          MpegTSPESFilter pes_filter;
-@@ -301,6 +302,7 @@ static MpegTSFilter *mpegts_open_section_filter(MpegTSContext *ts, unsigned int
+@@ -325,6 +326,7 @@
      filter->type = MPEGTS_SECTION;
      filter->pid = pid;
      filter->last_cc = -1;
@@ -27,7 +27,7 @@ index 74b0886..c355852 100644
      sec = &filter->u.section_filter;
      sec->section_cb = section_cb;
      sec->opaque = opaque;
-@@ -403,6 +405,7 @@ typedef struct SectionHeader {
+@@ -427,6 +429,7 @@
      uint8_t tid;
      uint16_t id;
      uint8_t version;
@@ -35,7 +35,7 @@ index 74b0886..c355852 100644
      uint8_t sec_num;
      uint8_t last_sec_num;
  } SectionHeader;
-@@ -474,6 +477,7 @@ static int parse_section_header(SectionHeader *h,
+@@ -498,6 +501,7 @@
      val = get8(pp, p_end);
      if (val < 0)
          return -1;
@@ -43,7 +43,7 @@ index 74b0886..c355852 100644
      h->version = (val >> 1) & 0x1f;
      val = get8(pp, p_end);
      if (val < 0)
-@@ -1124,6 +1128,12 @@ static void pat_cb(MpegTSFilter *filter, const uint8_t *section, int section_len
+@@ -1170,6 +1174,12 @@
          return;
      if (h->tid != PAT_TID)
          return;
@@ -54,8 +54,5 @@ index 74b0886..c355852 100644
 +    filter->last_version = h->version;
 +    av_dlog(ts->stream, "version=%d\n", filter->last_version);
  
-     clear_programs(ts);
-     for(;;) {
--- 
-1.7.3
-
+     ts->stream->ts_id = h->id;
+ 

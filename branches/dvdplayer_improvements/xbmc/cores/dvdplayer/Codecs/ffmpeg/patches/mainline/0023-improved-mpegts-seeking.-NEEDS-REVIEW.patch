@@ -9,9 +9,9 @@ Subject: [PATCH 23/36] improved mpegts seeking. NEEDS REVIEW
 
 Index: ffmpeg/libavformat/mpegts.c
 ===================================================================
---- ffmpeg.orig/libavformat/mpegts.c	2011-05-27 18:14:00.676724586 +0100
-+++ ffmpeg/libavformat/mpegts.c	2011-05-27 18:25:48.790411881 +0100
-@@ -1457,6 +1457,44 @@
+--- ffmpeg.orig/libavformat/mpegts.c	2011-08-04 20:51:47.536028600 +0100
++++ ffmpeg/libavformat/mpegts.c	2011-08-04 20:51:48.717727800 +0100
+@@ -1499,6 +1499,44 @@
      return 0;
  }
  
@@ -56,7 +56,7 @@ Index: ffmpeg/libavformat/mpegts.c
  static int mpegts_read_header(AVFormatContext *s,
                                AVFormatParameters *ap)
  {
-@@ -1668,38 +1706,39 @@
+@@ -1711,38 +1749,39 @@
      int64_t pos, timestamp;
      uint8_t buf[TS_PACKET_SIZE];
      int pcr_l, pcr_pid = ((PESContext*)s->streams[stream_index]->priv_data)->pcr_pid;
@@ -116,7 +116,7 @@ Index: ffmpeg/libavformat/mpegts.c
  #ifdef USE_SYNCPOINT_SEARCH
  
  static int read_seek2(AVFormatContext *s,
-@@ -1804,7 +1843,6 @@
+@@ -1847,7 +1886,6 @@
          if(buf[1] & 0x40) break;
          pos += ts->raw_packet_size;
      }
@@ -124,7 +124,7 @@ Index: ffmpeg/libavformat/mpegts.c
  
      return 0;
  }
-@@ -1872,7 +1910,7 @@
+@@ -1918,7 +1956,7 @@
      mpegts_read_header,
      mpegts_read_packet,
      mpegts_read_close,
@@ -133,7 +133,7 @@ Index: ffmpeg/libavformat/mpegts.c
      mpegts_get_pcr,
      .flags = AVFMT_SHOW_IDS|AVFMT_TS_DISCONT,
  #ifdef USE_SYNCPOINT_SEARCH
-@@ -1888,7 +1926,7 @@
+@@ -1934,7 +1972,7 @@
      mpegts_read_header,
      mpegts_raw_read_packet,
      mpegts_read_close,

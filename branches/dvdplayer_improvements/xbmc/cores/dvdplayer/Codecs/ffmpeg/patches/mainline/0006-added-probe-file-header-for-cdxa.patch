@@ -7,11 +7,11 @@ Subject: [PATCH 06/36] added: probe file header for cdxa
  libavformat/mpeg.c |   16 ++++++++++++++++
  1 files changed, 16 insertions(+), 0 deletions(-)
 
-diff --git a/libavformat/mpeg.c b/libavformat/mpeg.c
-index 135482b..d3b849c 100644
---- a/libavformat/mpeg.c
-+++ b/libavformat/mpeg.c
-@@ -50,6 +50,18 @@ static int check_pes(uint8_t *p, uint8_t *end){
+Index: ffmpeg/libavformat/mpeg.c
+===================================================================
+--- ffmpeg.orig/libavformat/mpeg.c	2011-08-04 20:46:47.504520200 +0100
++++ ffmpeg/libavformat/mpeg.c	2011-08-04 20:51:40.405775800 +0100
+@@ -49,6 +49,18 @@
      return pes1||pes2;
  }
  
@@ -30,7 +30,7 @@ index 135482b..d3b849c 100644
  static int mpegps_probe(AVProbeData *p)
  {
      uint32_t code= -1;
-@@ -57,6 +69,10 @@ static int mpegps_probe(AVProbeData *p)
+@@ -56,6 +68,10 @@
      int i;
      int score=0;
  
@@ -41,6 +41,3 @@ index 135482b..d3b849c 100644
      for(i=0; i<p->buf_size; i++){
          code = (code<<8) + p->buf[i];
          if ((code & 0xffffff00) == 0x100) {
--- 
-1.7.3
-

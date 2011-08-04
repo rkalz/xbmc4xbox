@@ -7,11 +7,11 @@ Subject: [PATCH 17/36] Don't assume reading more frames in av_find_stream_info w
  libavformat/utils.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/libavformat/utils.c b/libavformat/utils.c
-index ddb0ae3..26072c4 100644
---- a/libavformat/utils.c
-+++ b/libavformat/utils.c
-@@ -2050,7 +2050,7 @@ static int has_codec_parameters(AVCodecContext *enc)
+Index: ffmpeg/libavformat/utils.c
+===================================================================
+--- ffmpeg.orig/libavformat/utils.c	2011-08-04 20:51:44.701953400 +0100
++++ ffmpeg/libavformat/utils.c	2011-08-04 20:51:45.252745400 +0100
+@@ -2167,7 +2167,7 @@
          val = 1;
          break;
      }
@@ -20,6 +20,3 @@ index ddb0ae3..26072c4 100644
  }
  
  static int has_decode_delay_been_guessed(AVStream *st)
--- 
-1.7.3
-

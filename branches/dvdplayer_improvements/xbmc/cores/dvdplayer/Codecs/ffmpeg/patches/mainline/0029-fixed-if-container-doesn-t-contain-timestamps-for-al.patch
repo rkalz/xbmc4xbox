@@ -12,11 +12,11 @@ git-svn-id: https://xbmc.svn.sourceforge.net/svnroot/xbmc/trunk@34863 568bbfeb-2
  libavcodec/dca.c |    1 +
  1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/libavcodec/dca.c b/libavcodec/dca.c
-index 63ea329..2e2b37f 100644
---- a/libavcodec/dca.c
-+++ b/libavcodec/dca.c
-@@ -1642,6 +1642,7 @@ static int dca_decode_frame(AVCodecContext * avctx,
+Index: ffmpeg/libavcodec/dca.c
+===================================================================
+--- ffmpeg.orig/libavcodec/dca.c	2011-08-04 20:46:26.114520300 +0100
++++ ffmpeg/libavcodec/dca.c	2011-08-04 20:51:51.161241400 +0100
+@@ -1650,6 +1650,7 @@
      //set AVCodec values with parsed data
      avctx->sample_rate = s->sample_rate;
      avctx->bit_rate = s->bit_rate;
@@ -24,6 +24,3 @@ index 63ea329..2e2b37f 100644
  
      s->profile = FF_PROFILE_DTS;
  
--- 
-1.7.3
-

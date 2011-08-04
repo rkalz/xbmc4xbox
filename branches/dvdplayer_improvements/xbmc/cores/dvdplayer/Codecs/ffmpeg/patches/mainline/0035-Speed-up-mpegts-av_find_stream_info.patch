@@ -8,11 +8,11 @@ git-svn-id: https://xbmc.svn.sourceforge.net/svnroot/xbmc/trunk@31478 568bbfeb-2
  libavformat/mpegts.c |    7 +++++--
  1 files changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/libavformat/mpegts.c b/libavformat/mpegts.c
-index 112ff50..9c25e37 100644
---- a/libavformat/mpegts.c
-+++ b/libavformat/mpegts.c
-@@ -699,7 +699,7 @@ static int mpegts_push_data(MpegTSFilter *filter,
+Index: ffmpeg/libavformat/mpegts.c
+===================================================================
+--- ffmpeg.orig/libavformat/mpegts.c	2011-08-04 20:51:53.184150200 +0100
++++ ffmpeg/libavformat/mpegts.c	2011-08-04 20:51:53.805043000 +0100
+@@ -722,7 +722,7 @@
  #endif
  
                      /* stream not present in PMT */
@@ -21,7 +21,7 @@ index 112ff50..9c25e37 100644
                          pes->st = av_new_stream(ts->stream, pes->pid);
                          if (!pes->st)
                              return AVERROR(ENOMEM);
-@@ -1539,7 +1539,10 @@ static int mpegts_read_header(AVFormatContext *s,
+@@ -1592,7 +1592,10 @@
  
          av_dlog(ts->stream, "tuning done\n");
  
@@ -33,6 +33,3 @@ index 112ff50..9c25e37 100644
      } else {
          AVStream *st;
          int pcr_pid, pid, nb_packets, nb_pcrs, ret, pcr_l;
--- 
-1.7.3
-

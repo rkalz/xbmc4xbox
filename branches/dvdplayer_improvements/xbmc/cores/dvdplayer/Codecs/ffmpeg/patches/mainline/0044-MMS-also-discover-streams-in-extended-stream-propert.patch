@@ -14,8 +14,8 @@ Signed-off-by: Ronald S. Bultje <rsbultje@gmail.com>
 
 Index: ffmpeg/libavformat/mms.c
 ===================================================================
---- ffmpeg.orig/libavformat/mms.c	2011-05-27 18:50:51.897040275 +0100
-+++ ffmpeg/libavformat/mms.c	2011-05-27 18:51:40.286609443 +0100
+--- ffmpeg.orig/libavformat/mms.c	2011-08-04 20:40:16.904521900 +0100
++++ ffmpeg/libavformat/mms.c	2011-08-04 20:51:55.006771000 +0100
 @@ -143,6 +143,34 @@
                  if (chunksize - skip_bytes > 24)
                      chunksize = skip_bytes;
