@@ -40,7 +40,6 @@ xbmc_configure ()
   --enable-postproc \
   \
   --disable-filters \
-  --enable-filter=buffer \
   \
   --disable-protocol=rtmp,rtmpe,rtmps,rtmpt,rtmpte \
   \
