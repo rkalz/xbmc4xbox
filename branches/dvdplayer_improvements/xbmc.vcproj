@@ -1875,6 +1875,12 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\FileSystem\SIDFileDirectory.h">
 				</File>
 				<File
+					RelativePath=".\xbmc\FileSystem\Slingbox.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\FileSystem\Slingbox.h">
+				</File>
+				<File
 					RelativePath=".\xbmc\FileSystem\SmartPlaylistDirectory.cpp">
 				</File>
 				<File
@@ -4897,6 +4903,16 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 				</File>
 				<File
 					RelativePath=".\xbmc\lib\sqLite\sqlitedataset.h">
+				</File>
+			</Filter>
+			<Filter
+				Name="SlingboxLib"
+				Filter="">
+				<File
+					RelativePath=".\xbmc\lib\SlingboxLib\SlingboxLib.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\lib\SlingboxLib\SlingboxLib.h">
 				</File>
 			</Filter>
 		</Filter>
