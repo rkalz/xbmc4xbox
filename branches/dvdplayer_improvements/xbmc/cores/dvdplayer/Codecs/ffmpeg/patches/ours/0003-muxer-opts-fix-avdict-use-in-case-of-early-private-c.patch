@@ -1,0 +1,27 @@
+From bc420d18d37bfbcd04e8ee04c92d759ede31ddbc Mon Sep 17 00:00:00 2001
+From: Michael Niedermayer <michaelni@gmx.at>
+Date: Mon, 25 Jul 2011 22:25:24 +0200
+Subject: [PATCH 3/6] muxer opts: fix avdict use in case of early private context alloc
+
+Signed-off-by: Michael Niedermayer <michaelni@gmx.at>
+---
+ libavformat/utils.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/libavformat/utils.c b/libavformat/utils.c
+index 0d6023e..e62656a 100644
+--- a/libavformat/utils.c
++++ b/libavformat/utils.c
+@@ -3005,6 +3005,9 @@ int avformat_write_header(AVFormatContext *s, AVDictionary **options)
+         av_dict_copy(&tmp, *options, 0);
+     if ((ret = av_opt_set_dict(s, &tmp)) < 0)
+         goto fail;
++    if (s->priv_data && s->oformat->priv_class && *(const AVClass**)s->priv_data==s->oformat->priv_class &&
++        (ret = av_opt_set_dict(s->priv_data, &tmp)) < 0)
++        goto fail;
+ 
+     // some sanity checks
+     if (s->nb_streams == 0 && !(s->oformat->flags & AVFMT_NOSTREAMS)) {
+-- 
+1.7.4.1
+

@@ -1,0 +1,30 @@
+From 21ade8a0fd4b6c709df2de2886b15e20cca9fd93 Mon Sep 17 00:00:00 2001
+From: Jools Wills <jools@oxfordinspire.co.uk>
+Date: Fri, 5 Aug 2011 08:01:32 +0100
+Subject: [PATCH 1/6] lavf: use the correct pointer in av_open_input_stream().
+
+Conflicts:
+
+	libavformat/utils.c
+---
+ libavformat/utils.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/libavformat/utils.c b/libavformat/utils.c
+index b610276..ee38d21 100644
+--- a/libavformat/utils.c
++++ b/libavformat/utils.c
+@@ -533,8 +533,9 @@ int av_open_input_stream(AVFormatContext **ic_ptr,
+     }
+     ic->pb = pb;
+ 
+-    err = avformat_open_input(ic_ptr, filename, fmt, &opts);
++    err = avformat_open_input(&ic, filename, fmt, &opts);
+ 
++    *ic_ptr = ic;
+ #if FF_API_OLD_METADATA
+     ff_metadata_demux_compat(ic);
+ #endif
+-- 
+1.7.4.1
+

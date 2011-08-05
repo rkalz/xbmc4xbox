@@ -1,0 +1,36 @@
+From 1dc2d9918702026d0d46d7e87650e313044bfba2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Reimar=20D=C3=B6ffinger?= <Reimar.Doeffinger@gmx.de>
+Date: Tue, 5 Jul 2011 23:10:44 +0200
+Subject: [PATCH 4/6] Fix av_open_input_stream with uninitialized context pointer.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Code would allocate a new context but forget to assign it
+to the pointer actually passed to avformat_open_input,
+potentially causing a crash.
+Even if it was initialized it would cause a memleak.
+This caused crashes with e.g. mpd, see also
+http://bugs.gentoo.org/show_bug.cgi?id=373423
+
+Signed-off-by: Reimar Döffinger <Reimar.Doeffinger@gmx.de>
+---
+ libavformat/utils.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/libavformat/utils.c b/libavformat/utils.c
+index e62656a..20f8ecd 100644
+--- a/libavformat/utils.c
++++ b/libavformat/utils.c
+@@ -524,7 +524,7 @@ int av_open_input_stream(AVFormatContext **ic_ptr,
+     opts = convert_format_parameters(ap);
+ 
+     if(!ap->prealloced_context)
+-        ic = avformat_alloc_context();
++        *ic_ptr = ic = avformat_alloc_context();
+     else
+         ic = *ic_ptr;
+     if (!ic) {
+-- 
+1.7.4.1
+
