@@ -20,6 +20,7 @@
  */
  
 #include "stdafx.h"
+#include "GUISettings.h"
 #include "DVDPlayerAudio.h"
 #include "DVDPlayer.h"
 #include "DVDCodecs/Audio/DVDAudioCodec.h"
@@ -158,12 +159,8 @@ CDVDPlayerAudio::CDVDPlayerAudio(CDVDClock* pClock, CDVDMessageQueue& parent)
   m_duration = 0.0;
 
   m_freq = CurrentHostFrequency();
-#ifdef _XBOX
-  m_messageQueue.SetMaxDataSize(30 * 16 * 1024);
-#else
-  m_messageQueue.SetMaxDataSize(6 * 1024 * 1024);
-#endif
-  m_messageQueue.SetMaxTimeSize(8.0);
+  m_messageQueue.SetMaxDataSize(g_guiSettings.GetInt("dvdplayercache.audio") * 1024);
+  m_messageQueue.SetMaxTimeSize(g_guiSettings.GetInt("dvdplayercache.audiotime"));
   g_dvdPerformanceCounter.EnableAudioQueue(&m_messageQueue);
 }
 

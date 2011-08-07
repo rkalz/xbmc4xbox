@@ -370,6 +370,13 @@ void CGUISettings::Initialize()
   AddInt(3, "harddisk.aamlevel", 21386, AAM_FAST, AAM_FAST, 1, AAM_QUIET, SPIN_CONTROL_TEXT);
   AddInt(4, "harddisk.apmlevel", 21390, APM_HIPOWER, APM_HIPOWER, 1, APM_LOPOWER_STANDBY, SPIN_CONTROL_TEXT);
 
+  AddCategory(4, "dvdplayercache", 483);
+  AddInt(1, "dvdplayercache.video", 14096, 1024, 0, 256, 16384, SPIN_CONTROL_INT_PLUS, MASK_KB, TEXT_OFF);
+  AddInt(2, "dvdplayercache.videotime", 14097, 8, 0, 1, 30, SPIN_CONTROL_INT_PLUS, MASK_SECS);
+  AddSeparator(3, "dvdplayercache.sep1");
+  AddInt(4, "dvdplayercache.audio", 14098, 384, 0, 128, 4096, SPIN_CONTROL_INT_PLUS, MASK_KB, TEXT_OFF);
+  AddInt(5, "dvdplayercache.audiotime", 14099, 8, 0, 1, 30, SPIN_CONTROL_INT_PLUS, MASK_SECS);
+
   AddCategory(4, "cache", 439);
   AddInt(1, "cache.harddisk", 14025, 256, 0, 256, 4096, SPIN_CONTROL_INT_PLUS, MASK_KB, TEXT_OFF);
   AddSeparator(2, "cache.sep1");
