@@ -10,9 +10,9 @@ git-svn-id: https://xbmc.svn.sourceforge.net/svnroot/xbmc/trunk@34307 568bbfeb-2
 
 Index: ffmpeg/libavcodec/mpeg12.c
 ===================================================================
---- ffmpeg.orig/libavcodec/mpeg12.c	2011-08-04 20:46:27.774520300 +0100
-+++ ffmpeg/libavcodec/mpeg12.c	2011-08-04 20:51:50.540348600 +0100
-@@ -1990,7 +1990,7 @@
+--- ffmpeg.orig/libavcodec/mpeg12.c	2011-08-07 07:06:16.553848600 +0100
++++ ffmpeg/libavcodec/mpeg12.c	2011-08-07 07:06:35.004372800 +0100
+@@ -1988,7 +1988,7 @@
          ff_xvmc_field_end(s);
  
      /* end of slice reached */
@@ -20,4 +20,4 @@ Index: ffmpeg/libavcodec/mpeg12.c
 +    if (/*s->mb_y<<field_pic == s->mb_height &&*/ !s->first_field && !s->first_slice) {
          /* end of image */
  
-         s->current_picture_ptr->qscale_type= FF_QSCALE_TYPE_MPEG2;
+         s->current_picture_ptr->f.qscale_type = FF_QSCALE_TYPE_MPEG2;

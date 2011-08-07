@@ -9,9 +9,9 @@ Subject: [PATCH 07/36] if av_read_packet returns AVERROR_IO, we are done. ffmpeg
 
 Index: ffmpeg/libavformat/utils.c
 ===================================================================
---- ffmpeg.orig/libavformat/utils.c	2011-08-04 20:46:45.624520200 +0100
-+++ ffmpeg/libavformat/utils.c	2011-08-04 20:51:41.066726200 +0100
-@@ -1250,6 +1250,8 @@
+--- ffmpeg.orig/libavformat/utils.c	2011-08-07 07:06:17.383848600 +0100
++++ ffmpeg/libavformat/utils.c	2011-08-07 07:06:27.583702400 +0100
+@@ -1266,6 +1266,8 @@
              if (ret < 0) {
                  if (ret == AVERROR(EAGAIN))
                      return ret;

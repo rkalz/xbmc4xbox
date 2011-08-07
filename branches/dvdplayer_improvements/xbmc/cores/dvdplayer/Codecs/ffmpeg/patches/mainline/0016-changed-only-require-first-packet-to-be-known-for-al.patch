@@ -9,9 +9,9 @@ Subject: [PATCH 16/36] changed: only require first packet to be known for all au
 
 Index: ffmpeg/libavformat/utils.c
 ===================================================================
---- ffmpeg.orig/libavformat/utils.c	2011-08-04 20:51:41.066726200 +0100
-+++ ffmpeg/libavformat/utils.c	2011-08-04 20:51:44.701953400 +0100
-@@ -2391,7 +2391,7 @@
+--- ffmpeg.orig/libavformat/utils.c	2011-08-07 07:06:27.583702400 +0100
++++ ffmpeg/libavformat/utils.c	2011-08-07 07:06:30.447820800 +0100
+@@ -2414,7 +2414,7 @@
                  break;
              if(st->parser && st->parser->parser->split && !st->codec->extradata)
                  break;

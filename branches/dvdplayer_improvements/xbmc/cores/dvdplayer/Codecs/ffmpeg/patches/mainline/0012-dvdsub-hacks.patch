@@ -9,8 +9,8 @@ Subject: [PATCH 12/36] dvdsub hacks
 
 Index: ffmpeg/libavcodec/dvdsubdec.c
 ===================================================================
---- ffmpeg.orig/libavcodec/dvdsubdec.c	2011-08-04 20:40:17.164521900 +0100
-+++ ffmpeg/libavcodec/dvdsubdec.c	2011-08-04 20:51:43.470182200 +0100
+--- ffmpeg.orig/libavcodec/dvdsubdec.c	2011-08-07 07:06:17.083848600 +0100
++++ ffmpeg/libavcodec/dvdsubdec.c	2011-08-07 07:06:29.496452800 +0100
 @@ -25,6 +25,14 @@
  
  //#define DEBUG
@@ -108,7 +108,7 @@ Index: ffmpeg/libavcodec/dvdsubdec.c
                  }
                  sub_header->rects[0]->x = x1;
                  sub_header->rects[0]->y = y1;
-@@ -465,12 +499,13 @@
+@@ -469,12 +503,13 @@
                           void *data, int *data_size,
                           AVPacket *avpkt)
  {
@@ -123,7 +123,7 @@ Index: ffmpeg/libavcodec/dvdsubdec.c
  
      if (is_menu < 0) {
      no_subtitle:
-@@ -493,12 +528,54 @@
+@@ -497,10 +532,54 @@
      return buf_size;
  }
  
@@ -170,13 +170,11 @@ Index: ffmpeg/libavcodec/dvdsubdec.c
 +}
 +
  AVCodec ff_dvdsub_decoder = {
-     "dvdsub",
-     AVMEDIA_TYPE_SUBTITLE,
-     CODEC_ID_DVD_SUBTITLE,
--    0,
--    NULL,
-+    sizeof(DVDSubContext),
-+    dvdsub_init,
-     NULL,
-     NULL,
-     dvdsub_decode,
+     .name           = "dvdsub",
+     .type           = AVMEDIA_TYPE_SUBTITLE,
+     .id             = CODEC_ID_DVD_SUBTITLE,
++    .priv_data_size = sizeof(DVDSubContext),
++    .init           = dvdsub_init,
+     .decode         = dvdsub_decode,
+     .long_name = NULL_IF_CONFIG_SMALL("DVD subtitles"),
+ };

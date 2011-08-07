@@ -9,9 +9,9 @@ Subject: [PATCH 10/36] don't reparse PMT unless it's version has changed readded
 
 Index: ffmpeg/libavformat/mpegts.c
 ===================================================================
---- ffmpeg.orig/libavformat/mpegts.c	2011-08-04 20:51:42.298497400 +0100
-+++ ffmpeg/libavformat/mpegts.c	2011-08-04 20:51:42.899361400 +0100
-@@ -72,6 +72,7 @@
+--- ffmpeg.orig/libavformat/mpegts.c	2011-08-07 07:06:28.545084800 +0100
++++ ffmpeg/libavformat/mpegts.c	2011-08-07 07:06:29.015761600 +0100
+@@ -73,6 +73,7 @@
  struct MpegTSFilter {
      int pid;
      int last_cc; /* last cc code (-1 if first packet) */
@@ -19,7 +19,7 @@ Index: ffmpeg/libavformat/mpegts.c
      enum MpegTSFilterType type;
      union {
          MpegTSPESFilter pes_filter;
-@@ -325,6 +326,7 @@
+@@ -327,6 +328,7 @@
      filter->type = MPEGTS_SECTION;
      filter->pid = pid;
      filter->last_cc = -1;
@@ -27,7 +27,7 @@ Index: ffmpeg/libavformat/mpegts.c
      sec = &filter->u.section_filter;
      sec->section_cb = section_cb;
      sec->opaque = opaque;
-@@ -427,6 +429,7 @@
+@@ -429,6 +431,7 @@
      uint8_t tid;
      uint16_t id;
      uint8_t version;
@@ -35,7 +35,7 @@ Index: ffmpeg/libavformat/mpegts.c
      uint8_t sec_num;
      uint8_t last_sec_num;
  } SectionHeader;
-@@ -498,6 +501,7 @@
+@@ -500,6 +503,7 @@
      val = get8(pp, p_end);
      if (val < 0)
          return -1;
@@ -43,7 +43,7 @@ Index: ffmpeg/libavformat/mpegts.c
      h->version = (val >> 1) & 0x1f;
      val = get8(pp, p_end);
      if (val < 0)
-@@ -1170,6 +1174,12 @@
+@@ -1180,6 +1184,12 @@
          return;
      if (h->tid != PAT_TID)
          return;

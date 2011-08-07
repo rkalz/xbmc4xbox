@@ -9,9 +9,9 @@ Subject: [PATCH 18/36] changed: don't override file duration with bitrate durati
 
 Index: ffmpeg/libavformat/utils.c
 ===================================================================
---- ffmpeg.orig/libavformat/utils.c	2011-08-04 20:51:45.252745400 +0100
-+++ ffmpeg/libavformat/utils.c	2011-08-04 20:51:45.823566200 +0100
-@@ -1896,6 +1896,8 @@
+--- ffmpeg.orig/libavformat/utils.c	2011-08-07 07:06:30.908483200 +0100
++++ ffmpeg/libavformat/utils.c	2011-08-07 07:06:31.289030400 +0100
+@@ -1912,6 +1912,8 @@
  {
      int i;
      AVStream *st;
@@ -20,7 +20,7 @@ Index: ffmpeg/libavformat/utils.c
  
      for(i = 0;i < ic->nb_streams; i++) {
          st = ic->streams[i];
-@@ -1953,14 +1955,14 @@
+@@ -1969,14 +1971,14 @@
                  duration = end_time - start_time;
          }
      }

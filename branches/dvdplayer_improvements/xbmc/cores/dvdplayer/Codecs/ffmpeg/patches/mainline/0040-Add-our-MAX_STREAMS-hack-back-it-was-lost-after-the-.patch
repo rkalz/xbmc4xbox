@@ -12,9 +12,9 @@ This should be removed on ffmpeg major version bump.
 
 Index: ffmpeg/libavformat/avformat.h
 ===================================================================
---- ffmpeg.orig/libavformat/avformat.h	2011-08-04 20:40:16.954521900 +0100
-+++ ffmpeg/libavformat/avformat.h	2011-08-04 20:51:54.415921400 +0100
-@@ -705,7 +705,7 @@
+--- ffmpeg.orig/libavformat/avformat.h	2011-08-07 07:06:16.383848600 +0100
++++ ffmpeg/libavformat/avformat.h	2011-08-07 07:06:36.426417600 +0100
+@@ -718,7 +718,7 @@
  } AVChapter;
  
  #if FF_API_MAX_STREAMS

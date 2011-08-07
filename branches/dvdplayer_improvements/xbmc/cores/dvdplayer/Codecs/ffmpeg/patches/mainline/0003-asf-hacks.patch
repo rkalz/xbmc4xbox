@@ -9,9 +9,9 @@ Subject: [PATCH 03/36] asf hacks
 
 Index: ffmpeg/libavformat/asfdec.c
 ===================================================================
---- ffmpeg.orig/libavformat/asfdec.c	2011-08-04 20:40:17.354521900 +0100
-+++ ffmpeg/libavformat/asfdec.c	2011-08-04 20:51:38.122492600 +0100
-@@ -1205,6 +1205,7 @@
+--- ffmpeg.orig/libavformat/asfdec.c	2011-08-07 07:06:17.553848600 +0100
++++ ffmpeg/libavformat/asfdec.c	2011-08-07 07:06:25.901283200 +0100
+@@ -1202,6 +1202,7 @@
          int64_t gsize= avio_rl64(s->pb);
          if (gsize < 24 || url_feof(s->pb)) {
              avio_seek(s->pb, current_pos, SEEK_SET);
@@ -19,7 +19,7 @@ Index: ffmpeg/libavformat/asfdec.c
              return;
          }
          avio_skip(s->pb, gsize-24);
-@@ -1245,9 +1246,20 @@
+@@ -1242,9 +1243,20 @@
      int64_t pos;
      int index;
  
@@ -40,7 +40,7 @@ Index: ffmpeg/libavformat/asfdec.c
      /* Try using the protocol's read_seek if available */
      if(s->pb) {
          int ret = avio_seek_time(s->pb, stream_index, pts, flags);
-@@ -1268,7 +1280,8 @@
+@@ -1265,7 +1277,8 @@
  
              /* do the seek */
              av_log(s, AV_LOG_DEBUG, "SEEKTO: %"PRId64"\n", pos);

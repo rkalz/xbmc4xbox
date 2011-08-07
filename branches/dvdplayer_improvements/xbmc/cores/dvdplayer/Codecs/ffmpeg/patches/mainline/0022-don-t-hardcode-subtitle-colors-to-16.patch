@@ -9,8 +9,8 @@ Subject: [PATCH 22/36] don't hardcode subtitle colors to 16
 
 Index: ffmpeg/libavcodec/dvbsubdec.c
 ===================================================================
---- ffmpeg.orig/libavcodec/dvbsubdec.c	2011-08-04 20:46:30.894520300 +0100
-+++ ffmpeg/libavcodec/dvbsubdec.c	2011-08-04 20:51:48.136892600 +0100
+--- ffmpeg.orig/libavcodec/dvbsubdec.c	2011-08-07 07:06:16.643848600 +0100
++++ ffmpeg/libavcodec/dvbsubdec.c	2011-08-07 07:06:34.022961600 +0100
 @@ -1360,7 +1360,7 @@
          rect->y = display->y_pos + offset_y;
          rect->w = region->width;

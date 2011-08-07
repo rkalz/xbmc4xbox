@@ -9,8 +9,8 @@ Subject: [PATCH 19/36] changed: check for seek error when attempting to read tim
 
 Index: ffmpeg/libavformat/rmdec.c
 ===================================================================
---- ffmpeg.orig/libavformat/rmdec.c	2011-08-04 20:40:17.114521900 +0100
-+++ ffmpeg/libavformat/rmdec.c	2011-08-04 20:51:46.404401400 +0100
+--- ffmpeg.orig/libavformat/rmdec.c	2011-08-07 07:06:16.793848600 +0100
++++ ffmpeg/libavformat/rmdec.c	2011-08-07 07:06:31.839822400 +0100
 @@ -905,7 +905,9 @@
      if(rm->old_format)
          return AV_NOPTS_VALUE;

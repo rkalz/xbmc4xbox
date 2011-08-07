@@ -10,9 +10,9 @@ Subject: [PATCH 08/36] added: Ticket #7187, TV Teletext support for DVB EBU Tele
 
 Index: ffmpeg/libavcodec/avcodec.h
 ===================================================================
---- ffmpeg.orig/libavcodec/avcodec.h	2011-08-04 20:46:42.174520200 +0100
-+++ ffmpeg/libavcodec/avcodec.h	2011-08-04 20:51:41.657575800 +0100
-@@ -358,6 +358,10 @@
+--- ffmpeg.orig/libavcodec/avcodec.h	2011-08-07 07:06:17.293848600 +0100
++++ ffmpeg/libavcodec/avcodec.h	2011-08-07 07:06:28.014321600 +0100
+@@ -362,6 +362,10 @@
      CODEC_ID_SRT,
      CODEC_ID_MICRODVD,
  
@@ -25,9 +25,9 @@ Index: ffmpeg/libavcodec/avcodec.h
  
 Index: ffmpeg/libavformat/mpegts.c
 ===================================================================
---- ffmpeg.orig/libavformat/mpegts.c	2011-08-04 20:46:42.204520200 +0100
-+++ ffmpeg/libavformat/mpegts.c	2011-08-04 20:51:41.667590200 +0100
-@@ -561,6 +561,8 @@
+--- ffmpeg.orig/libavformat/mpegts.c	2011-08-07 07:06:17.303848600 +0100
++++ ffmpeg/libavformat/mpegts.c	2011-08-07 07:06:28.024336000 +0100
+@@ -563,6 +563,8 @@
      { 0x7b, AVMEDIA_TYPE_AUDIO,             CODEC_ID_DTS },
      { 0x56, AVMEDIA_TYPE_SUBTITLE, CODEC_ID_DVB_TELETEXT },
      { 0x59, AVMEDIA_TYPE_SUBTITLE, CODEC_ID_DVB_SUBTITLE }, /* subtitling descriptor */

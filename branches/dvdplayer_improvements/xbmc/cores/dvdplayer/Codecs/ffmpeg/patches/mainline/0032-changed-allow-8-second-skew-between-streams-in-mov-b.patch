@@ -10,9 +10,9 @@ git-svn-id: https://xbmc.svn.sourceforge.net/svnroot/xbmc/trunk@35598 568bbfeb-2
 
 Index: ffmpeg/libavformat/mov.c
 ===================================================================
---- ffmpeg.orig/libavformat/mov.c	2011-08-04 20:46:24.454520300 +0100
-+++ ffmpeg/libavformat/mov.c	2011-08-04 20:51:52.362969400 +0100
-@@ -2440,8 +2440,8 @@
+--- ffmpeg.orig/libavformat/mov.c	2011-08-07 07:06:16.493848600 +0100
++++ ffmpeg/libavformat/mov.c	2011-08-07 07:06:35.585208000 +0100
+@@ -2441,8 +2441,8 @@
              if (!sample || (!s->pb->seekable && current_sample->pos < sample->pos) ||
                  (s->pb->seekable &&
                   ((msc->pb != s->pb && dts < best_dts) || (msc->pb == s->pb &&

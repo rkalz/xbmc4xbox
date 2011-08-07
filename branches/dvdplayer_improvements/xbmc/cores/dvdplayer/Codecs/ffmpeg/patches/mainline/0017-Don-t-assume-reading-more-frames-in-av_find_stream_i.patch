@@ -9,14 +9,14 @@ Subject: [PATCH 17/36] Don't assume reading more frames in av_find_stream_info w
 
 Index: ffmpeg/libavformat/utils.c
 ===================================================================
---- ffmpeg.orig/libavformat/utils.c	2011-08-04 20:51:44.701953400 +0100
-+++ ffmpeg/libavformat/utils.c	2011-08-04 20:51:45.252745400 +0100
-@@ -2167,7 +2167,7 @@
+--- ffmpeg.orig/libavformat/utils.c	2011-08-07 07:06:30.457835200 +0100
++++ ffmpeg/libavformat/utils.c	2011-08-07 07:06:30.908483200 +0100
+@@ -2183,7 +2183,7 @@
          val = 1;
          break;
      }
--    return enc->codec_id != CODEC_ID_NONE && val != 0;
-+    return enc->codec_id != CODEC_ID_PROBE && val != 0;
+-    return avctx->codec_id != CODEC_ID_NONE && val != 0;
++    return avctx->codec_id != CODEC_ID_PROBE && val != 0;
  }
  
  static int has_decode_delay_been_guessed(AVStream *st)

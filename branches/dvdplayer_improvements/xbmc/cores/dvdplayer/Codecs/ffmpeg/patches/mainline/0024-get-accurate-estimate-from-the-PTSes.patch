@@ -9,9 +9,9 @@ Subject: [PATCH 24/36] get accurate estimate from the PTSes
 
 Index: ffmpeg/libavformat/utils.c
 ===================================================================
---- ffmpeg.orig/libavformat/utils.c	2011-08-04 20:51:45.833580600 +0100
-+++ ffmpeg/libavformat/utils.c	2011-08-04 20:51:49.308577400 +0100
-@@ -2098,6 +2098,43 @@
+--- ffmpeg.orig/libavformat/utils.c	2011-08-07 07:06:31.299044800 +0100
++++ ffmpeg/libavformat/utils.c	2011-08-07 07:06:34.393494400 +0100
+@@ -1998,6 +1998,43 @@
      }
  }
  
@@ -52,10 +52,10 @@ Index: ffmpeg/libavformat/utils.c
 +    url_fseek(ic->pb, old_offset, SEEK_SET);
 +}
 +
- static void av_estimate_timings(AVFormatContext *ic, int64_t old_offset)
+ static void estimate_timings_from_bit_rate(AVFormatContext *ic)
  {
-     int64_t file_size;
-@@ -2121,6 +2158,10 @@
+     int64_t filesize, duration;
+@@ -2137,6 +2174,10 @@
          /* at least one component has timings - we use them for all
             the components */
          fill_all_stream_timings(ic);

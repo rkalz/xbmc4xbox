@@ -10,8 +10,8 @@ git-svn-id: https://xbmc.svn.sourceforge.net/svnroot/xbmc/trunk@33768 568bbfeb-2
 
 Index: ffmpeg/libavcodec/vp3.c
 ===================================================================
---- ffmpeg.orig/libavcodec/vp3.c	2011-08-04 20:40:16.984521900 +0100
-+++ ffmpeg/libavcodec/vp3.c	2011-08-04 20:51:51.762105400 +0100
+--- ffmpeg.orig/libavcodec/vp3.c	2011-08-07 07:06:16.523848600 +0100
++++ ffmpeg/libavcodec/vp3.c	2011-08-07 07:06:35.294790400 +0100
 @@ -1876,7 +1876,7 @@
          return buf_size;
  

@@ -9,9 +9,9 @@ Subject: [PATCH 05/36] fixed: #5585 Media file gets played twice. we assume avi 
 
 Index: ffmpeg/libavformat/avidec.c
 ===================================================================
---- ffmpeg.orig/libavformat/avidec.c	2011-08-04 20:51:35.949367800 +0100
-+++ ffmpeg/libavformat/avidec.c	2011-08-04 20:51:39.784883000 +0100
-@@ -919,7 +919,8 @@
+--- ffmpeg.orig/libavformat/avidec.c	2011-08-07 07:06:24.399123200 +0100
++++ ffmpeg/libavformat/avidec.c	2011-08-07 07:06:26.792564800 +0100
+@@ -1050,7 +1050,8 @@
          if(i>=0){
              int64_t pos= best_st->index_entries[i].pos;
              pos += best_ast->packet_size - best_ast->remaining;
@@ -21,7 +21,7 @@ Index: ffmpeg/libavformat/avidec.c
  //        av_log(s, AV_LOG_DEBUG, "pos=%"PRId64"\n", pos);
  
              assert(best_ast->remaining <= best_ast->packet_size);
-@@ -929,6 +930,8 @@
+@@ -1060,6 +1061,8 @@
                  best_ast->packet_size=
                  best_ast->remaining= best_st->index_entries[i].size;
          }

@@ -9,9 +9,9 @@ Subject: [PATCH 04/36] support seeking in nuv files
 
 Index: ffmpeg/libavformat/nuv.c
 ===================================================================
---- ffmpeg.orig/libavformat/nuv.c	2011-08-04 20:46:49.234520200 +0100
-+++ ffmpeg/libavformat/nuv.c	2011-08-04 20:51:39.023788600 +0100
-@@ -218,12 +218,18 @@
+--- ffmpeg.orig/libavformat/nuv.c	2011-08-07 07:06:17.493848600 +0100
++++ ffmpeg/libavformat/nuv.c	2011-08-07 07:06:26.432046400 +0100
+@@ -219,12 +219,18 @@
                  ret = av_new_packet(pkt, copyhdrsize + size);
                  if (ret < 0)
                      return ret;
@@ -30,7 +30,7 @@ Index: ffmpeg/libavformat/nuv.c
                  memcpy(pkt->data, hdr, copyhdrsize);
                  ret = avio_read(pb, pkt->data + copyhdrsize, size);
                  if (ret < 0) {
-@@ -257,6 +263,83 @@
+@@ -258,6 +264,83 @@
      return AVERROR(EIO);
  }
  
@@ -65,7 +65,7 @@ Index: ffmpeg/libavformat/nuv.c
 + * \brief attempts to read a timestamp from stream at the given stream position
 + * \return timestamp if successfull and AV_NOPTS_VALUE if failure
 + */
-+static int64_t nuv_read_dts(AVFormatContext *s, int stream_index,
++static int64_t nuv_read_timestamp(AVFormatContext *s, int stream_index,
 +                               int64_t *ppos, int64_t pos_limit)
 +{
 +    NUVContext *ctx = s->priv_data;
@@ -112,12 +112,12 @@ Index: ffmpeg/libavformat/nuv.c
 +
 +
  AVInputFormat ff_nuv_demuxer = {
-     "nuv",
-     NULL_IF_CONFIG_SMALL("NuppelVideo format"),
-@@ -266,5 +349,6 @@
-     nuv_packet,
-     NULL,
-     NULL,
-+    nuv_read_dts,
+     .name           = "nuv",
+     .long_name      = NULL_IF_CONFIG_SMALL("NuppelVideo format"),
+@@ -265,5 +348,6 @@
+     .read_probe     = nuv_probe,
+     .read_header    = nuv_header,
+     .read_packet    = nuv_packet,
++    .read_timestamp = nuv_read_timestamp,
      .flags = AVFMT_GENERIC_INDEX,
  };

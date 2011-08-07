@@ -9,9 +9,9 @@ Subject: [PATCH 01/36] changed: allow reading of growing avi files (ie currently
 
 Index: ffmpeg/libavformat/avidec.c
 ===================================================================
---- ffmpeg.orig/libavformat/avidec.c	2011-08-04 20:40:17.404521900 +0100
-+++ ffmpeg/libavformat/avidec.c	2011-08-04 20:51:35.939353400 +0100
-@@ -155,7 +155,7 @@
+--- ffmpeg.orig/libavformat/avidec.c	2011-08-07 07:06:17.613848600 +0100
++++ ffmpeg/libavformat/avidec.c	2011-08-07 07:06:24.389108800 +0100
+@@ -157,7 +157,7 @@
      AVIStream *ast;
      int i;
      int64_t last_pos= -1;
@@ -20,7 +20,7 @@ Index: ffmpeg/libavformat/avidec.c
  
      av_dlog(s, "longs_pre_entry:%d index_type:%d entries_in_use:%d chunk_id:%X base:%16"PRIX64"\n",
              longs_pre_entry,index_type, entries_in_use, chunk_id, base);
-@@ -370,7 +370,7 @@
+@@ -372,7 +372,7 @@
      av_log(avi, AV_LOG_DEBUG, "use odml:%d\n", avi->use_odml);
  
      avi->fsize = avio_size(pb);
@@ -29,7 +29,7 @@ Index: ffmpeg/libavformat/avidec.c
          avi->fsize= avi->riff_end == 8 ? INT64_MAX : avi->riff_end;
  
      /* first list tag */
-@@ -396,7 +396,7 @@
+@@ -398,7 +398,7 @@
              if (tag1 == MKTAG('m', 'o', 'v', 'i')) {
                  avi->movi_list = avio_tell(pb) - 4;
                  if(size) avi->movi_end = avi->movi_list + size + (size & 1);
@@ -38,7 +38,7 @@ Index: ffmpeg/libavformat/avidec.c
                  av_dlog(NULL, "movi end=%"PRIx64"\n", avi->movi_end);
                  goto end_of_header;
              }
-@@ -724,7 +724,7 @@
+@@ -727,7 +727,7 @@
                  av_log(s, AV_LOG_ERROR, "Something went wrong during header parsing, "
                                          "I will ignore it and try to continue anyway.\n");
                  avi->movi_list = avio_tell(pb) - 4;

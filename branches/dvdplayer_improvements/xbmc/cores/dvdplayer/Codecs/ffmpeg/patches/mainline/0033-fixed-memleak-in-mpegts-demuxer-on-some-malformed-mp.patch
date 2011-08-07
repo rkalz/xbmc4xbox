@@ -12,9 +12,9 @@ git-svn-id: https://xbmc.svn.sourceforge.net/svnroot/xbmc/trunk@35475 568bbfeb-2
 
 Index: ffmpeg/libavformat/mpegts.c
 ===================================================================
---- ffmpeg.orig/libavformat/mpegts.c	2011-08-04 20:51:48.717727800 +0100
-+++ ffmpeg/libavformat/mpegts.c	2011-08-04 20:51:53.184150200 +0100
-@@ -642,6 +642,10 @@
+--- ffmpeg.orig/libavformat/mpegts.c	2011-08-07 07:06:33.622385600 +0100
++++ ffmpeg/libavformat/mpegts.c	2011-08-07 07:06:35.865611200 +0100
+@@ -644,6 +644,10 @@
  
  static void new_pes_packet(PESContext *pes, AVPacket *pkt)
  {
@@ -25,8 +25,8 @@ Index: ffmpeg/libavformat/mpegts.c
      av_init_packet(pkt);
  
      pkt->destruct = av_destruct_packet;
-@@ -1708,6 +1712,8 @@
-     }
+@@ -1698,6 +1702,8 @@
+     int ret, i;
  
      ts->pkt = pkt;
 +    ts->pkt->data = NULL;

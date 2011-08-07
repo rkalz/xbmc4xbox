@@ -9,9 +9,9 @@ Subject: [PATCH 14/36] changed: check some more avio_seeks in asf demuxer to avo
 
 Index: ffmpeg/libavformat/asfdec.c
 ===================================================================
---- ffmpeg.orig/libavformat/asfdec.c	2011-08-04 20:51:38.122492600 +0100
-+++ ffmpeg/libavformat/asfdec.c	2011-08-04 20:51:44.061031800 +0100
-@@ -1154,7 +1154,8 @@
+--- ffmpeg.orig/libavformat/asfdec.c	2011-08-07 07:06:25.911297600 +0100
++++ ffmpeg/libavformat/asfdec.c	2011-08-07 07:06:29.947100800 +0100
+@@ -1151,7 +1151,8 @@
      if (s->packet_size > 0)
          pos= (pos+s->packet_size-1-s->data_offset)/s->packet_size*s->packet_size+ s->data_offset;
      *ppos= pos;
@@ -21,7 +21,7 @@ Index: ffmpeg/libavformat/asfdec.c
  
  //printf("asf_read_pts\n");
      asf_reset_header(s);
-@@ -1196,7 +1197,11 @@
+@@ -1193,7 +1194,11 @@
      int64_t current_pos= avio_tell(s->pb);
      int i;
  

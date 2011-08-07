@@ -9,8 +9,8 @@ Subject: [PATCH 06/36] added: probe file header for cdxa
 
 Index: ffmpeg/libavformat/mpeg.c
 ===================================================================
---- ffmpeg.orig/libavformat/mpeg.c	2011-08-04 20:46:47.504520200 +0100
-+++ ffmpeg/libavformat/mpeg.c	2011-08-04 20:51:40.405775800 +0100
+--- ffmpeg.orig/libavformat/mpeg.c	2011-08-07 07:06:17.413848600 +0100
++++ ffmpeg/libavformat/mpeg.c	2011-08-07 07:06:27.193140800 +0100
 @@ -49,6 +49,18 @@
      return pes1||pes2;
  }
