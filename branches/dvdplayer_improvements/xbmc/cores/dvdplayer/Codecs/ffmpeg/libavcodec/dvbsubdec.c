@@ -1360,7 +1360,7 @@ static int dvbsub_display_end_segment(AVCodecContext *avctx, const uint8_t *buf,
         rect->y = display->y_pos + offset_y;
         rect->w = region->width;
         rect->h = region->height;
-        rect->nb_colors = (1 << region->depth);
+        rect->nb_colors = 16;
         rect->type      = SUBTITLE_BITMAP;
         rect->pict.linesize[0] = region->width;
 
@@ -1463,6 +1463,7 @@ static int dvbsub_decode(AVCodecContext *avctx,
                 break;
             case DVBSUB_DISPLAYDEFINITION_SEGMENT:
                 dvbsub_parse_display_definition_segment(avctx, p, segment_length);
+                break;
             case DVBSUB_DISPLAY_SEGMENT:
                 *data_size = dvbsub_display_end_segment(avctx, p, segment_length, sub);
                 break;
@@ -1481,13 +1482,12 @@ static int dvbsub_decode(AVCodecContext *avctx,
 
 
 AVCodec ff_dvbsub_decoder = {
-    "dvbsub",
-    AVMEDIA_TYPE_SUBTITLE,
-    CODEC_ID_DVB_SUBTITLE,
-    sizeof(DVBSubContext),
-    dvbsub_init_decoder,
-    NULL,
-    dvbsub_close_decoder,
-    dvbsub_decode,
+    .name           = "dvbsub",
+    .type           = AVMEDIA_TYPE_SUBTITLE,
+    .id             = CODEC_ID_DVB_SUBTITLE,
+    .priv_data_size = sizeof(DVBSubContext),
+    .init           = dvbsub_init_decoder,
+    .close          = dvbsub_close_decoder,
+    .decode         = dvbsub_decode,
     .long_name = NULL_IF_CONFIG_SMALL("DVB subtitles"),
 };

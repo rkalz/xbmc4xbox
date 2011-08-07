@@ -281,7 +281,7 @@ ff_rm_read_mdpr_codecdata (AVFormatContext *s, AVIOContext *pb,
         if (rm_read_audio_stream_info(s, pb, st, rst, 0))
             return -1;
     } else {
-        int fps, fps2;
+        int fps;
         if (avio_rl32(pb) != MKTAG('V', 'I', 'D', 'O')) {
         fail1:
             av_log(st->codec, AV_LOG_ERROR, "Unsupported video codec\n");
@@ -295,17 +295,18 @@ ff_rm_read_mdpr_codecdata (AVFormatContext *s, AVIOContext *pb,
             goto fail1;
         st->codec->width = avio_rb16(pb);
         st->codec->height = avio_rb16(pb);
-        st->codec->time_base.num= 1 << 16;
+        st->codec->time_base.num= 1;
         fps= avio_rb16(pb);
         st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
         avio_rb32(pb);
-        fps2= avio_rb32(pb);
+        avio_skip(pb, 2);
+        avio_rb16(pb);
 
         if ((ret = rm_read_extradata(pb, st->codec, codec_data_size - (avio_tell(pb) - codec_pos))) < 0)
             return ret;
 
 //        av_log(s, AV_LOG_DEBUG, "fps= %d fps2= %d\n", fps, fps2);
-        st->codec->time_base.den = fps2;
+        st->codec->time_base.den = fps * st->codec->time_base.num;
         //XXX: do we really need that?
         switch(st->codec->extradata[4]>>4){
         case 1: st->codec->codec_id = CODEC_ID_RV10; break;
@@ -370,7 +371,7 @@ skip:
     return 0;
 }
 
-static int rm_read_header_old(AVFormatContext *s, AVFormatParameters *ap)
+static int rm_read_header_old(AVFormatContext *s)
 {
     RMDemuxContext *rm = s->priv_data;
     AVStream *st;
@@ -398,7 +399,7 @@ static int rm_read_header(AVFormatContext *s, AVFormatParameters *ap)
     tag = avio_rl32(pb);
     if (tag == MKTAG('.', 'r', 'a', 0xfd)) {
         /* very old .ra format */
-        return rm_read_header_old(s, ap);
+        return rm_read_header_old(s);
     } else if (tag != MKTAG('.', 'R', 'M', 'F')) {
         return AVERROR(EIO);
     }
@@ -904,9 +905,7 @@ static int64_t rm_read_dts(AVFormatContext *s, int stream_index,
     if(rm->old_format)
         return AV_NOPTS_VALUE;
 
-    if (avio_seek(s->pb, pos, SEEK_SET) < 0)
-        return AV_NOPTS_VALUE;
-
+    avio_seek(s->pb, pos, SEEK_SET);
     rm->remaining_len=0;
     for(;;){
         int seq=1;
@@ -938,23 +937,19 @@ static int64_t rm_read_dts(AVFormatContext *s, int stream_index,
 }
 
 AVInputFormat ff_rm_demuxer = {
-    "rm",
-    NULL_IF_CONFIG_SMALL("RealMedia format"),
-    sizeof(RMDemuxContext),
-    rm_probe,
-    rm_read_header,
-    rm_read_packet,
-    rm_read_close,
-    NULL,
-    rm_read_dts,
+    .name           = "rm",
+    .long_name      = NULL_IF_CONFIG_SMALL("RealMedia format"),
+    .priv_data_size = sizeof(RMDemuxContext),
+    .read_probe     = rm_probe,
+    .read_header    = rm_read_header,
+    .read_packet    = rm_read_packet,
+    .read_close     = rm_read_close,
+    .read_timestamp = rm_read_dts,
 };
 
 AVInputFormat ff_rdt_demuxer = {
-    "rdt",
-    NULL_IF_CONFIG_SMALL("RDT demuxer"),
-    sizeof(RMDemuxContext),
-    NULL,
-    NULL,
-    NULL,
-    rm_read_close,
+    .name           = "rdt",
+    .long_name      = NULL_IF_CONFIG_SMALL("RDT demuxer"),
+    .priv_data_size = sizeof(RMDemuxContext),
+    .read_close     = rm_read_close,
 };

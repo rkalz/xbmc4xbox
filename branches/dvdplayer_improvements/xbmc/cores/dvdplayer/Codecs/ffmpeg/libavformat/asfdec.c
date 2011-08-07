@@ -25,6 +25,7 @@
 #include "libavutil/common.h"
 #include "libavutil/avstring.h"
 #include "libavutil/dict.h"
+#include "libavutil/mathematics.h"
 #include "libavcodec/mpegaudio.h"
 #include "avformat.h"
 #include "avio_internal.h"
@@ -84,13 +85,11 @@ static const ff_asf_guid index_guid = {
     0x90, 0x08, 0x00, 0x33, 0xb1, 0xe5, 0xcf, 0x11, 0x89, 0xf4, 0x00, 0xa0, 0xc9, 0x03, 0x49, 0xcb
 };
 
+#ifdef DEBUG
 static const ff_asf_guid stream_bitrate_guid = { /* (http://get.to/sdp) */
     0xce, 0x75, 0xf8, 0x7b, 0x8d, 0x46, 0xd1, 0x11, 0x8d, 0x82, 0x00, 0x60, 0x97, 0xc9, 0xa2, 0xb2
 };
-/**********************************/
-/* decoding */
 
-#ifdef DEBUG
 #define PRINT_IF_GUID(g,cmp) \
 if (!ff_guidcmp(g, &cmp)) \
     av_dlog(NULL, "(GUID: %s) ", #cmp)
@@ -1084,8 +1083,6 @@ static int asf_read_packet(AVFormatContext *s, AVPacket *pkt)
             assert(asf->packet_size_left < FRAME_HEADER_SIZE || asf->packet_segments < 1);
         asf->packet_time_start = 0;
     }
-
-    return 0;
 }
 
 // Added to support seeking after packets have been read
@@ -1154,8 +1151,7 @@ static int64_t asf_read_pts(AVFormatContext *s, int stream_index, int64_t *ppos,
     if (s->packet_size > 0)
         pos= (pos+s->packet_size-1-s->data_offset)/s->packet_size*s->packet_size+ s->data_offset;
     *ppos= pos;
-    if (avio_seek(s->pb, pos, SEEK_SET) < 0)
-        return AV_NOPTS_VALUE;
+    avio_seek(s->pb, pos, SEEK_SET);
 
 //printf("asf_read_pts\n");
     asf_reset_header(s);
@@ -1197,11 +1193,7 @@ static void asf_build_simple_index(AVFormatContext *s, int stream_index)
     int64_t current_pos= avio_tell(s->pb);
     int i;
 
-    if(avio_seek(s->pb, asf->data_object_offset + asf->data_object_size, SEEK_SET) < 0) {
-      asf->index_read= -1;
-      return;
-    }
-
+    avio_seek(s->pb, asf->data_object_offset + asf->data_object_size, SEEK_SET);
     ff_get_guid(s->pb, &g);
 
     /* the data object can be followed by other top-level objects,
@@ -1210,7 +1202,6 @@ static void asf_build_simple_index(AVFormatContext *s, int stream_index)
         int64_t gsize= avio_rl64(s->pb);
         if (gsize < 24 || url_feof(s->pb)) {
             avio_seek(s->pb, current_pos, SEEK_SET);
-            asf->index_read= -1;
             return;
         }
         avio_skip(s->pb, gsize-24);
@@ -1251,18 +1242,7 @@ static int asf_read_seek(AVFormatContext *s, int stream_index, int64_t pts, int 
     int64_t pos;
     int index;
 
-    if (pts == 0) {
-      // this is a hack since av_gen_search searches the entire file in this case
-      av_log(s, AV_LOG_DEBUG, "SEEKTO: %"PRId64"\n", s->data_offset);
-      if (avio_seek(s->pb, s->data_offset, SEEK_SET) < 0)
-          return -1;
-      return 0;
-    }
-
     if (s->packet_size <= 0)
-        return -1;
-
-    if (st->codec->codec_type != AVMEDIA_TYPE_VIDEO)
         return -1;
 
     /* Try using the protocol's read_seek if available */
@@ -1285,8 +1265,7 @@ static int asf_read_seek(AVFormatContext *s, int stream_index, int64_t pts, int 
 
             /* do the seek */
             av_log(s, AV_LOG_DEBUG, "SEEKTO: %"PRId64"\n", pos);
-            if(avio_seek(s->pb, pos, SEEK_SET)<0)
-               return -1;
+            avio_seek(s->pb, pos, SEEK_SET);
             asf_reset_header(s);
             return 0;
         }
@@ -1299,14 +1278,14 @@ static int asf_read_seek(AVFormatContext *s, int stream_index, int64_t pts, int 
 }
 
 AVInputFormat ff_asf_demuxer = {
-    "asf",
-    NULL_IF_CONFIG_SMALL("ASF format"),
-    sizeof(ASFContext),
-    asf_probe,
-    asf_read_header,
-    asf_read_packet,
-    asf_read_close,
-    asf_read_seek,
-    asf_read_pts,
+    .name           = "asf",
+    .long_name      = NULL_IF_CONFIG_SMALL("ASF format"),
+    .priv_data_size = sizeof(ASFContext),
+    .read_probe     = asf_probe,
+    .read_header    = asf_read_header,
+    .read_packet    = asf_read_packet,
+    .read_close     = asf_read_close,
+    .read_seek      = asf_read_seek,
+    .read_timestamp = asf_read_pts,
     .flags = AVFMT_NOBINSEARCH | AVFMT_NOGENSEARCH,
 };

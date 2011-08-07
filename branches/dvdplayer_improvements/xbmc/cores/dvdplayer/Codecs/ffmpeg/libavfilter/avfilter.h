@@ -23,10 +23,13 @@
 #define AVFILTER_AVFILTER_H
 
 #include "libavutil/avutil.h"
+#include "libavutil/log.h"
 #include "libavutil/samplefmt.h"
+#include "libavutil/pixfmt.h"
+#include "libavutil/rational.h"
 
 #define LIBAVFILTER_VERSION_MAJOR  1
-#define LIBAVFILTER_VERSION_MINOR 80
+#define LIBAVFILTER_VERSION_MINOR 81
 #define LIBAVFILTER_VERSION_MICRO  0
 
 #define LIBAVFILTER_VERSION_INT AV_VERSION_INT(LIBAVFILTER_VERSION_MAJOR, \
@@ -159,6 +162,7 @@ static inline void avfilter_copy_buffer_ref_props(AVFilterBufferRef *dst, AVFilt
     switch (src->type) {
     case AVMEDIA_TYPE_VIDEO: *dst->video = *src->video; break;
     case AVMEDIA_TYPE_AUDIO: *dst->audio = *src->audio; break;
+    default: break;
     }
 }
 
