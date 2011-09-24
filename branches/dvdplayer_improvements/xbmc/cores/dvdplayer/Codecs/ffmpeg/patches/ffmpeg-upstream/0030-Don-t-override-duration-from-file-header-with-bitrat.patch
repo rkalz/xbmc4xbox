@@ -1,17 +1,20 @@
-From 9bbf094291649cf50d3e2c67f28185126f402b55 Mon Sep 17 00:00:00 2001
-From: Cory Fields <theuni-nospam-@xbmc.org>
-Date: Mon, 28 Jun 2010 22:49:06 -0400
-Subject: [PATCH 18/36] changed: don't override file duration with bitrate duration for matroska files
+From cdced09ef6e40212bc69486c6d314a7f48e5647d Mon Sep 17 00:00:00 2001
+From: Joakim Plate <elupus@ecce.se>
+Date: Tue, 13 Sep 2011 01:02:48 +0200
+Subject: [PATCH 30/34] Don't override duration from file header with bitrate
+ duration
 
+This is most noticable on matroska files which has duration
+as part of it's header.
 ---
  libavformat/utils.c |    8 +++++---
  1 files changed, 5 insertions(+), 3 deletions(-)
 
-Index: ffmpeg/libavformat/utils.c
-===================================================================
---- ffmpeg.orig/libavformat/utils.c	2011-08-07 07:06:30.908483200 +0100
-+++ ffmpeg/libavformat/utils.c	2011-08-07 07:06:31.289030400 +0100
-@@ -1912,6 +1912,8 @@
+diff --git a/libavformat/utils.c b/libavformat/utils.c
+index 36107c3..8138069 100644
+--- a/libavformat/utils.c
++++ b/libavformat/utils.c
+@@ -1856,6 +1856,8 @@ static int has_duration(AVFormatContext *ic)
  {
      int i;
      AVStream *st;
@@ -20,7 +23,7 @@ Index: ffmpeg/libavformat/utils.c
  
      for(i = 0;i < ic->nb_streams; i++) {
          st = ic->streams[i];
-@@ -1969,14 +1971,14 @@
+@@ -1913,14 +1915,14 @@ static void update_stream_timings(AVFormatContext *ic)
                  duration = end_time - start_time;
          }
      }
@@ -38,3 +41,6 @@ Index: ffmpeg/libavformat/utils.c
  }
  
  static void fill_all_stream_timings(AVFormatContext *ic)
+-- 
+1.7.5.4
+

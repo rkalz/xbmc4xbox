@@ -1,17 +1,19 @@
-From 576a80321fbb6a6f4c4e69af75440e94990498bc Mon Sep 17 00:00:00 2001
-From: Cory Fields <theuni-nospam-@xbmc.org>
-Date: Mon, 28 Jun 2010 02:15:41 -0400
-Subject: [PATCH 09/36] additional HDMV types and reg descriptors
+From 6d40f88cab07cffa02691e573184e8b6420e5e38 Mon Sep 17 00:00:00 2001
+From: Joakim Plate <elupus@ecce.se>
+Date: Sat, 10 Sep 2011 21:30:42 +0200
+Subject: [PATCH 01/34] mpegts: Some additional HDMV types and reg descriptors
+ for mpegts
 
+Signed-off-by: Michael Niedermayer <michaelni@gmx.at>
 ---
  libavformat/mpegts.c |    6 ++++++
  1 files changed, 6 insertions(+), 0 deletions(-)
 
-Index: ffmpeg/libavformat/mpegts.c
-===================================================================
---- ffmpeg.orig/libavformat/mpegts.c	2011-08-07 07:06:28.024336000 +0100
-+++ ffmpeg/libavformat/mpegts.c	2011-08-07 07:06:28.535070400 +0100
-@@ -538,6 +538,8 @@
+diff --git a/libavformat/mpegts.c b/libavformat/mpegts.c
+index dc435c48..435469d 100644
+--- a/libavformat/mpegts.c
++++ b/libavformat/mpegts.c
+@@ -540,6 +540,8 @@ static const StreamType HDMV_types[] = {
      { 0x82, AVMEDIA_TYPE_AUDIO, CODEC_ID_DTS },
      { 0x83, AVMEDIA_TYPE_AUDIO, CODEC_ID_TRUEHD },
      { 0x84, AVMEDIA_TYPE_AUDIO, CODEC_ID_EAC3 },
@@ -20,7 +22,7 @@ Index: ffmpeg/libavformat/mpegts.c
      { 0x90, AVMEDIA_TYPE_SUBTITLE, CODEC_ID_HDMV_PGS_SUBTITLE },
      { 0 },
  };
-@@ -553,6 +555,10 @@
+@@ -555,6 +557,10 @@ static const StreamType REGD_types[] = {
      { MKTAG('d','r','a','c'), AVMEDIA_TYPE_VIDEO, CODEC_ID_DIRAC },
      { MKTAG('A','C','-','3'), AVMEDIA_TYPE_AUDIO,   CODEC_ID_AC3 },
      { MKTAG('B','S','S','D'), AVMEDIA_TYPE_AUDIO, CODEC_ID_S302M },
@@ -31,3 +33,6 @@ Index: ffmpeg/libavformat/mpegts.c
      { 0 },
  };
  
+-- 
+1.7.5.4
+

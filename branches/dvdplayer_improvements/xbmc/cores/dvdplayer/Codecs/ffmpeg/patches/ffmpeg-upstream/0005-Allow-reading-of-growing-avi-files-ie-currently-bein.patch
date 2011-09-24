@@ -1,0 +1,123 @@
+From e42a3dd123c47efd7921f93d4a1f6f53c196ad4a Mon Sep 17 00:00:00 2001
+From: Joakim Plate <elupus@ecce.se>
+Date: Mon, 28 Jun 2010 01:28:27 -0400
+Subject: [PATCH 05/34] Allow reading of growing avi files (ie currently being
+ written)
+
+This uses the RIFF header stored size to figure out the expected AVI file size, instead
+of the actual file. To work fully it requires handling failed avio_seek() instead
+of assuming they always succeed.
+
+Some fate file has been cut off and contains half a frame at the end which previously
+was not output during demuxing. This frame is now output to encoder, thus fate
+diff update.
+---
+ libavformat/avidec.c          |    8 ++++----
+ tests/ref/fate/aasc           |    1 +
+ tests/ref/fate/cvid           |    1 +
+ tests/ref/fate/fraps-v5       |    1 +
+ tests/ref/fate/truemotion1-24 |    1 +
+ tests/ref/fate/vp5            |    1 +
+ tests/ref/fate/zmbv-8bit      |    1 +
+ 7 files changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/libavformat/avidec.c b/libavformat/avidec.c
+index f119a1a..db0ed3c 100644
+--- a/libavformat/avidec.c
++++ b/libavformat/avidec.c
+@@ -157,7 +157,7 @@ static int read_braindead_odml_indx(AVFormatContext *s, int frame_num){
+     AVIStream *ast;
+     int i;
+     int64_t last_pos= -1;
+-    int64_t filesize= avio_size(s->pb);
++    int64_t filesize= avi->fsize;
+ 
+     av_dlog(s, "longs_pre_entry:%d index_type:%d entries_in_use:%d chunk_id:%X base:%16"PRIX64"\n",
+             longs_pre_entry,index_type, entries_in_use, chunk_id, base);
+@@ -372,7 +372,7 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
+     av_log(avi, AV_LOG_DEBUG, "use odml:%d\n", avi->use_odml);
+ 
+     avi->fsize = avio_size(pb);
+-    if(avi->fsize<=0)
++    if(avi->fsize<=0 || avi->fsize < avi->riff_end)
+         avi->fsize= avi->riff_end == 8 ? INT64_MAX : avi->riff_end;
+ 
+     /* first list tag */
+@@ -398,7 +398,7 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
+             if (tag1 == MKTAG('m', 'o', 'v', 'i')) {
+                 avi->movi_list = avio_tell(pb) - 4;
+                 if(size) avi->movi_end = avi->movi_list + size + (size & 1);
+-                else     avi->movi_end = avio_size(pb);
++                else     avi->movi_end = avi->fsize;
+                 av_dlog(NULL, "movi end=%"PRIx64"\n", avi->movi_end);
+                 goto end_of_header;
+             }
+@@ -731,7 +731,7 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
+                                         "I will ignore it and try to continue anyway.\n");
+                 if (s->error_recognition >= FF_ER_EXPLODE) goto fail;
+                 avi->movi_list = avio_tell(pb) - 4;
+-                avi->movi_end  = avio_size(pb);
++                avi->movi_end  = avi->fsize;
+                 goto end_of_header;
+             }
+             /* skip tag */
+diff --git a/tests/ref/fate/aasc b/tests/ref/fate/aasc
+index 7ec02ba..07b3269 100644
+--- a/tests/ref/fate/aasc
++++ b/tests/ref/fate/aasc
+@@ -21,3 +21,4 @@
+ 0, 72000, 168000, 0x646fa087
+ 0, 75600, 168000, 0x404450a2
+ 0, 79200, 168000, 0x5214c456
++0, 82800, 168000, 0xe573025c
+diff --git a/tests/ref/fate/cvid b/tests/ref/fate/cvid
+index d7ebe11..9a85275 100644
+--- a/tests/ref/fate/cvid
++++ b/tests/ref/fate/cvid
+@@ -76,3 +76,4 @@
+ 0, 562500, 112400, 0xe4394f1f
+ 0, 570000, 112400, 0x8ca8649f
+ 0, 577500, 112400, 0x804d44eb
++0, 585000, 112400, 0x3864488b
+diff --git a/tests/ref/fate/fraps-v5 b/tests/ref/fate/fraps-v5
+index 3fe1c49..05fa9da 100644
+--- a/tests/ref/fate/fraps-v5
++++ b/tests/ref/fate/fraps-v5
+@@ -56,3 +56,4 @@
+ 0, 165000, 145152, 0x80448031
+ 0, 168000, 145152, 0xe3b1fbf7
+ 0, 171000, 145152, 0xa00395a4
++0, 174000, 145152, 0xdf3b4fce
+diff --git a/tests/ref/fate/truemotion1-24 b/tests/ref/fate/truemotion1-24
+index b0b1c4e..edca66f 100644
+--- a/tests/ref/fate/truemotion1-24
++++ b/tests/ref/fate/truemotion1-24
+@@ -30,6 +30,7 @@
+ 1, 82898, 10832, 0x3c746fbe
+ 0, 84000, 69120, 0x5876d758
+ 1, 88424, 10832, 0x05f3b08a
++0, 90000, 69120, 0x45e7dd5c
+ 1, 93951, 10832, 0xa6560483
+ 1, 99478, 10832, 0xd98a8e19
+ 1, 105004, 10832, 0xf98a0b2e
+diff --git a/tests/ref/fate/vp5 b/tests/ref/fate/vp5
+index bf67801..556d111 100644
+--- a/tests/ref/fate/vp5
++++ b/tests/ref/fate/vp5
+@@ -244,3 +244,4 @@
+ 0, 912161, 233472, 0x6f530ac6
+ 0, 915915, 233472, 0x94f7466c
+ 0, 919669, 233472, 0xa8c1d365
++0, 923423, 233472, 0xedcff050
+diff --git a/tests/ref/fate/zmbv-8bit b/tests/ref/fate/zmbv-8bit
+index 258147f..75a212b 100644
+--- a/tests/ref/fate/zmbv-8bit
++++ b/tests/ref/fate/zmbv-8bit
+@@ -273,3 +273,4 @@
+ 0, 349284, 192000, 0xd08e49d1
+ 0, 350568, 192000, 0xd08e49d1
+ 0, 351852, 192000, 0xd08e49d1
++0, 353136, 192000, 0x1f34135f
+-- 
+1.7.5.4
+

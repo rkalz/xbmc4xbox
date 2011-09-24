@@ -1,0 +1,27 @@
+From fc12f54ea9d2cab4df3b125fb942b2172c04b449 Mon Sep 17 00:00:00 2001
+From: Joakim Plate <elupus@ecce.se>
+Date: Wed, 14 Sep 2011 19:33:05 +0200
+Subject: [PATCH 26/34] [tmv] Check return value of avio_seek and avoid
+ modifying state if it fails
+
+---
+ libavformat/tmv.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/libavformat/tmv.c b/libavformat/tmv.c
+index 9df11a4..3fce1e8 100644
+--- a/libavformat/tmv.c
++++ b/libavformat/tmv.c
+@@ -173,7 +173,8 @@ static int tmv_read_seek(AVFormatContext *s, int stream_index,
+     pos = timestamp *
+           (tmv->audio_chunk_size + tmv->video_chunk_size + tmv->padding);
+ 
+-    avio_seek(s->pb, pos + TMV_HEADER_SIZE, SEEK_SET);
++    if (avio_seek(s->pb, pos + TMV_HEADER_SIZE, SEEK_SET) < 0)
++        return -1;
+     tmv->stream_index = 0;
+     return 0;
+ }
+-- 
+1.7.5.4
+

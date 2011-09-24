@@ -1,0 +1,32 @@
+From c8ce2b0a1dce4f07b74c4686682bf72dbd307290 Mon Sep 17 00:00:00 2001
+From: Joakim Plate <elupus@ecce.se>
+Date: Sun, 11 Sep 2011 20:10:22 +0200
+Subject: [PATCH 07/34] mpegts: When playing mpegts over rtp/rtsp/sdp, lavf
+ must still read PAT/SDT to get available streams
+
+The code path using for mpegts over rtp doesn't open the demuxer using
+mpegts_read_header,
+so it never starts listening for PAT/SDT, only uses auto_guess
+
+Signed-off-by: Michael Niedermayer <michaelni@gmx.at>
+---
+ libavformat/mpegts.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/libavformat/mpegts.c b/libavformat/mpegts.c
+index c8e5660..b8c7f5f 100644
+--- a/libavformat/mpegts.c
++++ b/libavformat/mpegts.c
+@@ -1871,6 +1871,9 @@ MpegTSContext *ff_mpegts_parse_open(AVFormatContext *s)
+     ts->raw_packet_size = TS_PACKET_SIZE;
+     ts->stream = s;
+     ts->auto_guess = 1;
++    mpegts_open_section_filter(ts, SDT_PID, sdt_cb, ts, 1);
++    mpegts_open_section_filter(ts, PAT_PID, pat_cb, ts, 1);
++
+     return ts;
+ }
+ 
+-- 
+1.7.5.4
+

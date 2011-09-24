@@ -1,0 +1,41 @@
+From 5d7053680479a75562258c010715761c4285fd7f Mon Sep 17 00:00:00 2001
+From: Joakim Plate <elupus@ecce.se>
+Date: Wed, 14 Sep 2011 19:43:38 +0200
+Subject: [PATCH 29/34] [yop] Check return value of avio_seek and avoid
+ modifying state if it fails
+
+---
+ libavformat/yop.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/libavformat/yop.c b/libavformat/yop.c
+index da4f050..9e548f0 100644
+--- a/libavformat/yop.c
++++ b/libavformat/yop.c
+@@ -183,8 +183,6 @@ static int yop_read_seek(AVFormatContext *s, int stream_index,
+     int64_t frame_pos, pos_min, pos_max;
+     int frame_count;
+ 
+-    av_free_packet(&yop->video_packet);
+-
+     if (!stream_index)
+         return -1;
+ 
+@@ -195,9 +193,13 @@ static int yop_read_seek(AVFormatContext *s, int stream_index,
+     timestamp      = FFMAX(0, FFMIN(frame_count, timestamp));
+ 
+     frame_pos      = timestamp * yop->frame_size + pos_min;
++
++    if (avio_seek(s->pb, frame_pos, SEEK_SET) < 0)
++        return -1;
++
++    av_free_packet(&yop->video_packet);
+     yop->odd_frame = timestamp & 1;
+ 
+-    avio_seek(s->pb, frame_pos, SEEK_SET);
+     return 0;
+ }
+ 
+-- 
+1.7.5.4
+
