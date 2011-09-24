@@ -1876,7 +1876,7 @@ static int vp3_decode_frame(AVCodecContext *avctx,
         return buf_size;
 
     s->current_frame.reference = 3;
-    s->current_frame.key_frame = s->keyframe;
+    s->current_frame.pict_type = s->keyframe ? AV_PICTURE_TYPE_I : AV_PICTURE_TYPE_P;
     if (ff_thread_get_buffer(avctx, &s->current_frame) < 0) {
         av_log(s->avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         goto error;
@@ -2366,6 +2366,7 @@ AVCodec ff_vp3_decoder = {
     .decode         = vp3_decode_frame,
     .capabilities   = CODEC_CAP_DR1 | CODEC_CAP_DRAW_HORIZ_BAND | CODEC_CAP_FRAME_THREADS,
     .flush = vp3_decode_flush,
+
     .long_name = NULL_IF_CONFIG_SMALL("On2 VP3"),
     .update_thread_context = ONLY_IF_THREADS_ENABLED(vp3_update_thread_context)
 };

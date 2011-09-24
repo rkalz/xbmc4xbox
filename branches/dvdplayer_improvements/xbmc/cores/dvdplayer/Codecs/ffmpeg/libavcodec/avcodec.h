@@ -362,10 +362,6 @@ enum CodecID {
     CODEC_ID_SRT,
     CODEC_ID_MICRODVD,
 
-    /* data codecs */
-    CODEC_ID_VBI_DATA= 0x17500,
-    CODEC_ID_VBI_TELETEXT,
-
     /* other specific kind of codecs (generally used for attachments) */
     CODEC_ID_TTF= 0x18000,
 
@@ -2718,7 +2714,6 @@ typedef struct AVCodecContext {
 
     /**
      * Bits per sample/pixel of internal libavcodec pixel/sample format.
-     * This field is applicable only when sample_fmt is AV_SAMPLE_FMT_S32.
      * - encoding: set by user.
      * - decoding: set by libavcodec.
      */

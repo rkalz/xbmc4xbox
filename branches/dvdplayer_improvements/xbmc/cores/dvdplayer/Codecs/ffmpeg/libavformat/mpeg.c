@@ -49,18 +49,6 @@ static int check_pes(uint8_t *p, uint8_t *end){
     return pes1||pes2;
 }
 
-static int cdxa_probe(AVProbeData *p)
-{
-    /* check file header */
-    if (p->buf[0] == 'R' && p->buf[1] == 'I' &&
-        p->buf[2] == 'F' && p->buf[3] == 'F' &&
-        p->buf[8] == 'C' && p->buf[9] == 'D' &&
-        p->buf[10] == 'X' && p->buf[11] == 'A')
-        return AVPROBE_SCORE_MAX;
-    else
-        return 0;
-}
-
 static int mpegps_probe(AVProbeData *p)
 {
     uint32_t code= -1;
@@ -68,10 +56,6 @@ static int mpegps_probe(AVProbeData *p)
     int i;
     int score=0;
 
-    score = cdxa_probe(p);
-    if (score > 0) return score;
-
-    /* Search for MPEG stream */
     for(i=0; i<p->buf_size; i++){
         code = (code<<8) + p->buf[i];
         if ((code & 0xffffff00) == 0x100) {
@@ -122,6 +106,7 @@ static int mpegps_read_header(AVFormatContext *s,
     MpegDemuxContext *m = s->priv_data;
     const char *sofdec = "Sofdec";
     int v, i = 0;
+    int64_t last_pos = avio_tell(s->pb);
 
     m->header_state = 0xff;
     s->ctx_flags |= AVFMTCTX_NOHEADER;
@@ -134,6 +119,9 @@ static int mpegps_read_header(AVFormatContext *s,
     } while (v == sofdec[i] && i++ < 6);
 
     m->sofdec = (m->sofdec == 6) ? 1 : 0;
+
+    if (!m->sofdec)
+       avio_seek(s->pb, last_pos, SEEK_SET);
 
     /* no need to do more */
     return 0;
