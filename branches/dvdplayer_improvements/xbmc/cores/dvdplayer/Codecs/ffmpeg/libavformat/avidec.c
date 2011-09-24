@@ -157,7 +157,7 @@ static int read_braindead_odml_indx(AVFormatContext *s, int frame_num){
     AVIStream *ast;
     int i;
     int64_t last_pos= -1;
-    int64_t filesize= avio_size(s->pb);
+    int64_t filesize= avi->fsize;
 
     av_dlog(s, "longs_pre_entry:%d index_type:%d entries_in_use:%d chunk_id:%X base:%16"PRIX64"\n",
             longs_pre_entry,index_type, entries_in_use, chunk_id, base);
@@ -377,7 +377,7 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
     av_log(avi, AV_LOG_DEBUG, "use odml:%d\n", avi->use_odml);
 
     avi->fsize = avio_size(pb);
-    if(avi->fsize<=0)
+    if(avi->fsize<=0 || avi->fsize < avi->riff_end)
         avi->fsize= avi->riff_end == 8 ? INT64_MAX : avi->riff_end;
 
     /* first list tag */
@@ -403,7 +403,7 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
             if (tag1 == MKTAG('m', 'o', 'v', 'i')) {
                 avi->movi_list = avio_tell(pb) - 4;
                 if(size) avi->movi_end = avi->movi_list + size + (size & 1);
-                else     avi->movi_end = avio_size(pb);
+                else     avi->movi_end = avi->fsize;
                 av_dlog(NULL, "movi end=%"PRIx64"\n", avi->movi_end);
                 goto end_of_header;
             }
@@ -732,7 +732,7 @@ static int avi_read_header(AVFormatContext *s, AVFormatParameters *ap)
                 av_log(s, AV_LOG_ERROR, "Something went wrong during header parsing, "
                                         "I will ignore it and try to continue anyway.\n");
                 avi->movi_list = avio_tell(pb) - 4;
-                avi->movi_end  = avio_size(pb);
+                avi->movi_end  = avi->fsize;
                 goto end_of_header;
             }
             /* skip tag */
@@ -1039,7 +1039,7 @@ static int avi_read_packet(AVFormatContext *s, AVPacket *pkt)
             }
         }
         if(!best_st)
-            return -1;
+            return AVERROR_EOF;
 
         best_ast = best_st->priv_data;
         best_ts = av_rescale_q(best_ts, (AVRational){FFMAX(1, best_ast->sample_size), AV_TIME_BASE}, best_st->time_base);
@@ -1055,7 +1055,8 @@ static int avi_read_packet(AVFormatContext *s, AVPacket *pkt)
         if(i>=0){
             int64_t pos= best_st->index_entries[i].pos;
             pos += best_ast->packet_size - best_ast->remaining;
-            avio_seek(s->pb, pos + 8, SEEK_SET);
+            if(avio_seek(s->pb, pos + 8, SEEK_SET) < 0)
+              return AVERROR_EOF;
 //        av_log(s, AV_LOG_DEBUG, "pos=%"PRId64"\n", pos);
 
             assert(best_ast->remaining <= best_ast->packet_size);
@@ -1065,6 +1066,8 @@ static int avi_read_packet(AVFormatContext *s, AVPacket *pkt)
                 best_ast->packet_size=
                 best_ast->remaining= best_st->index_entries[i].size;
         }
+        else
+          return AVERROR_EOF;
     }
 
 resync:

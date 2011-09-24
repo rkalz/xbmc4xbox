@@ -860,7 +860,7 @@ int av_read_packet(AVFormatContext *s, AVPacket *pkt)
 
             if(end || av_log2(pd->buf_size) != av_log2(pd->buf_size - pkt->size)){
                 int score= set_codec_from_probe_data(s, st, pd);
-                if(    (st->codec->codec_id != CODEC_ID_NONE && score > AVPROBE_SCORE_MAX/4)
+                if(    (st->codec->codec_id != CODEC_ID_NONE && score > AVPROBE_SCORE_MAX/4-1)
                     || end){
                     pd->buf_size=0;
                     av_freep(&pd->buf);
@@ -1274,6 +1274,8 @@ static int read_frame_internal(AVFormatContext *s, AVPacket *pkt)
             ret = av_read_packet(s, &cur_pkt);
             if (ret < 0) {
                 if (ret == AVERROR(EAGAIN))
+                    return ret;
+                if (ret == AVERROR_IO)
                     return ret;
                 /* return the last frames, if any */
                 for(i = 0; i < s->nb_streams; i++) {
@@ -1919,6 +1921,8 @@ static int has_duration(AVFormatContext *ic)
 {
     int i;
     AVStream *st;
+    if(ic->duration != AV_NOPTS_VALUE)
+        return 1;
 
     for(i = 0;i < ic->nb_streams; i++) {
         st = ic->streams[i];
@@ -1976,14 +1980,14 @@ static void update_stream_timings(AVFormatContext *ic)
                 duration = end_time - start_time;
         }
     }
-    if (duration != INT64_MIN) {
+    if (duration != INT64_MIN && ic->duration == AV_NOPTS_VALUE) {
         ic->duration = duration;
-        if (ic->file_size > 0) {
+    }
+        if (ic->file_size > 0 && ic->duration != AV_NOPTS_VALUE) {
             /* compute the bitrate */
             ic->bit_rate = (double)ic->file_size * 8.0 * AV_TIME_BASE /
                 (double)ic->duration;
         }
-    }
 }
 
 static void fill_all_stream_timings(AVFormatContext *ic)
@@ -2038,6 +2042,43 @@ static void estimate_timings_from_bit_rate(AVFormatContext *ic)
 
 #define DURATION_MAX_READ_SIZE 250000
 #define DURATION_MAX_RETRY 3
+
+static void av_estimate_timings_from_pts2(AVFormatContext *ic, int64_t old_offset)
+{
+    AVStream *st;
+    int i, step= 1024;
+    int64_t ts, pos;
+
+    for(i=0;i<ic->nb_streams;i++) {
+        st = ic->streams[i];
+
+        pos = 0;
+        ts = ic->iformat->read_timestamp(ic, i, &pos, DURATION_MAX_READ_SIZE);
+        if (ts == AV_NOPTS_VALUE)
+            continue;
+        if (st->start_time == AV_NOPTS_VALUE || 
+            st->start_time > ts)
+            st->start_time = ts;
+
+        pos = url_fsize(ic->pb) - 1;
+        do {
+            pos -= step;
+            ts = ic->iformat->read_timestamp(ic, i, &pos, pos + step);
+            step += step;
+        } while (ts == AV_NOPTS_VALUE && pos >= step && step < DURATION_MAX_READ_SIZE);
+
+        if (ts == AV_NOPTS_VALUE)
+            continue;
+
+        if (st->duration == AV_NOPTS_VALUE
+        ||  st->duration < ts - st->start_time)
+            st->duration = ts - st->start_time;
+    }
+
+    fill_all_stream_timings(ic);
+
+    url_fseek(ic->pb, old_offset, SEEK_SET);
+}
 
 /* only usable for MPEG-PS streams */
 static void estimate_timings_from_pts(AVFormatContext *ic, int64_t old_offset)
@@ -2142,6 +2183,10 @@ static void estimate_timings(AVFormatContext *ic, int64_t old_offset)
         /* at least one component has timings - we use them for all
            the components */
         fill_all_stream_timings(ic);
+    } else if (ic->iformat->read_timestamp && 
+        file_size && !url_is_streamed(ic->pb)) {
+        /* get accurate estimate from the PTSes */
+        av_estimate_timings_from_pts2(ic, old_offset);
     } else {
         av_log(ic, AV_LOG_WARNING, "Estimating duration from bitrate, this may be inaccurate\n");
         /* less precise: use bitrate info */
@@ -2190,7 +2235,7 @@ static int has_codec_parameters(AVCodecContext *avctx)
         val = 1;
         break;
     }
-    return avctx->codec_id != CODEC_ID_NONE && val != 0;
+    return avctx->codec_id != CODEC_ID_PROBE && val != 0;
 }
 
 static int has_decode_delay_been_guessed(AVStream *st)
@@ -2421,7 +2466,7 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
                 break;
             if(st->parser && st->parser->parser->split && !st->codec->extradata)
                 break;
-            if(st->first_dts == AV_NOPTS_VALUE)
+            if(st->first_dts == AV_NOPTS_VALUE && (st->codec->codec_type == AVMEDIA_TYPE_VIDEO || st->codec->codec_type == AVMEDIA_TYPE_AUDIO))
                 break;
         }
         if (i == ic->nb_streams) {
