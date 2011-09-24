@@ -2387,7 +2387,6 @@ CStdString CFileItem::GetUserMusicThumb(bool alwaysCheckRemote /* = false */) co
    || CUtil::IsUPnP(m_strPath)
    || IsPlugin()
    || (CUtil::IsFTP(m_strPath) && !g_advancedSettings.m_bFTPThumbs)
-   || IsPlugin()
    || IsParentFolder()
    || IsMusicDb())
     return "";
@@ -2417,10 +2416,13 @@ CStdString CFileItem::GetUserMusicThumb(bool alwaysCheckRemote /* = false */) co
   {
     CStdString strFolder, strFile;
     CUtil::Split(m_strPath, strFolder, strFile);
-    CFileItem folderItem(strFolder, true);
-    folderItem.SetMusicThumb(alwaysCheckRemote);
-    if (folderItem.HasThumbnail())
-      return folderItem.GetThumbnailImage();
+    if (!m_strPath.Equals(strFolder)) // any more parents to inherit from?
+    {
+      CFileItem folderItem(strFolder, true);
+      folderItem.SetMusicThumb(alwaysCheckRemote);
+      if (folderItem.HasThumbnail())
+        return folderItem.GetThumbnailImage();
+    }
   }
   // No thumb found
   return "";
@@ -2714,6 +2716,7 @@ CStdString CFileItem::GetLocalFanart() const
    || CUtil::IsUPnP(strFile)
    || IsLiveTV()
    || IsPlugin()
+   || m_strPath.Left(4).Equals("dvd:")
    || (CUtil::IsFTP(strFile) && !g_advancedSettings.m_bFTPThumbs)
    || m_strPath.IsEmpty())
     return "";
@@ -3144,7 +3147,7 @@ MUSIC_INFO::CMusicInfoTag* CFileItem::GetMusicInfoTag()
 
 CStdString CFileItem::FindTrailer() const
 {
-  CStdString strFile2, strTrailer;
+  CStdString strFile2;
   CStdString strFile = m_strPath;
   if (IsStack())
   {
@@ -3170,8 +3173,9 @@ CStdString CFileItem::FindTrailer() const
   if (IsInternetStream()
    || CUtil::IsUPnP(strFile)
    || IsLiveTV()
-   || IsPlugin())
-    return strTrailer;
+   || IsPlugin()
+   || m_strPath.Left(4).Equals("dvd:"))
+    return "";
 
   CStdString strDir;
   CUtil::GetDirectory(strFile, strDir);
@@ -3196,6 +3200,7 @@ CStdString CFileItem::FindTrailer() const
     strRegExp++;
   }
 
+  CStdString strTrailer;
   for (int i = 0; i < items.Size(); i++)
   {
     CStdString strCandidate = items[i]->m_strPath;
