@@ -1,7 +1,7 @@
 Index: libavformat/mmsh.c
 ===================================================================
---- libavformat/mmsh.c	(revision 30972)
-+++ libavformat/mmsh.c	(working copy)
+--- a/libavformat/mmsh.c	(revision 30972)
++++ b/libavformat/mmsh.c	(working copy)
 @@ -55,6 +55,7 @@
  
  typedef struct {
