@@ -19,7 +19,7 @@
 
 /**
  * @file
- * filter fow showing textual video frame information
+ * filter for showing textual video frame information
  */
 
 #include "libavutil/adler32.h"
@@ -61,7 +61,7 @@ static void end_frame(AVFilterLink *inlink)
     av_log(ctx, AV_LOG_INFO,
            "n:%d pts:%"PRId64" pts_time:%f pos:%"PRId64" "
            "fmt:%s sar:%d/%d s:%dx%d i:%c iskey:%d type:%c "
-           "checksum:%u plane_checksum:[%u %u %u %u]\n",
+           "checksum:%08X plane_checksum:[%08X %08X %08X %08X]\n",
            showinfo->frame,
            picref->pts, picref ->pts * av_q2d(inlink->time_base), picref->pos,
            av_pix_fmt_descriptors[picref->format].name,
@@ -84,7 +84,7 @@ AVFilter avfilter_vf_showinfo = {
     .priv_size = sizeof(ShowInfoContext),
     .init      = init,
 
-    .inputs    = (AVFilterPad[]) {{ .name = "default",
+    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .get_video_buffer = avfilter_null_get_video_buffer,
                                     .start_frame      = avfilter_null_start_frame,
@@ -92,7 +92,7 @@ AVFilter avfilter_vf_showinfo = {
                                     .min_perms        = AV_PERM_READ, },
                                   { .name = NULL}},
 
-    .outputs   = (AVFilterPad[]) {{ .name             = "default",
+    .outputs   = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO },
                                   { .name = NULL}},
 };

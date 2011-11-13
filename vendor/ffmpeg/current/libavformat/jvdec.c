@@ -69,8 +69,8 @@ static int read_header(AVFormatContext *s,
 
     avio_skip(pb, 80);
 
-    ast = av_new_stream(s, 0);
-    vst = av_new_stream(s, 1);
+    ast = avformat_new_stream(s, NULL);
+    vst = avformat_new_stream(s, NULL);
     if (!ast || !vst)
         return AVERROR(ENOMEM);
 
@@ -207,10 +207,11 @@ static int read_seek(AVFormatContext *s, int stream_index,
 
     if (i < 0 || i >= ast->nb_index_entries)
         return 0;
+    if (avio_seek(s->pb, ast->index_entries[i].pos, SEEK_SET) < 0)
+        return -1;
 
     jv->state = JV_AUDIO;
     jv->pts   = i;
-    avio_seek(s->pb, ast->index_entries[i].pos, SEEK_SET);
     return 0;
 }
 

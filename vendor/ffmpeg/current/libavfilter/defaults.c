@@ -81,24 +81,23 @@ AVFilterBufferRef *avfilter_default_get_video_buffer(AVFilterLink *link, int per
 }
 
 AVFilterBufferRef *avfilter_default_get_audio_buffer(AVFilterLink *link, int perms,
-                                                     enum AVSampleFormat sample_fmt, int nb_samples,
-                                                     int64_t channel_layout, int planar)
+                                                     int nb_samples)
 {
     AVFilterBufferRef *samplesref = NULL;
     int linesize[8];
     uint8_t *data[8];
-    int nb_channels = av_get_channel_layout_nb_channels(channel_layout);
+    int nb_channels = av_get_channel_layout_nb_channels(link->channel_layout);
 
     /* Calculate total buffer size, round to multiple of 16 to be SIMD friendly */
     if (av_samples_alloc(data, linesize,
-                         nb_channels, nb_samples, sample_fmt,
-                         planar, 16) < 0)
+                         nb_channels, nb_samples, link->format,
+                         link->planar, 16) < 0)
         return NULL;
 
     samplesref =
         avfilter_get_audio_buffer_ref_from_arrays(data, linesize, perms,
-                                                  nb_samples, sample_fmt,
-                                                  channel_layout, planar);
+                                                  nb_samples, link->format,
+                                                  link->channel_layout, link->planar);
     if (!samplesref) {
         av_free(data[0]);
         return NULL;
@@ -160,10 +159,8 @@ void avfilter_default_filter_samples(AVFilterLink *inlink, AVFilterBufferRef *sa
         outlink = inlink->dst->outputs[0];
 
     if (outlink) {
-        outlink->out_buf = avfilter_default_get_audio_buffer(inlink, AV_PERM_WRITE, samplesref->format,
-                                                             samplesref->audio->nb_samples,
-                                                             samplesref->audio->channel_layout,
-                                                             samplesref->audio->planar);
+        outlink->out_buf = avfilter_default_get_audio_buffer(inlink, AV_PERM_WRITE,
+                                                             samplesref->audio->nb_samples);
         outlink->out_buf->pts                = samplesref->pts;
         outlink->out_buf->audio->sample_rate = samplesref->audio->sample_rate;
         avfilter_filter_samples(outlink, avfilter_ref_buffer(outlink->out_buf, ~0));
@@ -174,29 +171,6 @@ void avfilter_default_filter_samples(AVFilterLink *inlink, AVFilterBufferRef *sa
     inlink->cur_buf = NULL;
 }
 
-/**
- * default config_link() implementation for output video links to simplify
- * the implementation of one input one output video filters */
-int avfilter_default_config_output_link(AVFilterLink *link)
-{
-    if (link->src->input_count && link->src->inputs[0]) {
-        if (link->type == AVMEDIA_TYPE_VIDEO) {
-            link->w = link->src->inputs[0]->w;
-            link->h = link->src->inputs[0]->h;
-            link->time_base = link->src->inputs[0]->time_base;
-        } else if (link->type == AVMEDIA_TYPE_AUDIO) {
-            link->channel_layout = link->src->inputs[0]->channel_layout;
-            link->sample_rate    = link->src->inputs[0]->sample_rate;
-        }
-    } else {
-        /* XXX: any non-simple filter which would cause this branch to be taken
-         * really should implement its own config_props() for this link. */
-        return -1;
-    }
-
-    return 0;
-}
-
 static void set_common_formats(AVFilterContext *ctx, AVFilterFormats *fmts,
                                enum AVMediaType type, int offin, int offout)
 {
@@ -204,12 +178,12 @@ static void set_common_formats(AVFilterContext *ctx, AVFilterFormats *fmts,
     for (i = 0; i < ctx->input_count; i++)
         if (ctx->inputs[i] && ctx->inputs[i]->type == type)
             avfilter_formats_ref(fmts,
-                                 (AVFilterFormats**)((void*)ctx->inputs[i]+offout));
+                                 (AVFilterFormats **)((uint8_t *)ctx->inputs[i]+offout));
 
     for (i = 0; i < ctx->output_count; i++)
         if (ctx->outputs[i] && ctx->outputs[i]->type == type)
             avfilter_formats_ref(fmts,
-                                 (AVFilterFormats**)((void*)ctx->outputs[i]+offin));
+                                 (AVFilterFormats **)((uint8_t *)ctx->outputs[i]+offin));
 
     if (!fmts->refcount) {
         av_free(fmts->formats);
@@ -239,11 +213,19 @@ void avfilter_set_common_channel_layouts(AVFilterContext *ctx, AVFilterFormats *
                        offsetof(AVFilterLink, out_chlayouts));
 }
 
+void avfilter_set_common_packing_formats(AVFilterContext *ctx, AVFilterFormats *formats)
+{
+    set_common_formats(ctx, formats, AVMEDIA_TYPE_AUDIO,
+                       offsetof(AVFilterLink, in_packing),
+                       offsetof(AVFilterLink, out_packing));
+}
+
 int avfilter_default_query_formats(AVFilterContext *ctx)
 {
-    avfilter_set_common_pixel_formats(ctx, avfilter_all_formats(AVMEDIA_TYPE_VIDEO));
-    avfilter_set_common_sample_formats(ctx, avfilter_all_formats(AVMEDIA_TYPE_AUDIO));
-    avfilter_set_common_channel_layouts(ctx, avfilter_all_channel_layouts());
+    avfilter_set_common_pixel_formats(ctx, avfilter_make_all_formats(AVMEDIA_TYPE_VIDEO));
+    avfilter_set_common_sample_formats(ctx, avfilter_make_all_formats(AVMEDIA_TYPE_AUDIO));
+    avfilter_set_common_channel_layouts(ctx, avfilter_make_all_channel_layouts());
+    avfilter_set_common_packing_formats(ctx, avfilter_make_all_packing_formats());
 
     return 0;
 }
@@ -274,10 +256,8 @@ AVFilterBufferRef *avfilter_null_get_video_buffer(AVFilterLink *link, int perms,
 }
 
 AVFilterBufferRef *avfilter_null_get_audio_buffer(AVFilterLink *link, int perms,
-                                                  enum AVSampleFormat sample_fmt, int size,
-                                                  int64_t channel_layout, int packed)
+                                                  int nb_samples)
 {
-    return avfilter_get_audio_buffer(link->dst->outputs[0], perms, sample_fmt,
-                                     size, channel_layout, packed);
+    return avfilter_get_audio_buffer(link->dst->outputs[0], perms, nb_samples);
 }
 

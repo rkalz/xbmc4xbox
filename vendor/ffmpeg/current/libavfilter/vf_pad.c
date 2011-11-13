@@ -35,10 +35,7 @@
 #include "libavutil/mathematics.h"
 #include "drawutils.h"
 
-static const char *var_names[] = {
-    "PI",
-    "PHI",
-    "E",
+static const char * const var_names[] = {
     "in_w",   "iw",
     "in_h",   "ih",
     "out_w",  "ow",
@@ -54,9 +51,6 @@ static const char *var_names[] = {
 };
 
 enum var_name {
-    VAR_PI,
-    VAR_PHI,
-    VAR_E,
     VAR_IN_W,   VAR_IW,
     VAR_IN_H,   VAR_IH,
     VAR_OUT_W,  VAR_OW,
@@ -153,9 +147,6 @@ static int config_input(AVFilterLink *inlink)
     pad->hsub = pix_desc->log2_chroma_w;
     pad->vsub = pix_desc->log2_chroma_h;
 
-    var_values[VAR_PI]    = M_PI;
-    var_values[VAR_PHI]   = M_PHI;
-    var_values[VAR_E]     = M_E;
     var_values[VAR_IN_W]  = var_values[VAR_IW] = inlink->w;
     var_values[VAR_IN_H]  = var_values[VAR_IH] = inlink->h;
     var_values[VAR_OUT_W] = var_values[VAR_OW] = NAN;
@@ -260,9 +251,10 @@ static int config_output(AVFilterLink *outlink)
 static AVFilterBufferRef *get_video_buffer(AVFilterLink *inlink, int perms, int w, int h)
 {
     PadContext *pad = inlink->dst->priv;
+    int align = (perms&AV_PERM_ALIGN) ? AVFILTER_ALIGN : 1;
 
     AVFilterBufferRef *picref = avfilter_get_video_buffer(inlink->dst->outputs[0], perms,
-                                                       w + (pad->w - pad->in_w),
+                                                       w + (pad->w - pad->in_w) + 4*align,
                                                        h + (pad->h - pad->in_h));
     int plane;
 
@@ -273,7 +265,7 @@ static AVFilterBufferRef *get_video_buffer(AVFilterLink *inlink, int perms, int 
         int hsub = (plane == 1 || plane == 2) ? pad->hsub : 0;
         int vsub = (plane == 1 || plane == 2) ? pad->vsub : 0;
 
-        picref->data[plane] += (pad->x >> hsub) * pad->line_step[plane] +
+        picref->data[plane] += FFALIGN(pad->x >> hsub, align) * pad->line_step[plane] +
             (pad->y >> vsub) * picref->linesize[plane];
     }
 
@@ -420,7 +412,7 @@ AVFilter avfilter_vf_pad = {
     .uninit        = uninit,
     .query_formats = query_formats,
 
-    .inputs    = (AVFilterPad[]) {{ .name             = "default",
+    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .config_props     = config_input,
                                     .get_video_buffer = get_video_buffer,
@@ -429,7 +421,7 @@ AVFilter avfilter_vf_pad = {
                                     .end_frame        = end_frame, },
                                   { .name = NULL}},
 
-    .outputs   = (AVFilterPad[]) {{ .name             = "default",
+    .outputs   = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .config_props     = config_output, },
                                   { .name = NULL}},

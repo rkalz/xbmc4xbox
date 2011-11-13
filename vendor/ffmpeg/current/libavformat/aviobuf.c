@@ -1,5 +1,5 @@
 /*
- * Buffered I/O for ffmpeg system
+ * buffered I/O
  * Copyright (c) 2000,2001 Fabrice Bellard
  *
  * This file is part of FFmpeg.
@@ -38,9 +38,7 @@
 #define SHORT_SEEK_THRESHOLD 4096
 
 static void fill_buffer(AVIOContext *s);
-#if !FF_API_URL_RESETBUF
 static int url_resetbuf(AVIOContext *s, int flags);
-#endif
 
 int ffio_init_context(AVIOContext *s,
                   unsigned char *buffer,
@@ -55,7 +53,7 @@ int ffio_init_context(AVIOContext *s,
     s->buffer_size = buffer_size;
     s->buf_ptr = buffer;
     s->opaque = opaque;
-    url_resetbuf(s, write_flag ? AVIO_WRONLY : AVIO_RDONLY);
+    url_resetbuf(s, write_flag ? AVIO_FLAG_WRITE : AVIO_FLAG_READ);
     s->write_packet = write_packet;
     s->read_packet = read_packet;
     s->seek = seek;
@@ -780,13 +778,14 @@ int avio_get_str(AVIOContext *s, int maxlen, char *buf, int buflen)
 {
     int i;
 
+    if (buflen <= 0)
+        return AVERROR(EINVAL);
     // reserve 1 byte for terminating 0
     buflen = FFMIN(buflen - 1, maxlen);
     for (i = 0; i < buflen; i++)
         if (!(buf[i] = avio_r8(s)))
             return i + 1;
-    if (buflen)
-        buf[i] = 0;
+    buf[i] = 0;
     for (; i < maxlen; i++)
         if (!avio_r8(s))
             return i + 1;
@@ -798,6 +797,8 @@ int avio_get_str(AVIOContext *s, int maxlen, char *buf, int buflen)
 {\
     char* q = buf;\
     int ret = 0;\
+    if (buflen <= 0) \
+        return AVERROR(EINVAL); \
     while (ret + 1 < maxlen) {\
         uint8_t tmp;\
         uint32_t ch;\
@@ -849,7 +850,7 @@ int ffio_fdopen(AVIOContext **s, URLContext *h)
     if (!buffer)
         return AVERROR(ENOMEM);
 
-    *s = avio_alloc_context(buffer, buffer_size, (h->flags & AVIO_WRONLY || h->flags & AVIO_RDWR), h,
+    *s = avio_alloc_context(buffer, buffer_size, h->flags & AVIO_FLAG_WRITE, h,
                             ffurl_read, ffurl_write, ffurl_seek);
     if (!*s) {
         av_free(buffer);
@@ -879,24 +880,15 @@ int ffio_set_buf_size(AVIOContext *s, int buf_size)
     s->buffer = buffer;
     s->buffer_size = buf_size;
     s->buf_ptr = buffer;
-    url_resetbuf(s, s->write_flag ? AVIO_WRONLY : AVIO_RDONLY);
+    url_resetbuf(s, s->write_flag ? AVIO_FLAG_WRITE : AVIO_FLAG_READ);
     return 0;
 }
 
-#if FF_API_URL_RESETBUF
-int url_resetbuf(AVIOContext *s, int flags)
-#else
 static int url_resetbuf(AVIOContext *s, int flags)
-#endif
 {
-#if FF_API_URL_RESETBUF
-    if (flags & AVIO_RDWR)
-        return AVERROR(EINVAL);
-#else
-    assert(flags == AVIO_WRONLY || flags == AVIO_RDONLY);
-#endif
+    assert(flags == AVIO_FLAG_WRITE || flags == AVIO_FLAG_READ);
 
-    if (flags & AVIO_WRONLY) {
+    if (flags & AVIO_FLAG_WRITE) {
         s->buf_end = s->buffer + s->buffer_size;
         s->write_flag = 1;
     } else {
@@ -926,7 +918,7 @@ int ffio_rewind_with_probe_data(AVIOContext *s, unsigned char *buf, int buf_size
 
     alloc_size = FFMAX(s->buffer_size, new_size);
     if (alloc_size > buf_size)
-        if (!(buf = av_realloc(buf, alloc_size)))
+        if (!(buf = av_realloc_f(buf, 1, alloc_size)))
             return AVERROR(ENOMEM);
 
     if (new_size > buf_size) {
@@ -1054,7 +1046,7 @@ int url_open_buf(AVIOContext **s, uint8_t *buf, int buf_size, int flags)
     if(!*s)
         return AVERROR(ENOMEM);
     ret = ffio_init_context(*s, buf, buf_size,
-                        (flags & AVIO_WRONLY || flags & AVIO_RDWR),
+                            flags & AVIO_FLAG_WRITE,
                         NULL, NULL, NULL, NULL);
     if(ret != 0)
         av_freep(s);
@@ -1095,7 +1087,7 @@ static int dyn_buf_write(void *opaque, uint8_t *buf, int buf_size)
     }
 
     if (new_allocated_size > d->allocated_size) {
-        d->buffer = av_realloc(d->buffer, new_allocated_size);
+        d->buffer = av_realloc_f(d->buffer, 1, new_allocated_size);
         if(d->buffer == NULL)
              return AVERROR(ENOMEM);
         d->allocated_size = new_allocated_size;

@@ -125,13 +125,29 @@ fate-atrac3-3: CMP = oneoff
 fate-atrac3-3: REF = $(SAMPLES)/atrac3/mc_sich_at3_132_small.pcm
 
 FATE_TESTS += fate-gsm
-fate-gsm: CMD = framecrc -t 10 -i $(SAMPLES)/gsm/sample-gsm-8000.mov
+fate-gsm: CMD = framecrc -i $(SAMPLES)/gsm/sample-gsm-8000.mov -t 10
 
 FATE_TESTS += fate-gsm-ms
 fate-gsm-ms: CMD = framecrc -i $(SAMPLES)/gsm/ciao.wav
 
 FATE_TESTS += fate-g722dec-1
-fate-g722dec-1: CMD = framecrc -ar 16000 -i $(SAMPLES)/g722/conf-adminmenu-162.g722
+fate-g722dec-1: CMD = framecrc -i $(SAMPLES)/g722/conf-adminmenu-162.g722
+
+FATE_TESTS += fate-g722enc
+fate-g722enc: tests/data/asynth-16000-1.sw
+fate-g722enc: CMD = md5 -ar 16000 -ac 1 -f s16le -i $(TARGET_PATH)/tests/data/asynth-16000-1.sw -acodec g722 -ac 1 -f g722
+
+FATE_TESTS += fate-mapchan-6ch-extract-2
+fate-mapchan-6ch-extract-2: tests/data/mapchan-6ch.sw
+fate-mapchan-6ch-extract-2: CMD = avconv -ar 22050 -ac 6 -f s16le -i $(TARGET_PATH)/tests/data/mapchan-6ch.sw -map_channel 0.0.0 -f wav md5: -map_channel 0.0.1 -f wav md5:
+
+FATE_TESTS += fate-mapchan-6ch-extract-2-downmix-mono
+fate-mapchan-6ch-extract-2-downmix-mono: tests/data/mapchan-6ch.sw
+fate-mapchan-6ch-extract-2-downmix-mono: CMD = md5 -ar 22050 -ac 6 -f s16le -i $(TARGET_PATH)/tests/data/mapchan-6ch.sw -map_channel 0.0.1 -map_channel 0.0.0 -ac 1 -f wav
+
+FATE_TESTS += fate-mapchan-silent-mono
+fate-mapchan-silent-mono: tests/data/mapchan-mono.sw
+fate-mapchan-silent-mono: CMD = md5 -ar 22050 -ac 1 -f s16le -i $(TARGET_PATH)/tests/data/mapchan-mono.sw -map_channel -1 -map_channel 0.0.0 -f wav
 
 FATE_TESTS += fate-msmpeg4v1
 fate-msmpeg4v1: CMD = framecrc -flags +bitexact -dct fastint -idct simple -i $(SAMPLES)/msmpeg4v1/mpg4.avi -an

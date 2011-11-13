@@ -19,7 +19,7 @@ ffmpeg:
   ffmpeg.c                              Michael Niedermayer
 
 ffplay:
-  ffplay.c                              Michael Niedermayer
+  ffplay.c                              Marton Balint
 
 ffprobe:
   ffprobe.c                             Stefano Sabatini
@@ -40,11 +40,11 @@ Miscellaneous Areas
 documentation                           Mike Melanson
 website                                 Robert Swain
 build system (configure,Makefiles)      Diego Biurrun, Mans Rullgard
-project server                          Diego Biurrun, Mans Rullgard
-mailinglists                            Michael Niedermayer, Baptiste Coudurier
+project server                          Árpád Gereöffy, Michael Niedermayer, Reimar Döffinger
+mailinglists                            Michael Niedermayer, Baptiste Coudurier, Lou Logan
 presets                                 Robert Swain
 metadata subsystem                      Aurelien Jacobs
-release management                      Diego Biurrun, Reinhard Tartler
+release management                      Michael Niedermayer
 
 
 libavutil
@@ -212,6 +212,7 @@ Codecs:
   txd.c                                 Ivo van Poorten
   ulti*                                 Kostya Shishkov
   vb.c                                  Kostya Shishkov
+  vble.c                                Derek Buitenhuis
   vc1*                                  Kostya Shishkov
   vcr1.c                                Michael Niedermayer
   vmnc.c                                Kostya Shishkov
@@ -235,7 +236,9 @@ Codecs:
 Hardware acceleration:
   crystalhd.c                           Philip Langdale
   dxva2*                                Laurent Aimar
+  libstagefright.cpp                    Mohamed Naufal
   vaapi*                                Gwenole Beauchesne
+  vda*                                  Sebastien Zwickert
   vdpau*                                Carl Eugen Hoyos
 
 
@@ -287,6 +290,7 @@ Muxers/Demuxers:
   img2.c                                Michael Niedermayer
   iss.c                                 Stefan Gehrer
   jvdec.c                               Peter Ross
+  libmodplug.c                          Clément Bœsch
   libnut.c                              Oded Shimon
   lmlm4.c                               Ivo van Poorten
   lxfdec.c                              Tomas Härdin
@@ -366,14 +370,14 @@ Releases
 ========
 
 0.5                                     *Deprecated/Unmaintained*
-0.6                                     Stefano Sabatini
+0.6                                     *Deprecated/Unmaintained*
 0.7                                     Michael Niedermayer
 0.8                                     Michael Niedermayer
 
 
 
-GnuPG Fingerprints of maintainers and others who have svn write access
-======================================================================
+GnuPG Fingerprints of maintainers and contributors
+==================================================
 
 Anssi Hannula                 1A92 FF42 2DD9 8D2E 8AF7 65A9 4278 C520 513D F3CB
 Anton Khirnov                 6D0C 6625 56F8 65D1 E5F5 814B B50A 1241 C067 07AB

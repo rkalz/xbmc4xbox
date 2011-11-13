@@ -39,13 +39,6 @@
 #include "rtmppkt.h"
 #include "url.h"
 
-/* we can't use av_log() with URLContext yet... */
-#if FF_API_URL_CLASS
-#define LOG_CONTEXT s
-#else
-#define LOG_CONTEXT NULL
-#endif
-
 //#define DEBUG
 
 /** RTMP protocol handler state */
@@ -78,6 +71,9 @@ typedef struct RTMPContext {
     uint32_t      client_report_size;         ///< number of bytes after which client should report to server
     uint32_t      bytes_read;                 ///< number of bytes read from server
     uint32_t      last_bytes_read;            ///< number of bytes read last reported to server
+    int           skip_bytes;                 ///< number of bytes to skip from the input FLV stream in the next write call
+    uint8_t       flv_header[11];             ///< partial incoming flv packet header
+    int           flv_header_bytes;           ///< number of initialized bytes in flv_header
 } RTMPContext;
 
 #define PLAYER_KEY_OPEN_PART_LEN 30   ///< length of partial key used for first client digest signing
@@ -167,7 +163,7 @@ static void gen_release_stream(URLContext *s, RTMPContext *rt)
     ff_rtmp_packet_create(&pkt, RTMP_SYSTEM_CHANNEL, RTMP_PT_INVOKE, 0,
                           29 + strlen(rt->playpath));
 
-    av_log(LOG_CONTEXT, AV_LOG_DEBUG, "Releasing stream...\n");
+    av_log(s, AV_LOG_DEBUG, "Releasing stream...\n");
     p = pkt.data;
     ff_amf_write_string(&p, "releaseStream");
     ff_amf_write_number(&p, 2.0);
@@ -190,7 +186,7 @@ static void gen_fcpublish_stream(URLContext *s, RTMPContext *rt)
     ff_rtmp_packet_create(&pkt, RTMP_SYSTEM_CHANNEL, RTMP_PT_INVOKE, 0,
                           25 + strlen(rt->playpath));
 
-    av_log(LOG_CONTEXT, AV_LOG_DEBUG, "FCPublish stream...\n");
+    av_log(s, AV_LOG_DEBUG, "FCPublish stream...\n");
     p = pkt.data;
     ff_amf_write_string(&p, "FCPublish");
     ff_amf_write_number(&p, 3.0);
@@ -213,7 +209,7 @@ static void gen_fcunpublish_stream(URLContext *s, RTMPContext *rt)
     ff_rtmp_packet_create(&pkt, RTMP_SYSTEM_CHANNEL, RTMP_PT_INVOKE, 0,
                           27 + strlen(rt->playpath));
 
-    av_log(LOG_CONTEXT, AV_LOG_DEBUG, "UnPublishing stream...\n");
+    av_log(s, AV_LOG_DEBUG, "UnPublishing stream...\n");
     p = pkt.data;
     ff_amf_write_string(&p, "FCUnpublish");
     ff_amf_write_number(&p, 5.0);
@@ -233,7 +229,7 @@ static void gen_create_stream(URLContext *s, RTMPContext *rt)
     RTMPPacket pkt;
     uint8_t *p;
 
-    av_log(LOG_CONTEXT, AV_LOG_DEBUG, "Creating stream...\n");
+    av_log(s, AV_LOG_DEBUG, "Creating stream...\n");
     ff_rtmp_packet_create(&pkt, RTMP_SYSTEM_CHANNEL, RTMP_PT_INVOKE, 0, 25);
 
     p = pkt.data;
@@ -255,7 +251,7 @@ static void gen_delete_stream(URLContext *s, RTMPContext *rt)
     RTMPPacket pkt;
     uint8_t *p;
 
-    av_log(LOG_CONTEXT, AV_LOG_DEBUG, "Deleting stream...\n");
+    av_log(s, AV_LOG_DEBUG, "Deleting stream...\n");
     ff_rtmp_packet_create(&pkt, RTMP_SYSTEM_CHANNEL, RTMP_PT_INVOKE, 0, 34);
 
     p = pkt.data;
@@ -277,7 +273,7 @@ static void gen_play(URLContext *s, RTMPContext *rt)
     RTMPPacket pkt;
     uint8_t *p;
 
-    av_log(LOG_CONTEXT, AV_LOG_DEBUG, "Sending play command for '%s'\n", rt->playpath);
+    av_log(s, AV_LOG_DEBUG, "Sending play command for '%s'\n", rt->playpath);
     ff_rtmp_packet_create(&pkt, RTMP_VIDEO_CHANNEL, RTMP_PT_INVOKE, 0,
                           20 + strlen(rt->playpath));
     pkt.extra = rt->main_channel_id;
@@ -311,7 +307,7 @@ static void gen_publish(URLContext *s, RTMPContext *rt)
     RTMPPacket pkt;
     uint8_t *p;
 
-    av_log(LOG_CONTEXT, AV_LOG_DEBUG, "Sending publish command for '%s'\n", rt->playpath);
+    av_log(s, AV_LOG_DEBUG, "Sending publish command for '%s'\n", rt->playpath);
     ff_rtmp_packet_create(&pkt, RTMP_SOURCE_CHANNEL, RTMP_PT_INVOKE, 0,
                           30 + strlen(rt->playpath));
     pkt.extra = rt->main_channel_id;
@@ -479,7 +475,7 @@ static int rtmp_handshake(URLContext *s, RTMPContext *rt)
     int server_pos, client_pos;
     uint8_t digest[32];
 
-    av_log(LOG_CONTEXT, AV_LOG_DEBUG, "Handshaking...\n");
+    av_log(s, AV_LOG_DEBUG, "Handshaking...\n");
 
     av_lfg_init(&rnd, 0xDEADC0DE);
     // generate handshake packet - 1536 bytes of pseudorandom data
@@ -490,16 +486,16 @@ static int rtmp_handshake(URLContext *s, RTMPContext *rt)
     ffurl_write(rt->stream, tosend, RTMP_HANDSHAKE_PACKET_SIZE + 1);
     i = ffurl_read_complete(rt->stream, serverdata, RTMP_HANDSHAKE_PACKET_SIZE + 1);
     if (i != RTMP_HANDSHAKE_PACKET_SIZE + 1) {
-        av_log(LOG_CONTEXT, AV_LOG_ERROR, "Cannot read RTMP handshake response\n");
+        av_log(s, AV_LOG_ERROR, "Cannot read RTMP handshake response\n");
         return -1;
     }
     i = ffurl_read_complete(rt->stream, clientdata, RTMP_HANDSHAKE_PACKET_SIZE);
     if (i != RTMP_HANDSHAKE_PACKET_SIZE) {
-        av_log(LOG_CONTEXT, AV_LOG_ERROR, "Cannot read RTMP handshake response\n");
+        av_log(s, AV_LOG_ERROR, "Cannot read RTMP handshake response\n");
         return -1;
     }
 
-    av_log(LOG_CONTEXT, AV_LOG_DEBUG, "Server version %d.%d.%d.%d\n",
+    av_log(s, AV_LOG_DEBUG, "Server version %d.%d.%d.%d\n",
            serverdata[5], serverdata[6], serverdata[7], serverdata[8]);
 
     if (rt->is_input && serverdata[5] >= 3) {
@@ -507,7 +503,7 @@ static int rtmp_handshake(URLContext *s, RTMPContext *rt)
         if (!server_pos) {
             server_pos = rtmp_validate_digest(serverdata + 1, 8);
             if (!server_pos) {
-                av_log(LOG_CONTEXT, AV_LOG_ERROR, "Server response validating failed\n");
+                av_log(s, AV_LOG_ERROR, "Server response validating failed\n");
                 return -1;
             }
         }
@@ -519,7 +515,7 @@ static int rtmp_handshake(URLContext *s, RTMPContext *rt)
                          digest, 32,
                          digest);
         if (memcmp(digest, clientdata + RTMP_HANDSHAKE_PACKET_SIZE - 32, 32)) {
-            av_log(LOG_CONTEXT, AV_LOG_ERROR, "Signature mismatch\n");
+            av_log(s, AV_LOG_ERROR, "Signature mismatch\n");
             return -1;
         }
 
@@ -553,13 +549,13 @@ static int rtmp_parse_result(URLContext *s, RTMPContext *rt, RTMPPacket *pkt)
     const uint8_t *data_end = pkt->data + pkt->data_size;
 
 #ifdef DEBUG
-    ff_rtmp_packet_dump(LOG_CONTEXT, pkt);
+    ff_rtmp_packet_dump(s, pkt);
 #endif
 
     switch (pkt->type) {
     case RTMP_PT_CHUNK_SIZE:
         if (pkt->data_size != 4) {
-            av_log(LOG_CONTEXT, AV_LOG_ERROR,
+            av_log(s, AV_LOG_ERROR,
                    "Chunk size change packet is not 4 bytes long (%d)\n", pkt->data_size);
             return -1;
         }
@@ -567,10 +563,10 @@ static int rtmp_parse_result(URLContext *s, RTMPContext *rt, RTMPPacket *pkt)
             ff_rtmp_packet_write(rt->stream, pkt, rt->chunk_size, rt->prev_pkt[1]);
         rt->chunk_size = AV_RB32(pkt->data);
         if (rt->chunk_size <= 0) {
-            av_log(LOG_CONTEXT, AV_LOG_ERROR, "Incorrect chunk size %d\n", rt->chunk_size);
+            av_log(s, AV_LOG_ERROR, "Incorrect chunk size %d\n", rt->chunk_size);
             return -1;
         }
-        av_log(LOG_CONTEXT, AV_LOG_DEBUG, "New chunk size = %d\n", rt->chunk_size);
+        av_log(s, AV_LOG_DEBUG, "New chunk size = %d\n", rt->chunk_size);
         break;
     case RTMP_PT_PING:
         t = AV_RB16(pkt->data);
@@ -579,12 +575,12 @@ static int rtmp_parse_result(URLContext *s, RTMPContext *rt, RTMPPacket *pkt)
         break;
     case RTMP_PT_CLIENT_BW:
         if (pkt->data_size < 4) {
-            av_log(LOG_CONTEXT, AV_LOG_ERROR,
+            av_log(s, AV_LOG_ERROR,
                    "Client bandwidth report packet is less than 4 bytes long (%d)\n",
                    pkt->data_size);
             return -1;
         }
-        av_log(LOG_CONTEXT, AV_LOG_DEBUG, "Client bandwidth = %d\n", AV_RB32(pkt->data));
+        av_log(s, AV_LOG_DEBUG, "Client bandwidth = %d\n", AV_RB32(pkt->data));
         rt->client_report_size = AV_RB32(pkt->data) >> 1;
         break;
     case RTMP_PT_INVOKE:
@@ -594,7 +590,7 @@ static int rtmp_parse_result(URLContext *s, RTMPContext *rt, RTMPPacket *pkt)
 
             if (!ff_amf_get_field_value(pkt->data + 9, data_end,
                                         "description", tmpstr, sizeof(tmpstr)))
-                av_log(LOG_CONTEXT, AV_LOG_ERROR, "Server error: %s\n",tmpstr);
+                av_log(s, AV_LOG_ERROR, "Server error: %s\n",tmpstr);
             return -1;
         } else if (!memcmp(pkt->data, "\002\000\007_result", 10)) {
             switch (rt->state) {
@@ -625,7 +621,7 @@ static int rtmp_parse_result(URLContext *s, RTMPContext *rt, RTMPPacket *pkt)
             case STATE_CONNECTING:
                 //extract a number from the result
                 if (pkt->data[10] || pkt->data[19] != 5 || pkt->data[20]) {
-                    av_log(LOG_CONTEXT, AV_LOG_WARNING, "Unexpected reply on connect()\n");
+                    av_log(s, AV_LOG_WARNING, "Unexpected reply on connect()\n");
                 } else {
                     rt->main_channel_id = (int) av_int2dbl(AV_RB64(pkt->data + 21));
                 }
@@ -652,7 +648,7 @@ static int rtmp_parse_result(URLContext *s, RTMPContext *rt, RTMPPacket *pkt)
             if (!t && !strcmp(tmpstr, "error")) {
                 if (!ff_amf_get_field_value(ptr, data_end,
                                             "description", tmpstr, sizeof(tmpstr)))
-                    av_log(LOG_CONTEXT, AV_LOG_ERROR, "Server error: %s\n",tmpstr);
+                    av_log(s, AV_LOG_ERROR, "Server error: %s\n",tmpstr);
                 return -1;
             }
             t = ff_amf_get_field_value(ptr, data_end,
@@ -702,7 +698,7 @@ static int get_packet(URLContext *s, int for_header)
         }
         rt->bytes_read += ret;
         if (rt->bytes_read > rt->last_bytes_read + rt->client_report_size) {
-            av_log(LOG_CONTEXT, AV_LOG_DEBUG, "Sending bytes read report\n");
+            av_log(s, AV_LOG_DEBUG, "Sending bytes read report\n");
             gen_bytes_read(s, rt, rpkt.timestamp + 1);
             rt->last_bytes_read = rt->bytes_read;
         }
@@ -812,7 +808,7 @@ static int rtmp_open(URLContext *s, const char *uri, int flags)
     if (!rt)
         return AVERROR(ENOMEM);
     s->priv_data = rt;
-    rt->is_input = !(flags & AVIO_WRONLY);
+    rt->is_input = !(flags & AVIO_FLAG_WRITE);
 
     av_url_split(proto, sizeof(proto), NULL, 0, hostname, sizeof(hostname), &port,
                  path, sizeof(path), s->filename);
@@ -821,8 +817,8 @@ static int rtmp_open(URLContext *s, const char *uri, int flags)
         port = RTMP_DEFAULT_PORT;
     ff_url_join(buf, sizeof(buf), "tcp", NULL, hostname, port, NULL);
 
-    if (ffurl_open(&rt->stream, buf, AVIO_RDWR) < 0) {
-        av_log(LOG_CONTEXT, AV_LOG_ERROR, "Cannot open connection %s\n", buf);
+    if (ffurl_open(&rt->stream, buf, AVIO_FLAG_READ_WRITE) < 0) {
+        av_log(s , AV_LOG_ERROR, "Cannot open connection %s\n", buf);
         goto fail;
     }
 
@@ -866,7 +862,7 @@ static int rtmp_open(URLContext *s, const char *uri, int flags)
     rt->bytes_read = 0;
     rt->last_bytes_read = 0;
 
-    av_log(LOG_CONTEXT, AV_LOG_DEBUG, "Proto = %s, path = %s, app = %s, fname = %s\n",
+    av_log(s, AV_LOG_DEBUG, "Proto = %s, path = %s, app = %s, fname = %s\n",
            proto, path, rt->app, rt->playpath);
     gen_connect(s, rt, proto, hostname, port);
 
@@ -886,6 +882,7 @@ static int rtmp_open(URLContext *s, const char *uri, int flags)
         rt->flv_size = 0;
         rt->flv_data = NULL;
         rt->flv_off  = 0;
+        rt->skip_bytes = 13;
     }
 
     s->max_packet_size = rt->stream->max_packet_size;
@@ -932,25 +929,29 @@ static int rtmp_write(URLContext *s, const uint8_t *buf, int size)
     uint32_t ts;
     const uint8_t *buf_temp = buf;
 
-    if (size < 11) {
-        av_log(LOG_CONTEXT, AV_LOG_DEBUG, "FLV packet too small %d\n", size);
-        return 0;
-    }
-
     do {
-        if (!rt->flv_off) {
-            //skip flv header
-            if (buf_temp[0] == 'F' && buf_temp[1] == 'L' && buf_temp[2] == 'V') {
-                buf_temp += 9 + 4;
-                size_temp -= 9 + 4;
-            }
+        if (rt->skip_bytes) {
+            int skip = FFMIN(rt->skip_bytes, size_temp);
+            buf_temp       += skip;
+            size_temp      -= skip;
+            rt->skip_bytes -= skip;
+            continue;
+        }
 
-            pkttype = bytestream_get_byte(&buf_temp);
-            pktsize = bytestream_get_be24(&buf_temp);
-            ts = bytestream_get_be24(&buf_temp);
-            ts |= bytestream_get_byte(&buf_temp) << 24;
-            bytestream_get_be24(&buf_temp);
-            size_temp -= 11;
+        if (rt->flv_header_bytes < 11) {
+            const uint8_t *header = rt->flv_header;
+            int copy = FFMIN(11 - rt->flv_header_bytes, size_temp);
+            bytestream_get_buffer(&buf_temp, rt->flv_header + rt->flv_header_bytes, copy);
+            rt->flv_header_bytes += copy;
+            size_temp            -= copy;
+            if (rt->flv_header_bytes < 11)
+                break;
+
+            pkttype = bytestream_get_byte(&header);
+            pktsize = bytestream_get_be24(&header);
+            ts = bytestream_get_be24(&header);
+            ts |= bytestream_get_byte(&header) << 24;
+            bytestream_get_be24(&header);
             rt->flv_size = pktsize;
 
             //force 12bytes header
@@ -973,20 +974,23 @@ static int rtmp_write(URLContext *s, const uint8_t *buf, int size)
         if (rt->flv_size - rt->flv_off > size_temp) {
             bytestream_get_buffer(&buf_temp, rt->flv_data + rt->flv_off, size_temp);
             rt->flv_off += size_temp;
+            size_temp = 0;
         } else {
             bytestream_get_buffer(&buf_temp, rt->flv_data + rt->flv_off, rt->flv_size - rt->flv_off);
+            size_temp   -= rt->flv_size - rt->flv_off;
             rt->flv_off += rt->flv_size - rt->flv_off;
         }
 
         if (rt->flv_off == rt->flv_size) {
-            bytestream_get_be32(&buf_temp);
+            rt->skip_bytes = 4;
 
             ff_rtmp_packet_write(rt->stream, &rt->out_pkt, rt->chunk_size, rt->prev_pkt[1]);
             ff_rtmp_packet_destroy(&rt->out_pkt);
             rt->flv_size = 0;
             rt->flv_off = 0;
+            rt->flv_header_bytes = 0;
         }
-    } while (buf_temp - buf < size_temp);
+    } while (buf_temp - buf < size);
     return size;
 }
 

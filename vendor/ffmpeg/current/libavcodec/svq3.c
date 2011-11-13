@@ -614,7 +614,7 @@ static int svq3_decode_mb(SVQ3Context *svq3, unsigned int mb_type)
         dir = i_mb_type_info[mb_type - 8].pred_mode;
         dir = (dir >> 1) ^ 3*(dir & 1) ^ 1;
 
-        if ((h->intra16x16_pred_mode = ff_h264_check_intra_pred_mode(h, dir)) == -1){
+        if ((h->intra16x16_pred_mode = ff_h264_check_intra16x16_pred_mode(h, dir)) == -1){
             av_log(h->s.avctx, AV_LOG_ERROR, "check_intra_pred_mode = -1\n");
             return -1;
         }
@@ -713,7 +713,7 @@ static int svq3_decode_mb(SVQ3Context *svq3, unsigned int mb_type)
     s->current_picture.f.mb_type[mb_xy] = mb_type;
 
     if (IS_INTRA(mb_type)) {
-        h->chroma_pred_mode = ff_h264_check_intra_pred_mode(h, DC_PRED8x8);
+        h->chroma_pred_mode = ff_h264_check_intra_chroma_pred_mode(h, DC_PRED8x8);
     }
 
     return 0;
@@ -927,7 +927,10 @@ static av_cold int svq3_decode_init(AVCodecContext *avctx)
 
         h->b_stride = 4*s->mb_width;
 
-        ff_h264_alloc_tables(h);
+        if (ff_h264_alloc_tables(h) < 0) {
+            av_log(avctx, AV_LOG_ERROR, "svq3 memory allocation failed\n");
+            return AVERROR(ENOMEM);
+        }
     }
 
     return 0;
@@ -988,14 +991,6 @@ static int svq3_decode_frame(AVCodecContext *avctx,
     /* Skip B-frames if we do not have reference frames. */
     if (s->last_picture_ptr == NULL && s->pict_type == AV_PICTURE_TYPE_B)
         return 0;
-#if FF_API_HURRY_UP
-    /* Skip B-frames if we are in a hurry. */
-    if (avctx->hurry_up && s->pict_type == FF_B_TYPE)
-        return 0;
-    /* Skip everything if we are in a hurry >= 5. */
-    if (avctx->hurry_up >= 5)
-        return 0;
-#endif
     if (  (avctx->skip_frame >= AVDISCARD_NONREF && s->pict_type == AV_PICTURE_TYPE_B)
         ||(avctx->skip_frame >= AVDISCARD_NONKEY && s->pict_type != AV_PICTURE_TYPE_I)
         || avctx->skip_frame >= AVDISCARD_ALL)

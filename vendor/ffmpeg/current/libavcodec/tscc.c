@@ -60,6 +60,8 @@ typedef struct TsccContext {
     unsigned char* decomp_buf;
     int height;
     z_stream zstream;
+
+    uint32_t pal[256];
 } CamtasiaContext;
 
 /*
@@ -79,7 +81,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
     if(c->pic.data[0])
             avctx->release_buffer(avctx, &c->pic);
 
-    c->pic.reference = 1;
+    c->pic.reference = 3;
     c->pic.buffer_hints = FF_BUFFER_HINTS_VALID;
     if(avctx->get_buffer(avctx, &c->pic) < 0){
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
@@ -108,11 +110,13 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
 
     /* make the palette available on the way out */
     if (c->avctx->pix_fmt == PIX_FMT_PAL8) {
-        memcpy(c->pic.data[1], c->avctx->palctrl->palette, AVPALETTE_SIZE);
-        if (c->avctx->palctrl->palette_changed) {
+        const uint8_t *pal = av_packet_get_side_data(avpkt, AV_PKT_DATA_PALETTE, NULL);
+
+        if (pal) {
             c->pic.palette_has_changed = 1;
-            c->avctx->palctrl->palette_changed = 0;
+            memcpy(c->pal, pal, AVPALETTE_SIZE);
         }
+        memcpy(c->pic.data[1], c->pal, AVPALETTE_SIZE);
     }
 
     *data_size = sizeof(AVFrame);

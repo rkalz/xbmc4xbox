@@ -37,7 +37,7 @@
 #define DNX10BIT_QMAT_SHIFT 18 // The largest value that will not lead to overflow for 10bit samples.
 
 static const AVOption options[]={
-    {"nitris_compat", "encode with Avid Nitris compatibility", offsetof(DNXHDEncContext, nitris_compat), FF_OPT_TYPE_INT, {.dbl = 0}, 0, 1, VE},
+    {"nitris_compat", "encode with Avid Nitris compatibility", offsetof(DNXHDEncContext, nitris_compat), AV_OPT_TYPE_INT, {.dbl = 0}, 0, 1, VE},
 {NULL}
 };
 static const AVClass class = { "dnxhd", av_default_item_name, options, LIBAVUTIL_VERSION_INT };
@@ -77,7 +77,7 @@ static int dnxhd_10bit_dct_quantize(MpegEncContext *ctx, DCTELEM *block,
                                     int n, int qscale, int *overflow)
 {
     const uint8_t *scantable= ctx->intra_scantable.scantable;
-    const int *qmat = ctx->q_intra_matrix[qscale];
+    const int *qmat = n<4 ? ctx->q_intra_matrix[qscale] : ctx->q_chroma_intra_matrix[qscale];
     int last_non_zero = 0;
     int i;
 
@@ -122,9 +122,9 @@ static int dnxhd_init_vlc(DNXHDEncContext *ctx)
                 alevel -= offset<<6;
             }
             for (j = 0; j < 257; j++) {
-                if (ctx->cid_table->ac_level[j] == alevel &&
-                    (!offset || (ctx->cid_table->ac_index_flag[j] && offset)) &&
-                    (!run    || (ctx->cid_table->ac_run_flag  [j] && run))) {
+                if (ctx->cid_table->ac_level[j] >> 1 == alevel &&
+                    (!offset || (ctx->cid_table->ac_flags[j] & 1) && offset) &&
+                    (!run    || (ctx->cid_table->ac_flags[j] & 2) && run)) {
                     assert(!ctx->vlc_codes[index]);
                     if (alevel) {
                         ctx->vlc_codes[index] = (ctx->cid_table->ac_codes[j]<<1)|(sign&1);
@@ -207,6 +207,11 @@ static int dnxhd_init_qmat(DNXHDEncContext *ctx, int lbias, int cbias)
             }
         }
     }
+
+    ctx->m.q_chroma_intra_matrix16 = ctx->qmatrix_c16;
+    ctx->m.q_chroma_intra_matrix   = ctx->qmatrix_c;
+    ctx->m.q_intra_matrix16        = ctx->qmatrix_l16;
+    ctx->m.q_intra_matrix          = ctx->qmatrix_l;
 
     return 0;
  fail:
@@ -497,15 +502,8 @@ static av_always_inline void dnxhd_get_blocks(DNXHDEncContext *ctx, int mb_x, in
 
 static av_always_inline int dnxhd_switch_matrix(DNXHDEncContext *ctx, int i)
 {
-    if (i&2) {
-        ctx->m.q_intra_matrix16 = ctx->qmatrix_c16;
-        ctx->m.q_intra_matrix   = ctx->qmatrix_c;
-        return 1 + (i&1);
-    } else {
-        ctx->m.q_intra_matrix16 = ctx->qmatrix_l16;
-        ctx->m.q_intra_matrix   = ctx->qmatrix_l;
-        return 0;
-    }
+    const static uint8_t component[8]={0,0,1,2,0,0,1,2};
+    return component[i];
 }
 
 static int dnxhd_calc_bits_thread(AVCodecContext *avctx, void *arg, int jobnr, int threadnr)
@@ -535,7 +533,7 @@ static int dnxhd_calc_bits_thread(AVCodecContext *avctx, void *arg, int jobnr, i
             int n = dnxhd_switch_matrix(ctx, i);
 
             memcpy(block, src_block, 64*sizeof(*block));
-            last_index = ctx->m.dct_quantize(&ctx->m, block, i, qscale, &overflow);
+            last_index = ctx->m.dct_quantize(&ctx->m, block, 4&(2*i), qscale, &overflow);
             ac_bits += dnxhd_calc_ac_bits(ctx, block, last_index);
 
             diff = block[0] - ctx->m.last_dc[n];
@@ -582,7 +580,7 @@ static int dnxhd_encode_thread(AVCodecContext *avctx, void *arg, int jobnr, int 
             DCTELEM *block = ctx->blocks[i];
             int last_index, overflow;
             int n = dnxhd_switch_matrix(ctx, i);
-            last_index = ctx->m.dct_quantize(&ctx->m, block, i, qscale, &overflow);
+            last_index = ctx->m.dct_quantize(&ctx->m, block, 4&(2*i), qscale, &overflow);
             //START_TIMER;
             dnxhd_encode_block(ctx, block, last_index, n);
             //STOP_TIMER("encode_block");
@@ -623,7 +621,7 @@ static int dnxhd_mb_var_thread(AVCodecContext *avctx, void *arg, int jobnr, int 
         for (mb_x = 0; mb_x < ctx->m.mb_width; ++mb_x, pix += 16) {
             unsigned mb  = mb_y * ctx->m.mb_width + mb_x;
             int sum = ctx->m.dsp.pix_sum(pix, ctx->m.linesize);
-            int varc = (ctx->m.dsp.pix_norm1(pix, ctx->m.linesize) - (((unsigned)(sum*sum))>>8)+128)>>8;
+            int varc = (ctx->m.dsp.pix_norm1(pix, ctx->m.linesize) - (((unsigned)sum*sum)>>8)+128)>>8;
             ctx->mb_cmp[mb].value = varc;
             ctx->mb_cmp[mb].mb = mb;
         }

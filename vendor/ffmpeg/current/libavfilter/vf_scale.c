@@ -31,10 +31,7 @@
 #include "libavutil/avassert.h"
 #include "libswscale/swscale.h"
 
-static const char *var_names[] = {
-    "PI",
-    "PHI",
-    "E",
+static const char * const var_names[] = {
     "in_w",   "iw",
     "in_h",   "ih",
     "out_w",  "ow",
@@ -48,9 +45,6 @@ static const char *var_names[] = {
 };
 
 enum var_name {
-    VAR_PI,
-    VAR_PHI,
-    VAR_E,
     VAR_IN_W,   VAR_IW,
     VAR_IN_H,   VAR_IH,
     VAR_OUT_W,  VAR_OW,
@@ -155,9 +149,6 @@ static int config_props(AVFilterLink *outlink)
     char *expr;
     int ret;
 
-    var_values[VAR_PI]    = M_PI;
-    var_values[VAR_PHI]   = M_PHI;
-    var_values[VAR_E]     = M_E;
     var_values[VAR_IN_W]  = var_values[VAR_IW] = inlink->w;
     var_values[VAR_IN_H]  = var_values[VAR_IH] = inlink->h;
     var_values[VAR_OUT_W] = var_values[VAR_OW] = NAN;
@@ -237,7 +228,7 @@ static int config_props(AVFilterLink *outlink)
     scale->isws[1] = sws_getContext(inlink ->w, inlink ->h/2, inlink ->format,
                                     outlink->w, outlink->h/2, outlink->format,
                                     scale->flags, NULL, NULL, NULL);
-    if (!scale->sws)
+    if (!scale->sws || !scale->isws[0] || !scale->isws[1])
         return AVERROR(EINVAL);
 
     if (inlink->sample_aspect_ratio.num){
@@ -262,7 +253,7 @@ static void start_frame(AVFilterLink *link, AVFilterBufferRef *picref)
     scale->hsub = av_pix_fmt_descriptors[link->format].log2_chroma_w;
     scale->vsub = av_pix_fmt_descriptors[link->format].log2_chroma_h;
 
-    outpicref = avfilter_get_video_buffer(outlink, AV_PERM_WRITE, outlink->w, outlink->h);
+    outpicref = avfilter_get_video_buffer(outlink, AV_PERM_WRITE|AV_PERM_ALIGN, outlink->w, outlink->h);
     avfilter_copy_buffer_ref_props(outpicref, picref);
     outpicref->video->w = outlink->w;
     outpicref->video->h = outlink->h;
@@ -338,13 +329,13 @@ AVFilter avfilter_vf_scale = {
 
     .priv_size = sizeof(ScaleContext),
 
-    .inputs    = (AVFilterPad[]) {{ .name             = "default",
+    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .start_frame      = start_frame,
                                     .draw_slice       = draw_slice,
                                     .min_perms        = AV_PERM_READ, },
                                   { .name = NULL}},
-    .outputs   = (AVFilterPad[]) {{ .name             = "default",
+    .outputs   = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .config_props     = config_props, },
                                   { .name = NULL}},

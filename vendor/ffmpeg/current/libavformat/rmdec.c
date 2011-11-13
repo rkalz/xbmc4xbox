@@ -232,6 +232,7 @@ static int rm_read_audio_stream_info(AVFormatContext *s, AVIOContext *pb,
             }
             if ((ret = rm_read_extradata(pb, st->codec, codecdata_length)) < 0)
                 return ret;
+
             break;
         case CODEC_ID_AAC:
             avio_rb16(pb); avio_r8(pb);
@@ -321,30 +322,21 @@ ff_rm_read_mdpr_codecdata (AVFormatContext *s, AVIOContext *pb,
 //        av_log(s, AV_LOG_DEBUG, "%X %X\n", st->codec->codec_tag, MKTAG('R', 'V', '2', '0'));
         if (st->codec->codec_id == CODEC_ID_NONE)
             goto fail1;
-        st->codec->width = avio_rb16(pb);
+        st->codec->width  = avio_rb16(pb);
         st->codec->height = avio_rb16(pb);
-        st->codec->time_base.num= 1;
-        fps= avio_rb16(pb);
+        avio_skip(pb, 2); // looks like bits per sample
+        avio_skip(pb, 4); // always zero?
         st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-        avio_rb32(pb);
-        avio_skip(pb, 2);
-        avio_rb16(pb);
+        st->need_parsing = AVSTREAM_PARSE_TIMESTAMPS;
+        fps = avio_rb32(pb);
 
         if ((ret = rm_read_extradata(pb, st->codec, codec_data_size - (avio_tell(pb) - codec_pos))) < 0)
             return ret;
 
-//        av_log(s, AV_LOG_DEBUG, "fps= %d fps2= %d\n", fps, fps2);
-        st->codec->time_base.den = fps * st->codec->time_base.num;
-        //XXX: do we really need that?
-        switch(st->codec->extradata[4]>>4){
-        case 1: st->codec->codec_id = CODEC_ID_RV10; break;
-        case 2: st->codec->codec_id = CODEC_ID_RV20; break;
-        case 3: st->codec->codec_id = CODEC_ID_RV30; break;
-        case 4: st->codec->codec_id = CODEC_ID_RV40; break;
-        default:
-            av_log(st->codec, AV_LOG_ERROR, "extra:%02X %02X %02X %02X %02X\n", st->codec->extradata[0], st->codec->extradata[1], st->codec->extradata[2], st->codec->extradata[3], st->codec->extradata[4]);
-            goto fail1;
-        }
+        av_reduce(&st->codec->time_base.num, &st->codec->time_base.den,
+                  0x10000, fps, (1 << 30) - 1);
+        st->avg_frame_rate.num = st->codec->time_base.den;
+        st->avg_frame_rate.den = st->codec->time_base.num;
     }
 
 skip:
@@ -405,7 +397,7 @@ static int rm_read_header_old(AVFormatContext *s)
     AVStream *st;
 
     rm->old_format = 1;
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return -1;
     st->priv_data = ff_rm_alloc_rmstream();
@@ -443,15 +435,13 @@ static int rm_read_header(AVFormatContext *s, AVFormatParameters *ap)
         tag = avio_rl32(pb);
         tag_size = avio_rb32(pb);
         avio_rb16(pb);
-#if 0
-        printf("tag=%c%c%c%c (%08x) size=%d\n",
-               (tag) & 0xff,
-               (tag >> 8) & 0xff,
-               (tag >> 16) & 0xff,
-               (tag >> 24) & 0xff,
-               tag,
-               tag_size);
-#endif
+        av_dlog(s, "tag=%c%c%c%c (%08x) size=%d\n",
+                (tag      ) & 0xff,
+                (tag >>  8) & 0xff,
+                (tag >> 16) & 0xff,
+                (tag >> 24) & 0xff,
+                tag,
+                tag_size);
         if (tag_size < 10 && tag != MKTAG('D', 'A', 'T', 'A'))
             return -1;
         switch(tag) {
@@ -473,7 +463,7 @@ static int rm_read_header(AVFormatContext *s, AVFormatParameters *ap)
             rm_read_metadata(s, 1);
             break;
         case MKTAG('M', 'D', 'P', 'R'):
-            st = av_new_stream(s, 0);
+            st = avformat_new_stream(s, NULL);
             if (!st)
                 return AVERROR(ENOMEM);
             st->id = avio_rb16(pb);
@@ -608,7 +598,8 @@ skip:
 
 static int rm_assemble_video_frame(AVFormatContext *s, AVIOContext *pb,
                                    RMDemuxContext *rm, RMStream *vst,
-                                   AVPacket *pkt, int len, int *pseq)
+                                   AVPacket *pkt, int len, int *pseq,
+                                   int64_t *timestamp)
 {
     int hdr, seq, pic_num, len2, pos;
     int type;
@@ -628,8 +619,10 @@ static int rm_assemble_video_frame(AVFormatContext *s, AVIOContext *pb,
         return -1;
     rm->remaining_len = len;
     if(type&1){     // frame, not slice
-        if(type == 3)  // frame as a part of packet
+        if(type == 3){  // frame as a part of packet
             len= len2;
+            *timestamp = pos;
+        }
         if(rm->remaining_len < len)
             return -1;
         rm->remaining_len -= len;
@@ -737,7 +730,7 @@ ff_rm_parse_packet (AVFormatContext *s, AVIOContext *pb,
 
     if (st->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
         rm->current_stream= st->id;
-        if(rm_assemble_video_frame(s, pb, rm, ast, pkt, len, seq))
+        if(rm_assemble_video_frame(s, pb, rm, ast, pkt, len, seq, &timestamp))
             return -1; //got partial frame
     } else if (st->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
         if ((ast->deint_id == DEINT_ID_GENR) ||
@@ -811,7 +804,7 @@ ff_rm_parse_packet (AVFormatContext *s, AVIOContext *pb,
     }
 #endif
 
-    pkt->pts= timestamp;
+    pkt->pts = timestamp;
     if (flags & 2)
         pkt->flags |= AV_PKT_FLAG_KEY;
 
@@ -982,4 +975,5 @@ AVInputFormat ff_rdt_demuxer = {
     .long_name      = NULL_IF_CONFIG_SMALL("RDT demuxer"),
     .priv_data_size = sizeof(RMDemuxContext),
     .read_close     = rm_read_close,
+    .flags          = AVFMT_NOFILE,
 };

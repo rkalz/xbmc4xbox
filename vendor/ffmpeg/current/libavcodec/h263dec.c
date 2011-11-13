@@ -91,6 +91,8 @@ av_cold int ff_h263_decode_init(AVCodecContext *avctx)
         break;
     case CODEC_ID_VC1:
     case CODEC_ID_WMV3:
+    case CODEC_ID_VC1IMAGE:
+    case CODEC_ID_WMV3IMAGE:
         s->h263_pred = 1;
         s->msmpeg4_version=6;
         avctx->chroma_sample_location = AVCHROMA_LOC_LEFT;
@@ -598,18 +600,10 @@ retry:
 
     /* skip B-frames if we don't have reference frames */
     if(s->last_picture_ptr==NULL && (s->pict_type==AV_PICTURE_TYPE_B || s->dropable)) return get_consumed_bytes(s, buf_size);
-#if FF_API_HURRY_UP
-    /* skip b frames if we are in a hurry */
-    if(avctx->hurry_up && s->pict_type==FF_B_TYPE) return get_consumed_bytes(s, buf_size);
-#endif
     if(   (avctx->skip_frame >= AVDISCARD_NONREF && s->pict_type==AV_PICTURE_TYPE_B)
        || (avctx->skip_frame >= AVDISCARD_NONKEY && s->pict_type!=AV_PICTURE_TYPE_I)
        ||  avctx->skip_frame >= AVDISCARD_ALL)
         return get_consumed_bytes(s, buf_size);
-#if FF_API_HURRY_UP
-    /* skip everything if we are in a hurry>=5 */
-    if(avctx->hurry_up>=5) return get_consumed_bytes(s, buf_size);
-#endif
 
     if(s->next_p_frame_damaged){
         if(s->pict_type==AV_PICTURE_TYPE_B)
@@ -738,7 +732,7 @@ intrax8_decoded:
 av_log(avctx, AV_LOG_DEBUG, "%"PRId64"\n", rdtsc()-time);
 #endif
 
-    return (ret && avctx->error_recognition >= FF_ER_EXPLODE)?ret:get_consumed_bytes(s, buf_size);
+    return (ret && (avctx->err_recognition & AV_EF_EXPLODE))?ret:get_consumed_bytes(s, buf_size);
 }
 
 AVCodec ff_h263_decoder = {

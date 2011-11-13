@@ -183,14 +183,6 @@ x11grab_read_header(AVFormatContext *s1, AVFormatParameters *ap)
         av_log(s1, AV_LOG_ERROR, "Could not parse framerate: %s.\n", x11grab->framerate);
         goto out;
     }
-#if FF_API_FORMAT_PARAMETERS
-    if (ap->width > 0)
-        x11grab->width = ap->width;
-    if (ap->height > 0)
-        x11grab->height = ap->height;
-    if (ap->time_base.num)
-        framerate = (AVRational){ap->time_base.den, ap->time_base.num};
-#endif
     av_log(s1, AV_LOG_INFO, "device: %s -> display: %s x: %d y: %d width: %d height: %d\n",
            s1->filename, dpyname, x_off, y_off, x11grab->width, x11grab->height);
 
@@ -202,7 +194,7 @@ x11grab_read_header(AVFormatContext *s1, AVFormatParameters *ap)
         goto out;
     }
 
-    st = av_new_stream(s1, 0);
+    st = avformat_new_stream(s1, NULL);
     if (!st) {
         ret = AVERROR(ENOMEM);
         goto out;
@@ -545,6 +537,8 @@ x11grab_read_packet(AVFormatContext *s1, AVPacket *pkt)
             av_log (s1, AV_LOG_INFO, "XGetZPixmap() failed\n");
         }
     }
+    if (image->bits_per_pixel == 32)
+        XAddPixel(image, 0xFF000000);
 
     if (s->draw_mouse) {
         paint_mouse_pointer(image, s);
@@ -589,13 +583,13 @@ x11grab_read_close(AVFormatContext *s1)
 #define OFFSET(x) offsetof(struct x11_grab, x)
 #define DEC AV_OPT_FLAG_DECODING_PARAM
 static const AVOption options[] = {
-    { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), FF_OPT_TYPE_STRING, {.str = "vga"}, 0, 0, DEC },
-    { "framerate", "", OFFSET(framerate), FF_OPT_TYPE_STRING, {.str = "ntsc"}, 0, 0, DEC },
-    { "draw_mouse", "Draw the mouse pointer.", OFFSET(draw_mouse), FF_OPT_TYPE_INT, { 1 }, 0, 1, DEC },
+    { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), AV_OPT_TYPE_STRING, {.str = "vga"}, 0, 0, DEC },
+    { "framerate", "", OFFSET(framerate), AV_OPT_TYPE_STRING, {.str = "ntsc"}, 0, 0, DEC },
+    { "draw_mouse", "Draw the mouse pointer.", OFFSET(draw_mouse), AV_OPT_TYPE_INT, { 1 }, 0, 1, DEC },
     { "follow_mouse", "Move the grabbing region when the mouse pointer reaches within specified amount of pixels to the edge of region.",
-      OFFSET(follow_mouse), FF_OPT_TYPE_INT, { 0 }, -1, INT_MAX, DEC, "follow_mouse" },
-    { "centered", "Keep the mouse pointer at the center of grabbing region when following.", 0, FF_OPT_TYPE_CONST, { -1 }, INT_MIN, INT_MAX, DEC, "follow_mouse" },
-    { "show_region", "Show the grabbing region.", OFFSET(show_region), FF_OPT_TYPE_INT, { 0 }, 0, 1, DEC },
+      OFFSET(follow_mouse), AV_OPT_TYPE_INT, { 0 }, -1, INT_MAX, DEC, "follow_mouse" },
+    { "centered", "Keep the mouse pointer at the center of grabbing region when following.", 0, AV_OPT_TYPE_CONST, { -1 }, INT_MIN, INT_MAX, DEC, "follow_mouse" },
+    { "show_region", "Show the grabbing region.", OFFSET(show_region), AV_OPT_TYPE_INT, { 0 }, 0, 1, DEC },
     { NULL },
 };
 
@@ -607,15 +601,13 @@ static const AVClass x11_class = {
 };
 
 /** x11 grabber device demuxer declaration */
-AVInputFormat ff_x11_grab_device_demuxer =
-{
-    "x11grab",
-    NULL_IF_CONFIG_SMALL("X11grab"),
-    sizeof(struct x11_grab),
-    NULL,
-    x11grab_read_header,
-    x11grab_read_packet,
-    x11grab_read_close,
-    .flags = AVFMT_NOFILE,
-    .priv_class = &x11_class,
+AVInputFormat ff_x11_grab_device_demuxer = {
+    .name           = "x11grab",
+    .long_name      = NULL_IF_CONFIG_SMALL("X11grab"),
+    .priv_data_size = sizeof(struct x11_grab),
+    .read_header    = x11grab_read_header,
+    .read_packet    = x11grab_read_packet,
+    .read_close     = x11grab_read_close,
+    .flags          = AVFMT_NOFILE,
+    .priv_class     = &x11_class,
 };

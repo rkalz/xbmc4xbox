@@ -174,12 +174,13 @@ static av_cold int aac_encode_init(AVCodecContext *avctx)
     AACEncContext *s = avctx->priv_data;
     int i;
     const uint8_t *sizes[2];
+    uint8_t grouping[AAC_MAX_CHANNELS];
     int lengths[2];
 
     avctx->frame_size = 1024;
 
     for (i = 0; i < 16; i++)
-        if (avctx->sample_rate == ff_mpeg4audio_sample_rates[i])
+        if (avctx->sample_rate == avpriv_mpeg4audio_sample_rates[i])
             break;
     if (i == 16) {
         av_log(avctx, AV_LOG_ERROR, "Unsupported sample rate %d\n", avctx->sample_rate);
@@ -219,7 +220,9 @@ static av_cold int aac_encode_init(AVCodecContext *avctx)
     sizes[1]   = swb_size_128[i];
     lengths[0] = ff_aac_num_swb_1024[i];
     lengths[1] = ff_aac_num_swb_128[i];
-    ff_psy_init(&s->psy, avctx, 2, sizes, lengths, s->chan_map[0], &s->chan_map[1]);
+    for (i = 0; i < s->chan_map[0]; i++)
+        grouping[i] = s->chan_map[i + 1] == TYPE_CPE;
+    ff_psy_init(&s->psy, avctx, 2, sizes, lengths, s->chan_map[0], grouping);
     s->psypp = ff_psy_preprocess_init(avctx);
     s->coder = &ff_aac_coders[2];
 
@@ -488,7 +491,7 @@ static void put_bitstream_info(AVCodecContext *avctx, AACEncContext *s,
         put_bits(&s->pb, 8, namelen - 16);
     put_bits(&s->pb, 4, 0); //extension type - filler
     padbits = 8 - (put_bits_count(&s->pb) & 7);
-    align_put_bits(&s->pb);
+    avpriv_align_put_bits(&s->pb);
     for (i = 0; i < namelen - 2; i++)
         put_bits(&s->pb, 8, name[i]);
     put_bits(&s->pb, 12 - padbits, 0);
@@ -555,6 +558,12 @@ static int aac_encode_frame(AVCodecContext *avctx,
                 wi[ch].window_shape   = 0;
                 wi[ch].num_windows    = 1;
                 wi[ch].grouping[0]    = 1;
+
+                /* Only the lowest 12 coefficients are used in a LFE channel.
+                 * The expression below results in only the bottom 8 coefficients
+                 * being used for 11.025kHz to 16kHz sample rates.
+                 */
+                ics->num_swb = s->samplerate_index >= 8 ? 1 : 3;
             } else {
                 wi[ch] = s->psy.model->window(&s->psy, samples2, la, cur_channel,
                                               ics->window_sequence[0]);
@@ -565,7 +574,7 @@ static int aac_encode_frame(AVCodecContext *avctx,
             ics->use_kb_window[0]   = wi[ch].window_shape;
             ics->num_windows        = wi[ch].num_windows;
             ics->swb_sizes          = s->psy.bands    [ics->num_windows == 8];
-            ics->num_swb            = tag == TYPE_LFE ? 12 : s->psy.num_bands[ics->num_windows == 8];
+            ics->num_swb            = tag == TYPE_LFE ? ics->num_swb : s->psy.num_bands[ics->num_windows == 8];
             for (w = 0; w < ics->num_windows; w++)
                 ics->group_len[w] = wi[ch].grouping[w];
 
@@ -677,10 +686,10 @@ static av_cold int aac_encode_end(AVCodecContext *avctx)
 
 #define AACENC_FLAGS AV_OPT_FLAG_ENCODING_PARAM | AV_OPT_FLAG_AUDIO_PARAM
 static const AVOption aacenc_options[] = {
-    {"stereo_mode", "Stereo coding method", offsetof(AACEncContext, options.stereo_mode), FF_OPT_TYPE_INT, {.dbl = 0}, -1, 1, AACENC_FLAGS, "stereo_mode"},
-        {"auto",     "Selected by the Encoder", 0, FF_OPT_TYPE_CONST, {.dbl = -1 }, INT_MIN, INT_MAX, AACENC_FLAGS, "stereo_mode"},
-        {"ms_off",   "Disable Mid/Side coding", 0, FF_OPT_TYPE_CONST, {.dbl =  0 }, INT_MIN, INT_MAX, AACENC_FLAGS, "stereo_mode"},
-        {"ms_force", "Force Mid/Side for the whole frame if possible", 0, FF_OPT_TYPE_CONST, {.dbl =  1 }, INT_MIN, INT_MAX, AACENC_FLAGS, "stereo_mode"},
+    {"stereo_mode", "Stereo coding method", offsetof(AACEncContext, options.stereo_mode), AV_OPT_TYPE_INT, {.dbl = 0}, -1, 1, AACENC_FLAGS, "stereo_mode"},
+        {"auto",     "Selected by the Encoder", 0, AV_OPT_TYPE_CONST, {.dbl = -1 }, INT_MIN, INT_MAX, AACENC_FLAGS, "stereo_mode"},
+        {"ms_off",   "Disable Mid/Side coding", 0, AV_OPT_TYPE_CONST, {.dbl =  0 }, INT_MIN, INT_MAX, AACENC_FLAGS, "stereo_mode"},
+        {"ms_force", "Force Mid/Side for the whole frame if possible", 0, AV_OPT_TYPE_CONST, {.dbl =  1 }, INT_MIN, INT_MAX, AACENC_FLAGS, "stereo_mode"},
     {NULL}
 };
 

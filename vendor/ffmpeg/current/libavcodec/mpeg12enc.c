@@ -27,12 +27,16 @@
 
 #include "avcodec.h"
 #include "dsputil.h"
+#include "mathops.h"
 #include "mpegvideo.h"
 
 #include "mpeg12.h"
 #include "mpeg12data.h"
 #include "bytestream.h"
-
+#include "timecode.h"
+#include "libavutil/log.h"
+#include "libavutil/opt.h"
+#include "libavutil/avassert.h"
 
 static const uint8_t inv_non_linear_qscale[13] = {
     0, 2, 4, 6, 8,
@@ -71,11 +75,12 @@ static void init_uni_ac_vlc(RLTable *rl, uint8_t *uni_ac_vlc_len){
     for(i=0; i<128; i++){
         int level= i-64;
         int run;
+        if (!level)
+            continue;
         for(run=0; run<64; run++){
-            int len, bits, code;
+            int len, code;
 
             int alevel= FFABS(level);
-            int sign= (level>>31)&1;
 
             if (alevel > rl->max_level[0][run])
                 code= 111; /*rl->n*/
@@ -83,25 +88,15 @@ static void init_uni_ac_vlc(RLTable *rl, uint8_t *uni_ac_vlc_len){
                 code= rl->index_run[0][run] + alevel - 1;
 
             if (code < 111 /* rl->n */) {
-                /* store the vlc & sign at once */
+                /* length of vlc and sign */
                 len=   rl->table_vlc[code][1]+1;
-                bits= (rl->table_vlc[code][0]<<1) + sign;
             } else {
                 len=  rl->table_vlc[111/*rl->n*/][1]+6;
-                bits= rl->table_vlc[111/*rl->n*/][0]<<6;
 
-                bits|= run;
                 if (alevel < 128) {
-                    bits<<=8; len+=8;
-                    bits|= level & 0xff;
+                    len += 8;
                 } else {
-                    bits<<=16; len+=16;
-                    bits|= level & 0xff;
-                    if (level < 0) {
-                        bits|= 0x8001 + level + 255;
-                    } else {
-                        bits|= level & 0xffff;
-                    }
+                    len += 16;
                 }
             }
 
@@ -117,7 +112,7 @@ static int find_frame_rate_index(MpegEncContext *s){
     int64_t d;
 
     for(i=1;i<14;i++) {
-        int64_t n0= 1001LL/ff_frame_rate_tab[i].den*ff_frame_rate_tab[i].num*s->avctx->time_base.num;
+        int64_t n0= 1001LL/avpriv_frame_rate_tab[i].den*avpriv_frame_rate_tab[i].num*s->avctx->time_base.num;
         int64_t n1= 1001LL*s->avctx->time_base.den;
         if(s->avctx->strict_std_compliance > FF_COMPLIANCE_UNOFFICIAL && i>=9) break;
 
@@ -139,6 +134,13 @@ static av_cold int encode_init(AVCodecContext *avctx)
 
     if(MPV_encode_init(avctx) < 0)
         return -1;
+
+#if FF_API_MPEGVIDEO_GLOBAL_OPTS
+    if (avctx->flags2 & CODEC_FLAG2_DROP_FRAME_TIMECODE)
+        s->drop_frame_timecode = 1;
+    if (avctx->flags & CODEC_FLAG_SVCD_SCAN_OFFSET)
+        s->scan_offset = 1;
+#endif
 
     if(find_frame_rate_index(s) < 0){
         if(s->strict_std_compliance > FF_COMPLIANCE_EXPERIMENTAL){
@@ -172,17 +174,24 @@ static av_cold int encode_init(AVCodecContext *avctx)
         }
     }
 
-    if((avctx->flags2 & CODEC_FLAG2_DROP_FRAME_TIMECODE) && s->frame_rate_index != 4){
+    s->drop_frame_timecode = s->tc.drop = s->drop_frame_timecode || !!(avctx->flags2 & CODEC_FLAG2_DROP_FRAME_TIMECODE);
+    if (s->drop_frame_timecode && s->frame_rate_index != 4) {
         av_log(avctx, AV_LOG_ERROR, "Drop frame time code only allowed with 1001/30000 fps\n");
         return -1;
     }
 
+    if (s->tc.str) {
+        s->tc.rate = avpriv_frame_rate_tab[s->frame_rate_index];
+        if (ff_init_smtpe_timecode(s, &s->tc) < 0)
+            return -1;
+        s->avctx->timecode_frame_start = s->tc.start;
+    }
     return 0;
 }
 
 static void put_header(MpegEncContext *s, int header)
 {
-    align_put_bits(&s->pb);
+    avpriv_align_put_bits(&s->pb);
     put_bits(&s->pb, 16, header>>16);
     put_sbits(&s->pb, 16, header);
 }
@@ -201,7 +210,7 @@ static void mpeg1_encode_sequence_header(MpegEncContext *s)
         if(aspect_ratio==0.0) aspect_ratio= 1.0; //pixel aspect 1:1 (VGA)
 
         if (s->current_picture.f.key_frame) {
-            AVRational framerate= ff_frame_rate_tab[s->frame_rate_index];
+            AVRational framerate= avpriv_frame_rate_tab[s->frame_rate_index];
 
             /* mpeg1 header repeated every gop */
             put_header(s, SEQ_START_CODE);
@@ -283,20 +292,16 @@ static void mpeg1_encode_sequence_header(MpegEncContext *s)
             }
 
             put_header(s, GOP_START_CODE);
-            put_bits(&s->pb, 1, !!(s->avctx->flags2 & CODEC_FLAG2_DROP_FRAME_TIMECODE)); /* drop frame flag */
+            put_bits(&s->pb, 1, s->drop_frame_timecode); /* drop frame flag */
             /* time code : we must convert from the real frame rate to a
                fake mpeg frame rate in case of low frame rate */
             fps = (framerate.num + framerate.den/2)/ framerate.den;
             time_code = s->current_picture_ptr->f.coded_picture_number + s->avctx->timecode_frame_start;
 
             s->gop_picture_number = s->current_picture_ptr->f.coded_picture_number;
-            if (s->avctx->flags2 & CODEC_FLAG2_DROP_FRAME_TIMECODE) {
-                /* only works for NTSC 29.97 */
-                int d = time_code / 17982;
-                int m = time_code % 17982;
-                //if (m < 2) m += 2; /* not needed since -2,-1 / 1798 in C returns 0 */
-                time_code += 18 * d + 2 * ((m - 2) / 1798);
-            }
+            av_assert0(s->drop_frame_timecode == s->tc.drop);
+            if (s->tc.drop)
+                time_code = ff_framenum_to_drop_timecode(time_code);
             put_bits(&s->pb, 5, (uint32_t)((time_code / (fps * 3600)) % 24));
             put_bits(&s->pb, 6, (uint32_t)((time_code / (fps * 60)) % 60));
             put_bits(&s->pb, 1, 1);
@@ -413,7 +418,7 @@ void mpeg1_encode_picture_header(MpegEncContext *s, int picture_number)
         put_bits(&s->pb, 1, s->progressive_frame);
         put_bits(&s->pb, 1, 0); //composite_display_flag
     }
-    if(s->flags & CODEC_FLAG_SVCD_SCAN_OFFSET){
+    if (s->scan_offset) {
         int i;
 
         put_header(s, USER_START_CODE);
@@ -681,8 +686,7 @@ static void mpeg1_encode_motion(MpegEncContext *s, int val, int f_or_b_code)
         int bit_size = f_or_b_code - 1;
         int range = 1 << bit_size;
         /* modulo encoding */
-        int l= INT_BIT - 5 - bit_size;
-        val= (val<<l)>>l;
+        val = sign_extend(val, 5 + bit_size);
 
         if (val >= 0) {
             val--;
@@ -925,6 +929,38 @@ static void mpeg1_encode_block(MpegEncContext *s,
     put_bits(&s->pb, table_vlc[112][1], table_vlc[112][0]);
 }
 
+#define OFFSET(x) offsetof(MpegEncContext, x)
+#define VE AV_OPT_FLAG_ENCODING_PARAM | AV_OPT_FLAG_VIDEO_PARAM
+#define COMMON_OPTS\
+        {TIMECODE_OPT(MpegEncContext,\
+         AV_OPT_FLAG_ENCODING_PARAM | AV_OPT_FLAG_VIDEO_PARAM)},\
+    { "intra_vlc",           "Use MPEG-2 intra VLC table.",       OFFSET(intra_vlc_format),    AV_OPT_TYPE_INT, { 0 }, 0, 1, VE },\
+    { "drop_frame_timecode", "Timecode is in drop frame format.", OFFSET(drop_frame_timecode), AV_OPT_TYPE_INT, { 0 }, 0, 1, VE}, \
+    { "scan_offset",         "Reserve space for SVCD scan offset user data.", OFFSET(scan_offset), AV_OPT_TYPE_INT, { 0 }, 0, 1, VE },
+
+static const AVOption mpeg1_options[] = {
+    COMMON_OPTS
+    { NULL },
+};
+
+static const AVOption mpeg2_options[] = {
+    COMMON_OPTS
+    { "non_linear_quant",    "Use nonlinear quantizer.",          OFFSET(q_scale_type),         AV_OPT_TYPE_INT, { 0 }, 0, 1, VE },
+    { "alternate_scan",      "Enable alternate scantable.",       OFFSET(alternate_scan),       AV_OPT_TYPE_INT, { 0 }, 0, 1, VE },
+    { NULL },
+};
+
+#define mpeg12_class(x)\
+static const AVClass mpeg## x ##_class = {\
+    .class_name   = "mpeg" #x "video encoder",\
+    .item_name    = av_default_item_name,\
+    .option       = mpeg## x ##_options,\
+    .version      = LIBAVUTIL_VERSION_INT,\
+};
+
+mpeg12_class(1)
+mpeg12_class(2)
+
 AVCodec ff_mpeg1video_encoder = {
     .name           = "mpeg1video",
     .type           = AVMEDIA_TYPE_VIDEO,
@@ -933,10 +969,11 @@ AVCodec ff_mpeg1video_encoder = {
     .init           = encode_init,
     .encode         = MPV_encode_picture,
     .close          = MPV_encode_end,
-    .supported_framerates= ff_frame_rate_tab+1,
+    .supported_framerates= avpriv_frame_rate_tab+1,
     .pix_fmts= (const enum PixelFormat[]){PIX_FMT_YUV420P, PIX_FMT_NONE},
     .capabilities= CODEC_CAP_DELAY | CODEC_CAP_SLICE_THREADS,
     .long_name= NULL_IF_CONFIG_SMALL("MPEG-1 video"),
+    .priv_class     = &mpeg1_class,
 };
 
 AVCodec ff_mpeg2video_encoder = {
@@ -947,8 +984,9 @@ AVCodec ff_mpeg2video_encoder = {
     .init           = encode_init,
     .encode         = MPV_encode_picture,
     .close          = MPV_encode_end,
-    .supported_framerates= ff_frame_rate_tab+1,
+    .supported_framerates= avpriv_frame_rate_tab+1,
     .pix_fmts= (const enum PixelFormat[]){PIX_FMT_YUV420P, PIX_FMT_YUV422P, PIX_FMT_NONE},
     .capabilities= CODEC_CAP_DELAY | CODEC_CAP_SLICE_THREADS,
     .long_name= NULL_IF_CONFIG_SMALL("MPEG-2 video"),
+    .priv_class     = &mpeg2_class,
 };

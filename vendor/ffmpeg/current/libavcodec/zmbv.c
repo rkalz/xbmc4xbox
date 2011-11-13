@@ -404,7 +404,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
     if(c->pic.data[0])
             avctx->release_buffer(avctx, &c->pic);
 
-    c->pic.reference = 1;
+    c->pic.reference = 3;
     c->pic.buffer_hints = FF_BUFFER_HINTS_VALID;
     if(avctx->get_buffer(avctx, &c->pic) < 0){
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
@@ -574,7 +574,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
         default:
             av_log(avctx, AV_LOG_ERROR, "Cannot handle format %i\n", c->fmt);
         }
-        memcpy(c->prev, c->cur, c->width * c->height * (c->bpp / 8));
+        FFSWAP(uint8_t *, c->cur, c->prev);
     }
     *data_size = sizeof(AVFrame);
     *(AVFrame*)data = c->pic;

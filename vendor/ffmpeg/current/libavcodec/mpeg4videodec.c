@@ -20,6 +20,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "libavutil/opt.h"
 #include "mpegvideo.h"
 #include "mpeg4video.h"
 #include "h263.h"
@@ -130,10 +131,11 @@ static inline int mpeg4_is_resync(MpegEncContext *s){
         v|= 0x7F >> (7-(bits_count&7));
 
         if(v==0x7F)
-            return 1;
+            return s->mb_num;
     }else{
         if(v == ff_mpeg4_resync_prefix[bits_count&7]){
-            int len;
+            int len, mb_num;
+            int mb_num_bits= av_log2(s->mb_num - 1) + 1;
             GetBitContext gb= s->gb;
 
             skip_bits(&s->gb, 1);
@@ -143,10 +145,14 @@ static inline int mpeg4_is_resync(MpegEncContext *s){
                 if(get_bits1(&s->gb)) break;
             }
 
+            mb_num= get_bits(&s->gb, mb_num_bits);
+            if(!mb_num || mb_num > s->mb_num || get_bits_count(&s->gb)+6 > s->gb.size_in_bits)
+                mb_num= -1;
+
             s->gb= gb;
 
             if(len>=ff_mpeg4_get_video_packet_prefix_length(s))
-                return 1;
+                return mb_num;
         }
     }
     return 0;
@@ -372,16 +378,6 @@ int mpeg4_decode_video_packet_header(MpegEncContext *s)
     if(mb_num>=s->mb_num){
         av_log(s->avctx, AV_LOG_ERROR, "illegal mb_num in video packet (%d %d) \n", mb_num, s->mb_num);
         return -1;
-    }
-    if(s->pict_type == AV_PICTURE_TYPE_B){
-        int mb_x = 0, mb_y = 0;
-
-        while (s->next_picture.f.mbskip_table[s->mb_index2xy[mb_num]]) {
-            if (!mb_x) ff_thread_await_progress((AVFrame*)s->next_picture_ptr, mb_y++, 0);
-            mb_num++;
-            if (++mb_x == s->mb_width) mb_x = 0;
-        }
-        if(mb_num >= s->mb_num) return -1; // slice contains just skipped MBs which where already decoded
     }
 
     s->mb_x= mb_num % s->mb_width;
@@ -1488,16 +1484,21 @@ end:
 
         /* per-MB end of slice check */
     if(s->codec_id==CODEC_ID_MPEG4){
-        if(mpeg4_is_resync(s)){
-            const int delta= s->mb_x + 1 == s->mb_width ? 2 : 1;
+        int next= mpeg4_is_resync(s);
+        if(next) {
+            if        (s->mb_x + s->mb_y*s->mb_width + 1 >  next && s->avctx->error_recognition >= FF_ER_AGGRESSIVE) {
+                return -1;
+            } else if (s->mb_x + s->mb_y*s->mb_width + 1 >= next)
+                return SLICE_END;
 
             if(s->pict_type==AV_PICTURE_TYPE_B){
+                const int delta= s->mb_x + 1 == s->mb_width ? 2 : 1;
                 ff_thread_await_progress((AVFrame*)s->next_picture_ptr,
                                         (s->mb_x + delta >= s->mb_width) ? FFMIN(s->mb_y+1, s->mb_height-1) : s->mb_y, 0);
+                if (s->next_picture.f.mbskip_table[xy + delta])
+                    return SLICE_OK;
             }
 
-            if (s->pict_type == AV_PICTURE_TYPE_B && s->next_picture.f.mbskip_table[xy + delta])
-                return SLICE_OK;
             return SLICE_END;
         }
     }
@@ -1877,7 +1878,7 @@ static int decode_user_data(MpegEncContext *s, GetBitContext *gb){
         }
     }
 
-    /* ffmpeg detection */
+    /* libavcodec detection */
     e=sscanf(buf, "FFmpe%*[^b]b%d", &build)+3;
     if(e!=4)
         e=sscanf(buf, "FFmpeg v%d.%d.%d / libavcodec build: %d", &ver, &ver2, &ver3, &build);
@@ -2124,7 +2125,7 @@ static int decode_vop_header(MpegEncContext *s, GetBitContext *gb){
  */
 int ff_mpeg4_decode_picture_header(MpegEncContext * s, GetBitContext *gb)
 {
-    int startcode, v;
+    unsigned startcode, v;
 
     /* search next start code */
     align_get_bits(gb);
@@ -2276,6 +2277,26 @@ static const AVProfile mpeg4_video_profiles[] = {
     { FF_PROFILE_MPEG4_ADVANCED_SIMPLE,           "Advanced Simple Profile" },
 };
 
+static const AVOption mpeg4_options[] = {
+    {"quarter_sample", "1/4 subpel MC", offsetof(MpegEncContext, quarter_sample), FF_OPT_TYPE_INT, {.dbl = 0}, 0, 1, 0},
+    {"divx_packed", "divx style packed b frames", offsetof(MpegEncContext, divx_packed), FF_OPT_TYPE_INT, {.dbl = 0}, 0, 1, 0},
+    {NULL}
+};
+
+static const AVClass mpeg4_class = {
+    "MPEG4 Video Decoder",
+    av_default_item_name,
+    mpeg4_options,
+    LIBAVUTIL_VERSION_INT,
+};
+
+static const AVClass mpeg4_vdpau_class = {
+    "MPEG4 Video VDPAU Decoder",
+    av_default_item_name,
+    mpeg4_options,
+    LIBAVUTIL_VERSION_INT,
+};
+
 AVCodec ff_mpeg4_decoder = {
     .name           = "mpeg4",
     .type           = AVMEDIA_TYPE_VIDEO,
@@ -2290,7 +2311,8 @@ AVCodec ff_mpeg4_decoder = {
     .long_name= NULL_IF_CONFIG_SMALL("MPEG-4 part 2"),
     .pix_fmts= ff_hwaccel_pixfmt_list_420,
     .profiles = NULL_IF_CONFIG_SMALL(mpeg4_video_profiles),
-    .update_thread_context= ONLY_IF_THREADS_ENABLED(ff_mpeg_update_thread_context)
+    .update_thread_context= ONLY_IF_THREADS_ENABLED(ff_mpeg_update_thread_context),
+    .priv_class = &mpeg4_class,
 };
 
 
@@ -2306,5 +2328,6 @@ AVCodec ff_mpeg4_vdpau_decoder = {
     .capabilities   = CODEC_CAP_DR1 | CODEC_CAP_TRUNCATED | CODEC_CAP_DELAY | CODEC_CAP_HWACCEL_VDPAU,
     .long_name= NULL_IF_CONFIG_SMALL("MPEG-4 part 2 (VDPAU)"),
     .pix_fmts= (const enum PixelFormat[]){PIX_FMT_VDPAU_MPEG4, PIX_FMT_NONE},
+    .priv_class = &mpeg4_vdpau_class,
 };
 #endif

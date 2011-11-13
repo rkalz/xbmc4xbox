@@ -2,29 +2,30 @@ MAIN_MAKEFILE=1
 include config.mak
 
 vpath %.c    $(SRC_PATH)
+vpath %.cpp  $(SRC_PATH)
 vpath %.h    $(SRC_PATH)
 vpath %.S    $(SRC_PATH)
 vpath %.asm  $(SRC_PATH)
 vpath %.v    $(SRC_PATH)
 vpath %.texi $(SRC_PATH)
 
-
 PROGS-$(CONFIG_FFMPEG)   += ffmpeg
+PROGS-$(CONFIG_AVCONV)   += avconv
 PROGS-$(CONFIG_FFPLAY)   += ffplay
 PROGS-$(CONFIG_FFPROBE)  += ffprobe
 PROGS-$(CONFIG_FFSERVER) += ffserver
 
 PROGS      := $(PROGS-yes:%=%$(EXESUF))
-PROGS_G     = $(PROGS-yes:%=%_g$(EXESUF))
+INSTPROGS   = $(PROGS-yes:%=%$(PROGSSUF)$(EXESUF))
 OBJS        = $(PROGS-yes:%=%.o) cmdutils.o
 TESTTOOLS   = audiogen videogen rotozoom tiny_psnr base64
 HOSTPROGS  := $(TESTTOOLS:%=tests/%)
 TOOLS       = qt-faststart trasher
 TOOLS-$(CONFIG_ZLIB) += cws2fws
 
-BASENAMES   = ffmpeg ffplay ffprobe ffserver
-ALLPROGS    = $(BASENAMES:%=%$(EXESUF))
-ALLPROGS_G  = $(BASENAMES:%=%_g$(EXESUF))
+BASENAMES   = ffmpeg avconv ffplay ffprobe ffserver
+ALLPROGS    = $(BASENAMES:%=%$(PROGSSUF)$(EXESUF))
+ALLPROGS_G  = $(BASENAMES:%=%$(PROGSSUF)_g$(EXESUF))
 ALLMANPAGES = $(BASENAMES:%=%.1)
 
 FFLIBS-$(CONFIG_AVDEVICE) += avdevice
@@ -32,11 +33,12 @@ FFLIBS-$(CONFIG_AVFILTER) += avfilter
 FFLIBS-$(CONFIG_AVFORMAT) += avformat
 FFLIBS-$(CONFIG_AVCODEC)  += avcodec
 FFLIBS-$(CONFIG_POSTPROC) += postproc
+FFLIBS-$(CONFIG_SWRESAMPLE)+= swresample
 FFLIBS-$(CONFIG_SWSCALE)  += swscale
 
 FFLIBS := avutil
 
-DATA_FILES := $(wildcard $(SRC_PATH)/ffpresets/*.ffpreset)
+DATA_FILES := $(wildcard $(SRC_PATH)/presets/*.ffpreset)
 
 SKIPHEADERS = cmdutils_common_opts.h
 
@@ -47,9 +49,9 @@ FF_DEP_LIBS  := $(DEP_LIBS)
 
 all: $(PROGS)
 
-$(PROGS): %$(EXESUF): %_g$(EXESUF)
-	$(CP) $< $@
-	$(STRIP) $@
+$(PROGS): %$(EXESUF): %$(PROGSSUF)_g$(EXESUF)
+	$(CP) $< $@$(PROGSSUF)
+	$(STRIP) $@$(PROGSSUF)
 
 $(TOOLS): %$(EXESUF): %.o
 	$(LD) $(LDFLAGS) -o $@ $< $(ELIBS)
@@ -83,7 +85,7 @@ ffplay.o: CFLAGS += $(SDL_CFLAGS)
 ffplay_g$(EXESUF): FF_EXTRALIBS += $(SDL_LIBS)
 ffserver_g$(EXESUF): LDFLAGS += $(FFSERVERLDFLAGS)
 
-%_g$(EXESUF): %.o cmdutils.o $(FF_DEP_LIBS)
+%$(PROGSSUF)_g$(EXESUF): %.o cmdutils.o $(FF_DEP_LIBS)
 	$(LD) $(LDFLAGS) -o $@ $< cmdutils.o $(FF_EXTRALIBS)
 
 OBJDIRS += tools
@@ -116,7 +118,7 @@ install-progs-$(CONFIG_SHARED): install-libs
 
 install-progs: install-progs-yes $(PROGS)
 	$(Q)mkdir -p "$(BINDIR)"
-	$(INSTALL) -c -m 755 $(PROGS) "$(BINDIR)"
+	$(INSTALL) -c -m 755 $(INSTPROGS) "$(BINDIR)"
 
 install-data: $(DATA_FILES)
 	$(Q)mkdir -p "$(DATADIR)"

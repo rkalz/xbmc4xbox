@@ -73,10 +73,10 @@ static int tmv_read_header(AVFormatContext *s, AVFormatParameters *ap)
     if (avio_rl32(pb) != TMV_TAG)
         return -1;
 
-    if (!(vst = av_new_stream(s, 0)))
+    if (!(vst = avformat_new_stream(s, NULL)))
         return AVERROR(ENOMEM);
 
-    if (!(ast = av_new_stream(s, 0)))
+    if (!(ast = avformat_new_stream(s, NULL)))
         return AVERROR(ENOMEM);
 
     ast->codec->sample_rate = avio_rl16(pb);
@@ -173,7 +173,8 @@ static int tmv_read_seek(AVFormatContext *s, int stream_index,
     pos = timestamp *
           (tmv->audio_chunk_size + tmv->video_chunk_size + tmv->padding);
 
-    avio_seek(s->pb, pos + TMV_HEADER_SIZE, SEEK_SET);
+    if (avio_seek(s->pb, pos + TMV_HEADER_SIZE, SEEK_SET) < 0)
+        return -1;
     tmv->stream_index = 0;
     return 0;
 }

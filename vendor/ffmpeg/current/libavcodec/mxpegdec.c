@@ -47,9 +47,7 @@ static av_cold int mxpeg_decode_init(AVCodecContext *avctx)
 
     s->picture[0].reference = s->picture[1].reference = 3;
     s->jpg.picture_ptr      = &s->picture[0];
-    ff_mjpeg_decode_init(avctx);
-
-    return 0;
+    return ff_mjpeg_decode_init(avctx);
 }
 
 static int mxpeg_decode_app(MXpegDecodeContext *s,
@@ -276,9 +274,13 @@ static int mxpeg_decode_frame(AVCodecContext *avctx,
                         return AVERROR(ENOMEM);
                     }
 
-                    ff_mjpeg_decode_sos(jpg, s->mxm_bitmask, reference_ptr);
+                    ret = ff_mjpeg_decode_sos(jpg, s->mxm_bitmask, reference_ptr);
+                    if (ret < 0 && (avctx->err_recognition & AV_EF_EXPLODE))
+                        return ret;
                 } else {
-                    ff_mjpeg_decode_sos(jpg, NULL, NULL);
+                    ret = ff_mjpeg_decode_sos(jpg, NULL, NULL);
+                    if (ret < 0 && (avctx->err_recognition & AV_EF_EXPLODE))
+                        return ret;
                 }
 
                 break;

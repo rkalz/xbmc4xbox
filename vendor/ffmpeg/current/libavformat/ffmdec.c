@@ -121,6 +121,11 @@ static int ffm_read_data(AVFormatContext *s,
             if (avio_tell(pb) == ffm->file_size)
                 avio_seek(pb, ffm->packet_size, SEEK_SET);
     retry_read:
+            if (pb->buffer_size != ffm->packet_size) {
+                int64_t tell = avio_tell(pb);
+                url_setbufsize(pb, ffm->packet_size);
+                avio_seek(pb, tell, SEEK_SET);
+            }
             id = avio_rb16(pb); /* PACKET_ID */
             if (id != PACKET_ID)
                 if (ffm_resync(s, id) < 0)
@@ -166,7 +171,7 @@ static int ffm_read_data(AVFormatContext *s,
 
 /* ensure that acutal seeking happens between FFM_PACKET_SIZE
    and file_size - FFM_PACKET_SIZE */
-static void ffm_seek1(AVFormatContext *s, int64_t pos1)
+static int64_t ffm_seek1(AVFormatContext *s, int64_t pos1)
 {
     FFMContext *ffm = s->priv_data;
     AVIOContext *pb = s->pb;
@@ -175,7 +180,7 @@ static void ffm_seek1(AVFormatContext *s, int64_t pos1)
     pos = FFMIN(pos1, ffm->file_size - FFM_PACKET_SIZE);
     pos = FFMAX(pos, FFM_PACKET_SIZE);
     av_dlog(s, "seek to %"PRIx64" -> %"PRIx64"\n", pos1, pos);
-    avio_seek(pb, pos, SEEK_SET);
+    return avio_seek(pb, pos, SEEK_SET);
 }
 
 static int64_t get_dts(AVFormatContext *s, int64_t pos)
@@ -290,7 +295,7 @@ static int ffm_read_header(AVFormatContext *s, AVFormatParameters *ap)
     for(i=0;i<nb_streams;i++) {
         char rc_eq_buf[128];
 
-        st = av_new_stream(s, 0);
+        st = avformat_new_stream(s, NULL);
         if (!st)
             goto fail;
 
@@ -461,11 +466,25 @@ static int ffm_seek(AVFormatContext *s, int stream_index, int64_t wanted_pts, in
     av_dlog(s, "wanted_pts=%0.6f\n", wanted_pts / 1000000.0);
     /* find the position using linear interpolation (better than
        dichotomy in typical cases) */
-    pos_min = FFM_PACKET_SIZE;
-    pos_max = ffm->file_size - FFM_PACKET_SIZE;
+    if (ffm->write_index && ffm->write_index < ffm->file_size) {
+        if (get_dts(s, FFM_PACKET_SIZE) < wanted_pts) {
+            pos_min = FFM_PACKET_SIZE;
+            pos_max = ffm->write_index - FFM_PACKET_SIZE;
+        } else {
+            pos_min = ffm->write_index;
+            pos_max = ffm->file_size - FFM_PACKET_SIZE;
+        }
+    } else {
+        pos_min = FFM_PACKET_SIZE;
+        pos_max = ffm->file_size - FFM_PACKET_SIZE;
+    }
     while (pos_min <= pos_max) {
         pts_min = get_dts(s, pos_min);
         pts_max = get_dts(s, pos_max);
+        if (pts_min > wanted_pts || pts_max < wanted_pts) {
+            pos = pts_min > wanted_pts ? pos_min : pos_max;
+            goto found;
+        }
         /* linear interpolation */
         pos1 = (double)(pos_max - pos_min) * (double)(wanted_pts - pts_min) /
             (double)(pts_max - pts_min);
@@ -487,7 +506,8 @@ static int ffm_seek(AVFormatContext *s, int stream_index, int64_t wanted_pts, in
     pos = (flags & AVSEEK_FLAG_BACKWARD) ? pos_min : pos_max;
 
  found:
-    ffm_seek1(s, pos);
+    if (ffm_seek1(s, pos) < 0)
+        return -1;
 
     /* reset read state */
     ffm->read_state = READ_HEADER;

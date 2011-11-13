@@ -38,6 +38,7 @@
 #include "config.h"
 #include "ac3dec.h"
 #include "vorbis.h"
+#include "diracdsp.h"
 
 uint8_t ff_cropTbl[256 + 2 * MAX_NEG_CROP] = {0, };
 uint32_t ff_squareTbl[512] = {0, };
@@ -141,6 +142,41 @@ void ff_init_scantable(uint8_t *permutation, ScanTable *st, const uint8_t *src_s
         j = st->permutated[i];
         if(j>end) end=j;
         st->raster_end[i]= end;
+    }
+}
+
+void ff_init_scantable_permutation(uint8_t *idct_permutation,
+                                   int idct_permutation_type)
+{
+    int i;
+
+    switch(idct_permutation_type){
+    case FF_NO_IDCT_PERM:
+        for(i=0; i<64; i++)
+            idct_permutation[i]= i;
+        break;
+    case FF_LIBMPEG2_IDCT_PERM:
+        for(i=0; i<64; i++)
+            idct_permutation[i]= (i & 0x38) | ((i & 6) >> 1) | ((i & 1) << 2);
+        break;
+    case FF_SIMPLE_IDCT_PERM:
+        for(i=0; i<64; i++)
+            idct_permutation[i]= simple_mmx_permutation[i];
+        break;
+    case FF_TRANSPOSE_IDCT_PERM:
+        for(i=0; i<64; i++)
+            idct_permutation[i]= ((i&7)<<3) | (i>>3);
+        break;
+    case FF_PARTTRANS_IDCT_PERM:
+        for(i=0; i<64; i++)
+            idct_permutation[i]= (i&0x24) | ((i&3)<<3) | ((i>>3)&3);
+        break;
+    case FF_SSE2_IDCT_PERM:
+        for(i=0; i<64; i++)
+            idct_permutation[i]= (i&0x38) | idct_sse2_row_perm[i&7];
+        break;
+    default:
+        av_log(NULL, AV_LOG_ERROR, "Internal error, IDCT permutation not set\n");
     }
 }
 
@@ -1279,19 +1315,64 @@ static void wmv2_mspel8_h_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int
 }
 
 #if CONFIG_RV40_DECODER
-static void put_rv40_qpel16_mc33_c(uint8_t *dst, uint8_t *src, int stride){
+void ff_put_rv40_qpel16_mc33_c(uint8_t *dst, uint8_t *src, int stride){
     put_pixels16_xy2_8_c(dst, src, stride, 16);
 }
-static void avg_rv40_qpel16_mc33_c(uint8_t *dst, uint8_t *src, int stride){
+void ff_avg_rv40_qpel16_mc33_c(uint8_t *dst, uint8_t *src, int stride){
     avg_pixels16_xy2_8_c(dst, src, stride, 16);
 }
-static void put_rv40_qpel8_mc33_c(uint8_t *dst, uint8_t *src, int stride){
+void ff_put_rv40_qpel8_mc33_c(uint8_t *dst, uint8_t *src, int stride){
     put_pixels8_xy2_8_c(dst, src, stride, 8);
 }
-static void avg_rv40_qpel8_mc33_c(uint8_t *dst, uint8_t *src, int stride){
+void ff_avg_rv40_qpel8_mc33_c(uint8_t *dst, uint8_t *src, int stride){
     avg_pixels8_xy2_8_c(dst, src, stride, 8);
 }
 #endif /* CONFIG_RV40_DECODER */
+
+#if CONFIG_DIRAC_DECODER
+#define DIRAC_MC(OPNAME)\
+void ff_ ## OPNAME ## _dirac_pixels8_c(uint8_t *dst, const uint8_t *src[5], int stride, int h)\
+{\
+     OPNAME ## _pixels8_8_c(dst, src[0], stride, h);\
+}\
+void ff_ ## OPNAME ## _dirac_pixels16_c(uint8_t *dst, const uint8_t *src[5], int stride, int h)\
+{\
+    OPNAME ## _pixels16_8_c(dst, src[0], stride, h);\
+}\
+void ff_ ## OPNAME ## _dirac_pixels32_c(uint8_t *dst, const uint8_t *src[5], int stride, int h)\
+{\
+    OPNAME ## _pixels16_8_c(dst   , src[0]   , stride, h);\
+    OPNAME ## _pixels16_8_c(dst+16, src[0]+16, stride, h);\
+}\
+void ff_ ## OPNAME ## _dirac_pixels8_l2_c(uint8_t *dst, const uint8_t *src[5], int stride, int h)\
+{\
+    OPNAME ## _pixels8_l2_8(dst, src[0], src[1], stride, stride, stride, h);\
+}\
+void ff_ ## OPNAME ## _dirac_pixels16_l2_c(uint8_t *dst, const uint8_t *src[5], int stride, int h)\
+{\
+    OPNAME ## _pixels16_l2_8(dst, src[0], src[1], stride, stride, stride, h);\
+}\
+void ff_ ## OPNAME ## _dirac_pixels32_l2_c(uint8_t *dst, const uint8_t *src[5], int stride, int h)\
+{\
+    OPNAME ## _pixels16_l2_8(dst   , src[0]   , src[1]   , stride, stride, stride, h);\
+    OPNAME ## _pixels16_l2_8(dst+16, src[0]+16, src[1]+16, stride, stride, stride, h);\
+}\
+void ff_ ## OPNAME ## _dirac_pixels8_l4_c(uint8_t *dst, const uint8_t *src[5], int stride, int h)\
+{\
+    OPNAME ## _pixels8_l4_8(dst, src[0], src[1], src[2], src[3], stride, stride, stride, stride, stride, h);\
+}\
+void ff_ ## OPNAME ## _dirac_pixels16_l4_c(uint8_t *dst, const uint8_t *src[5], int stride, int h)\
+{\
+    OPNAME ## _pixels16_l4_8(dst, src[0], src[1], src[2], src[3], stride, stride, stride, stride, stride, h);\
+}\
+void ff_ ## OPNAME ## _dirac_pixels32_l4_c(uint8_t *dst, const uint8_t *src[5], int stride, int h)\
+{\
+    OPNAME ## _pixels16_l4_8(dst   , src[0]   , src[1]   , src[2]   , src[3]   , stride, stride, stride, stride, stride, h);\
+    OPNAME ## _pixels16_l4_8(dst+16, src[0]+16, src[1]+16, src[2]+16, src[3]+16, stride, stride, stride, stride, stride, h);\
+}
+DIRAC_MC(put)
+DIRAC_MC(avg)
+#endif
 
 static void wmv2_mspel8_v_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int w){
     uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
@@ -2443,6 +2524,14 @@ static void vector_fmul_scalar_c(float *dst, const float *src, float mul,
         dst[i] = src[i] * mul;
 }
 
+static void vector_fmac_scalar_c(float *dst, const float *src, float mul,
+                                 int len)
+{
+    int i;
+    for (i = 0; i < len; i++)
+        dst[i] += src[i] * mul;
+}
+
 static void butterflies_float_c(float *restrict v1, float *restrict v2,
                                 int len)
 {
@@ -2451,6 +2540,18 @@ static void butterflies_float_c(float *restrict v1, float *restrict v2,
         float t = v1[i] - v2[i];
         v1[i] += v2[i];
         v2[i] = t;
+    }
+}
+
+static void butterflies_float_interleave_c(float *dst, const float *src0,
+                                           const float *src1, int len)
+{
+    int i;
+    for (i = 0; i < len; i++) {
+        float f1 = src0[i];
+        float f2 = src1[i];
+        dst[2*i    ] = f1 + f2;
+        dst[2*i + 1] = f1 - f2;
     }
 }
 
@@ -2891,16 +2992,6 @@ av_cold void dsputil_init(DSPContext* c, AVCodecContext *avctx)
 #if CONFIG_WMV2_DECODER || CONFIG_VC1_DECODER
     ff_intrax8dsp_init(c,avctx);
 #endif
-#if CONFIG_RV30_DECODER
-    ff_rv30dsp_init(c,avctx);
-#endif
-#if CONFIG_RV40_DECODER
-    ff_rv40dsp_init(c,avctx);
-    c->put_rv40_qpel_pixels_tab[0][15] = put_rv40_qpel16_mc33_c;
-    c->avg_rv40_qpel_pixels_tab[0][15] = avg_rv40_qpel16_mc33_c;
-    c->put_rv40_qpel_pixels_tab[1][15] = put_rv40_qpel8_mc33_c;
-    c->avg_rv40_qpel_pixels_tab[1][15] = avg_rv40_qpel8_mc33_c;
-#endif
 
     c->put_mspel_pixels_tab[0]= ff_put_pixels8x8_c;
     c->put_mspel_pixels_tab[1]= put_mspel8_mc10_c;
@@ -2987,7 +3078,9 @@ av_cold void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     c->vector_clip_int32 = vector_clip_int32_c;
     c->scalarproduct_float = scalarproduct_float_c;
     c->butterflies_float = butterflies_float_c;
+    c->butterflies_float_interleave = butterflies_float_interleave_c;
     c->vector_fmul_scalar = vector_fmul_scalar_c;
+    c->vector_fmac_scalar = vector_fmac_scalar_c;
 
     c->shrink[0]= av_image_copy_plane;
     c->shrink[1]= ff_shrink22;
@@ -3108,42 +3201,6 @@ av_cold void dsputil_init(DSPContext* c, AVCodecContext *avctx)
             c->avg_2tap_qpel_pixels_tab[0][i]= c->avg_h264_qpel_pixels_tab[0][i];
     }
 
-    c->put_rv30_tpel_pixels_tab[0][0] = c->put_h264_qpel_pixels_tab[0][0];
-    c->put_rv30_tpel_pixels_tab[1][0] = c->put_h264_qpel_pixels_tab[1][0];
-    c->avg_rv30_tpel_pixels_tab[0][0] = c->avg_h264_qpel_pixels_tab[0][0];
-    c->avg_rv30_tpel_pixels_tab[1][0] = c->avg_h264_qpel_pixels_tab[1][0];
-
-    c->put_rv40_qpel_pixels_tab[0][0] = c->put_h264_qpel_pixels_tab[0][0];
-    c->put_rv40_qpel_pixels_tab[1][0] = c->put_h264_qpel_pixels_tab[1][0];
-    c->avg_rv40_qpel_pixels_tab[0][0] = c->avg_h264_qpel_pixels_tab[0][0];
-    c->avg_rv40_qpel_pixels_tab[1][0] = c->avg_h264_qpel_pixels_tab[1][0];
-
-    switch(c->idct_permutation_type){
-    case FF_NO_IDCT_PERM:
-        for(i=0; i<64; i++)
-            c->idct_permutation[i]= i;
-        break;
-    case FF_LIBMPEG2_IDCT_PERM:
-        for(i=0; i<64; i++)
-            c->idct_permutation[i]= (i & 0x38) | ((i & 6) >> 1) | ((i & 1) << 2);
-        break;
-    case FF_SIMPLE_IDCT_PERM:
-        for(i=0; i<64; i++)
-            c->idct_permutation[i]= simple_mmx_permutation[i];
-        break;
-    case FF_TRANSPOSE_IDCT_PERM:
-        for(i=0; i<64; i++)
-            c->idct_permutation[i]= ((i&7)<<3) | (i>>3);
-        break;
-    case FF_PARTTRANS_IDCT_PERM:
-        for(i=0; i<64; i++)
-            c->idct_permutation[i]= (i&0x24) | ((i&3)<<3) | ((i>>3)&3);
-        break;
-    case FF_SSE2_IDCT_PERM:
-        for(i=0; i<64; i++)
-            c->idct_permutation[i]= (i&0x38) | idct_sse2_row_perm[i&7];
-        break;
-    default:
-        av_log(avctx, AV_LOG_ERROR, "Internal error, IDCT permutation not set\n");
-    }
+    ff_init_scantable_permutation(c->idct_permutation,
+                                  c->idct_permutation_type);
 }

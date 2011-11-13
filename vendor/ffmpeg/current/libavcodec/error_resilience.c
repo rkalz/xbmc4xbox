@@ -358,7 +358,7 @@ static void v_block_filter(MpegEncContext *s, uint8_t *dst, int w, int h, int st
 }
 
 static void guess_mv(MpegEncContext *s){
-    uint8_t fixed[s->mb_stride * s->mb_height];
+    uint8_t *fixed = av_malloc(s->mb_stride * s->mb_height);
 #define MV_FROZEN    3
 #define MV_CHANGED   2
 #define MV_UNCHANGED 1
@@ -414,7 +414,7 @@ static void guess_mv(MpegEncContext *s){
                 decode_mb(s, 0);
             }
         }
-        return;
+        goto end;
     }
 
     for(depth=0;; depth++){
@@ -634,7 +634,7 @@ score_sum+= best_score;
         }
 
         if(none_left)
-            return;
+            goto end;
 
         for(i=0; i<s->mb_num; i++){
             int mb_xy= s->mb_index2xy[i];
@@ -643,6 +643,8 @@ score_sum+= best_score;
         }
 //        printf(":"); fflush(stdout);
     }
+end:
+    av_free(fixed);
 }
 
 static int is_intra_more_likely(MpegEncContext *s){
@@ -660,7 +662,7 @@ static int is_intra_more_likely(MpegEncContext *s){
 
     if(s->codec_id == CODEC_ID_H264){
         H264Context *h= (void*)s;
-        if (h->ref_count[0] <= 0 || !h->ref_list[0][0].f.data[0])
+        if (h->list_count <= 0 || h->ref_count[0] <= 0 || !h->ref_list[0][0].f.data[0])
             return 1;
     }
 

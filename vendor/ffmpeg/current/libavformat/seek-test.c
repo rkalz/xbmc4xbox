@@ -64,10 +64,10 @@ int main(int argc, char **argv)
     AVFormatContext *ic = NULL;
     int i, ret, stream_id;
     int64_t timestamp;
-    AVFormatParameters params, *ap= &params;
-    memset(ap, 0, sizeof(params));
-    ap->channels=1;
-    ap->sample_rate= 22050;
+    AVDictionary *format_opts = NULL;
+
+    av_dict_set(&format_opts, "channels", "1", 0);
+    av_dict_set(&format_opts, "sample_rate", "22050", 0);
 
     /* initialize libavcodec, and register all codecs and formats */
     av_register_all();
@@ -80,13 +80,14 @@ int main(int argc, char **argv)
 
     filename = argv[1];
 
-    ret = av_open_input_file(&ic, filename, NULL, 0, ap);
+    ret = avformat_open_input(&ic, filename, NULL, &format_opts);
+    av_dict_free(&format_opts);
     if (ret < 0) {
         fprintf(stderr, "cannot open %s\n", filename);
         exit(1);
     }
 
-    ret = av_find_stream_info(ic);
+    ret = avformat_find_stream_info(ic, NULL);
     if (ret < 0) {
         fprintf(stderr, "%s: could not find codec parameters\n", filename);
         exit(1);

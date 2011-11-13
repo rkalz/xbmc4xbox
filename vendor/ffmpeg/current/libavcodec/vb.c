@@ -73,7 +73,7 @@ static void vb_decode_palette(VBDecContext *c, int data_size)
         return;
     }
     for(i = start; i <= start + size; i++)
-        c->pal[i] = bytestream_get_be24(&c->stream);
+        c->pal[i] = 0xFF << 24 | bytestream_get_be24(&c->stream);
 }
 
 static inline int check_pixel(uint8_t *buf, uint8_t *start, uint8_t *end)
@@ -205,7 +205,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
 
     if(c->pic.data[0])
         avctx->release_buffer(avctx, &c->pic);
-    c->pic.reference = 1;
+    c->pic.reference = 3;
     if(avctx->get_buffer(avctx, &c->pic) < 0){
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         return -1;

@@ -320,10 +320,10 @@ apply Dolby Surround EX processing.
 Not Indicated (default)
 @item 1
 @itemx on
-Dolby Surround EX On
+Dolby Surround EX Off
 @item 2
 @itemx off
-Dolby Surround EX Off
+Dolby Surround EX On
 @end table
 
 @item -dheadphone_mode @var{mode}
@@ -337,10 +337,10 @@ processing.
 Not Indicated (default)
 @item 1
 @itemx on
-Dolby Headphone On
+Dolby Headphone Off
 @item 2
 @itemx off
-Dolby Headphone Off
+Dolby Headphone On
 @end table
 
 @item -ad_conv_type @var{type}
@@ -551,30 +551,27 @@ Set the encoding preset.
 
 @item tune @var{tune_name}
 Tune the encoding params.
-Deprecated in favor of @var{x264_opts}
 
 @item fastfirstpass @var{bool}
 Use fast settings when encoding first pass, default value is 1.
-Deprecated in favor of @var{x264_opts}.
 
 @item profile @var{profile_name}
 Set profile restrictions.
-Deprecated in favor of @var{x264_opts}.
 
 @item level @var{level}
 Specify level (as defined by Annex A).
-Deprecated in favor of @var{x264_opts}.
+Deprecated in favor of @var{x264opts}.
 
 @item passlogfile @var{filename}
 Specify filename for 2 pass stats.
-Deprecated in favor of @var{x264_opts}.
+Deprecated in favor of @var{x264opts} (see @var{stats} libx264 option).
 
 @item wpredp @var{wpred_type}
 Specify Weighted prediction for P-frames.
-Deprecated in favor of @var{x264_opts}.
+Deprecated in favor of @var{x264opts} (see @var{weightp} libx264 option).
 
 @item x264opts @var{options}
-Allow to set any x264 option, see x264 manual for a list.
+Allow to set any x264 option, see x264 --fullhelp for a list.
 
 @var{options} is a list of @var{key}=@var{value} couples separated by
 ":".

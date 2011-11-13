@@ -138,6 +138,10 @@ static av_cold int vqa_decode_init(AVCodecContext *avctx)
     /* load up the VQA parameters from the header */
     vqa_header = (unsigned char *)s->avctx->extradata;
     s->vqa_version = vqa_header[0];
+    if (s->vqa_version < 1 || s->vqa_version > 3) {
+        av_log(s->avctx, AV_LOG_ERROR, "  VQA video: unsupported version %d\n", s->vqa_version);
+        return -1;
+    }
     s->width = AV_RL16(&vqa_header[6]);
     s->height = AV_RL16(&vqa_header[8]);
     if(av_image_check_size(s->width, s->height, 0, avctx)){
@@ -226,6 +230,8 @@ static void decode_format80(const unsigned char *src, int src_size,
             src_index += 2;
             av_dlog(NULL, "(1) copy %X bytes from absolute pos %X\n", count, src_pos);
             CHECK_COUNT();
+            if (src_pos + count > dest_size)
+                return;
             for (i = 0; i < count; i++)
                 dest[dest_index + i] = dest[src_pos + i];
             dest_index += count;
@@ -248,6 +254,8 @@ static void decode_format80(const unsigned char *src, int src_size,
             src_index += 2;
             av_dlog(NULL, "(3) copy %X bytes from absolute pos %X\n", count, src_pos);
             CHECK_COUNT();
+            if (src_pos + count > dest_size)
+                return;
             for (i = 0; i < count; i++)
                 dest[dest_index + i] = dest[src_pos + i];
             dest_index += count;
@@ -268,6 +276,8 @@ static void decode_format80(const unsigned char *src, int src_size,
             src_index += 2;
             av_dlog(NULL, "(5) copy %X bytes from relpos %X\n", count, src_pos);
             CHECK_COUNT();
+            if (dest_index < src_pos)
+                return;
             for (i = 0; i < count; i++)
                 dest[dest_index + i] = dest[dest_index - src_pos + i];
             dest_index += count;
@@ -392,7 +402,8 @@ static void vqa_decode_chunk(VqaContext *s)
             r = s->buf[cpl0_chunk++] * 4;
             g = s->buf[cpl0_chunk++] * 4;
             b = s->buf[cpl0_chunk++] * 4;
-            s->palette[i] = (r << 16) | (g << 8) | (b);
+            s->palette[i] = 0xFF << 24 | r << 16 | g << 8 | b;
+            s->palette[i] |= s->palette[i] >> 6 & 0x30303;
         }
     }
 

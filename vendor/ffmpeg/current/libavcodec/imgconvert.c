@@ -143,6 +143,14 @@ static const PixFmtInfo pix_fmt_info[PIX_FMT_NB] = {
     [PIX_FMT_RGB48LE] = {
         .color_type = FF_COLOR_RGB,
     },
+    [PIX_FMT_RGBA64BE] = {
+        .is_alpha = 1,
+        .color_type = FF_COLOR_RGB,
+    },
+    [PIX_FMT_RGBA64LE] = {
+        .is_alpha = 1,
+        .color_type = FF_COLOR_RGB,
+    },
     [PIX_FMT_RGB565BE] = {
         .color_type = FF_COLOR_RGB,
     },
@@ -192,6 +200,20 @@ static const PixFmtInfo pix_fmt_info[PIX_FMT_NB] = {
         .color_type = FF_COLOR_YUV,
     },
     [PIX_FMT_ABGR] = {
+        .is_alpha = 1,
+        .color_type = FF_COLOR_RGB,
+    },
+    [PIX_FMT_BGR48BE] = {
+        .color_type = FF_COLOR_RGB,
+    },
+    [PIX_FMT_BGR48LE] = {
+        .color_type = FF_COLOR_RGB,
+    },
+    [PIX_FMT_BGRA64BE] = {
+        .is_alpha = 1,
+        .color_type = FF_COLOR_RGB,
+    },
+    [PIX_FMT_BGRA64LE] = {
         .is_alpha = 1,
         .color_type = FF_COLOR_RGB,
     },
@@ -269,39 +291,10 @@ const char *avcodec_get_pix_fmt_name(enum PixelFormat pix_fmt)
 }
 #endif
 
-#if LIBAVCODEC_VERSION_MAJOR < 53
-enum PixelFormat avcodec_get_pix_fmt(const char *name)
-{
-    return av_get_pix_fmt(name);
-}
-
-void avcodec_pix_fmt_string (char *buf, int buf_size, enum PixelFormat pix_fmt)
-{
-    av_get_pix_fmt_string(buf, buf_size, pix_fmt);
-}
-#endif
-
 int ff_is_hwaccel_pix_fmt(enum PixelFormat pix_fmt)
 {
     return av_pix_fmt_descriptors[pix_fmt].flags & PIX_FMT_HWACCEL;
 }
-
-#if LIBAVCODEC_VERSION_MAJOR < 53
-int ff_set_systematic_pal(uint32_t pal[256], enum PixelFormat pix_fmt){
-    return ff_set_systematic_pal2(pal, pix_fmt);
-}
-
-int ff_fill_linesize(AVPicture *picture, enum PixelFormat pix_fmt, int width)
-{
-    return av_image_fill_linesizes(picture->linesize, pix_fmt, width);
-}
-
-int ff_fill_pointer(AVPicture *picture, uint8_t *ptr, enum PixelFormat pix_fmt,
-                    int height)
-{
-    return av_image_fill_pointers(picture->data, pix_fmt, height, ptr, picture->linesize);
-}
-#endif
 
 int avpicture_fill(AVPicture *picture, uint8_t *ptr,
                    enum PixelFormat pix_fmt, int width, int height)
@@ -342,6 +335,16 @@ int avpicture_layout(const AVPicture* src, enum PixelFormat pix_fmt, int width, 
             dest += linesizes[i];
             s += src->linesize[i];
         }
+    }
+
+    switch (pix_fmt) {
+    case PIX_FMT_RGB8:
+    case PIX_FMT_BGR8:
+    case PIX_FMT_RGB4_BYTE:
+    case PIX_FMT_BGR4_BYTE:
+    case PIX_FMT_GRAY8:
+        // do not include palette for these pseudo-paletted formats
+        return size;
     }
 
     if (desc->flags & PIX_FMT_PAL)
@@ -389,11 +392,16 @@ int avcodec_get_pix_fmt_loss(enum PixelFormat dst_pix_fmt, enum PixelFormat src_
                              int has_alpha)
 {
     const PixFmtInfo *pf, *ps;
-    const AVPixFmtDescriptor *src_desc = &av_pix_fmt_descriptors[src_pix_fmt];
-    const AVPixFmtDescriptor *dst_desc = &av_pix_fmt_descriptors[dst_pix_fmt];
+    const AVPixFmtDescriptor *src_desc;
+    const AVPixFmtDescriptor *dst_desc;
     int src_min_depth, src_max_depth, dst_min_depth, dst_max_depth;
     int ret, loss;
 
+    if (dst_pix_fmt >= PIX_FMT_NB || dst_pix_fmt <= PIX_FMT_NONE)
+        return ~0;
+
+    src_desc = &av_pix_fmt_descriptors[src_pix_fmt];
+    dst_desc = &av_pix_fmt_descriptors[dst_pix_fmt];
     ps = &pix_fmt_info[src_pix_fmt];
 
     /* compute loss */
@@ -457,37 +465,28 @@ static int avg_bits_per_pixel(enum PixelFormat pix_fmt)
         info->padded_size : av_get_bits_per_pixel(desc);
 }
 
-static enum PixelFormat avcodec_find_best_pix_fmt1(int64_t pix_fmt_mask,
-                                      enum PixelFormat src_pix_fmt,
-                                      int has_alpha,
-                                      int loss_mask)
+enum PixelFormat avcodec_find_best_pix_fmt(int64_t pix_fmt_mask, enum PixelFormat src_pix_fmt,
+                                            int has_alpha, int *loss_ptr)
 {
-    int dist, i, loss, min_dist;
     enum PixelFormat dst_pix_fmt;
+    int i;
 
-    /* find exact color match with smallest size */
-    dst_pix_fmt = PIX_FMT_NONE;
-    min_dist = 0x7fffffff;
-    for(i = 0;i < PIX_FMT_NB; i++) {
-        if (pix_fmt_mask & (1ULL << i)) {
-            loss = avcodec_get_pix_fmt_loss(i, src_pix_fmt, has_alpha) & loss_mask;
-            if (loss == 0) {
-                dist = avg_bits_per_pixel(i);
-                if (dist < min_dist) {
-                    min_dist = dist;
-                    dst_pix_fmt = i;
-                }
-            }
-        }
+    if (loss_ptr) /* all losses count (for backward compatibility) */
+        *loss_ptr = 0;
+
+    dst_pix_fmt = PIX_FMT_NONE; /* so first iteration doesn't have to be treated special */
+    for(i = 0; i< FFMIN(PIX_FMT_NB, 64); i++){
+        if (pix_fmt_mask & (1ULL << i))
+            dst_pix_fmt = avcodec_find_best_pix_fmt2(dst_pix_fmt, i, src_pix_fmt, has_alpha, loss_ptr);
     }
     return dst_pix_fmt;
 }
 
-enum PixelFormat avcodec_find_best_pix_fmt(int64_t pix_fmt_mask, enum PixelFormat src_pix_fmt,
-                              int has_alpha, int *loss_ptr)
+enum PixelFormat avcodec_find_best_pix_fmt2(enum PixelFormat dst_pix_fmt1, enum PixelFormat dst_pix_fmt2,
+                                            enum PixelFormat src_pix_fmt, int has_alpha, int *loss_ptr)
 {
     enum PixelFormat dst_pix_fmt;
-    int loss_mask, i;
+    int loss1, loss2, loss_order1, loss_order2, i, loss_mask;
     static const int loss_mask_order[] = {
         ~0, /* no loss first */
         ~FF_LOSS_ALPHA,
@@ -495,48 +494,33 @@ enum PixelFormat avcodec_find_best_pix_fmt(int64_t pix_fmt_mask, enum PixelForma
         ~(FF_LOSS_COLORSPACE | FF_LOSS_RESOLUTION),
         ~FF_LOSS_COLORQUANT,
         ~FF_LOSS_DEPTH,
+        ~(FF_LOSS_RESOLUTION | FF_LOSS_DEPTH | FF_LOSS_COLORSPACE | FF_LOSS_ALPHA |
+          FF_LOSS_COLORQUANT | FF_LOSS_CHROMA),
+        0x80000, //non zero entry that combines all loss variants including future additions
         0,
     };
 
+    loss_mask= loss_ptr?~*loss_ptr:~0; /* use loss mask if provided */
+    dst_pix_fmt = PIX_FMT_NONE;
+    loss1 = avcodec_get_pix_fmt_loss(dst_pix_fmt1, src_pix_fmt, has_alpha) & loss_mask;
+    loss2 = avcodec_get_pix_fmt_loss(dst_pix_fmt2, src_pix_fmt, has_alpha) & loss_mask;
+
     /* try with successive loss */
-    i = 0;
-    for(;;) {
-        loss_mask = loss_mask_order[i++];
-        dst_pix_fmt = avcodec_find_best_pix_fmt1(pix_fmt_mask, src_pix_fmt,
-                                                 has_alpha, loss_mask);
-        if (dst_pix_fmt >= 0)
-            goto found;
-        if (loss_mask == 0)
-            break;
+    for(i = 0;loss_mask_order[i] != 0 && dst_pix_fmt == PIX_FMT_NONE;i++) {
+        loss_order1 = loss1 & loss_mask_order[i];
+        loss_order2 = loss2 & loss_mask_order[i];
+
+        if (loss_order1 == 0 && loss_order2 == 0){ /* use format with smallest depth */
+            dst_pix_fmt = avg_bits_per_pixel(dst_pix_fmt2) < avg_bits_per_pixel(dst_pix_fmt1) ? dst_pix_fmt2 : dst_pix_fmt1;
+        } else if (loss_order1 == 0 || loss_order2 == 0) { /* use format with no loss */
+            dst_pix_fmt = loss_order2 ? dst_pix_fmt1 : dst_pix_fmt2;
+        }
     }
-    return PIX_FMT_NONE;
- found:
+
     if (loss_ptr)
         *loss_ptr = avcodec_get_pix_fmt_loss(dst_pix_fmt, src_pix_fmt, has_alpha);
     return dst_pix_fmt;
 }
-
-#if LIBAVCODEC_VERSION_MAJOR < 53
-void ff_img_copy_plane(uint8_t *dst, int dst_wrap,
-                           const uint8_t *src, int src_wrap,
-                           int width, int height)
-{
-    av_image_copy_plane(dst, dst_wrap, src, src_wrap, width, height);
-}
-
-int ff_get_plane_bytewidth(enum PixelFormat pix_fmt, int width, int plane)
-{
-    return av_image_get_linesize(pix_fmt, width, plane);
-}
-
-void av_picture_data_copy(uint8_t *dst_data[4], int dst_linesize[4],
-                          uint8_t *src_data[4], int src_linesize[4],
-                          enum PixelFormat pix_fmt, int width, int height)
-{
-    av_image_copy(dst_data, dst_linesize, src_data, src_linesize,
-                  pix_fmt, width, height);
-}
-#endif
 
 void av_picture_copy(AVPicture *dst, const AVPicture *src,
                      enum PixelFormat pix_fmt, int width, int height)
@@ -763,6 +747,7 @@ int av_picture_pad(AVPicture *dst, const AVPicture *src, int height, int width,
     return 0;
 }
 
+#if FF_API_GET_ALPHA_INFO
 /* NOTE: we scan all the pixels to have an exact information */
 static int get_alpha_info_pal8(const AVPicture *src, int width, int height)
 {
@@ -809,6 +794,7 @@ int img_get_alpha_info(const AVPicture *src,
     }
     return ret;
 }
+#endif
 
 #if !(HAVE_MMX && HAVE_YASM)
 /* filter parameters: [-1 4 2 4 -1] // 8 */

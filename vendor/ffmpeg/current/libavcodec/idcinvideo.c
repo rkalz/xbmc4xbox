@@ -36,7 +36,7 @@
  * a little more compression by exploiting the fact that adjacent pixels
  * tend to be similar.
  *
- * Note that this decoder could use ffmpeg's optimized VLC facilities
+ * Note that this decoder could use libavcodec's optimized VLC facilities
  * rather than naive, tree-based Huffman decoding. However, there are 256
  * Huffman tables. Plus, the VLC bit coding order is right -> left instead
  * or left -> right, so all of the bits would have to be reversed. Further,
@@ -72,6 +72,7 @@ typedef struct IdcinContext {
     hnode huff_nodes[256][HUF_TOKENS*2];
     int num_huff_nodes[256];
 
+    uint32_t pal[256];
 } IdcinContext;
 
 /*
@@ -214,7 +215,7 @@ static int idcin_decode_frame(AVCodecContext *avctx,
     const uint8_t *buf = avpkt->data;
     int buf_size = avpkt->size;
     IdcinContext *s = avctx->priv_data;
-    AVPaletteControl *palette_control = avctx->palctrl;
+    const uint8_t *pal = av_packet_get_side_data(avpkt, AV_PKT_DATA_PALETTE, NULL);
 
     s->buf = buf;
     s->size = buf_size;
@@ -229,13 +230,12 @@ static int idcin_decode_frame(AVCodecContext *avctx,
 
     idcin_decode_vlcs(s);
 
-    /* make the palette available on the way out */
-    memcpy(s->frame.data[1], palette_control->palette, PALETTE_COUNT * 4);
-    /* If palette changed inform application*/
-    if (palette_control->palette_changed) {
-        palette_control->palette_changed = 0;
+    if (pal) {
         s->frame.palette_has_changed = 1;
+        memcpy(s->pal, pal, AVPALETTE_SIZE);
     }
+    /* make the palette available on the way out */
+    memcpy(s->frame.data[1], s->pal, AVPALETTE_SIZE);
 
     *data_size = sizeof(AVFrame);
     *(AVFrame*)data = s->frame;

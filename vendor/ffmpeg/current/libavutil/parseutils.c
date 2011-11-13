@@ -21,7 +21,6 @@
  * misc parsing utilities
  */
 
-#include <strings.h>
 #include <sys/time.h>
 #include <time.h>
 
@@ -97,7 +96,7 @@ int av_parse_video_size(int *width_ptr, int *height_ptr, const char *str)
 {
     int i;
     int n = FF_ARRAY_ELEMS(video_size_abbrs);
-    char *p;
+    const char *p;
     int width = 0, height = 0;
 
     for (i = 0; i < n; i++) {
@@ -109,10 +108,10 @@ int av_parse_video_size(int *width_ptr, int *height_ptr, const char *str)
     }
     if (i == n) {
         p = str;
-        width = strtol(p, &p, 10);
+        width = strtol(p, (void*)&p, 10);
         if (*p)
             p++;
-        height = strtol(p, &p, 10);
+        height = strtol(p, (void*)&p, 10);
     }
     if (width <= 0 || height <= 0)
         return AVERROR(EINVAL);
@@ -149,7 +148,7 @@ typedef struct {
     uint8_t     rgb_color[3];    ///< RGB values for the color
 } ColorEntry;
 
-static ColorEntry color_table[] = {
+static const ColorEntry color_table[] = {
     { "AliceBlue",            { 0xF0, 0xF8, 0xFF } },
     { "AntiqueWhite",         { 0xFA, 0xEB, 0xD7 } },
     { "Aqua",                 { 0x00, 0xFF, 0xFF } },
@@ -294,7 +293,7 @@ static ColorEntry color_table[] = {
 
 static int color_table_compare(const void *lhs, const void *rhs)
 {
-    return strcasecmp(lhs, ((const ColorEntry *)rhs)->name);
+    return av_strcasecmp(lhs, ((const ColorEntry *)rhs)->name);
 }
 
 #define ALPHA_SEP '@'
@@ -320,7 +319,7 @@ int av_parse_color(uint8_t *rgba_color, const char *color_string, int slen,
     len = strlen(color_string2);
     rgba_color[3] = 255;
 
-    if (!strcasecmp(color_string2, "random") || !strcasecmp(color_string2, "bikeshed")) {
+    if (!av_strcasecmp(color_string2, "random") || !av_strcasecmp(color_string2, "bikeshed")) {
         int rgba = av_get_random_seed();
         rgba_color[0] = rgba >> 24;
         rgba_color[1] = rgba >> 16;
@@ -411,9 +410,7 @@ static int date_get_num(const char **pp,
  * function call, or NULL in case the function fails to match all of
  * the fmt string and therefore an error occurred
  */
-static
-const char *small_strptime(const char *p, const char *fmt,
-                           struct tm *dt)
+static const char *small_strptime(const char *p, const char *fmt, struct tm *dt)
 {
     int c, val;
 
@@ -527,7 +524,7 @@ int av_parse_time(int64_t *timeval, const char *timestr, int duration)
     p = timestr;
     q = NULL;
     if (!duration) {
-        if (!strncasecmp(timestr, "now", len)) {
+        if (!av_strncasecmp(timestr, "now", len)) {
             *timeval = (int64_t) now * 1000000;
             return 0;
         }
@@ -573,7 +570,7 @@ int av_parse_time(int64_t *timeval, const char *timestr, int duration)
         q = small_strptime(p, time_fmt[0], &dt);
         if (!q) {
             /* parse timestr as S+ */
-            dt.tm_sec = strtol(p, (char **)&q, 10);
+            dt.tm_sec = strtol(p, (void *)&q, 10);
             if (q == p) {
                 /* the parsing didn't succeed */
                 *timeval = INT64_MIN;

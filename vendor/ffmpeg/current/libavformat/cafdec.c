@@ -61,7 +61,7 @@ static int read_desc_chunk(AVFormatContext *s)
     int flags;
 
     /* new audio stream */
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
 
@@ -120,18 +120,28 @@ static int read_kuki_chunk(AVFormatContext *s, int64_t size)
     } else if (st->codec->codec_id == CODEC_ID_ALAC) {
 #define ALAC_PREAMBLE 12
 #define ALAC_HEADER   36
-        if (size < ALAC_PREAMBLE + ALAC_HEADER) {
-            av_log(s, AV_LOG_ERROR, "invalid ALAC magic cookie\n");
-            avio_skip(pb, size);
-            return AVERROR_INVALIDDATA;
+#define ALAC_NEW_KUKI 24
+        if (size == ALAC_NEW_KUKI) {
+            st->codec->extradata = av_mallocz(ALAC_HEADER + FF_INPUT_BUFFER_PADDING_SIZE);
+            if (!st->codec->extradata)
+                return AVERROR(ENOMEM);
+            memcpy(st->codec->extradata, "\0\0\0\24alac", 8);
+            avio_read(pb, st->codec->extradata + ALAC_HEADER - ALAC_NEW_KUKI, ALAC_NEW_KUKI);
+            st->codec->extradata_size = ALAC_HEADER;
+        } else {
+            if (size < ALAC_PREAMBLE + ALAC_HEADER) {
+                av_log(s, AV_LOG_ERROR, "invalid ALAC magic cookie\n");
+                avio_skip(pb, size);
+                return AVERROR_INVALIDDATA;
+            }
+            avio_skip(pb, ALAC_PREAMBLE);
+            st->codec->extradata = av_mallocz(ALAC_HEADER + FF_INPUT_BUFFER_PADDING_SIZE);
+            if (!st->codec->extradata)
+                return AVERROR(ENOMEM);
+            avio_read(pb, st->codec->extradata, ALAC_HEADER);
+            st->codec->extradata_size = ALAC_HEADER;
+            avio_skip(pb, size - ALAC_PREAMBLE - ALAC_HEADER);
         }
-        avio_skip(pb, ALAC_PREAMBLE);
-        st->codec->extradata = av_mallocz(ALAC_HEADER + FF_INPUT_BUFFER_PADDING_SIZE);
-        if (!st->codec->extradata)
-            return AVERROR(ENOMEM);
-        avio_read(pb, st->codec->extradata, ALAC_HEADER);
-        st->codec->extradata_size = ALAC_HEADER;
-        avio_skip(pb, size - ALAC_PREAMBLE - ALAC_HEADER);
     } else {
         st->codec->extradata = av_mallocz(size + FF_INPUT_BUFFER_PADDING_SIZE);
         if (!st->codec->extradata)
@@ -292,8 +302,6 @@ static int read_header(AVFormatContext *s,
                                 "block size or frame size are variable.\n");
         return AVERROR_INVALIDDATA;
     }
-    s->file_size = avio_size(pb);
-    s->file_size = FFMAX(0, s->file_size);
 
     av_set_pts_info(st, 64, 1, st->codec->sample_rate);
     st->start_time = 0;
@@ -366,6 +374,7 @@ static int read_seek(AVFormatContext *s, int stream_index,
 {
     AVStream *st = s->streams[0];
     CaffContext *caf = s->priv_data;
+    CaffContext caf2 = *caf;
     int64_t pos;
 
     timestamp = FFMAX(timestamp, 0);
@@ -385,7 +394,10 @@ static int read_seek(AVFormatContext *s, int stream_index,
         return -1;
     }
 
-    avio_seek(s->pb, pos + caf->data_start, SEEK_SET);
+    if (avio_seek(s->pb, pos + caf->data_start, SEEK_SET) < 0) {
+        *caf = caf2;
+        return -1;
+    }
     return 0;
 }
 

@@ -35,7 +35,7 @@
 /* if we don't know the size in advance */
 #define AU_UNKNOWN_SIZE ((uint32_t)(~0))
 
-/* The ffmpeg codecs we support, and the IDs they have in the file */
+/* The libavcodec codecs we support, and the IDs they have in the file */
 static const AVCodecTag codec_au_tags[] = {
     { CODEC_ID_PCM_MULAW, 1 },
     { CODEC_ID_PCM_S8, 2 },
@@ -134,7 +134,7 @@ static int au_read_header(AVFormatContext *s,
     size = avio_rb32(pb); /* header size */
     data_size = avio_rb32(pb); /* data size in bytes */
 
-    if (data_size < 0) {
+    if (data_size < 0 && data_size != AU_UNKNOWN_SIZE) {
         av_log(s, AV_LOG_ERROR, "Invalid negative data size '%d' found\n", data_size);
         return AVERROR_INVALIDDATA;
     }
@@ -156,7 +156,7 @@ static int au_read_header(AVFormatContext *s,
     }
 
     /* now we are ready: build format streams */
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return -1;
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
@@ -164,6 +164,7 @@ static int au_read_header(AVFormatContext *s,
     st->codec->codec_id = codec;
     st->codec->channels = channels;
     st->codec->sample_rate = rate;
+    if (data_size != AU_UNKNOWN_SIZE)
     st->duration = (((int64_t)data_size)<<3) / (st->codec->channels * bps);
     av_set_pts_info(st, 64, 1, rate);
     return 0;

@@ -10,4 +10,7 @@
     { "protocols", OPT_EXIT, {(void*)opt_protocols}, "show available protocols" },
     { "filters",   OPT_EXIT, {(void*)opt_filters  }, "show available filters" },
     { "pix_fmts" , OPT_EXIT, {(void*)opt_pix_fmts }, "show available pixel formats" },
+    { "sample_fmts", OPT_EXIT, {.func_arg = show_sample_fmts }, "show available audio sample formats" },
     { "loglevel", HAS_ARG, {(void*)opt_loglevel}, "set libav* logging level", "loglevel" },
+    { "v", HAS_ARG, {(void*)opt_loglevel}, "set libav* logging level", "loglevel" },
+    { "debug", HAS_ARG, {(void*)opt_codec_debug}, "set debug flags", "flags" },

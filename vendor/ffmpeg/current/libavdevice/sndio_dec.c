@@ -34,14 +34,7 @@ static av_cold int audio_read_header(AVFormatContext *s1,
     AVStream *st;
     int ret;
 
-#if FF_API_FORMAT_PARAMETERS
-    if (ap->sample_rate > 0)
-        s->sample_rate = ap->sample_rate;
-    if (ap->channels > 0)
-        s->channels = ap->channels;
-#endif
-
-    st = av_new_stream(s1, 0);
+    st = avformat_new_stream(s1, NULL);
     if (!st)
         return AVERROR(ENOMEM);
 
@@ -100,8 +93,8 @@ static av_cold int audio_read_close(AVFormatContext *s1)
 }
 
 static const AVOption options[] = {
-    { "sample_rate", "", offsetof(SndioData, sample_rate), FF_OPT_TYPE_INT, {.dbl = 48000}, 1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
-    { "channels",    "", offsetof(SndioData, channels),    FF_OPT_TYPE_INT, {.dbl = 2},     1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
+    { "sample_rate", "", offsetof(SndioData, sample_rate), AV_OPT_TYPE_INT, {.dbl = 48000}, 1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
+    { "channels",    "", offsetof(SndioData, channels),    AV_OPT_TYPE_INT, {.dbl = 2},     1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
     { NULL },
 };
 

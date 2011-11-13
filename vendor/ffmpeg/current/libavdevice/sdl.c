@@ -43,7 +43,7 @@ typedef struct {
     int sdl_was_already_inited;
 } SDLContext;
 
-struct sdl_overlay_pix_fmt_entry {
+static const struct sdl_overlay_pix_fmt_entry {
     enum PixelFormat pix_fmt; int overlay_fmt;
 } sdl_overlay_pix_fmt_map[] = {
     { PIX_FMT_YUV420P, SDL_IYUV_OVERLAY },
@@ -203,9 +203,9 @@ static int sdl_write_packet(AVFormatContext *s, AVPacket *pkt)
 #define OFFSET(x) offsetof(SDLContext,x)
 
 static const AVOption options[] = {
-    { "window_title", "SDL window title",           OFFSET(window_title),  FF_OPT_TYPE_STRING, {.str = NULL }, 0,  0, AV_OPT_FLAG_ENCODING_PARAM },
-    { "icon_title",   "SDL iconified window title", OFFSET(icon_title)  ,  FF_OPT_TYPE_STRING, {.str = NULL }, 0,  0, AV_OPT_FLAG_ENCODING_PARAM },
-    { "window_size",  "SDL window forced size",     OFFSET(window_size) ,  FF_OPT_TYPE_STRING, {.str = NULL }, 0,  0, AV_OPT_FLAG_ENCODING_PARAM },
+    { "window_title", "SDL window title",           OFFSET(window_title),  AV_OPT_TYPE_STRING, {.str = NULL }, 0,  0, AV_OPT_FLAG_ENCODING_PARAM },
+    { "icon_title",   "SDL iconified window title", OFFSET(icon_title)  ,  AV_OPT_TYPE_STRING, {.str = NULL }, 0,  0, AV_OPT_FLAG_ENCODING_PARAM },
+    { "window_size",  "SDL window forced size",     OFFSET(window_size) ,  AV_OPT_TYPE_STRING, {.str = NULL }, 0,  0, AV_OPT_FLAG_ENCODING_PARAM },
     { NULL },
 };
 

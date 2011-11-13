@@ -34,6 +34,21 @@ You can use libavcodec or libavformat in your commercial program, but
 @emph{any patch you make must be published}. The best way to proceed is
 to send your patches to the FFmpeg mailing list.
 
+@section Contributing
+
+There are 3 ways by which code gets into ffmpeg.
+@itemize @bullet
+@item Submiting Patches to the main developer mailing list
+      see @ref{Submitting patches} for details.
+@item Directly commiting changes to the main tree.
+@item Commiting changes to a git clone, for example on github.com or
+      gitorious.org. And asking us to merge these changes.
+@end itemize
+
+Whichever way, changes should be reviewed by the maintainer of the code
+before they are commited. And they should follow the @ref{Coding Rules}.
+The developer making the commit and the author are responsible for their changes
+and should try to fix issues their commit causes.
 
 @anchor{Coding Rules}
 @section Coding Rules
@@ -241,6 +256,7 @@ We think our rules are not too hard. If you have comments, contact us.
 
 Note, these rules are mostly borrowed from the MPlayer project.
 
+@anchor{Submitting patches}
 @section Submitting patches
 
 First, read the @ref{Coding Rules} above if you did not yet, in particular
@@ -294,7 +310,7 @@ send a reminder by email. Your patch should eventually be dealt with.
     AVInputFormat/AVOutputFormat struct?
 @item
     Did you bump the minor version number (and reset the micro version
-    number) in @file{avcodec.h} or @file{avformat.h}?
+    number) in @file{libavcodec/version.h} or @file{libavformat/version.h}?
 @item
     Did you register it in @file{allcodecs.c} or @file{allformats.c}?
 @item
@@ -327,7 +343,7 @@ send a reminder by email. Your patch should eventually be dealt with.
 
 @enumerate
 @item
-    Does 'make fate' pass with the patch applied?
+    Does @code{make fate} pass with the patch applied?
 @item
     Was the patch generated with git format-patch or send-email?
 @item
@@ -412,6 +428,11 @@ After a patch is approved it will be committed to the repository.
 We will review all submitted patches, but sometimes we are quite busy so
 especially for large patches this can take several weeks.
 
+If you feel that the review process is too slow and you are willing to try to
+take over maintainership of the area of code you change then just clone
+git master and maintain the area of code there. We will merge each area from
+where its best maintained.
+
 When resubmitting patches, please do not make any significant changes
 not related to the comments received during review. Such patches will
 be rejected. Instead, submit  significant changes or new features as
@@ -422,24 +443,7 @@ separate patches.
 Before submitting a patch (or committing to the repository), you should at least
 test that you did not break anything.
 
-The regression tests build a synthetic video stream and a synthetic
-audio stream. These are then encoded and decoded with all codecs or
-formats. The CRC (or MD5) of each generated file is recorded in a
-result file. A 'diff' is launched to compare the reference results and
-the result file. The output is checked immediately after each test
-has run.
-
-The regression tests then go on to test the FFserver code with a
-limited set of streams. It is important that this step runs correctly
-as well.
-
-Run 'make test' to test all the codecs and formats. Commands like
-'make regtest-mpeg2' can be used to run a single test. By default,
-make will abort if any test fails. To run all tests regardless,
-use make -k. To get a more verbose output, use 'make V=1 test' or
-'make V=2 test'.
-
-Run 'make fulltest' to test all the codecs, formats and FFserver.
+Running 'make fate' accomplishes this, please see @file{doc/fate.txt} for details.
 
 [Of course, some patches may change the results of the regression tests. In
 this case, the reference results of the regression tests shall be modified

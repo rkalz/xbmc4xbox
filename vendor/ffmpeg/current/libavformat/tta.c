@@ -77,7 +77,7 @@ static int tta_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return -1;
     }
 
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
 
@@ -107,6 +107,10 @@ static int tta_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return -1;
     }
     st->codec->extradata = av_mallocz(st->codec->extradata_size+FF_INPUT_BUFFER_PADDING_SIZE);
+    if (!st->codec->extradata) {
+        st->codec->extradata_size = 0;
+        return AVERROR(ENOMEM);
+    }
     avio_seek(s->pb, start_offset, SEEK_SET);
     avio_read(s->pb, st->codec->extradata, st->codec->extradata_size);
 
@@ -137,9 +141,10 @@ static int tta_read_seek(AVFormatContext *s, int stream_index, int64_t timestamp
     int index = av_index_search_timestamp(st, timestamp, flags);
     if (index < 0)
         return -1;
+    if (avio_seek(s->pb, st->index_entries[index].pos, SEEK_SET) < 0)
+        return -1;
 
     c->currentframe = index;
-    avio_seek(s->pb, st->index_entries[index].pos, SEEK_SET);
 
     return 0;
 }
