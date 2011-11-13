@@ -162,7 +162,7 @@ public:
 class DllAvCodec : public DllDynamic, DllAvCodecInterface
 {
 public:
-  DllAvCodec() : DllDynamic( g_settings.GetFFmpegDllFolder() + "avcodec-52.dll") {}
+  DllAvCodec() : DllDynamic( g_settings.GetFFmpegDllFolder() + "avcodec-53.dll") {}
 #ifndef _LINUX
   DEFINE_FUNC_ALIGNED1(void, __cdecl, avcodec_flush_buffers, AVCodecContext*)
   DEFINE_FUNC_ALIGNED2(int, __cdecl, avcodec_open_dont_call, AVCodecContext*, AVCodec *)

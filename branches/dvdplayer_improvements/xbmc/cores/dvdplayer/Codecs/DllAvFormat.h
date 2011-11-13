@@ -149,7 +149,7 @@ public:
 class DllAvFormat : public DllDynamic, DllAvFormatInterface
 {
 public:
-  DllAvFormat() : DllDynamic( g_settings.GetFFmpegDllFolder() + "avformat-52.dll") {}
+  DllAvFormat() : DllDynamic( g_settings.GetFFmpegDllFolder() + "avformat-53.dll") {}
 
   LOAD_SYMBOLS()
 
