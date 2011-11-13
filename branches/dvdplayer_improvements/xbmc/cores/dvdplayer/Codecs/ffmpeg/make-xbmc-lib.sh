@@ -14,6 +14,7 @@ xbmc_configure ()
 {
   echo "Configuring ..."
   CFLAGS="-D_XBOX -fno-common -msse -mfpmath=sse -pipe"
+  LDFLAGS="-static-libgcc -Wl,--enable-auto-import"
   PARAMS=" \
   --cpu=pentium3 \
   --enable-gpl \
@@ -30,6 +31,7 @@ xbmc_configure ()
   --disable-ffplay \
   --disable-ffprobe \
   --disable-ffserver \
+  --disable-avconv \
   \
   --disable-muxers \
   --enable-muxer=spdif \
@@ -60,8 +62,8 @@ xbmc_configure ()
   --disable-mmi \
   --disable-neon \
   --disable-vis"
-  echo "--extra-cflags=\"$CFLAGS\" $PARAMS $1"
-  ./configure --extra-cflags="$CFLAGS" $PARAMS $1
+  echo "--extra-cflags=\"$CFLAGS\" --extra-ldflags=\"$LDFLAGS\" $PARAMS $1"
+  ./configure --extra-cflags="$CFLAGS" --extra-ldflags="$LDFLAGS" $PARAMS $1
 }
 
 # $1 = destination folder
@@ -72,15 +74,14 @@ xbmc_make ()
   make -j2
   [ ! -d .libs ] && mkdir .libs
   cp lib*/*.dll .libs/
-  mv .libs/swscale-0.dll .libs/swscale-0.14.0.dll
   if [ "$1" != "" ]; then
     echo "Copying libraries to $1 ..."
     [ ! -d "$1" ] && mkdir -p "$1"
-    cp .libs/avcodec-52.dll "$1"
-    cp .libs/avformat-52.dll "$1"
-    cp .libs/avutil-50.dll "$1"
+    cp .libs/avcodec-53.dll "$1"
+    cp .libs/avformat-53.dll "$1"
+    cp .libs/avutil-51.dll "$1"
     cp .libs/postproc-51.dll "$1"
-    cp .libs/swscale-0.14.0.dll "$1"
+    cp .libs/swscale-2.dll "$1"
   fi
 }
 
