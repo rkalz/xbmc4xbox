@@ -9,10 +9,10 @@ Subject: [PATCH 06/36] added: probe file header for cdxa
 
 Index: ffmpeg/libavformat/mpeg.c
 ===================================================================
---- ffmpeg.orig/libavformat/mpeg.c	2011-08-07 07:06:17.413848600 +0100
-+++ ffmpeg/libavformat/mpeg.c	2011-08-07 07:06:27.193140800 +0100
-@@ -49,6 +49,18 @@
-     return pes1||pes2;
+--- ffmpeg.orig/libavformat/mpeg.c	2011-11-13 17:44:59.871931700 +0000
++++ ffmpeg/libavformat/mpeg.c	2011-11-13 18:23:19.110586900 +0000
+@@ -53,6 +53,18 @@
+     return (buf[1] & 0xC0) == 0x40 || (buf[1] & 0xF0) == 0x20;
  }
  
 +static int cdxa_probe(AVProbeData *p)
@@ -30,7 +30,7 @@ Index: ffmpeg/libavformat/mpeg.c
  static int mpegps_probe(AVProbeData *p)
  {
      uint32_t code= -1;
-@@ -56,6 +68,10 @@
+@@ -60,6 +72,10 @@
      int i;
      int score=0;
  

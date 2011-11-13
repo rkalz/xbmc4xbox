@@ -9,9 +9,9 @@ Subject: [PATCH 24/36] get accurate estimate from the PTSes
 
 Index: ffmpeg/libavformat/utils.c
 ===================================================================
---- ffmpeg.orig/libavformat/utils.c	2011-08-07 07:21:26.265944000 +0100
-+++ ffmpeg/libavformat/utils.c	2011-08-07 07:22:23.958902400 +0100
-@@ -2034,6 +2034,43 @@
+--- ffmpeg.orig/libavformat/utils.c	2011-11-13 18:24:00.810548500 +0000
++++ ffmpeg/libavformat/utils.c	2011-11-13 18:28:40.775849600 +0000
+@@ -2045,6 +2045,43 @@
  #define DURATION_MAX_READ_SIZE 250000
  #define DURATION_MAX_RETRY 3
  
@@ -55,7 +55,7 @@ Index: ffmpeg/libavformat/utils.c
  /* only usable for MPEG-PS streams */
  static void estimate_timings_from_pts(AVFormatContext *ic, int64_t old_offset)
  {
-@@ -2137,6 +2174,10 @@
+@@ -2147,6 +2184,10 @@
          /* at least one component has timings - we use them for all
             the components */
          fill_all_stream_timings(ic);

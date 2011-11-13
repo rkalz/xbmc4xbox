@@ -10,18 +10,18 @@ git-svn-id: https://xbmc.svn.sourceforge.net/svnroot/xbmc/trunk@31478 568bbfeb-2
 
 Index: ffmpeg/libavformat/mpegts.c
 ===================================================================
---- ffmpeg.orig/libavformat/mpegts.c	2011-08-07 07:06:35.865611200 +0100
-+++ ffmpeg/libavformat/mpegts.c	2011-08-07 07:06:36.125985600 +0100
-@@ -732,7 +732,7 @@
- #endif
+--- ffmpeg.orig/libavformat/mpegts.c	2011-11-13 18:26:59.000000000 +0000
++++ ffmpeg/libavformat/mpegts.c	2011-11-13 18:27:57.621065300 +0000
+@@ -824,7 +824,7 @@
+                         goto skip;
  
                      /* stream not present in PMT */
 -                    if (!pes->st) {
 +                    if (ts->auto_guess && !pes->st) {
-                         pes->st = av_new_stream(ts->stream, pes->pid);
+                         pes->st = avformat_new_stream(ts->stream, NULL);
                          if (!pes->st)
                              return AVERROR(ENOMEM);
-@@ -1594,7 +1594,10 @@
+@@ -1973,7 +1973,10 @@
  
          av_dlog(ts->stream, "tuning done\n");
  

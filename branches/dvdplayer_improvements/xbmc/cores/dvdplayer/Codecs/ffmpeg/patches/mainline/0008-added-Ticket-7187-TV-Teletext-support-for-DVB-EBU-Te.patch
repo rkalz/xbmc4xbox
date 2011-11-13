@@ -10,24 +10,24 @@ Subject: [PATCH 08/36] added: Ticket #7187, TV Teletext support for DVB EBU Tele
 
 Index: ffmpeg/libavcodec/avcodec.h
 ===================================================================
---- ffmpeg.orig/libavcodec/avcodec.h	2011-08-07 07:06:17.293848600 +0100
-+++ ffmpeg/libavcodec/avcodec.h	2011-08-07 07:06:28.014321600 +0100
-@@ -362,6 +362,10 @@
+--- ffmpeg.orig/libavcodec/avcodec.h	2011-11-13 17:44:55.927931800 +0000
++++ ffmpeg/libavcodec/avcodec.h	2011-11-13 18:23:55.993622100 +0000
+@@ -384,6 +384,10 @@
      CODEC_ID_SRT,
-     CODEC_ID_MICRODVD,
+     CODEC_ID_MICRODVD   = MKBETAG('m','D','V','D'),
  
 +    /* data codecs */
 +    CODEC_ID_VBI_DATA= 0x17500,
 +    CODEC_ID_VBI_TELETEXT,
 +
      /* other specific kind of codecs (generally used for attachments) */
-     CODEC_ID_TTF= 0x18000,
- 
+     CODEC_ID_FIRST_UNKNOWN = 0x18000,           ///< A dummy ID pointing at the start of various fake codecs.
+     CODEC_ID_TTF = 0x18000,
 Index: ffmpeg/libavformat/mpegts.c
 ===================================================================
---- ffmpeg.orig/libavformat/mpegts.c	2011-08-07 07:06:17.303848600 +0100
-+++ ffmpeg/libavformat/mpegts.c	2011-08-07 07:06:28.024336000 +0100
-@@ -563,6 +563,8 @@
+--- ffmpeg.orig/libavformat/mpegts.c	2011-11-13 17:44:59.187931700 +0000
++++ ffmpeg/libavformat/mpegts.c	2011-11-13 18:28:49.383849426 +0000
+@@ -581,6 +581,8 @@
      { 0x7b, AVMEDIA_TYPE_AUDIO,             CODEC_ID_DTS },
      { 0x56, AVMEDIA_TYPE_SUBTITLE, CODEC_ID_DVB_TELETEXT },
      { 0x59, AVMEDIA_TYPE_SUBTITLE, CODEC_ID_DVB_SUBTITLE }, /* subtitling descriptor */

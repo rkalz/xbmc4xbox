@@ -9,9 +9,9 @@ Subject: [PATCH 17/36] Don't assume reading more frames in av_find_stream_info w
 
 Index: ffmpeg/libavformat/utils.c
 ===================================================================
---- ffmpeg.orig/libavformat/utils.c	2011-08-07 07:06:30.457835200 +0100
-+++ ffmpeg/libavformat/utils.c	2011-08-07 07:06:30.908483200 +0100
-@@ -2183,7 +2183,7 @@
+--- ffmpeg.orig/libavformat/utils.c	2011-11-13 18:23:49.414161300 +0000
++++ ffmpeg/libavformat/utils.c	2011-11-13 18:28:45.783849500 +0000
+@@ -2194,7 +2194,7 @@
          val = 1;
          break;
      }
