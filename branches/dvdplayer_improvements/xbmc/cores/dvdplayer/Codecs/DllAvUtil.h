@@ -43,6 +43,7 @@ extern "C" {
 
 #include "libavutil/avutil.h"
 #include "libavutil/crc.h"
+#include "libavutil/opt.h"
 
 }
 
@@ -64,6 +65,7 @@ public:
   virtual int64_t av_rescale_rnd(int64_t a, int64_t b, int64_t c, enum AVRounding)=0;
   virtual const AVCRC* av_crc_get_table(AVCRCId crc_id)=0;
   virtual uint32_t av_crc(const AVCRC *ctx, uint32_t crc, const uint8_t *buffer, size_t length)=0;
+  virtual int av_set_string3(void *obj, const char *name, const char *val, int alloc, const AVOption **o_out)=0;
   virtual char *av_strdup(const char *s)=0;
 };
 
@@ -84,6 +86,12 @@ public:
    virtual int64_t av_rescale_rnd(int64_t a, int64_t b, int64_t c, enum AVRounding d) { return ::av_rescale_rnd(a, b, c, d); }
    virtual const AVCRC* av_crc_get_table(AVCRCId crc_id) { return ::av_crc_get_table(crc_id); }
    virtual uint32_t av_crc(const AVCRC *ctx, uint32_t crc, const uint8_t *buffer, size_t length) { return ::av_crc(ctx, crc, buffer); }
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(52,7,0)
+   // API added on: 2008-12-16
+   virtual int av_set_string3(void *obj, const char *name, const char *val, int alloc, const AVOption **o_out) { return :
+#else
+   virtual int av_set_string3(void *obj, const char *name, const char *val, int alloc, const AVOption **o_out) { return A
+#endif
    virtual char *av_strdup(const char *s) { return ::av_strdup(s); }
 
    // DLL faking.
@@ -113,6 +121,7 @@ public:
   DEFINE_METHOD4(int64_t, av_rescale_rnd, (int64_t p1, int64_t p2, int64_t p3, enum AVRounding p4));
   DEFINE_METHOD1(const AVCRC*, av_crc_get_table, (AVCRCId p1))
   DEFINE_METHOD4(uint32_t, av_crc, (const AVCRC *p1, uint32_t p2, const uint8_t *p3, size_t p4));
+  DEFINE_METHOD5(int, av_set_string3, (void *p1, const char *p2, const char *p3, int p4, const AVOption **p5));
   DEFINE_METHOD1(char*, av_strdup, (const char *p1))
 
   public:
@@ -126,6 +135,7 @@ public:
     RESOLVE_METHOD(av_rescale_rnd)
     RESOLVE_METHOD(av_crc_get_table)
     RESOLVE_METHOD(av_crc)
+    RESOLVE_METHOD(av_set_string3)
     RESOLVE_METHOD(av_strdup)
   END_METHOD_RESOLVE()
 };
