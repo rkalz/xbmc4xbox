@@ -30,6 +30,8 @@
 #include "avio_internal.h"
 #include "libavutil/parseutils.h"
 #include "libavutil/fifo.h"
+#include "libavutil/intreadwrite.h"
+#include "libavutil/avstring.h"
 #include <unistd.h>
 #include "internal.h"
 #include "network.h"
@@ -46,6 +48,9 @@
 #define IPV6_ADD_MEMBERSHIP IPV6_JOIN_GROUP
 #define IPV6_DROP_MEMBERSHIP IPV6_LEAVE_GROUP
 #endif
+
+#define UDP_TX_BUF_SIZE 32768
+#define UDP_MAX_PKT_SIZE 65536
 
 typedef struct {
     int udp_fd;
@@ -65,10 +70,9 @@ typedef struct {
 #if HAVE_PTHREADS
     pthread_t circular_buffer_thread;
 #endif
+    uint8_t tmp[UDP_MAX_PKT_SIZE+4];
+    int remaining_in_dg;
 } UDPContext;
-
-#define UDP_TX_BUF_SIZE 32768
-#define UDP_MAX_PKT_SIZE 65536
 
 static int udp_set_multicast_ttl(int sockfd, int mcastTTL,
                                  struct sockaddr *addr)
@@ -192,8 +196,8 @@ static int udp_set_url(struct sockaddr_storage *addr,
     return addr_len;
 }
 
-static int udp_socket_create(UDPContext *s,
-                             struct sockaddr_storage *addr, int *addr_len)
+static int udp_socket_create(UDPContext *s, struct sockaddr_storage *addr,
+                             int *addr_len, const char *localaddr)
 {
     int udp_fd = -1;
     struct addrinfo *res0 = NULL, *res = NULL;
@@ -201,7 +205,8 @@ static int udp_socket_create(UDPContext *s,
 
     if (((struct sockaddr *) &s->dest_addr)->sa_family)
         family = ((struct sockaddr *) &s->dest_addr)->sa_family;
-    res0 = udp_resolve_host(0, s->local_port, SOCK_DGRAM, family, AI_PASSIVE);
+    res0 = udp_resolve_host(localaddr[0] ? localaddr : NULL, s->local_port,
+                            SOCK_DGRAM, family, AI_PASSIVE);
     if (res0 == 0)
         goto fail;
     for (res = res0; res; res=res->ai_next) {
@@ -280,7 +285,7 @@ int ff_udp_set_remote_url(URLContext *h, const char *uri)
                 if (connect(s->udp_fd, (struct sockaddr *) &s->dest_addr,
                             s->dest_addr_len)) {
                     s->is_connected = 0;
-                    av_log(NULL, AV_LOG_ERROR, "connect: %s\n", strerror(errno));
+                    av_log(h, AV_LOG_ERROR, "connect: %s\n", strerror(errno));
                     return AVERROR(EIO);
                 }
             }
@@ -306,10 +311,7 @@ int ff_udp_get_local_port(URLContext *h)
  * streams at the same time.
  * @param h media file context
  */
-#if !FF_API_UDP_GET_FILE
-static
-#endif
-int udp_get_file_handle(URLContext *h)
+static int udp_get_file_handle(URLContext *h)
 {
     UDPContext *s = h->priv_data;
     return s->udp_fd;
@@ -350,26 +352,24 @@ static void *circular_buffer_task( void *_URLContext)
         /* How much do we have left to the end of the buffer */
         /* Whats the minimum we can read so that we dont comletely fill the buffer */
         left = av_fifo_space(s->fifo);
-        left = FFMIN(left, s->fifo->end - s->fifo->wptr);
 
         /* No Space left, error, what do we do now */
-        if( !left) {
+        if(left < UDP_MAX_PKT_SIZE + 4) {
             av_log(h, AV_LOG_ERROR, "circular_buffer: OVERRUN\n");
             s->circular_buffer_error = EIO;
             return NULL;
         }
-
-        len = recv(s->udp_fd, s->fifo->wptr, left, 0);
+        left = FFMIN(left, s->fifo->end - s->fifo->wptr);
+        len = recv(s->udp_fd, s->tmp+4, sizeof(s->tmp)-4, 0);
         if (len < 0) {
             if (ff_neterrno() != AVERROR(EAGAIN) && ff_neterrno() != AVERROR(EINTR)) {
                 s->circular_buffer_error = EIO;
                 return NULL;
             }
+            continue;
         }
-        s->fifo->wptr += len;
-        if (s->fifo->wptr >= s->fifo->end)
-            s->fifo->wptr = s->fifo->buffer;
-        s->fifo->wndx += len;
+        AV_WL32(s->tmp, len);
+        av_fifo_generic_write(s->fifo, s->tmp, len+4, NULL);
     }
 
     return NULL;
@@ -379,7 +379,7 @@ static void *circular_buffer_task( void *_URLContext)
 /* return non zero if error */
 static int udp_open(URLContext *h, const char *uri, int flags)
 {
-    char hostname[1024];
+    char hostname[1024], localaddr[1024] = "";
     int port, udp_fd = -1, tmp, bind_ret = -1;
     UDPContext *s = NULL;
     int is_output;
@@ -392,7 +392,7 @@ static int udp_open(URLContext *h, const char *uri, int flags)
     h->is_streamed = 1;
     h->max_packet_size = 1472;
 
-    is_output = (flags & AVIO_WRONLY);
+    is_output = !(flags & AVIO_FLAG_READ);
 
     s = av_mallocz(sizeof(UDPContext));
     if (!s)
@@ -432,6 +432,9 @@ static int udp_open(URLContext *h, const char *uri, int flags)
         if (av_find_info_tag(buf, sizeof(buf), "fifo_size", p)) {
             s->circular_buffer_size = strtol(buf, NULL, 10)*188;
         }
+        if (av_find_info_tag(buf, sizeof(buf), "localaddr", p)) {
+            av_strlcpy(localaddr, buf, sizeof(localaddr));
+        }
     }
 
     /* fill the dest addr */
@@ -440,16 +443,16 @@ static int udp_open(URLContext *h, const char *uri, int flags)
     /* XXX: fix av_url_split */
     if (hostname[0] == '\0' || hostname[0] == '?') {
         /* only accepts null hostname if input */
-        if (flags & AVIO_WRONLY)
+        if (!(flags & AVIO_FLAG_READ))
             goto fail;
     } else {
         if (ff_udp_set_remote_url(h, uri) < 0)
             goto fail;
     }
 
-    if ((s->is_multicast || !s->local_port) && !(h->flags & AVIO_WRONLY))
+    if ((s->is_multicast || !s->local_port) && (h->flags & AVIO_FLAG_READ))
         s->local_port = port;
-    udp_fd = udp_socket_create(s, &my_addr, &len);
+    udp_fd = udp_socket_create(s, &my_addr, &len, localaddr);
     if (udp_fd < 0)
         goto fail;
 
@@ -464,7 +467,7 @@ static int udp_open(URLContext *h, const char *uri, int flags)
 
     /* the bind is needed to give a port to the socket now */
     /* if multicast, try the multicast address bind first */
-    if (s->is_multicast && !(h->flags & AVIO_WRONLY)) {
+    if (s->is_multicast && (h->flags & AVIO_FLAG_READ)) {
         bind_ret = bind(udp_fd,(struct sockaddr *)&s->dest_addr, len);
     }
     /* bind to the local address if not multicast or if the multicast
@@ -477,7 +480,7 @@ static int udp_open(URLContext *h, const char *uri, int flags)
     s->local_port = udp_port(&my_addr, len);
 
     if (s->is_multicast) {
-        if (h->flags & AVIO_WRONLY) {
+        if (!(h->flags & AVIO_FLAG_READ)) {
             /* output */
             if (udp_set_multicast_ttl(udp_fd, s->ttl, (struct sockaddr *)&s->dest_addr) < 0)
                 goto fail;
@@ -492,7 +495,7 @@ static int udp_open(URLContext *h, const char *uri, int flags)
         /* limit the tx buf size to limit latency */
         tmp = s->buffer_size;
         if (setsockopt(udp_fd, SOL_SOCKET, SO_SNDBUF, &tmp, sizeof(tmp)) < 0) {
-            av_log(NULL, AV_LOG_ERROR, "setsockopt(SO_SNDBUF): %s\n", strerror(errno));
+            av_log(h, AV_LOG_ERROR, "setsockopt(SO_SNDBUF): %s\n", strerror(errno));
             goto fail;
         }
     } else {
@@ -500,14 +503,14 @@ static int udp_open(URLContext *h, const char *uri, int flags)
          * avoid losing data on OSes that set this too low by default. */
         tmp = s->buffer_size;
         if (setsockopt(udp_fd, SOL_SOCKET, SO_RCVBUF, &tmp, sizeof(tmp)) < 0) {
-            av_log(NULL, AV_LOG_WARNING, "setsockopt(SO_RECVBUF): %s\n", strerror(errno));
+            av_log(h, AV_LOG_WARNING, "setsockopt(SO_RECVBUF): %s\n", strerror(errno));
         }
         /* make the socket non-blocking */
         ff_socket_nonblock(udp_fd, 1);
     }
     if (s->is_connected) {
         if (connect(udp_fd, (struct sockaddr *) &s->dest_addr, s->dest_addr_len)) {
-            av_log(NULL, AV_LOG_ERROR, "connect: %s\n", strerror(errno));
+            av_log(h, AV_LOG_ERROR, "connect: %s\n", strerror(errno));
             goto fail;
         }
     }
@@ -547,11 +550,18 @@ static int udp_read(URLContext *h, uint8_t *buf, int size)
         do {
             avail = av_fifo_size(s->fifo);
             if (avail) { // >=size) {
+                uint8_t tmp[4];
 
-                // Maximum amount available
-                size = FFMIN( avail, size);
-                av_fifo_generic_read(s->fifo, buf, size, NULL);
-                return size;
+                av_fifo_generic_read(s->fifo, tmp, 4, NULL);
+                avail= AV_RL32(tmp);
+                if(avail > size){
+                    av_log(h, AV_LOG_WARNING, "Part of datagram lost due to insufficient buffer size\n");
+                    avail= size;
+                }
+
+                av_fifo_generic_read(s->fifo, buf, avail, NULL);
+                av_fifo_drain(s->fifo, AV_RL32(tmp) - avail);
+                return avail;
             }
             else {
                 FD_ZERO(&rfds);
@@ -600,7 +610,7 @@ static int udp_close(URLContext *h)
 {
     UDPContext *s = h->priv_data;
 
-    if (s->is_multicast && !(h->flags & AVIO_WRONLY))
+    if (s->is_multicast && (h->flags & AVIO_FLAG_READ))
         udp_leave_multicast_group(s->udp_fd, (struct sockaddr *)&s->dest_addr);
     closesocket(s->udp_fd);
     av_fifo_free(s->fifo);

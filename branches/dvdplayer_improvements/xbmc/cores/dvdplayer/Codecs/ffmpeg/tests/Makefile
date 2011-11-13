@@ -4,8 +4,8 @@ AREF = fate-acodec-aref
 VREF = fate-vsynth1-vref fate-vsynth2-vref
 REFS = $(AREF) $(VREF)
 
-$(VREF): ffmpeg$(EXESUF) tests/vsynth1/00.pgm tests/vsynth2/00.pgm
-$(AREF): ffmpeg$(EXESUF) tests/data/asynth1.sw
+$(VREF): avconv$(EXESUF) tests/vsynth1/00.pgm tests/vsynth2/00.pgm
+$(AREF): avconv$(EXESUF) tests/data/asynth1.sw
 
 ffservertest: ffserver$(EXESUF) tests/vsynth1/00.pgm tests/data/asynth1.sw
 	@echo
@@ -26,7 +26,19 @@ tests/data/asynth1.sw: tests/audiogen$(HOSTEXESUF)
 	@mkdir -p tests/data
 	$(M)./$< $@
 
-tests/data/asynth1.sw tests/vsynth%/00.pgm: TAG = GEN
+tests/data/asynth-16000-1.sw: tests/audiogen$(HOSTEXESUF)
+	@mkdir -p tests/data
+	$(M)./$< $@ 16000 1
+
+tests/data/mapchan-6ch.sw: tests/audiogen$(HOSTEXESUF)
+	@mkdir -p tests/data
+	$(M)./$< $@ 22050 6
+
+tests/data/mapchan-mono.sw: tests/audiogen$(HOSTEXESUF)
+	@mkdir -p tests/data
+	$(M)./$< $@ 22050 1
+
+tests/data/asynth%.sw tests/vsynth%/00.pgm: TAG = GEN
 
 include $(SRC_PATH)/tests/fate.mak
 include $(SRC_PATH)/tests/fate2.mak
@@ -40,6 +52,7 @@ include $(SRC_PATH)/tests/fate/fft.mak
 include $(SRC_PATH)/tests/fate/h264.mak
 include $(SRC_PATH)/tests/fate/libavutil.mak
 include $(SRC_PATH)/tests/fate/mp3.mak
+include $(SRC_PATH)/tests/fate/prores.mak
 include $(SRC_PATH)/tests/fate/vorbis.mak
 include $(SRC_PATH)/tests/fate/vp8.mak
 
@@ -54,8 +67,11 @@ FATE_SEEK    = $(SEEK_TESTS:seek_%=fate-seek-%)
 FATE = $(FATE_ACODEC)                                                   \
        $(FATE_VCODEC)                                                   \
        $(FATE_LAVF)                                                     \
-       $(FATE_LAVFI)                                                    \
        $(FATE_SEEK)                                                     \
+
+FATE-$(CONFIG_AVFILTER) += $(FATE_LAVFI)
+
+FATE += $(FATE-yes)
 
 $(filter-out %-aref,$(FATE_ACODEC)): $(AREF)
 $(filter-out %-vref,$(FATE_VSYNTH1)): fate-vsynth1-vref
@@ -79,9 +95,9 @@ fate-lavfi:  $(FATE_LAVFI)
 fate-seek:   $(FATE_SEEK)
 
 ifdef SAMPLES
-FATE += $(FATE_TESTS)
+FATE += $(FATE_TESTS) $(FATE_TESTS-yes)
 fate-rsync:
-	rsync -vaLW rsync://fate-suite.libav.org/fate-suite/ $(SAMPLES)
+	rsync -vaLW --timeout=60 --contimeout=60 rsync://fate.ffmpeg.org/fate-suite/ $(SAMPLES)
 else
 fate-rsync:
 	@echo "use 'make fate-rsync SAMPLES=/path/to/samples' to sync the fate suite"
@@ -91,11 +107,13 @@ endif
 
 FATE_UTILS = base64 tiny_psnr
 
+TOOL = ffmpeg
+
 fate: $(FATE)
 
-$(FATE): ffmpeg$(EXESUF) $(FATE_UTILS:%=tests/%$(HOSTEXESUF))
+$(FATE): $(TOOL)$(EXESUF) $(FATE_UTILS:%=tests/%$(HOSTEXESUF))
 	@echo "TEST    $(@:fate-%=%)"
-	$(Q)$(SRC_PATH)/tests/fate-run.sh $@ "$(SAMPLES)" "$(TARGET_EXEC)" "$(TARGET_PATH)" '$(CMD)' '$(CMP)' '$(REF)' '$(FUZZ)' '$(THREADS)' '$(THREAD_TYPE)'
+	$(Q)$(SRC_PATH)/tests/fate-run.sh $@ "$(SAMPLES)" "$(TARGET_EXEC)" "$(TARGET_PATH)" '$(CMD)' '$(CMP)' '$(REF)' '$(FUZZ)' '$(THREADS)' '$(THREAD_TYPE)' '$(TOOL)'
 
 fate-list:
 	@printf '%s\n' $(sort $(FATE))

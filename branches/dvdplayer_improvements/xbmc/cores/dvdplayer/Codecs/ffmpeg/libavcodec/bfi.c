@@ -61,7 +61,7 @@ static int bfi_decode_frame(AVCodecContext * avctx, void *data,
     if (bfi->frame.data[0])
         avctx->release_buffer(avctx, &bfi->frame);
 
-    bfi->frame.reference = 1;
+    bfi->frame.reference = 3;
 
     if (avctx->get_buffer(avctx, &bfi->frame) < 0) {
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
@@ -80,7 +80,7 @@ static int bfi_decode_frame(AVCodecContext * avctx, void *data,
         pal = (uint32_t *) bfi->frame.data[1];
         for (i = 0; i < avctx->extradata_size / 3; i++) {
             int shift = 16;
-            *pal = 0;
+            *pal = 0xFF << 24;
             for (j = 0; j < 3; j++, shift -= 8)
                 *pal +=
                     ((avctx->extradata[i * 3 + j] << 2) |

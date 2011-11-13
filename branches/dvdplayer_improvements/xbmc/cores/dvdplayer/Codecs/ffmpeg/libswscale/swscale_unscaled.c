@@ -182,14 +182,14 @@ static int uyvyToYuv422Wrapper(SwsContext *c, const uint8_t* src[], int srcStrid
     return srcSliceH;
 }
 
-static void gray8aToPacked32(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette)
+static void gray8aToPacked32(const uint8_t *src, uint8_t *dst, int num_pixels, const uint8_t *palette)
 {
     int i;
     for (i=0; i<num_pixels; i++)
         ((uint32_t *) dst)[i] = ((const uint32_t *)palette)[src[i<<1]] | (src[(i<<1)+1] << 24);
 }
 
-static void gray8aToPacked32_1(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette)
+static void gray8aToPacked32_1(const uint8_t *src, uint8_t *dst, int num_pixels, const uint8_t *palette)
 {
     int i;
 
@@ -197,7 +197,7 @@ static void gray8aToPacked32_1(const uint8_t *src, uint8_t *dst, long num_pixels
         ((uint32_t *) dst)[i] = ((const uint32_t *)palette)[src[i<<1]] | src[(i<<1)+1];
 }
 
-static void gray8aToPacked24(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette)
+static void gray8aToPacked24(const uint8_t *src, uint8_t *dst, int num_pixels, const uint8_t *palette)
 {
     int i;
 
@@ -215,7 +215,7 @@ static int palToRgbWrapper(SwsContext *c, const uint8_t* src[], int srcStride[],
 {
     const enum PixelFormat srcFormat= c->srcFormat;
     const enum PixelFormat dstFormat= c->dstFormat;
-    void (*conv)(const uint8_t *src, uint8_t *dst, long num_pixels,
+    void (*conv)(const uint8_t *src, uint8_t *dst, int num_pixels,
                  const uint8_t *palette)=NULL;
     int i;
     uint8_t *dstPtr= dst[0] + dstStride[0]*srcSliceY;
@@ -250,6 +250,92 @@ static int palToRgbWrapper(SwsContext *c, const uint8_t* src[], int srcStride[],
             srcPtr+= srcStride[0];
             dstPtr+= dstStride[0];
         }
+    }
+
+    return srcSliceH;
+}
+
+static void gbr24ptopacked24(const uint8_t* src[], int srcStride[], uint8_t* dst, int dstStride, int srcSliceH, int width)
+{
+    int x, h, i;
+    for (h = 0; h < srcSliceH; h++) {
+        uint8_t *dest = dst + dstStride * h;
+        for (x = 0; x < width; x++) {
+            *dest++ = src[0][x];
+            *dest++ = src[1][x];
+            *dest++ = src[2][x];
+        }
+
+        for (i = 0; i < 3; i++)
+            src[i] += srcStride[i];
+    }
+}
+
+static void gbr24ptopacked32(const uint8_t* src[], int srcStride[], uint8_t* dst, int dstStride, int srcSliceH, int alpha_first, int width)
+{
+    int x, h, i;
+    for (h = 0; h < srcSliceH; h++) {
+        uint8_t *dest = dst + dstStride * h;
+
+        if (alpha_first) {
+            for (x = 0; x < width; x++) {
+                *dest++ = 0xff;
+                *dest++ = src[0][x];
+                *dest++ = src[1][x];
+                *dest++ = src[2][x];
+            }
+        } else {
+            for (x = 0; x < width; x++) {
+                *dest++ = src[0][x];
+                *dest++ = src[1][x];
+                *dest++ = src[2][x];
+                *dest++ = 0xff;
+            }
+        }
+
+        for (i = 0; i < 3; i++)
+            src[i] += srcStride[i];
+    }
+}
+
+static int planarRgbToRgbWrapper(SwsContext *c, const uint8_t* src[], int srcStride[], int srcSliceY,
+        int srcSliceH, uint8_t* dst[], int dstStride[])
+{
+    int alpha_first = 0;
+    if (c->srcFormat != PIX_FMT_GBR24P) {
+        av_log(c, AV_LOG_ERROR, "unsupported planar RGB conversion %s -> %s\n",
+              av_get_pix_fmt_name(c->srcFormat), av_get_pix_fmt_name(c->dstFormat));
+        return srcSliceH;
+    }
+
+    switch (c->dstFormat) {
+        case PIX_FMT_BGR24:
+            gbr24ptopacked24((const uint8_t* []) {src[1], src[0], src[2]}, (int []) {srcStride[1], srcStride[0], srcStride[2]},
+                  dst[0] + srcSliceY * dstStride[0], dstStride[0], srcSliceH, c->srcW);
+            break;
+
+        case PIX_FMT_RGB24:
+            gbr24ptopacked24((const uint8_t* []) {src[2], src[0], src[1]}, (int []) {srcStride[2], srcStride[0], srcStride[1]},
+                  dst[0] + srcSliceY * dstStride[0], dstStride[0], srcSliceH, c->srcW);
+            break;
+
+        case PIX_FMT_ARGB:
+            alpha_first = 1;
+        case PIX_FMT_RGBA:
+            gbr24ptopacked32((const uint8_t* []) {src[2], src[0], src[1]}, (int []) {srcStride[2], srcStride[0], srcStride[1]},
+                  dst[0] + srcSliceY * dstStride[0], dstStride[0], srcSliceH, alpha_first, c->srcW);
+            break;
+
+        case PIX_FMT_ABGR:
+            alpha_first = 1;
+        case PIX_FMT_BGRA:
+            gbr24ptopacked32((const uint8_t* []) {src[1], src[0], src[2]}, (int []) {srcStride[1], srcStride[0], srcStride[2]},
+                  dst[0] + srcSliceY * dstStride[0], dstStride[0], srcSliceH, alpha_first, c->srcW);
+            break;
+
+        default:
+            av_log(c, AV_LOG_ERROR, "unsupported planar RGB conversion %s -> %s\n",
+                    av_get_pix_fmt_name(c->srcFormat), av_get_pix_fmt_name(c->dstFormat));
     }
 
     return srcSliceH;
@@ -444,6 +530,7 @@ static int planarCopyWrapper(SwsContext *c, const uint8_t* src[], int srcStride[
         int height= (plane==0 || plane==3) ? srcSliceH: -((-srcSliceH)>>c->chrDstVSubSample);
         const uint8_t *srcPtr= src[plane];
         uint8_t *dstPtr= dst[plane] + dstStride[plane]*y;
+        int shiftonly= plane==1 || plane==2 || (!c->srcRange && plane==0);
 
         if (!dst[plane]) continue;
         // ignore palette for GRAY8
@@ -469,14 +556,19 @@ static int planarCopyWrapper(SwsContext *c, const uint8_t* src[], int srcStride[
                     }
                 } else if (src_depth == 8) {
                     for (i = 0; i < height; i++) {
+                        #define COPY816(w)\
+                        if(shiftonly){\
+                            for (j = 0; j < length; j++)\
+                                w(&dstPtr2[j], srcPtr[j]<<(dst_depth-8));\
+                        }else{\
+                            for (j = 0; j < length; j++)\
+                                w(&dstPtr2[j], (srcPtr[j]<<(dst_depth-8)) |\
+                                               (srcPtr[j]>>(2*8-dst_depth)));\
+                        }
                         if(isBE(c->dstFormat)){
-                            for (j = 0; j < length; j++)
-                                AV_WB16(&dstPtr2[j], (srcPtr[j]<<(dst_depth-8)) |
-                                                     (srcPtr[j]>>(2*8-dst_depth)));
+                            COPY816(AV_WB16)
                         } else {
-                            for (j = 0; j < length; j++)
-                                AV_WL16(&dstPtr2[j], (srcPtr[j]<<(dst_depth-8)) |
-                                                     (srcPtr[j]>>(2*8-dst_depth)));
+                            COPY816(AV_WL16)
                         }
                         dstPtr2 += dstStride[plane]/2;
                         srcPtr  += srcStride[plane];
@@ -484,10 +576,17 @@ static int planarCopyWrapper(SwsContext *c, const uint8_t* src[], int srcStride[
                 } else if (src_depth <= dst_depth) {
                     for (i = 0; i < height; i++) {
 #define COPY_UP(r,w) \
-    for (j = 0; j < length; j++){ \
-        unsigned int v= r(&srcPtr2[j]);\
-        w(&dstPtr2[j], (v<<(dst_depth-src_depth)) | \
-                       (v>>(2*src_depth-dst_depth)));\
+    if(shiftonly){\
+        for (j = 0; j < length; j++){ \
+            unsigned int v= r(&srcPtr2[j]);\
+            w(&dstPtr2[j], v<<(dst_depth-src_depth));\
+        }\
+    }else{\
+        for (j = 0; j < length; j++){ \
+            unsigned int v= r(&srcPtr2[j]);\
+            w(&dstPtr2[j], (v<<(dst_depth-src_depth)) | \
+                        (v>>(2*src_depth-dst_depth)));\
+        }\
     }
                         if(isBE(c->srcFormat)){
                             if(isBE(c->dstFormat)){
@@ -595,13 +694,18 @@ void ff_get_unscaled_swscale(SwsContext *c)
         && (!needsDither || (c->flags&(SWS_FAST_BILINEAR|SWS_POINT))))
         c->swScale= rgbToRgbWrapper;
 
-    if ((usePal(srcFormat) && (
-        dstFormat == PIX_FMT_RGB32   ||
-        dstFormat == PIX_FMT_RGB32_1 ||
-        dstFormat == PIX_FMT_RGB24   ||
-        dstFormat == PIX_FMT_BGR32   ||
-        dstFormat == PIX_FMT_BGR32_1 ||
-        dstFormat == PIX_FMT_BGR24)))
+#define isByteRGB(f) (\
+        f == PIX_FMT_RGB32   ||\
+        f == PIX_FMT_RGB32_1 ||\
+        f == PIX_FMT_RGB24   ||\
+        f == PIX_FMT_BGR32   ||\
+        f == PIX_FMT_BGR32_1 ||\
+        f == PIX_FMT_BGR24)
+
+    if (isAnyRGB(srcFormat) && isPlanar(srcFormat) && isByteRGB(dstFormat))
+        c->swScale= planarRgbToRgbWrapper;
+
+    if (usePal(srcFormat) && isByteRGB(dstFormat))
         c->swScale= palToRgbWrapper;
 
     if (srcFormat == PIX_FMT_YUV422P) {
@@ -659,7 +763,7 @@ static void reset_ptr(const uint8_t* src[], int format)
 {
     if(!isALPHA(format))
         src[3]=NULL;
-    if(!isPlanarYUV(format)) {
+    if(!isPlanar(format)) {
         src[3]=src[2]=NULL;
 
         if (!usePal(format))
@@ -785,7 +889,7 @@ int sws_scale(struct SwsContext *c, const uint8_t* const srcSlice[],
         int dstStride2[4]= {dstStride[0], dstStride[1], dstStride[2], dstStride[3]};
 
         reset_ptr(src2, c->srcFormat);
-        reset_ptr((const uint8_t**)dst2, c->dstFormat);
+        reset_ptr((void*)dst2, c->dstFormat);
 
         /* reset slice direction at end of frame */
         if (srcSliceY + srcSliceH == c->srcH)
@@ -818,16 +922,8 @@ int sws_scale(struct SwsContext *c, const uint8_t* const srcSlice[],
     }
 }
 
-#if LIBSWSCALE_VERSION_MAJOR < 1
-int sws_scale_ordered(SwsContext *c, const uint8_t* const src[], int srcStride[], int srcSliceY,
-                      int srcSliceH, uint8_t* dst[], int dstStride[])
-{
-    return sws_scale(c, src, srcStride, srcSliceY, srcSliceH, dst, dstStride);
-}
-#endif
-
 /* Convert the palette to the same packed 32-bit format as the palette */
-void sws_convertPalette8ToPacked32(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette)
+void sws_convertPalette8ToPacked32(const uint8_t *src, uint8_t *dst, int num_pixels, const uint8_t *palette)
 {
     int i;
 
@@ -836,7 +932,7 @@ void sws_convertPalette8ToPacked32(const uint8_t *src, uint8_t *dst, long num_pi
 }
 
 /* Palette format: ABCD -> dst format: ABC */
-void sws_convertPalette8ToPacked24(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette)
+void sws_convertPalette8ToPacked24(const uint8_t *src, uint8_t *dst, int num_pixels, const uint8_t *palette)
 {
     int i;
 

@@ -45,7 +45,7 @@ static av_cold int decode_init(AVCodecContext *avctx)
         return -1;
 
     avcodec_get_frame_defaults(&s->frame);
-    s->frame.reference = 1;
+    s->frame.reference = 3;
 
     buf = avctx->extradata + 16*8;
     for (i = 0; i < 256; i++)
@@ -79,6 +79,8 @@ static inline int op(uint8_t **dst, const uint8_t *dst_end,
         int striplen = FFMIN(count, remaining);
         if (buf) {
             striplen = FFMIN(striplen, buf_end - *buf);
+            if (*buf >= buf_end)
+                goto exhausted;
             memcpy(*dst, *buf, striplen);
             *buf += striplen;
         } else if (pixel >= 0)

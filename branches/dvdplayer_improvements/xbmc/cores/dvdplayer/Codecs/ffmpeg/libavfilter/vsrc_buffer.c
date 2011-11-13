@@ -24,6 +24,7 @@
  */
 
 #include "avfilter.h"
+#include "internal.h"
 #include "avcodec.h"
 #include "vsrc_buffer.h"
 #include "libavutil/imgutils.h"
@@ -104,7 +105,7 @@ int av_vsrc_buffer_add_video_buffer_ref(AVFilterContext *buffer_filter,
     c->picref = avfilter_get_video_buffer(outlink, AV_PERM_WRITE,
                                           picref->video->w, picref->video->h);
     av_image_copy(c->picref->data, c->picref->linesize,
-                  picref->data, picref->linesize,
+                  (void*)picref->data, picref->linesize,
                   picref->format, picref->video->w, picref->video->h);
     avfilter_copy_buffer_ref_props(c->picref, picref);
 
@@ -134,7 +135,7 @@ static av_cold int init(AVFilterContext *ctx, const char *args, void *opaque)
 {
     BufferSourceContext *c = ctx->priv;
     char pix_fmt_str[128];
-    int n = 0;
+    int ret, n = 0;
     *c->sws_param = 0;
 
     if (!args ||
@@ -145,14 +146,8 @@ static av_cold int init(AVFilterContext *ctx, const char *args, void *opaque)
         return AVERROR(EINVAL);
     }
 
-    if ((c->pix_fmt = av_get_pix_fmt(pix_fmt_str)) == PIX_FMT_NONE) {
-        char *tail;
-        c->pix_fmt = strtol(pix_fmt_str, &tail, 10);
-        if (*tail || c->pix_fmt < 0 || c->pix_fmt >= PIX_FMT_NB) {
-            av_log(ctx, AV_LOG_ERROR, "Invalid pixel format string '%s'\n", pix_fmt_str);
-            return AVERROR(EINVAL);
-        }
-    }
+    if ((ret = ff_parse_pixel_format(&c->pix_fmt, pix_fmt_str, ctx)) < 0)
+        return ret;
 
     av_log(ctx, AV_LOG_INFO, "w:%d h:%d pixfmt:%s tb:%d/%d sar:%d/%d sws_param:%s\n",
            c->w, c->h, av_pix_fmt_descriptors[c->pix_fmt].name,
@@ -215,8 +210,8 @@ AVFilter avfilter_vsrc_buffer = {
 
     .init      = init,
 
-    .inputs    = (AVFilterPad[]) {{ .name = NULL }},
-    .outputs   = (AVFilterPad[]) {{ .name            = "default",
+    .inputs    = (const AVFilterPad[]) {{ .name = NULL }},
+    .outputs   = (const AVFilterPad[]) {{ .name      = "default",
                                     .type            = AVMEDIA_TYPE_VIDEO,
                                     .request_frame   = request_frame,
                                     .poll_frame      = poll_frame,

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2010 Michael Niedermayer <michaelni@gmx.at>
+ * Copyright (C) 2006-2011 Michael Niedermayer <michaelni@gmx.at>
  *               2010      James Darnley <james.darnley@gmail.com>
  *
  * FFmpeg is free software; you can redistribute it and/or modify
@@ -145,7 +145,7 @@ static void filter(AVFilterContext *ctx, AVFilterBufferRef *dstpic,
         int refs = yadif->cur->linesize[i];
         int df = (yadif->csp->comp[i].depth_minus1+1) / 8;
 
-        if (i) {
+        if (i == 1 || i == 2) {
         /* Why is this not part of the per-plane description thing? */
             w >>= yadif->csp->log2_chroma_w;
             h >>= yadif->csp->log2_chroma_h;
@@ -211,7 +211,7 @@ static void return_frame(AVFilterContext *ctx, int is_second)
     if (!yadif->csp)
         yadif->csp = &av_pix_fmt_descriptors[link->format];
     if (yadif->csp->comp[0].depth_minus1 == 15)
-        yadif->filter_line = filter_line_c_16bit;
+        yadif->filter_line = (void*)filter_line_c_16bit;
 
     filter(ctx, yadif->out, tff ^ !is_second, tff);
 
@@ -355,6 +355,7 @@ static int query_formats(AVFilterContext *ctx)
         AV_NE( PIX_FMT_YUV420P16BE, PIX_FMT_YUV420P16LE ),
         AV_NE( PIX_FMT_YUV422P16BE, PIX_FMT_YUV422P16LE ),
         AV_NE( PIX_FMT_YUV444P16BE, PIX_FMT_YUV444P16LE ),
+        PIX_FMT_YUVA420P,
         PIX_FMT_NONE
     };
 
@@ -399,15 +400,16 @@ AVFilter avfilter_vf_yadif = {
     .uninit        = uninit,
     .query_formats = query_formats,
 
-    .inputs    = (AVFilterPad[]) {{ .name             = "default",
+    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .start_frame      = start_frame,
                                     .get_video_buffer = get_video_buffer,
                                     .draw_slice       = null_draw_slice,
-                                    .end_frame        = end_frame, },
+                                    .end_frame        = end_frame,
+                                    .rej_perms        = AV_PERM_REUSE2, },
                                   { .name = NULL}},
 
-    .outputs   = (AVFilterPad[]) {{ .name             = "default",
+    .outputs   = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .poll_frame       = poll_frame,
                                     .request_frame    = request_frame, },

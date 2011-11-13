@@ -165,6 +165,9 @@ static void get_tag(AVFormatContext *s, const char *key, int type, int len)
 
     if (type == 0) {         // UTF16-LE
         avio_get_str16le(s->pb, len, value, 2*len + 1);
+    } else if (type == -1) { // ASCII
+        get_buffer(s->pb, value, len);
+        value[len]=0;
     } else if (type > 1 && type <= 5) {  // boolean or DWORD or QWORD or WORD
         uint64_t num = get_value(s->pb, type);
         snprintf(value, len, "%"PRIu64, num);
@@ -221,7 +224,7 @@ static int asf_read_stream_properties(AVFormatContext *s, int64_t size)
 
     pos1 = avio_tell(pb);
 
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
     av_set_pts_info(st, 32, 1, 1000); /* 32 bit pts in ms */
@@ -355,18 +358,17 @@ static int asf_read_stream_properties(AVFormatContext *s, int64_t size)
 
         /* Extract palette from extradata if bpp <= 8 */
         /* This code assumes that extradata contains only palette */
-        /* This is true for all paletted codecs implemented in ffmpeg */
+        /* This is true for all paletted codecs implemented in libavcodec */
         if (st->codec->extradata_size && (st->codec->bits_per_coded_sample <= 8)) {
             int av_unused i;
-            st->codec->palctrl = av_mallocz(sizeof(AVPaletteControl));
 #if HAVE_BIGENDIAN
             for (i = 0; i < FFMIN(st->codec->extradata_size, AVPALETTE_SIZE)/4; i++)
-                st->codec->palctrl->palette[i] = av_bswap32(((uint32_t*)st->codec->extradata)[i]);
+                asf_st->palette[i] = av_bswap32(((uint32_t*)st->codec->extradata)[i]);
 #else
-            memcpy(st->codec->palctrl->palette, st->codec->extradata,
-                    FFMIN(st->codec->extradata_size, AVPALETTE_SIZE));
+            memcpy(asf_st->palette, st->codec->extradata,
+                   FFMIN(st->codec->extradata_size, AVPALETTE_SIZE));
 #endif
-            st->codec->palctrl->palette_changed = 1;
+            asf_st->palette_changed = 1;
         }
 
         st->codec->codec_tag = tag1;
@@ -567,7 +569,7 @@ static int asf_read_marker(AVFormatContext *s, int64_t size)
         name_len = avio_rl32(pb);  // name length
         if ((ret = avio_get_str16le(pb, name_len * 2, name, sizeof(name))) < name_len)
             avio_skip(pb, name_len - ret);
-        ff_new_chapter(s, i, (AVRational){1, 10000000}, pres_time, AV_NOPTS_VALUE, name );
+        avpriv_new_chapter(s, i, (AVRational){1, 10000000}, pres_time, AV_NOPTS_VALUE, name );
     }
 
     return 0;
@@ -637,11 +639,23 @@ static int asf_read_header(AVFormatContext *s, AVFormatParameters *ap)
         } else {
             if (!s->keylen) {
                 if (!ff_guidcmp(&g, &ff_asf_content_encryption)) {
+                    unsigned int len;
+                    AVPacket pkt;
                     av_log(s, AV_LOG_WARNING, "DRM protected stream detected, decoding will likely fail!\n");
+                    len= avio_rl32(pb);
+                    av_log(s, AV_LOG_DEBUG, "Secret data:\n");
+                    av_get_packet(pb, &pkt, len); av_hex_dump_log(s, AV_LOG_DEBUG, pkt.data, pkt.size); av_free_packet(&pkt);
+                    len= avio_rl32(pb);
+                    get_tag(s, "ASF_Protection_Type", -1, len);
+                    len= avio_rl32(pb);
+                    get_tag(s, "ASF_Key_ID", -1, len);
+                    len= avio_rl32(pb);
+                    get_tag(s, "ASF_License_URL", -1, len);
                 } else if (!ff_guidcmp(&g, &ff_asf_ext_content_encryption)) {
                     av_log(s, AV_LOG_WARNING, "Ext DRM protected stream detected, decoding will likely fail!\n");
+                    av_dict_set(&s->metadata, "encryption", "ASF Extended Content Encryption", 0);
                 } else if (!ff_guidcmp(&g, &ff_asf_digital_signature)) {
-                    av_log(s, AV_LOG_WARNING, "Digital signature detected, decoding will likely fail!\n");
+                    av_log(s, AV_LOG_INFO, "Digital signature detected!\n");
                 }
             }
         }
@@ -808,6 +822,10 @@ static int asf_read_frame_header(AVFormatContext *s, AVIOContext *pb){
     DO_2BITS(asf->packet_property >> 2, asf->packet_frag_offset, 0);
     DO_2BITS(asf->packet_property, asf->packet_replic_size, 0);
 //printf("key:%d stream:%d seq:%d offset:%d replic_size:%d\n", asf->packet_key_frame, asf->stream_index, asf->packet_seq, //asf->packet_frag_offset, asf->packet_replic_size);
+    if (rsize+asf->packet_replic_size > asf->packet_size_left) {
+        av_log(s, AV_LOG_ERROR, "packet_replic_size %d is invalid\n", asf->packet_replic_size);
+        return -1;
+    }
     if (asf->packet_replic_size >= 8) {
         asf->packet_obj_size = avio_rl32(pb);
         if(asf->packet_obj_size >= (1<<24) || asf->packet_obj_size <= 0){
@@ -840,10 +858,6 @@ static int asf_read_frame_header(AVFormatContext *s, AVIOContext *pb){
         rsize++;
     }else if(asf->packet_replic_size!=0){
         av_log(s, AV_LOG_ERROR, "unexpected packet_replic_size of %d\n", asf->packet_replic_size);
-        return -1;
-    }
-    if (rsize > asf->packet_size_left) {
-        av_log(s, AV_LOG_ERROR, "packet_replic_size is invalid\n");
         return -1;
     }
     if (asf->packet_flags & 0x01) {
@@ -970,6 +984,17 @@ static int ff_asf_parse_packet(AVFormatContext *s, AVIOContext *pb, AVPacket *pk
             asf_st->pkt.stream_index = asf->stream_index;
             asf_st->pkt.pos =
             asf_st->packet_pos= asf->packet_pos;
+            if (asf_st->pkt.data && asf_st->palette_changed) {
+                uint8_t *pal;
+                pal = av_packet_new_side_data(pkt, AV_PKT_DATA_PALETTE,
+                                              AVPALETTE_SIZE);
+                if (!pal) {
+                    av_log(s, AV_LOG_ERROR, "Cannot append palette to packet\n");
+                } else {
+                    memcpy(pal, asf_st->palette, AVPALETTE_SIZE);
+                    asf_st->palette_changed = 0;
+                }
+            }
 //printf("new packet: stream:%d key:%d packet_key:%d audio:%d size:%d\n",
 //asf->stream_index, asf->packet_key_frame, asf_st->pkt.flags & AV_PKT_FLAG_KEY,
 //s->streams[asf->stream_index]->codec->codec_type == AVMEDIA_TYPE_AUDIO, asf->packet_obj_size);
@@ -1124,13 +1149,7 @@ static void asf_reset_header(AVFormatContext *s)
 
 static int asf_read_close(AVFormatContext *s)
 {
-    int i;
     asf_reset_header(s);
-
-    for(i=0;i<s->nb_streams;i++) {
-        AVStream *st = s->streams[i];
-        av_free(st->codec->palctrl);
-    }
 
     return 0;
 }
@@ -1278,7 +1297,7 @@ static int asf_read_seek(AVFormatContext *s, int stream_index, int64_t pts, int 
         }
     }
     /* no index or seeking by index failed */
-    if(av_seek_frame_binary(s, stream_index, pts, flags)<0)
+    if (ff_seek_frame_binary(s, stream_index, pts, flags) < 0)
         return -1;
     asf_reset_header(s);
     return 0;

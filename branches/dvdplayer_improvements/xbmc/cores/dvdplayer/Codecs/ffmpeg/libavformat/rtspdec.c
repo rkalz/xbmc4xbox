@@ -22,7 +22,6 @@
 #include "libavutil/avstring.h"
 #include "libavutil/intreadwrite.h"
 #include "libavutil/mathematics.h"
-#include "libavutil/opt.h"
 #include "avformat.h"
 
 #include "internal.h"
@@ -164,11 +163,6 @@ static int rtsp_read_header(AVFormatContext *s,
         return AVERROR(ENOMEM);
     rt->real_setup = rt->real_setup_cache + s->nb_streams;
 
-#if FF_API_FORMAT_PARAMETERS
-    if (ap->initial_pause)
-        rt->initial_pause = ap->initial_pause;
-#endif
-
     if (rt->initial_pause) {
          /* do not start immediately */
     } else {
@@ -209,7 +203,7 @@ redo:
     id  = buf[0];
     len = AV_RB16(buf + 1);
     av_dlog(s, "id=%d len=%d\n", id, len);
-    if (len > buf_size || len < 12)
+    if (len > buf_size || len < 8)
         goto redo;
     /* get the data */
     ret = ffurl_read_complete(rt->rtsp_hd, buf, len);
@@ -393,15 +387,10 @@ static int rtsp_read_close(AVFormatContext *s)
     return 0;
 }
 
-static const AVOption options[] = {
-    { "initial_pause",  "Don't start playing the stream immediately", offsetof(RTSPState, initial_pause),  FF_OPT_TYPE_INT, {.dbl = 0}, 0, 1, AV_OPT_FLAG_DECODING_PARAM },
-    { NULL },
-};
-
 const AVClass rtsp_demuxer_class = {
     .class_name     = "RTSP demuxer",
     .item_name      = av_default_item_name,
-    .option         = options,
+    .option         = ff_rtsp_options,
     .version        = LIBAVUTIL_VERSION_INT,
 };
 

@@ -1,5 +1,5 @@
 /*
- * Buffered file io for ffmpeg system
+ * buffered file I/O
  * Copyright (c) 2001 Fabrice Bellard
  *
  * This file is part of FFmpeg.
@@ -37,13 +37,15 @@
 static int file_read(URLContext *h, unsigned char *buf, int size)
 {
     int fd = (intptr_t) h->priv_data;
-    return read(fd, buf, size);
+    int r = read(fd, buf, size);
+    return (-1 == r)?AVERROR(errno):r;
 }
 
 static int file_write(URLContext *h, const unsigned char *buf, int size)
 {
     int fd = (intptr_t) h->priv_data;
-    return write(fd, buf, size);
+    int r = write(fd, buf, size);
+    return (-1 == r)?AVERROR(errno):r;
 }
 
 static int file_get_handle(URLContext *h)
@@ -58,9 +60,8 @@ static int file_check(URLContext *h, int mask)
     if (ret < 0)
         return AVERROR(errno);
 
-    ret |= st.st_mode&S_IRUSR ? mask&AVIO_RDONLY : 0;
-    ret |= st.st_mode&S_IWUSR ? mask&AVIO_WRONLY : 0;
-    ret |= st.st_mode&S_IWUSR && st.st_mode&S_IRUSR ? mask&AVIO_RDWR : 0;
+    ret |= st.st_mode&S_IRUSR ? mask&AVIO_FLAG_READ  : 0;
+    ret |= st.st_mode&S_IWUSR ? mask&AVIO_FLAG_WRITE : 0;
 
     return ret;
 }
@@ -74,9 +75,9 @@ static int file_open(URLContext *h, const char *filename, int flags)
 
     av_strstart(filename, "file:", &filename);
 
-    if (flags & AVIO_RDWR) {
+    if (flags & AVIO_FLAG_WRITE && flags & AVIO_FLAG_READ) {
         access = O_CREAT | O_TRUNC | O_RDWR;
-    } else if (flags & AVIO_WRONLY) {
+    } else if (flags & AVIO_FLAG_WRITE) {
         access = O_CREAT | O_TRUNC | O_WRONLY;
     } else {
         access = O_RDONLY;
@@ -132,7 +133,7 @@ static int pipe_open(URLContext *h, const char *filename, int flags)
 
     fd = strtol(filename, &final, 10);
     if((filename == final) || *final ) {/* No digits found, or something like 10ab */
-        if (flags & AVIO_WRONLY) {
+        if (flags & AVIO_FLAG_WRITE) {
             fd = 1;
         } else {
             fd = 0;

@@ -45,6 +45,8 @@ typedef struct {
 
     uint16_t stream_language_index;
 
+    int      palette_changed;
+    uint32_t palette[256];
 } ASFStream;
 
 typedef struct {
@@ -171,5 +173,7 @@ extern const AVMetadataConv ff_asf_metadata_conv[];
 #define ASF_PL_FLAG_KEY_FRAME 0x80 //1000 0000
 
 extern AVInputFormat ff_asf_demuxer;
+
+void ff_put_guid(AVIOContext *s, const ff_asf_guid *g);
 
 #endif /* AVFORMAT_ASF_H */

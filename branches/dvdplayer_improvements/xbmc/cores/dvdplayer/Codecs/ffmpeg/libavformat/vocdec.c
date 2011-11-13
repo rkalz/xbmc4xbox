@@ -52,7 +52,7 @@ static int voc_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return AVERROR(ENOSYS);
     }
     avio_skip(pb, header_size);
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if (!st)
         return AVERROR(ENOMEM);
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
@@ -142,7 +142,7 @@ voc_get_packet(AVFormatContext *s, AVPacket *pkt, AVStream *st, int max_size)
         }
     }
 
-    dec->bit_rate = dec->sample_rate * dec->bits_per_coded_sample;
+    dec->bit_rate = dec->sample_rate * dec->channels * dec->bits_per_coded_sample;
 
     if (max_size <= 0)
         max_size = 2048;

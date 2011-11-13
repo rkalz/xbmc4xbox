@@ -30,7 +30,7 @@
 #include "libavutil/pixdesc.h"
 #include "avfilter.h"
 
-static const char *var_names[] = {
+static const char * const var_names[] = {
     "w",
     "h",
     "cw",
@@ -81,7 +81,7 @@ static av_cold int init(AVFilterContext *ctx, const char *args, void *opaque)
 
     if (!args) {
         av_log(ctx, AV_LOG_ERROR,
-               "Filter expects 2 or 4 arguments, none provided\n");
+               "Filter expects 2 or 4 or 6 arguments, none provided\n");
         return AVERROR(EINVAL);
     }
 
@@ -298,7 +298,9 @@ static void vblur(uint8_t *dst, int dst_linesize, const uint8_t *src, int src_li
                    h, radius, power, temp);
 }
 
-static void draw_slice(AVFilterLink *inlink, int y0, int h0, int slice_dir)
+static void null_draw_slice(AVFilterLink *inlink, int y, int h, int slice_dir) { }
+
+static void end_frame(AVFilterLink *inlink)
 {
     AVFilterContext *ctx = inlink->dst;
     BoxBlurContext *boxblur = ctx->priv;
@@ -306,16 +308,9 @@ static void draw_slice(AVFilterLink *inlink, int y0, int h0, int slice_dir)
     AVFilterBufferRef *inpicref  = inlink ->cur_buf;
     AVFilterBufferRef *outpicref = outlink->out_buf;
     int plane;
-    int cw = inlink->w >> boxblur->hsub, ch = h0 >> boxblur->vsub;
+    int cw = inlink->w >> boxblur->hsub, ch = inlink->h >> boxblur->vsub;
     int w[4] = { inlink->w, cw, cw, inlink->w };
-    int h[4] = { h0, ch, ch, h0 };
-    uint8_t *dst[4], *src[4];
-
-    for (plane = 0; inpicref->data[plane] && plane < 4; plane++) {
-        int y = plane == 1 || plane == 2 ? y0 >> boxblur->vsub : y0;
-        src[plane] = inpicref ->data[plane] + inpicref ->linesize[plane] * y;
-        dst[plane] = outpicref->data[plane] + outpicref->linesize[plane] * y;
-    }
+    int h[4] = { inlink->h, ch, ch, inlink->h };
 
     for (plane = 0; inpicref->data[plane] && plane < 4; plane++)
         hblur(outpicref->data[plane], outpicref->linesize[plane],
@@ -329,7 +324,8 @@ static void draw_slice(AVFilterLink *inlink, int y0, int h0, int slice_dir)
               w[plane], h[plane], boxblur->radius[plane], boxblur->power[plane],
               boxblur->temp);
 
-    avfilter_draw_slice(outlink, y0, h0, slice_dir);
+    avfilter_draw_slice(outlink, 0, inlink->h, 1);
+    avfilter_end_frame(outlink);
 }
 
 AVFilter avfilter_vf_boxblur = {
@@ -340,13 +336,14 @@ AVFilter avfilter_vf_boxblur = {
     .uninit        = uninit,
     .query_formats = query_formats,
 
-    .inputs    = (AVFilterPad[]) {{ .name             = "default",
+    .inputs    = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO,
                                     .config_props     = config_input,
-                                    .draw_slice       = draw_slice,
+                                    .draw_slice       = null_draw_slice,
+                                    .end_frame        = end_frame,
                                     .min_perms        = AV_PERM_READ },
                                   { .name = NULL}},
-    .outputs   = (AVFilterPad[]) {{ .name             = "default",
+    .outputs   = (const AVFilterPad[]) {{ .name       = "default",
                                     .type             = AVMEDIA_TYPE_VIDEO, },
                                   { .name = NULL}},
 };

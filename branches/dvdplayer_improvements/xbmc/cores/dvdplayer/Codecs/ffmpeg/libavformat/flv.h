@@ -63,6 +63,12 @@ enum {
 };
 
 enum {
+    FLV_STREAM_TYPE_VIDEO,
+    FLV_STREAM_TYPE_AUDIO,
+    FLV_STREAM_TYPE_DATA,
+};
+
+enum {
     FLV_MONO   = 0,
     FLV_STEREO = 1,
 };
@@ -98,6 +104,8 @@ enum {
     FLV_CODECID_VP6A    = 5,
     FLV_CODECID_SCREEN2 = 6,
     FLV_CODECID_H264    = 7,
+    FLV_CODECID_REALH263= 8,
+    FLV_CODECID_MPEG4   = 9,
 };
 
 enum {

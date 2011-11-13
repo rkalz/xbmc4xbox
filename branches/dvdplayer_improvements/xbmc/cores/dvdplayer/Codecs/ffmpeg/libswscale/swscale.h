@@ -31,9 +31,9 @@
 #include "libavutil/log.h"
 #include "libavutil/pixfmt.h"
 
-#define LIBSWSCALE_VERSION_MAJOR 0
-#define LIBSWSCALE_VERSION_MINOR 14
-#define LIBSWSCALE_VERSION_MICRO 1
+#define LIBSWSCALE_VERSION_MAJOR 2
+#define LIBSWSCALE_VERSION_MINOR 1
+#define LIBSWSCALE_VERSION_MICRO 0
 
 #define LIBSWSCALE_VERSION_INT  AV_VERSION_INT(LIBSWSCALE_VERSION_MAJOR, \
                                                LIBSWSCALE_VERSION_MINOR, \
@@ -235,17 +235,9 @@ struct SwsContext *sws_getContext(int srcW, int srcH, enum PixelFormat srcFormat
  *                  the destination image
  * @return          the height of the output slice
  */
-int sws_scale(struct SwsContext *context, const uint8_t* const srcSlice[], const int srcStride[],
-              int srcSliceY, int srcSliceH, uint8_t* const dst[], const int dstStride[]);
-
-#if LIBSWSCALE_VERSION_MAJOR < 1
-/**
- * @deprecated Use sws_scale() instead.
- */
-int sws_scale_ordered(struct SwsContext *context, const uint8_t* const src[],
-                      int srcStride[], int srcSliceY, int srcSliceH,
-                      uint8_t* dst[], int dstStride[]) attribute_deprecated;
-#endif
+int sws_scale(struct SwsContext *c, const uint8_t* const srcSlice[],
+              const int srcStride[], int srcSliceY, int srcSliceH,
+              uint8_t* const dst[], const int dstStride[]);
 
 /**
  * @param inv_table the yuv2rgb coefficients, normally ff_yuv2rgb_coeffs[x]
@@ -305,13 +297,6 @@ void sws_shiftVec(SwsVector *a, int shift);
  */
 SwsVector *sws_cloneVec(SwsVector *a);
 
-#if LIBSWSCALE_VERSION_MAJOR < 1
-/**
- * @deprecated Use sws_printVec2() instead.
- */
-attribute_deprecated void sws_printVec(SwsVector *a);
-#endif
-
 /**
  * Prints with av_log() a textual representation of the vector a
  * if log_level <= av_log_level.
@@ -355,7 +340,7 @@ struct SwsContext *sws_getCachedContext(struct SwsContext *context,
  * @param num_pixels number of pixels to convert
  * @param palette    array with [256] entries, which must match color arrangement (RGB or BGR) of src
  */
-void sws_convertPalette8ToPacked32(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette);
+void sws_convertPalette8ToPacked32(const uint8_t *src, uint8_t *dst, int num_pixels, const uint8_t *palette);
 
 /**
  * Converts an 8bit paletted frame into a frame with a color depth of 24 bits.
@@ -367,7 +352,14 @@ void sws_convertPalette8ToPacked32(const uint8_t *src, uint8_t *dst, long num_pi
  * @param num_pixels number of pixels to convert
  * @param palette    array with [256] entries, which must match color arrangement (RGB or BGR) of src
  */
-void sws_convertPalette8ToPacked24(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette);
+void sws_convertPalette8ToPacked24(const uint8_t *src, uint8_t *dst, int num_pixels, const uint8_t *palette);
 
+/**
+ * Get the AVClass for swsContext. It can be used in combination with
+ * AV_OPT_SEARCH_FAKE_OBJ for examining options.
+ *
+ * @see av_opt_find().
+ */
+const AVClass *sws_get_class(void);
 
 #endif /* SWSCALE_SWSCALE_H */

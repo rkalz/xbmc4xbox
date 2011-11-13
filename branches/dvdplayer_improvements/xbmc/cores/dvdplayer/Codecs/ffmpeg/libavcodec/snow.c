@@ -19,6 +19,8 @@
  */
 
 #include "libavutil/intmath.h"
+#include "libavutil/log.h"
+#include "libavutil/opt.h"
 #include "avcodec.h"
 #include "dsputil.h"
 #include "dwt.h"
@@ -199,7 +201,7 @@ typedef struct Plane{
 }Plane;
 
 typedef struct SnowContext{
-
+    AVClass *class;
     AVCodecContext *avctx;
     RangeCoder c;
     DSPContext dsp;
@@ -252,6 +254,7 @@ typedef struct SnowContext{
     int me_cache[ME_CACHE_SIZE];
     int me_cache_generation;
     slice_buffer sb;
+    int memc_only;
 
     MpegEncContext m; // needed for motion estimation, should not be used for anything else, the idea is to eventually make the motion estimation independent of MpegEncContext, so this will be removed then (FIXME/XXX)
 
@@ -1606,8 +1609,6 @@ static void dwt_quantize(SnowContext *s, Plane *p, DWTELEM *buffer, int width, i
 static void halfpel_interpol(SnowContext *s, uint8_t *halfpel[4][4], AVFrame *frame){
     int p,x,y;
 
-    assert(!(s->avctx->flags & CODEC_FLAG_EMU_EDGE));
-
     for(p=0; p<3; p++){
         int is_chroma= !!p;
         int w= s->avctx->width  >>is_chroma;
@@ -1664,7 +1665,7 @@ static int frame_start(SnowContext *s){
    int w= s->avctx->width; //FIXME round up to x16 ?
    int h= s->avctx->height;
 
-    if(s->current_picture.data[0]){
+    if (s->current_picture.data[0] && !(s->avctx->flags&CODEC_FLAG_EMU_EDGE)) {
         s->dsp.draw_edges(s->current_picture.data[0],
                           s->current_picture.linesize[0], w   , h   ,
                           EDGE_WIDTH  , EDGE_WIDTH  , EDGE_TOP | EDGE_BOTTOM);
@@ -1700,7 +1701,7 @@ static int frame_start(SnowContext *s){
         }
     }
 
-    s->current_picture.reference= 1;
+    s->current_picture.reference= 3;
     if(s->avctx->get_buffer(s->avctx, &s->current_picture) < 0){
         av_log(s->avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         return -1;
@@ -3306,7 +3307,7 @@ static void update_last_header_values(SnowContext *s){
 
 static int qscale2qlog(int qscale){
     return rint(QROOT*log(qscale / (float)FF_QP2LAMBDA)/log(2))
-           + 61*QROOT/8; //<64 >60
+           + 61*QROOT/8; ///< 64 > 60
 }
 
 static int ratecontrol_1pass(SnowContext *s, AVFrame *pict)
@@ -3518,7 +3519,7 @@ redo_frame:
         int x, y;
 //        int bits= put_bits_count(&s->c.pb);
 
-        if(!(avctx->flags2 & CODEC_FLAG2_MEMC_ONLY)){
+        if (!s->memc_only) {
             //FIXME optimize
             if(pict->data[plane_index]) //FIXME gray hack
                 for(y=0; y<h; y++){
@@ -3676,6 +3677,20 @@ static av_cold int encode_end(AVCodecContext *avctx)
     return 0;
 }
 
+#define OFFSET(x) offsetof(SnowContext, x)
+#define VE AV_OPT_FLAG_VIDEO_PARAM | AV_OPT_FLAG_ENCODING_PARAM
+static const AVOption options[] = {
+    { "memc_only",      "Only do ME/MC (I frames -> ref, P frame -> ME+MC).",   OFFSET(memc_only), AV_OPT_TYPE_INT, { 0 }, 0, 1, VE },
+    { NULL },
+};
+
+static const AVClass snowenc_class = {
+    .class_name = "snow encoder",
+    .item_name  = av_default_item_name,
+    .option     = options,
+    .version    = LIBAVUTIL_VERSION_INT,
+};
+
 AVCodec ff_snow_encoder = {
     .name           = "snow",
     .type           = AVMEDIA_TYPE_VIDEO,
@@ -3685,6 +3700,7 @@ AVCodec ff_snow_encoder = {
     .encode         = encode_frame,
     .close          = encode_end,
     .long_name = NULL_IF_CONFIG_SMALL("Snow"),
+    .priv_class     = &snowenc_class,
 };
 #endif
 

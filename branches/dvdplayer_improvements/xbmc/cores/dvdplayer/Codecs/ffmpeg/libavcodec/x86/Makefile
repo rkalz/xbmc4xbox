@@ -9,6 +9,8 @@ YASM-OBJS-FFT-$(HAVE_SSE)              += x86/fft_sse.o
 YASM-OBJS-$(CONFIG_FFT)                += x86/fft_mmx.o                 \
                                           $(YASM-OBJS-FFT-yes)
 
+YASM-OBJS-$(CONFIG_DWT)                += x86/dwt_yasm.o
+
 MMX-OBJS-$(CONFIG_H264DSP)             += x86/h264dsp_mmx.o
 YASM-OBJS-$(CONFIG_H264DSP)            += x86/h264_deblock.o            \
                                           x86/h264_deblock_10bit.o      \
@@ -21,18 +23,30 @@ YASM-OBJS-$(CONFIG_H264PRED)           += x86/h264_intrapred.o          \
                                           x86/h264_intrapred_10bit.o
 MMX-OBJS-$(CONFIG_H264PRED)            += x86/h264_intrapred_init.o
 
+MMX-OBJS-$(CONFIG_RV40_DECODER)        += x86/rv40dsp.o                 \
+
 YASM-OBJS-$(CONFIG_VC1_DECODER)        += x86/vc1dsp_yasm.o
+
+YASM-OBJS-$(CONFIG_DIRAC_DECODER)      += x86/diracdsp_mmx.o x86/diracdsp_yasm.o
 
 MMX-OBJS-$(CONFIG_AC3DSP)              += x86/ac3dsp_mmx.o
 YASM-OBJS-$(CONFIG_AC3DSP)             += x86/ac3dsp.o
 MMX-OBJS-$(CONFIG_CAVS_DECODER)        += x86/cavsdsp_mmx.o
 MMX-OBJS-$(CONFIG_MPEGAUDIODSP)        += x86/mpegaudiodec_mmx.o
+YASM-OBJS-$(CONFIG_MPEGAUDIODSP)       += x86/imdct36_sse.o
 MMX-OBJS-$(CONFIG_PNG_DECODER)         += x86/png_mmx.o
 MMX-OBJS-$(CONFIG_ENCODERS)            += x86/dsputilenc_mmx.o
 YASM-OBJS-$(CONFIG_ENCODERS)           += x86/dsputilenc_yasm.o
 MMX-OBJS-$(CONFIG_GPL)                 += x86/idct_mmx.o
 MMX-OBJS-$(CONFIG_LPC)                 += x86/lpc_mmx.o
-MMX-OBJS-$(CONFIG_DWT)                 += x86/snowdsp_mmx.o
+YASM-OBJS-$(CONFIG_PRORES_LGPL_DECODER)     += x86/proresdsp.o
+MMX-OBJS-$(CONFIG_PRORES_LGPL_DECODER)      += x86/proresdsp-init.o
+YASM-OBJS-$(CONFIG_PRORES_DECODER)     += x86/proresdsp.o
+MMX-OBJS-$(CONFIG_PRORES_DECODER)      += x86/proresdsp-init.o
+MMX-OBJS-$(CONFIG_DWT)                 += x86/snowdsp_mmx.o \
+                                          x86/dwt.o
+YASM-OBJS-$(CONFIG_V210_DECODER)       += x86/v210.o
+MMX-OBJS-$(CONFIG_V210_DECODER)        += x86/v210-init.o
 MMX-OBJS-$(CONFIG_VC1_DECODER)         += x86/vc1dsp_mmx.o
 YASM-OBJS-$(CONFIG_VP3_DECODER)        += x86/vp3dsp.o
 YASM-OBJS-$(CONFIG_VP5_DECODER)        += x86/vp3dsp.o

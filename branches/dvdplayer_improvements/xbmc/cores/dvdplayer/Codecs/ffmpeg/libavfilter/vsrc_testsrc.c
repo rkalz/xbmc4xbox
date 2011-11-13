@@ -24,7 +24,7 @@
  * Misc test sources.
  *
  * testsrc is based on the test pattern generator demuxer by Nicolas George:
- * http://lists.mplayerhq.hu/pipermail/ffmpeg-devel/2007-October/037845.html
+ * http://lists.ffmpeg.org/pipermail/ffmpeg-devel/2007-October/037845.html
  *
  * rgbtestsrc is ported from MPlayer libmpcodecs/vf_rgbtest.c by
  * Michael Niedermayer.
@@ -46,6 +46,8 @@ typedef struct {
     char *size;                 ///< video frame size
     char *rate;                 ///< video frame rate
     char *duration;             ///< total duration of the generated video
+    AVRational sar;             ///< sample aspect ratio
+
     void (* fill_picture_fn)(AVFilterContext *ctx, AVFilterBufferRef *picref);
 
     /* only used by rgbtest */
@@ -55,11 +57,12 @@ typedef struct {
 #define OFFSET(x) offsetof(TestSourceContext, x)
 
 static const AVOption testsrc_options[]= {
-    { "size",     "set video size",     OFFSET(size),     FF_OPT_TYPE_STRING, {.str = "320x240"}, 0, 0 },
-    { "s",        "set video size",     OFFSET(size),     FF_OPT_TYPE_STRING, {.str = "320x240"}, 0, 0 },
-    { "rate",     "set video rate",     OFFSET(rate),     FF_OPT_TYPE_STRING, {.str = "25"},      0, 0 },
-    { "r",        "set video rate",     OFFSET(rate),     FF_OPT_TYPE_STRING, {.str = "25"},      0, 0 },
-    { "duration", "set video duration", OFFSET(duration), FF_OPT_TYPE_STRING, {.str = NULL},      0, 0 },
+    { "size",     "set video size",     OFFSET(size),     AV_OPT_TYPE_STRING, {.str = "320x240"}, 0, 0 },
+    { "s",        "set video size",     OFFSET(size),     AV_OPT_TYPE_STRING, {.str = "320x240"}, 0, 0 },
+    { "rate",     "set video rate",     OFFSET(rate),     AV_OPT_TYPE_STRING, {.str = "25"},      0, 0 },
+    { "r",        "set video rate",     OFFSET(rate),     AV_OPT_TYPE_STRING, {.str = "25"},      0, 0 },
+    { "duration", "set video duration", OFFSET(duration), AV_OPT_TYPE_STRING, {.str = NULL},      0, 0 },
+    { "sar",      "set video sample aspect ratio", OFFSET(sar), AV_OPT_TYPE_RATIONAL, {.dbl= 1},  0, INT_MAX },
     { NULL },
 };
 
@@ -70,7 +73,7 @@ static av_cold int init(AVFilterContext *ctx, const char *args, void *opaque)
     int64_t duration = -1;
     int ret = 0;
 
-    av_opt_set_defaults2(test, 0, 0);
+    av_opt_set_defaults(test);
 
     if ((ret = (av_set_options_string(test, args, "=", ":"))) < 0) {
         av_log(ctx, AV_LOG_ERROR, "Error parsing options string: '%s'\n", args);
@@ -100,9 +103,10 @@ static av_cold int init(AVFilterContext *ctx, const char *args, void *opaque)
     test->nb_frame = 0;
     test->pts = 0;
 
-    av_log(ctx, AV_LOG_INFO, "size:%dx%d rate:%d/%d duration:%f\n",
+    av_log(ctx, AV_LOG_INFO, "size:%dx%d rate:%d/%d duration:%f sar:%d/%d\n",
            test->w, test->h, frame_rate_q.num, frame_rate_q.den,
-           duration < 0 ? -1 : test->max_pts * av_q2d(test->time_base));
+           duration < 0 ? -1 : test->max_pts * av_q2d(test->time_base),
+           test->sar.num, test->sar.den);
     return 0;
 }
 
@@ -112,6 +116,7 @@ static int config_props(AVFilterLink *outlink)
 
     outlink->w = test->w;
     outlink->h = test->h;
+    outlink->sample_aspect_ratio = test->sar;
     outlink->time_base = test->time_base;
 
     return 0;
@@ -122,13 +127,18 @@ static int request_frame(AVFilterLink *outlink)
     TestSourceContext *test = outlink->src->priv;
     AVFilterBufferRef *picref;
 
-    if (test->max_pts >= 0 && test->pts > test->max_pts)
+    if (test->max_pts >= 0 && test->pts >= test->max_pts)
         return AVERROR_EOF;
     picref = avfilter_get_video_buffer(outlink, AV_PERM_WRITE,
                                        test->w, test->h);
     picref->pts = test->pts++;
-    test->nb_frame++;
+    picref->pos = -1;
+    picref->video->key_frame = 1;
+    picref->video->interlaced = 0;
+    picref->video->pict_type = AV_PICTURE_TYPE_I;
+    picref->video->sample_aspect_ratio = test->sar;
     test->fill_picture_fn(outlink->src, picref);
+    test->nb_frame++;
 
     avfilter_start_frame(outlink, avfilter_ref_buffer(picref, ~0));
     avfilter_draw_slice(outlink, 0, picref->video->h, 1);
@@ -138,6 +148,46 @@ static int request_frame(AVFilterLink *outlink)
     return 0;
 }
 
+#if CONFIG_NULLSRC_FILTER
+
+static const char *nullsrc_get_name(void *ctx)
+{
+    return "nullsrc";
+}
+
+static const AVClass nullsrc_class = {
+    .class_name = "NullSourceContext",
+    .item_name  = nullsrc_get_name,
+    .option     = testsrc_options,
+};
+
+static void nullsrc_fill_picture(AVFilterContext *ctx, AVFilterBufferRef *picref) { }
+
+static av_cold int nullsrc_init(AVFilterContext *ctx, const char *args, void *opaque)
+{
+    TestSourceContext *test = ctx->priv;
+
+    test->class = &nullsrc_class;
+    test->fill_picture_fn = nullsrc_fill_picture;
+    return init(ctx, args, opaque);
+}
+
+AVFilter avfilter_vsrc_nullsrc = {
+    .name        = "nullsrc",
+    .description = NULL_IF_CONFIG_SMALL("Null video source, return unprocessed video frames."),
+    .init       = nullsrc_init,
+    .priv_size  = sizeof(TestSourceContext),
+
+    .inputs    = (const AVFilterPad[]) {{ .name = NULL}},
+    .outputs   = (const AVFilterPad[]) {{ .name = "default",
+                                    .type = AVMEDIA_TYPE_VIDEO,
+                                    .request_frame = request_frame,
+                                    .config_props  = config_props, },
+                                  { .name = NULL}},
+};
+
+#endif /* CONFIG_NULLSRC_FILTER */
+
 #if CONFIG_TESTSRC_FILTER
 
 static const char *testsrc_get_name(void *ctx)
@@ -146,9 +196,9 @@ static const char *testsrc_get_name(void *ctx)
 }
 
 static const AVClass testsrc_class = {
-    "TestSourceContext",
-    testsrc_get_name,
-    testsrc_options
+    .class_name = "TestSourceContext",
+    .item_name  = testsrc_get_name,
+    .option     = testsrc_options,
 };
 
 /**
@@ -273,7 +323,7 @@ static void test_fill_picture(AVFilterContext *ctx, AVFilterBufferRef *picref)
     }
 
     /* draw sliding color line */
-    p = data + picref->linesize[0] * height * 3/4;
+    p0 = p = data + picref->linesize[0] * height * 3/4;
     grad = (256 * test->nb_frame * test->time_base.num / test->time_base.den) %
         GRADIENT_SIZE;
     rgrad = 0;
@@ -301,8 +351,9 @@ static void test_fill_picture(AVFilterContext *ctx, AVFilterBufferRef *picref)
         if (grad >= GRADIENT_SIZE)
             grad -= GRADIENT_SIZE;
     }
+    p = p0;
     for (y = height / 8; y > 0; y--) {
-        memcpy(p, p - picref->linesize[0], 3 * width);
+        memcpy(p+picref->linesize[0], p, 3 * width);
         p += picref->linesize[0];
     }
 
@@ -349,9 +400,9 @@ AVFilter avfilter_vsrc_testsrc = {
 
     .query_formats   = test_query_formats,
 
-    .inputs    = (AVFilterPad[]) {{ .name = NULL}},
+    .inputs    = (const AVFilterPad[]) {{ .name = NULL}},
 
-    .outputs   = (AVFilterPad[]) {{ .name = "default",
+    .outputs   = (const AVFilterPad[]) {{ .name = "default",
                                     .type = AVMEDIA_TYPE_VIDEO,
                                     .request_frame = request_frame,
                                     .config_props  = config_props, },
@@ -368,9 +419,9 @@ static const char *rgbtestsrc_get_name(void *ctx)
 }
 
 static const AVClass rgbtestsrc_class = {
-    "RGBTestSourceContext",
-    rgbtestsrc_get_name,
-    testsrc_options
+    .class_name = "RGBTestSourceContext",
+    .item_name  = rgbtestsrc_get_name,
+    .option     = testsrc_options,
 };
 
 #define R 0
@@ -476,9 +527,9 @@ AVFilter avfilter_vsrc_rgbtestsrc = {
 
     .query_formats   = rgbtest_query_formats,
 
-    .inputs    = (AVFilterPad[]) {{ .name = NULL}},
+    .inputs    = (const AVFilterPad[]) {{ .name = NULL}},
 
-    .outputs   = (AVFilterPad[]) {{ .name = "default",
+    .outputs   = (const AVFilterPad[]) {{ .name = "default",
                                     .type = AVMEDIA_TYPE_VIDEO,
                                     .request_frame = request_frame,
                                     .config_props  = rgbtest_config_props, },

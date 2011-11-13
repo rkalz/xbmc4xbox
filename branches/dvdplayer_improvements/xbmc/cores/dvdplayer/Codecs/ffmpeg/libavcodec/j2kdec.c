@@ -64,9 +64,9 @@ typedef struct {
     J2kCodingStyle codsty[4];
     J2kQuantStyle  qntsty[4];
 
-    uint8_t *buf_start;
-    uint8_t *buf;
-    uint8_t *buf_end;
+    const uint8_t *buf_start;
+    const uint8_t *buf;
+    const uint8_t *buf_end;
     int bit_index;
 
     int16_t curtileno;
@@ -701,9 +701,9 @@ static int decode_cblk(J2kDecoderContext *s, J2kCodingStyle *codsty, J2kT1Contex
     for (y = 0; y < height; y++)
         memset(t1->data[y], 0, width*sizeof(int));
 
-    ff_mqc_initdec(&t1->mqc, cblk->data);
     cblk->data[cblk->length] = 0xff;
     cblk->data[cblk->length+1] = 0xff;
+    ff_mqc_initdec(&t1->mqc, cblk->data);
 
     while(passno--){
         switch(pass_t){
@@ -903,13 +903,15 @@ static int decode_codestream(J2kDecoderContext *s)
 
     for (;;){
         int marker, len, ret = 0;
-        uint8_t *oldbuf;
+        const uint8_t *oldbuf;
         if (s->buf_end - s->buf < 2){
             av_log(s->avctx, AV_LOG_ERROR, "Missing EOC\n");
             break;
         }
 
         marker = bytestream_get_be16(&s->buf);
+        if(s->avctx->debug & FF_DEBUG_STARTCODE)
+            av_log(s->avctx, AV_LOG_DEBUG, "marker 0x%.4X at pos 0x%x\n", marker, s->buf - s->buf_start - 4);
         oldbuf = s->buf;
 
         if (marker == J2K_SOD){
@@ -948,7 +950,7 @@ static int decode_codestream(J2kDecoderContext *s)
                 // the comment is ignored
                 s->buf += len - 2; break;
             default:
-                av_log(s->avctx, AV_LOG_ERROR, "unsupported marker 0x%.4X at pos 0x%x\n", marker, s->buf - s->buf_start - 4);
+                av_log(s->avctx, AV_LOG_ERROR, "unsupported marker 0x%.4X at pos 0x%tx\n", marker, s->buf - s->buf_start - 4);
                 s->buf += len - 2; break;
         }
         if (s->buf - oldbuf != len || ret){
@@ -961,18 +963,20 @@ static int decode_codestream(J2kDecoderContext *s)
 
 static int jp2_find_codestream(J2kDecoderContext *s)
 {
-    int32_t atom_size;
+    uint32_t atom_size;
     int found_codestream = 0, search_range = 10;
 
     // skip jpeg2k signature atom
     s->buf += 12;
 
-    while(!found_codestream && search_range) {
+    while(!found_codestream && search_range && s->buf_end - s->buf >= 8) {
         atom_size = AV_RB32(s->buf);
         if(AV_RB32(s->buf + 4) == JP2_CODESTREAM) {
             found_codestream = 1;
             s->buf += 8;
         } else {
+            if (s->buf_end - s->buf < atom_size)
+                return 0;
             s->buf += atom_size;
             search_range--;
         }
@@ -1005,7 +1009,8 @@ static int decode_frame(AVCodecContext *avctx,
         return AVERROR(EINVAL);
 
     // check if the image is in jp2 format
-    if((AV_RB32(s->buf) == 12) && (AV_RB32(s->buf + 4) == JP2_SIG_TYPE) &&
+    if(s->buf_end - s->buf >= 12 &&
+       (AV_RB32(s->buf) == 12) && (AV_RB32(s->buf + 4) == JP2_SIG_TYPE) &&
        (AV_RB32(s->buf + 8) == JP2_SIG_VALUE)) {
         if(!jp2_find_codestream(s)) {
             av_log(avctx, AV_LOG_ERROR, "couldn't find jpeg2k codestream atom\n");
@@ -1062,6 +1067,7 @@ AVCodec ff_jpeg2000_decoder = {
     decode_end,
     decode_frame,
     .capabilities = CODEC_CAP_EXPERIMENTAL,
+    .long_name = NULL_IF_CONFIG_SMALL("JPEG 2000"),
     .pix_fmts =
         (enum PixelFormat[]) {PIX_FMT_GRAY8, PIX_FMT_RGB24, -1}
 };

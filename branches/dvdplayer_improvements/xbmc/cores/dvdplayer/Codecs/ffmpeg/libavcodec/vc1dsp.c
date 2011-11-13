@@ -688,6 +688,26 @@ static void put_no_rnd_vc1_chroma_mc8_c(uint8_t *dst/*align 8*/, uint8_t *src/*a
     }
 }
 
+static void put_no_rnd_vc1_chroma_mc4_c(uint8_t *dst, uint8_t *src, int stride, int h, int x, int y){
+    const int A=(8-x)*(8-y);
+    const int B=(  x)*(8-y);
+    const int C=(8-x)*(  y);
+    const int D=(  x)*(  y);
+    int i;
+
+    assert(x<8 && y<8 && x>=0 && y>=0);
+
+    for(i=0; i<h; i++)
+    {
+        dst[0] = (A*src[0] + B*src[1] + C*src[stride+0] + D*src[stride+1] + 32 - 4) >> 6;
+        dst[1] = (A*src[1] + B*src[2] + C*src[stride+1] + D*src[stride+2] + 32 - 4) >> 6;
+        dst[2] = (A*src[2] + B*src[3] + C*src[stride+2] + D*src[stride+3] + 32 - 4) >> 6;
+        dst[3] = (A*src[3] + B*src[4] + C*src[stride+3] + D*src[stride+4] + 32 - 4) >> 6;
+        dst+= stride;
+        src+= stride;
+    }
+}
+
 #define avg2(a,b) ((a+b+1)>>1)
 static void avg_no_rnd_vc1_chroma_mc8_c(uint8_t *dst/*align 8*/, uint8_t *src/*align 1*/, int stride, int h, int x, int y){
     const int A=(8-x)*(8-y);
@@ -712,6 +732,66 @@ static void avg_no_rnd_vc1_chroma_mc8_c(uint8_t *dst/*align 8*/, uint8_t *src/*a
         src+= stride;
     }
 }
+
+#if CONFIG_WMV3IMAGE_DECODER || CONFIG_VC1IMAGE_DECODER
+
+static void sprite_h_c(uint8_t *dst, const uint8_t *src, int offset, int advance, int count)
+{
+    while (count--) {
+        int a = src[(offset >> 16)    ];
+        int b = src[(offset >> 16) + 1];
+        *dst++ = a + ((b - a) * (offset&0xFFFF) >> 16);
+        offset += advance;
+    }
+}
+
+static av_always_inline void sprite_v_template(uint8_t *dst, const uint8_t *src1a, const uint8_t *src1b, int offset1,
+                                            int two_sprites, const uint8_t *src2a, const uint8_t *src2b, int offset2,
+                                            int alpha, int scaled, int width)
+{
+    int a1, b1, a2, b2;
+    while (width--) {
+        a1 = *src1a++;
+        if (scaled) {
+            b1 = *src1b++;
+            a1 = a1 + ((b1 - a1) * offset1 >> 16);
+        }
+        if (two_sprites) {
+            a2 = *src2a++;
+            if (scaled > 1) {
+                b2 = *src2b++;
+                a2 = a2 + ((b2 - a2) * offset2 >> 16);
+            }
+            a1 = a1 + ((a2 - a1) * alpha >> 16);
+        }
+        *dst++ = a1;
+    }
+}
+
+static void sprite_v_single_c(uint8_t *dst, const uint8_t *src1a, const uint8_t *src1b, int offset, int width)
+{
+    sprite_v_template(dst, src1a, src1b, offset, 0, NULL, NULL, 0, 0, 1, width);
+}
+
+static void sprite_v_double_noscale_c(uint8_t *dst, const uint8_t *src1a, const uint8_t *src2a, int alpha, int width)
+{
+    sprite_v_template(dst, src1a, NULL, 0, 1, src2a, NULL, 0, alpha, 0, width);
+}
+
+static void sprite_v_double_onescale_c(uint8_t *dst, const uint8_t *src1a, const uint8_t *src1b, int offset1,
+                                                     const uint8_t *src2a, int alpha, int width)
+{
+    sprite_v_template(dst, src1a, src1b, offset1, 1, src2a, NULL, 0, alpha, 1, width);
+}
+
+static void sprite_v_double_twoscale_c(uint8_t *dst, const uint8_t *src1a, const uint8_t *src1b, int offset1,
+                                                     const uint8_t *src2a, const uint8_t *src2b, int offset2,
+                                       int alpha, int width)
+{
+    sprite_v_template(dst, src1a, src1b, offset1, 1, src2a, src2b, offset2, alpha, 2, width);
+}
+
+#endif
 
 av_cold void ff_vc1dsp_init(VC1DSPContext* dsp) {
     dsp->vc1_inv_trans_8x8 = vc1_inv_trans_8x8_c;
@@ -769,6 +849,15 @@ av_cold void ff_vc1dsp_init(VC1DSPContext* dsp) {
 
     dsp->put_no_rnd_vc1_chroma_pixels_tab[0]= put_no_rnd_vc1_chroma_mc8_c;
     dsp->avg_no_rnd_vc1_chroma_pixels_tab[0]= avg_no_rnd_vc1_chroma_mc8_c;
+    dsp->put_no_rnd_vc1_chroma_pixels_tab[1] = put_no_rnd_vc1_chroma_mc4_c;
+
+#if CONFIG_WMV3IMAGE_DECODER || CONFIG_VC1IMAGE_DECODER
+    dsp->sprite_h = sprite_h_c;
+    dsp->sprite_v_single = sprite_v_single_c;
+    dsp->sprite_v_double_noscale = sprite_v_double_noscale_c;
+    dsp->sprite_v_double_onescale = sprite_v_double_onescale_c;
+    dsp->sprite_v_double_twoscale = sprite_v_double_twoscale_c;
+#endif
 
     if (HAVE_ALTIVEC)
         ff_vc1dsp_init_altivec(dsp);

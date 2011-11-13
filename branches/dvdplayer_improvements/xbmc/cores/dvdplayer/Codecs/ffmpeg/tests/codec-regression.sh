@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# automatic regression test for ffmpeg
+# automatic regression test for avconv
 #
 #
 #set -x
@@ -13,10 +13,10 @@ eval do_$test=y
 
 # generate reference for quality check
 if [ -n "$do_vref" ]; then
-do_ffmpeg $raw_ref -f image2 -vcodec pgmyuv -i $raw_src -an -f rawvideo
+do_avconv $raw_ref -f image2 -vcodec pgmyuv -i $raw_src -an -f rawvideo
 fi
 if [ -n "$do_aref" ]; then
-do_ffmpeg $pcm_ref -ab 128k -ac 2 -ar 44100 -f s16le -i $pcm_src -f wav
+do_avconv $pcm_ref -b 128k -ac 2 -ar 44100 -f s16le -i $pcm_src -f wav
 fi
 
 if [ -n "$do_mpeg" ] ; then
@@ -58,7 +58,7 @@ do_video_decoding
 
 # mpeg2 encoding interlaced
 file=${outfile}mpeg2reuse.mpg
-do_ffmpeg $file $DEC_OPTS -me_threshold 256 -i ${target_path}/${outfile}mpeg2thread.mpg $ENC_OPTS -sameq -me_threshold 256 -mb_threshold 1024 -vcodec mpeg2video -f mpeg1video -bf 2 -flags +ildct+ilme -threads 4
+do_avconv $file $DEC_OPTS -me_threshold 256 -i ${target_path}/${outfile}mpeg2thread.mpg $ENC_OPTS -same_quant -me_threshold 256 -mb_threshold 1024 -vcodec mpeg2video -f mpeg1video -bf 2 -flags +ildct+ilme -threads 4
 do_video_decoding
 fi
 
@@ -112,6 +112,11 @@ do_video_encoding huffyuv.avi "-an -vcodec huffyuv -pix_fmt yuv422p -sws_flags n
 do_video_decoding "" "-strict -2 -pix_fmt yuv420p -sws_flags neighbor+bitexact"
 fi
 
+if [ -n "$do_amv" ] ; then
+do_video_encoding amv.avi "-an -vcodec amv"
+do_video_decoding
+fi
+
 if [ -n "$do_rc" ] ; then
 do_video_encoding mpeg4-rc.avi "-b 400k -bf 2 -an -vcodec mpeg4"
 do_video_decoding
@@ -154,6 +159,11 @@ fi
 if [ -n "$do_mjpeg" ] ; then
 do_video_encoding mjpeg.avi "-qscale 9 -an -vcodec mjpeg -pix_fmt yuvj420p"
 do_video_decoding "" "-pix_fmt yuv420p"
+fi
+
+if [ -n "$do_jpeg2000" ] ; then
+do_video_encoding jpeg2000.avi "-qscale 7 -an -vcodec j2k -strict experimental -pix_fmt rgb24"
+do_video_decoding "-vcodec j2k -strict experimental" "-pix_fmt yuv420p"
 fi
 
 if [ -n "$do_ljpeg" ] ; then
@@ -240,6 +250,11 @@ do_video_encoding dnxhd-720p-10bit.dnxhd "-s hd720 -b 90M -pix_fmt yuv422p10 -vf
 do_video_decoding "" "-s cif -pix_fmt yuv420p"
 fi
 
+if [ -n "$do_prores" ] ; then
+do_video_encoding prores.mov "-vcodec prores"
+do_video_decoding "" "-pix_fmt yuv420p"
+fi
+
 if [ -n "$do_svq1" ] ; then
 do_video_encoding svq1.mov "-an -vcodec svq1 -qscale 3 -pix_fmt yuv410p"
 do_video_decoding "" "-pix_fmt yuv420p"
@@ -252,7 +267,8 @@ fi
 
 if [ -n "$do_flashsv2" ] ; then
 do_video_encoding flashsv2.flv "-an -vcodec flashsv2 -sws_flags neighbor+full_chroma_int+accurate_rnd+bitexact -strict experimental"
-#do_video_decoding "" "-pix_fmt yuv420p -sws_flags area+accurate_rnd+bitexact"
+do_video_encoding flashsv2I.flv "-an -vcodec flashsv2 -sws_flags neighbor+full_chroma_int+accurate_rnd+bitexact -strict experimental -g 1"
+do_video_decoding "" "-pix_fmt yuv420p -sws_flags area+accurate_rnd+bitexact"
 fi
 
 if [ -n "$do_roq" ] ; then
@@ -293,8 +309,13 @@ do_audio_encoding ac3.rm "-vn -acodec ac3_fixed"
 #$tiny_psnr $pcm_dst $pcm_ref 2 1024
 fi
 
+if [ -n "$do_g723_1" ] ; then
+do_audio_encoding g723_1.tco "-b:a 6.3k -ac 1 -ar 8000 -acodec g723_1"
+do_audio_decoding
+fi
+
 if [ -n "$do_g726" ] ; then
-do_audio_encoding g726.wav "-ab 32k -ac 1 -ar 8000 -acodec g726"
+do_audio_encoding g726.wav "-b:a 32k -ac 1 -ar 8000 -acodec g726"
 do_audio_decoding
 fi
 
@@ -335,12 +356,12 @@ fi
 
 if [ -n "$do_wmav1" ] ; then
 do_audio_encoding wmav1.asf "-acodec wmav1"
-do_ffmpeg_nomd5 $pcm_dst $DEC_OPTS -i $target_path/$file -f wav
+do_avconv_nomd5 $pcm_dst $DEC_OPTS -i $target_path/$file -f wav
 $tiny_psnr $pcm_dst $pcm_ref 2 8192
 fi
 if [ -n "$do_wmav2" ] ; then
 do_audio_encoding wmav2.asf "-acodec wmav2"
-do_ffmpeg_nomd5 $pcm_dst $DEC_OPTS -i $target_path/$file -f wav
+do_avconv_nomd5 $pcm_dst $DEC_OPTS -i $target_path/$file -f wav
 $tiny_psnr $pcm_dst $pcm_ref 2 8192
 fi
 
@@ -377,6 +398,5 @@ do_audio_enc_dec au  flt pcm_f32be
 do_audio_enc_dec wav flt pcm_f32le
 do_audio_enc_dec au  dbl pcm_f64be
 do_audio_enc_dec wav dbl pcm_f64le
-do_audio_enc_dec wav s16 pcm_zork
 do_audio_enc_dec 302 s16 pcm_s24daud "-ac 6 -ar 96000"
 fi

@@ -25,6 +25,7 @@
  */
 
 #include "avcodec.h"
+#include "internal.h"
 #include "put_bits.h"
 
 #define FRAC_BITS   15   /* fractional bits for sb_samples and dct */
@@ -83,9 +84,9 @@ static av_cold int MPA_encode_init(AVCodecContext *avctx)
     /* encoding freq */
     s->lsf = 0;
     for(i=0;i<3;i++) {
-        if (ff_mpa_freq_tab[i] == freq)
+        if (avpriv_mpa_freq_tab[i] == freq)
             break;
-        if ((ff_mpa_freq_tab[i] / 2) == freq) {
+        if ((avpriv_mpa_freq_tab[i] / 2) == freq) {
             s->lsf = 1;
             break;
         }
@@ -98,7 +99,7 @@ static av_cold int MPA_encode_init(AVCodecContext *avctx)
 
     /* encoding bitrate & frequency */
     for(i=0;i<15;i++) {
-        if (ff_mpa_bitrate_tab[s->lsf][1][i] == bitrate)
+        if (avpriv_mpa_bitrate_tab[s->lsf][1][i] == bitrate)
             break;
     }
     if (i == 15){
@@ -396,10 +397,8 @@ static void compute_scale_factors(unsigned char scale_code[SBLIMIT],
                 index = 62; /* value 63 is not allowed */
             }
 
-#if 0
-            printf("%2d:%d in=%x %x %d\n",
-                   j, i, vmax, scale_factor_table[index], index);
-#endif
+            av_dlog(NULL, "%2d:%d in=%x %x %d\n",
+                    j, i, vmax, scale_factor_table[index], index);
             /* store the scale factor */
             assert(index >=0 && index <= 63);
             sf[i] = index;
@@ -467,10 +466,8 @@ static void compute_scale_factors(unsigned char scale_code[SBLIMIT],
             code = 0;           /* kill warning */
         }
 
-#if 0
-        printf("%d: %2d %2d %2d %d %d -> %d\n", j,
-               sf[0], sf[1], sf[2], d1, d2, code);
-#endif
+        av_dlog(NULL, "%d: %2d %2d %2d %d %d -> %d\n", j,
+                sf[0], sf[1], sf[2], d1, d2, code);
         scale_code[j] = code;
         sf += 3;
     }
@@ -763,6 +760,11 @@ static av_cold int MPA_encode_close(AVCodecContext *avctx)
     return 0;
 }
 
+static const AVCodecDefault mp2_defaults[] = {
+    { "b",    "128k" },
+    { NULL },
+};
+
 AVCodec ff_mp2_encoder = {
     .name           = "mp2",
     .type           = AVMEDIA_TYPE_AUDIO,
@@ -774,4 +776,5 @@ AVCodec ff_mp2_encoder = {
     .sample_fmts = (const enum AVSampleFormat[]){AV_SAMPLE_FMT_S16,AV_SAMPLE_FMT_NONE},
     .supported_samplerates= (const int[]){44100, 48000,  32000, 22050, 24000, 16000, 0},
     .long_name = NULL_IF_CONFIG_SMALL("MP2 (MPEG audio layer 2)"),
+    .defaults       = mp2_defaults,
 };

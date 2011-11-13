@@ -89,7 +89,8 @@ static void fill_colmap(H264Context *h, int map[2][16+32], int list, int field, 
             for(j=start; j<end; j++){
                 if (4 * h->ref_list[0][j].frame_num + (h->ref_list[0][j].f.reference & 3) == poc) {
                     int cur_ref= mbafi ? (j-16)^field : j;
-                    map[list][2*old_ref + (rfield^field) + 16] = cur_ref;
+                    if(ref1->mbaff)
+                        map[list][2*old_ref + (rfield^field) + 16] = cur_ref;
                     if(rfield == field || !interl)
                         map[list][old_ref] = cur_ref;
                     break;
@@ -147,7 +148,7 @@ static void await_reference_mb_row(H264Context * const h, Picture *ref, int mb_y
     int ref_field_picture = ref->field_picture;
     int ref_height = 16*h->s.mb_height >> ref_field_picture;
 
-    if(!HAVE_PTHREADS || !(h->s.avctx->active_thread_type&FF_THREAD_FRAME))
+    if(!HAVE_THREADS || !(h->s.avctx->active_thread_type&FF_THREAD_FRAME))
         return;
 
     //FIXME it can be safe to access mb stuff
@@ -172,7 +173,7 @@ static void pred_spatial_direct_motion(H264Context * const h, int *mb_type){
     int mv[2];
     int list;
 
-    assert(h->ref_list[1][0].reference&3);
+    assert(h->ref_list[1][0].f.reference & 3);
 
     await_reference_mb_row(h, &h->ref_list[1][0], s->mb_y + !!IS_INTERLACED(*mb_type));
 
@@ -416,7 +417,7 @@ static void pred_temp_direct_motion(H264Context * const h, int *mb_type){
     unsigned int sub_mb_type;
     int i8, i4;
 
-    assert(h->ref_list[1][0].reference&3);
+    assert(h->ref_list[1][0].f.reference & 3);
 
     await_reference_mb_row(h, &h->ref_list[1][0], s->mb_y + !!IS_INTERLACED(*mb_type));
 

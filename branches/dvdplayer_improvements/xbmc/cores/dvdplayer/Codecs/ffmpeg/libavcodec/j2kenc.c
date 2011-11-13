@@ -59,7 +59,7 @@ typedef struct {
 
 typedef struct {
     AVCodecContext *avctx;
-    AVFrame *picture;
+    AVFrame picture;
 
     int width, height; ///< image width and height
     uint8_t cbps[4]; ///< bits per sample in particular components
@@ -285,7 +285,11 @@ static int put_cod(J2kEncoderContext *s)
     // SGcod
     bytestream_put_byte(&s->buf, 0); // progression level
     bytestream_put_be16(&s->buf, 1); // num of layers
-    bytestream_put_byte(&s->buf, 0); // multiple component transformation
+    if(s->avctx->pix_fmt == PIX_FMT_YUV444P){
+        bytestream_put_byte(&s->buf, 2); // ICT
+    }else{
+        bytestream_put_byte(&s->buf, 0); // unspecified
+    }
     // SPcod
     bytestream_put_byte(&s->buf, codsty->nreslevels - 1); // num of decomp. levels
     bytestream_put_byte(&s->buf, codsty->log2_cblk_width-2); // cblk width
@@ -326,7 +330,7 @@ static uint8_t *put_sot(J2kEncoderContext *s, int tileno)
     uint8_t *psotptr;
 
     if (s->buf_end - s->buf < 12)
-        return -1;
+        return NULL;
 
     bytestream_put_be16(&s->buf, J2K_SOT);
     bytestream_put_be16(&s->buf, 10); // Lsot
@@ -377,7 +381,7 @@ static int init_tiles(J2kEncoderContext *s)
                         for (j = 0; j < 2; j++)
                             comp->coord[i][j] = ff_j2k_ceildivpow2(comp->coord[i][j], s->chroma_shift[i]);
 
-                if (ret = ff_j2k_init_component(comp, codsty, qntsty, s->cbps[compno]))
+                if (ret = ff_j2k_init_component(comp, codsty, qntsty, s->cbps[compno], compno?1<<s->chroma_shift[0]:1, compno?1<<s->chroma_shift[1]:1))
                     return ret;
             }
         }
@@ -394,18 +398,18 @@ static void copy_frame(J2kEncoderContext *s)
             for (compno = 0; compno < s->ncomponents; compno++){
                 J2kComponent *comp = tile->comp + compno;
                 int *dst = comp->data;
-                line = s->picture->data[compno]
-                       + comp->coord[1][0] * s->picture->linesize[compno]
+                line = s->picture.data[compno]
+                       + comp->coord[1][0] * s->picture.linesize[compno]
                        + comp->coord[0][0];
                 for (y = comp->coord[1][0]; y < comp->coord[1][1]; y++){
                     uint8_t *ptr = line;
                     for (x = comp->coord[0][0]; x < comp->coord[0][1]; x++)
                         *dst++ = *ptr++ - (1 << 7);
-                    line += s->picture->linesize[compno];
+                    line += s->picture.linesize[compno];
                 }
             }
         } else{
-            line = s->picture->data[0] + tile->comp[0].coord[1][0] * s->picture->linesize[0]
+            line = s->picture.data[0] + tile->comp[0].coord[1][0] * s->picture.linesize[0]
                    + tile->comp[0].coord[0][0] * s->ncomponents;
 
             i = 0;
@@ -416,7 +420,7 @@ static void copy_frame(J2kEncoderContext *s)
                         tile->comp[compno].data[i] = *ptr++  - (1 << 7);
                     }
                 }
-                line += s->picture->linesize[0];
+                line += s->picture.linesize[0];
             }
         }
     }
@@ -487,11 +491,12 @@ static int getnmsedec_ref(int x, int bpno)
 static void encode_sigpass(J2kT1Context *t1, int width, int height, int bandno, int *nmsedec, int bpno)
 {
     int y0, x, y, mask = 1 << (bpno + NMSEDEC_FRACBITS);
+    int vert_causal_ctx_csty_loc_symbol;
     for (y0 = 0; y0 < height; y0 += 4)
         for (x = 0; x < width; x++)
             for (y = y0; y < height && y < y0+4; y++){
                 if (!(t1->flags[y+1][x+1] & J2K_T1_SIG) && (t1->flags[y+1][x+1] & J2K_T1_SIG_NB)){
-                    int ctxno = ff_j2k_getnbctxno(t1->flags[y+1][x+1], bandno),
+                    int ctxno = ff_j2k_getnbctxno(t1->flags[y+1][x+1], bandno, vert_causal_ctx_csty_loc_symbol),
                         bit = t1->data[y][x] & mask ? 1 : 0;
                     ff_mqc_encode(&t1->mqc, t1->mqc.cx_states + ctxno, bit);
                     if (bit){
@@ -523,6 +528,7 @@ static void encode_refpass(J2kT1Context *t1, int width, int height, int *nmsedec
 static void encode_clnpass(J2kT1Context *t1, int width, int height, int bandno, int *nmsedec, int bpno)
 {
     int y0, x, y, mask = 1 << (bpno + NMSEDEC_FRACBITS);
+    int vert_causal_ctx_csty_loc_symbol;
     for (y0 = 0; y0 < height; y0 += 4)
         for (x = 0; x < width; x++){
             if (y0 + 3 < height && !(
@@ -543,7 +549,7 @@ static void encode_clnpass(J2kT1Context *t1, int width, int height, int bandno, 
                 ff_mqc_encode(&t1->mqc, t1->mqc.cx_states + MQC_CX_UNI, rlen & 1);
                 for (y = y0 + rlen; y < y0 + 4; y++){
                     if (!(t1->flags[y+1][x+1] & (J2K_T1_SIG | J2K_T1_VIS))){
-                        int ctxno = ff_j2k_getnbctxno(t1->flags[y+1][x+1], bandno);
+                        int ctxno = ff_j2k_getnbctxno(t1->flags[y+1][x+1], bandno, vert_causal_ctx_csty_loc_symbol);
                         if (y > y0 + rlen)
                             ff_mqc_encode(&t1->mqc, t1->mqc.cx_states + ctxno, t1->data[y][x] & mask ? 1:0);
                         if (t1->data[y][x] & mask){ // newly significant
@@ -559,7 +565,7 @@ static void encode_clnpass(J2kT1Context *t1, int width, int height, int bandno, 
             } else{
                 for (y = y0; y < y0 + 4 && y < height; y++){
                     if (!(t1->flags[y+1][x+1] & (J2K_T1_SIG | J2K_T1_VIS))){
-                        int ctxno = ff_j2k_getnbctxno(t1->flags[y+1][x+1], bandno);
+                        int ctxno = ff_j2k_getnbctxno(t1->flags[y+1][x+1], bandno, vert_causal_ctx_csty_loc_symbol);
                         ff_mqc_encode(&t1->mqc, t1->mqc.cx_states + ctxno, t1->data[y][x] & mask ? 1:0);
                         if (t1->data[y][x] & mask){ // newly significant
                             int xorbit;
@@ -820,7 +826,7 @@ static int encode_tile(J2kEncoderContext *s, J2kTile *tile, int tileno)
         J2kComponent *comp = s->tile[tileno].comp + compno;
 
         av_log(s->avctx, AV_LOG_DEBUG,"dwt\n");
-        if (ret = ff_dwt_encode(&comp->dwt, comp->data))
+        if (ret = ff_j2k_dwt_encode(&comp->dwt, comp->data))
             return ret;
         av_log(s->avctx, AV_LOG_DEBUG,"after dwt -> tier1\n");
 
@@ -863,7 +869,8 @@ static int encode_tile(J2kEncoderContext *s, J2kTile *tile, int tileno)
                                 int *ptr = t1.data[y-yy0];
                                 for (x = xx0; x < xx1; x++){
                                     *ptr = (comp->data[(comp->coord[0][1] - comp->coord[0][0]) * y + x]);
-                                    *ptr++ = (int64_t)*ptr * (int64_t)(8192 * 8192 / band->stepsize) >> 13 - NMSEDEC_FRACBITS;
+                                    *ptr = (int64_t)*ptr * (int64_t)(8192 * 8192 / band->stepsize) >> 13 - NMSEDEC_FRACBITS;
+                                    *ptr++;
                                 }
                             }
                         }
@@ -888,7 +895,7 @@ static int encode_tile(J2kEncoderContext *s, J2kTile *tile, int tileno)
     return 0;
 }
 
-void cleanup(J2kEncoderContext *s)
+static void cleanup(J2kEncoderContext *s)
 {
     int tileno, compno;
     J2kCodingStyle *codsty = &s->codsty;
@@ -924,9 +931,10 @@ static int encode_frame(AVCodecContext *avctx,
     s->buf = s->buf_start = buf;
     s->buf_end = buf + buf_size;
 
-    s->picture = data;
+    s->picture = *(AVFrame*)data;
+    avctx->coded_frame= &s->picture;
 
-    s->lambda = s->picture->quality * LAMBDA_SCALE;
+    s->lambda = s->picture.quality * LAMBDA_SCALE;
 
     copy_frame(s);
     reinit(s);
@@ -943,8 +951,8 @@ static int encode_frame(AVCodecContext *avctx,
 
     for (tileno = 0; tileno < s->numXtiles * s->numYtiles; tileno++){
         uint8_t *psotptr;
-        if ((psotptr = put_sot(s, tileno)) < 0)
-            return psotptr;
+        if (!(psotptr = put_sot(s, tileno)))
+            return -1;
         if (s->buf_end - s->buf < 2)
             return -1;
         bytestream_put_be16(&s->buf, J2K_SOD);
@@ -1027,19 +1035,20 @@ static int j2kenc_destroy(AVCodecContext *avctx)
     return 0;
 }
 
-AVCodec jpeg2000_encoder = {
+AVCodec ff_jpeg2000_encoder = {
     "j2k",
-    CODEC_TYPE_VIDEO,
+    AVMEDIA_TYPE_VIDEO,
     CODEC_ID_JPEG2000,
     sizeof(J2kEncoderContext),
     j2kenc_init,
     encode_frame,
     j2kenc_destroy,
-    NULL,
-    0,
+    .capabilities= CODEC_CAP_EXPERIMENTAL,
+    .long_name = NULL_IF_CONFIG_SMALL("JPEG 2000"),
     .pix_fmts =
-        (enum PixelFormat[]) {PIX_FMT_GRAY8, PIX_FMT_RGB24,
+        (enum PixelFormat[]) {PIX_FMT_RGB24, PIX_FMT_YUV444P, PIX_FMT_GRAY8,
+/*                              PIX_FMT_YUV420P,
                               PIX_FMT_YUV422P, PIX_FMT_YUV444P,
-                              PIX_FMT_YUV410P, PIX_FMT_YUV411P,
+                              PIX_FMT_YUV410P, PIX_FMT_YUV411P,*/
                               -1}
 };

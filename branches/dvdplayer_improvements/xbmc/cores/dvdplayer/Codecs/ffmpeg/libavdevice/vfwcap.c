@@ -265,11 +265,6 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return AVERROR(EIO);
     }
 
-#if FF_API_FORMAT_PARAMETERS
-    if (ap->time_base.num)
-        framerate_q = (AVRational){ap->time_base.den, ap->time_base.num};
-#endif
-
     ctx->hwnd = capCreateCaptureWindow(NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, 0);
     if(!ctx->hwnd) {
         av_log(s, AV_LOG_ERROR, "Could not create capture window.\n");
@@ -298,7 +293,7 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
     SetWindowLongPtr(ctx->hwnd, GWLP_USERDATA, (LONG_PTR) s);
 
-    st = av_new_stream(s, 0);
+    st = avformat_new_stream(s, NULL);
     if(!st) {
         vfw_read_close(s);
         return AVERROR(ENOMEM);
@@ -319,6 +314,11 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
     dump_bih(s, &bi->bmiHeader);
 
+    ret = av_parse_video_rate(&framerate_q, ctx->framerate);
+    if (ret < 0) {
+        av_log(s, AV_LOG_ERROR, "Could not parse framerate '%s'.\n", ctx->framerate);
+        goto fail;
+    }
 
     if (ctx->video_size) {
         ret = av_parse_video_size(&bi->bmiHeader.biWidth, &bi->bmiHeader.biHeight, ctx->video_size);
@@ -327,12 +327,6 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
             goto fail;
         }
     }
-#if FF_API_FORMAT_PARAMETERS
-    if (ap->width > 0)
-        bi->bmiHeader.biWidth = ap->width;
-    if (ap->height > 0)
-        bi->bmiHeader.biHeight = ap->height;
-#endif
 
     if (0) {
         /* For testing yet unsupported compressions
@@ -464,8 +458,8 @@ static int vfw_read_packet(AVFormatContext *s, AVPacket *pkt)
 #define OFFSET(x) offsetof(struct vfw_ctx, x)
 #define DEC AV_OPT_FLAG_DECODING_PARAM
 static const AVOption options[] = {
-    { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), FF_OPT_TYPE_STRING, {.str = NULL}, 0, 0, DEC },
-    { "framerate", "", OFFSET(framerate), FF_OPT_TYPE_STRING, {.str = "ntsc"}, 0, 0, DEC },
+    { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), AV_OPT_TYPE_STRING, {.str = NULL}, 0, 0, DEC },
+    { "framerate", "", OFFSET(framerate), AV_OPT_TYPE_STRING, {.str = "ntsc"}, 0, 0, DEC },
     { NULL },
 };
 
@@ -477,13 +471,12 @@ static const AVClass vfw_class = {
 };
 
 AVInputFormat ff_vfwcap_demuxer = {
-    "vfwcap",
-    NULL_IF_CONFIG_SMALL("VFW video capture"),
-    sizeof(struct vfw_ctx),
-    NULL,
-    vfw_read_header,
-    vfw_read_packet,
-    vfw_read_close,
-    .flags = AVFMT_NOFILE,
-    .priv_class = &vfw_class,
+    .name           = "vfwcap",
+    .long_name      = NULL_IF_CONFIG_SMALL("VfW video capture"),
+    .priv_data_size = sizeof(struct vfw_ctx),
+    .read_header    = vfw_read_header,
+    .read_packet    = vfw_read_packet,
+    .read_close     = vfw_read_close,
+    .flags          = AVFMT_NOFILE,
+    .priv_class     = &vfw_class,
 };

@@ -28,7 +28,7 @@ various FFmpeg APIs.
 @chapter Options
 @c man begin OPTIONS
 
-@include fftools-common-opts.texi
+@include avtools-common-opts.texi
 
 @section Main options
 
@@ -134,6 +134,8 @@ Exit when video is done playing.
 Exit if any key is pressed.
 @item -exitonmousedown
 Exit if any mouse button is pressed.
+@item -codec:@var{stream_type}
+Force a specific decoder implementation
 @end table
 
 @section While playing

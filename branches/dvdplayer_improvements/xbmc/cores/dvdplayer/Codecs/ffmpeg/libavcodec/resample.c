@@ -121,11 +121,11 @@ static void surround_to_stereo(short **output, short *input, int channels, int s
     short l, r;
 
     for (i = 0; i < samples; i++) {
-        int fl,fr,c,rl,rr,lfe;
+        int fl,fr,c,rl,rr;
         fl = input[0];
         fr = input[1];
         c = input[2];
-        lfe = input[3];
+        // lfe = input[3];
         rl = input[4];
         rr = input[5];
 
@@ -184,7 +184,7 @@ static void ac3_5p1_mux(short *output, short *input1, short *input2, int n)
     ch8<<7 | ch7<<6 | ch6<<5 | ch5<<4 | ch4<<3 | ch3<<2 | ch2<<1 | ch1<<0
 
 static const uint8_t supported_resampling[MAX_CHANNELS] = {
-    //ouput channels:1  2  3  4  5  6  7  8
+    // output ch:    1  2  3  4  5  6  7  8
     SUPPORT_RESAMPLE(1, 1, 0, 0, 0, 0, 0, 0), // 1 input channel
     SUPPORT_RESAMPLE(1, 1, 0, 0, 0, 1, 0, 0), // 2 input channels
     SUPPORT_RESAMPLE(0, 0, 1, 0, 0, 0, 0, 0), // 3 input channels
@@ -265,7 +265,6 @@ ReSampleContext *av_audio_resample_init(int output_channels, int input_channels,
         }
     }
 
-#define TAPS 16
     s->resample_context = av_resample_init(output_rate, input_rate,
                                            filter_length, log2_phase_count,
                                            linear, cutoff);
@@ -274,17 +273,6 @@ ReSampleContext *av_audio_resample_init(int output_channels, int input_channels,
 
     return s;
 }
-
-#if FF_API_AUDIO_OLD
-ReSampleContext *audio_resample_init(int output_channels, int input_channels,
-                                     int output_rate, int input_rate)
-{
-    return av_audio_resample_init(output_channels, input_channels,
-                                  output_rate, input_rate,
-                                  AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_S16,
-                                  TAPS, 10, 0, 0.8);
-}
-#endif
 
 /* resample audio. 'nb_samples' is the number of input samples */
 /* XXX: optimize it ! */
@@ -337,9 +325,9 @@ int audio_resample(ReSampleContext *s, short *output, short *input, int nb_sampl
     if (s->sample_fmt[1] != AV_SAMPLE_FMT_S16) {
         output_bak = output;
 
-        if (!s->buffer_size[1] || s->buffer_size[1] < lenout) {
+        if (!s->buffer_size[1] || s->buffer_size[1] < 2*lenout) {
             av_free(s->buffer[1]);
-            s->buffer_size[1] = lenout;
+            s->buffer_size[1] = 2*lenout;
             s->buffer[1] = av_malloc(s->buffer_size[1]);
             if (!s->buffer[1]) {
                 av_log(s->resample_context, AV_LOG_ERROR, "Could not allocate buffer\n");

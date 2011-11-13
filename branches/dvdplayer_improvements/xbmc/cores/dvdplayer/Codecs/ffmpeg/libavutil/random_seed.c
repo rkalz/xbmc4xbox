@@ -23,7 +23,6 @@
 #include <math.h>
 #include <time.h>
 #include "timer.h"
-#include "avutil.h"
 #include "random_seed.h"
 
 static int read_random(uint32_t *dst, const char *file)
@@ -81,11 +80,3 @@ uint32_t av_get_random_seed(void)
         return seed;
     return get_generic_seed();
 }
-
-#if LIBAVUTIL_VERSION_MAJOR < 51
-attribute_deprecated uint32_t ff_random_get_seed(void);
-uint32_t ff_random_get_seed(void)
-{
-    return av_get_random_seed();
-}
-#endif

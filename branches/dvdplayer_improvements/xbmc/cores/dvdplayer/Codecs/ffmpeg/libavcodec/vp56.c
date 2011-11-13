@@ -467,6 +467,7 @@ static int vp56_size_changed(AVCodecContext *avctx)
     s->mb_height = (avctx->coded_height+15) / 16;
 
     if (s->mb_width > 1000 || s->mb_height > 1000) {
+        avcodec_set_dimensions(avctx, 0, 0);
         av_log(avctx, AV_LOG_ERROR, "picture too big\n");
         return -1;
     }
@@ -521,12 +522,14 @@ int ff_vp56_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
                 if (s->frames[i].data[0])
                     avctx->release_buffer(avctx, &s->frames[i]);
             }
-            if (is_alpha)
+            if (is_alpha) {
+                avcodec_set_dimensions(avctx, 0, 0);
                 return -1;
+            }
         }
 
         if (!is_alpha) {
-            p->reference = 1;
+            p->reference = 3;
             if (avctx->get_buffer(avctx, p) < 0) {
                 av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
                 return -1;

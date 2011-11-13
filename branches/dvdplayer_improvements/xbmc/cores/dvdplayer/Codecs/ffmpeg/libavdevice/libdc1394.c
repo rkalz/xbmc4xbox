@@ -85,9 +85,9 @@ struct dc1394_frame_rate {
 #define OFFSET(x) offsetof(dc1394_data, x)
 #define DEC AV_OPT_FLAG_DECODING_PARAM
 static const AVOption options[] = {
-    { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), FF_OPT_TYPE_STRING, {.str = "qvga"}, 0, 0, DEC },
-    { "pixel_format", "", OFFSET(pixel_format), FF_OPT_TYPE_STRING, {.str = "uyvy422"}, 0, 0, DEC },
-    { "framerate", "", OFFSET(framerate), FF_OPT_TYPE_STRING, {.str = "ntsc"}, 0, 0, DEC },
+    { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), AV_OPT_TYPE_STRING, {.str = "qvga"}, 0, 0, DEC },
+    { "pixel_format", "", OFFSET(pixel_format), AV_OPT_TYPE_STRING, {.str = "uyvy422"}, 0, 0, DEC },
+    { "framerate", "", OFFSET(framerate), AV_OPT_TYPE_STRING, {.str = "ntsc"}, 0, 0, DEC },
     { NULL },
 };
 
@@ -154,7 +154,7 @@ static int dc1394_read_header(AVFormatContext *c, AVFormatParameters * ap)
             goto out;
         }
     }
-    
+
     /* Choose the best mode. */
     rate = (ap->time_base.num ? av_rescale(1000, ap->time_base.den, ap->time_base.num) : -1);
     max_score = -1;
@@ -253,7 +253,7 @@ static int dc1394_read_header(AVFormatContext *c, AVFormatParameters * ap)
     }
 
     /* create a video stream */
-    vst = av_new_stream(c, 0);
+    vst = avformat_new_stream(c, NULL);
     if (!vst)
         goto out_camera;
     av_set_pts_info(vst, 64, 1, 1000);

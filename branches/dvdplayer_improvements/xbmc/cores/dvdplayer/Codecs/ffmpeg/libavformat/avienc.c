@@ -523,6 +523,11 @@ static int avi_write_packet(AVFormatContext *s, AVPacket *pkt)
     while(enc->block_align==0 && pkt->dts != AV_NOPTS_VALUE && pkt->dts > avist->packet_count){
         AVPacket empty_packet;
 
+        if(pkt->dts - avist->packet_count > 60000){
+            av_log(s, AV_LOG_ERROR, "Too large number of skiped frames %Ld\n", pkt->dts - avist->packet_count);
+            return AVERROR(EINVAL);
+        }
+
         av_init_packet(&empty_packet);
         empty_packet.size= 0;
         empty_packet.data= NULL;
@@ -558,7 +563,7 @@ static int avi_write_packet(AVFormatContext *s, AVPacket *pkt)
         int cl = idx->entry / AVI_INDEX_CLUSTER_SIZE;
         int id = idx->entry % AVI_INDEX_CLUSTER_SIZE;
         if (idx->ents_allocated <= idx->entry) {
-            idx->cluster = av_realloc(idx->cluster, (cl+1)*sizeof(void*));
+            idx->cluster = av_realloc_f(idx->cluster, sizeof(void*), cl+1);
             if (!idx->cluster)
                 return -1;
             idx->cluster[cl] = av_malloc(AVI_INDEX_CLUSTER_SIZE*sizeof(AVIIentry));
@@ -644,7 +649,11 @@ AVOutputFormat ff_avi_muxer = {
     .mime_type         = "video/x-msvideo",
     .extensions        = "avi",
     .priv_data_size    = sizeof(AVIContext),
-    .audio_codec       = CODEC_ID_MP2,
+#if CONFIG_LIBMP3LAME_ENCODER
+    .audio_codec       = CODEC_ID_MP3,
+#else
+    .audio_codec       = CODEC_ID_AC3,
+#endif
     .video_codec       = CODEC_ID_MPEG4,
     .write_header      = avi_write_header,
     .write_packet      = avi_write_packet,

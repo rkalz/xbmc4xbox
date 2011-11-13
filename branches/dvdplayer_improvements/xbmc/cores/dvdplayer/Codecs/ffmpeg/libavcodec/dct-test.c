@@ -71,7 +71,7 @@ struct algo {
     const char *name;
     void (*func)(DCTELEM *block);
     enum formattag { NO_PERM, MMX_PERM, MMX_SIMPLE_PERM, SCALE_PERM,
-                     SSE2_PERM, PARTTRANS_PERM } format;
+                     SSE2_PERM, PARTTRANS_PERM, TRANSPOSE_PERM } format;
     int mm_support;
     int nonspec;
 };
@@ -107,6 +107,22 @@ static const struct algo fdct_tab[] = {
     { 0 }
 };
 
+#if HAVE_MMX
+void ff_prores_idct_put_10_sse2(uint16_t *dst, int linesize,
+                                DCTELEM *block, int16_t *qmat);
+
+static void ff_prores_idct_put_10_sse2_wrap(uint16_t *dst){
+    int16_t qmat[64]; int i;
+    int16_t tmp[64];
+
+    for(i=0; i<64; i++){
+        qmat[i]=4;
+        tmp[i]= dst[i];
+    }
+    ff_prores_idct_put_10_sse2(dst, 16, tmp, qmat);
+}
+#endif
+
 static const struct algo idct_tab[] = {
     { "FAANI",          ff_faanidct,           NO_PERM  },
     { "REF-DBL",        ff_ref_idct,           NO_PERM  },
@@ -122,6 +138,9 @@ static const struct algo idct_tab[] = {
     { "XVID-MMX",       ff_idct_xvid_mmx,      NO_PERM,   AV_CPU_FLAG_MMX,  1 },
     { "XVID-MMX2",      ff_idct_xvid_mmx2,     NO_PERM,   AV_CPU_FLAG_MMX2, 1 },
     { "XVID-SSE2",      ff_idct_xvid_sse2,     SSE2_PERM, AV_CPU_FLAG_SSE2, 1 },
+#if ARCH_X86_64
+    { "PR-SSE2",        ff_prores_idct_put_10_sse2_wrap,     TRANSPOSE_PERM, AV_CPU_FLAG_SSE2, 1 },
+#endif
 #endif
 
 #if ARCH_BFIN
@@ -199,6 +218,58 @@ static inline void mmx_emms(void)
 #endif
 }
 
+static void init_block(DCTELEM block[64], int test, int is_idct, AVLFG *prng, int vals)
+{
+    int i, j;
+
+    memset(block, 0, 64 * sizeof(*block));
+
+    switch (test) {
+    case 0:
+        for (i = 0; i < 64; i++)
+            block[i] = (av_lfg_get(prng) % (2*vals)) -vals;
+        if (is_idct) {
+            ff_ref_fdct(block);
+            for (i = 0; i < 64; i++)
+                block[i] >>= 3;
+        }
+        break;
+    case 1:
+        j = av_lfg_get(prng) % 10 + 1;
+        for (i = 0; i < j; i++)
+            block[av_lfg_get(prng) % 64] = av_lfg_get(prng) % (2*vals) -vals;
+        break;
+    case 2:
+        block[ 0] = av_lfg_get(prng) % (16*vals) - (8*vals);
+        block[63] = (block[0] & 1) ^ 1;
+        break;
+    }
+}
+
+static void permute(DCTELEM dst[64], const DCTELEM src[64], int perm)
+{
+    int i;
+
+    if (perm == MMX_PERM) {
+        for (i = 0; i < 64; i++)
+            dst[idct_mmx_perm[i]] = src[i];
+    } else if (perm == MMX_SIMPLE_PERM) {
+        for (i = 0; i < 64; i++)
+            dst[idct_simple_mmx_perm[i]] = src[i];
+    } else if (perm == SSE2_PERM) {
+        for (i = 0; i < 64; i++)
+            dst[(i & 0x38) | idct_sse2_row_perm[i & 7]] = src[i];
+    } else if (perm == PARTTRANS_PERM) {
+        for (i = 0; i < 64; i++)
+            dst[(i & 0x24) | ((i & 3) << 3) | ((i >> 3) & 3)] = src[i];
+    } else if (perm == TRANSPOSE_PERM) {
+        for (i = 0; i < 64; i++)
+            dst[(i>>3) | ((i<<3)&0x38)] = src[i];
+    } else {
+        for (i = 0; i < 64; i++)
+            dst[i] = src[i];
+    }
+}
 
 static int dct_error(const struct algo *dct, int test, int is_idct, int speed, const int bits)
 {
@@ -221,46 +292,8 @@ static int dct_error(const struct algo *dct, int test, int is_idct, int speed, c
     for (i = 0; i < 64; i++)
         sysErr[i] = 0;
     for (it = 0; it < NB_ITS; it++) {
-        for (i = 0; i < 64; i++)
-            block1[i] = 0;
-        switch (test) {
-        case 0:
-            for (i = 0; i < 64; i++)
-                block1[i] = (av_lfg_get(&prng) % (2*vals)) -vals;
-            if (is_idct) {
-                ff_ref_fdct(block1);
-                for (i = 0; i < 64; i++)
-                    block1[i] >>= 3;
-            }
-            break;
-        case 1: {
-                int num = av_lfg_get(&prng) % 10 + 1;
-                for (i = 0; i < num; i++)
-                    block1[av_lfg_get(&prng) % 64] = av_lfg_get(&prng) % (2*vals) -vals;
-            }
-            break;
-        case 2:
-            block1[0] = av_lfg_get(&prng) % (16*vals) - (8*vals);
-            block1[63] = (block1[0] & 1) ^ 1;
-            break;
-        }
-
-        if (dct->format == MMX_PERM) {
-            for (i = 0; i < 64; i++)
-                block[idct_mmx_perm[i]] = block1[i];
-        } else if (dct->format == MMX_SIMPLE_PERM) {
-            for (i = 0; i < 64; i++)
-                block[idct_simple_mmx_perm[i]] = block1[i];
-        } else if (dct->format == SSE2_PERM) {
-            for (i = 0; i < 64; i++)
-                block[(i & 0x38) | idct_sse2_row_perm[i & 7]] = block1[i];
-        } else if (dct->format == PARTTRANS_PERM) {
-            for (i = 0; i < 64; i++)
-                block[(i & 0x24) | ((i & 3) << 3) | ((i >> 3) & 3)] = block1[i];
-        } else {
-            for (i = 0; i < 64; i++)
-                block[i] = block1[i];
-        }
+        init_block(block1, test, is_idct, &prng, vals);
+        permute(block, block1, dct->format);
 
         dct->func(block);
         mmx_emms();
@@ -305,7 +338,7 @@ static int dct_error(const struct algo *dct, int test, int is_idct, int speed, c
 
     spec_err = is_idct && (err_inf > 1 || omse > 0.02 || fabs(ome) > 0.0015);
 
-    printf("%s %s: ppe=%d omse=%0.8f ome=%0.8f syserr=%0.8f maxout=%d blockSumErr=%d\n",
+    printf("%s %s: max_err=%d omse=%0.8f ome=%0.8f syserr=%0.8f maxout=%d blockSumErr=%d\n",
            is_idct ? "IDCT" : "DCT", dct->name, err_inf,
            omse, ome, (double) sysErrMax / NB_ITS,
            maxout, blockSumErrMax);
@@ -317,45 +350,15 @@ static int dct_error(const struct algo *dct, int test, int is_idct, int speed, c
         return 0;
 
     /* speed test */
-    for (i = 0; i < 64; i++)
-        block1[i] = 0;
 
-    switch (test) {
-    case 0:
-        for (i = 0; i < 64; i++)
-            block1[i] = av_lfg_get(&prng) % (2*vals) -vals;
-        if (is_idct) {
-            ff_ref_fdct(block1);
-            for (i = 0; i < 64; i++)
-                block1[i] >>= 3;
-        }
-        break;
-    case 1:
-    case 2:
-        block1[0] = av_lfg_get(&prng) % (2*vals) -vals;
-        block1[1] = av_lfg_get(&prng) % (2*vals) -vals;
-        block1[2] = av_lfg_get(&prng) % (2*vals) -vals;
-        block1[3] = av_lfg_get(&prng) % (2*vals) -vals;
-        break;
-    }
-
-    if (dct->format == MMX_PERM) {
-        for (i = 0; i < 64; i++)
-            block[idct_mmx_perm[i]] = block1[i];
-    } else if (dct->format == MMX_SIMPLE_PERM) {
-        for (i = 0; i < 64; i++)
-            block[idct_simple_mmx_perm[i]] = block1[i];
-    } else {
-        for (i = 0; i < 64; i++)
-            block[i] = block1[i];
-    }
+    init_block(block, test, is_idct, &prng, vals);
+    permute(block1, block, dct->format);
 
     ti = gettime();
     it1 = 0;
     do {
         for (it = 0; it < NB_ITS_SPEED; it++) {
-            for (i = 0; i < 64; i++)
-                block[i] = block1[i];
+            memcpy(block, block1, sizeof(block));
             dct->func(block);
         }
         it1 += NB_ITS_SPEED;
@@ -530,10 +533,11 @@ static void idct248_error(const char *name,
 
 static void help(void)
 {
-    printf("dct-test [-i] [<test-number>]\n"
+    printf("dct-test [-i] [<test-number>] [<bits>]\n"
            "test-number 0 -> test with random matrixes\n"
            "            1 -> test with random sparse matrixes\n"
            "            2 -> do 3. test from mpeg4 std\n"
+           "bits        Number of time domain bits to use, 8 is default\n"
            "-i          test IDCT implementations\n"
            "-4          test IDCT248 implementations\n"
            "-t          speed test\n");

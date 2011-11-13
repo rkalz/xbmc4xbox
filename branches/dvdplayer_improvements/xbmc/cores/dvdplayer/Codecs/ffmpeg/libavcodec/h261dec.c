@@ -136,7 +136,7 @@ static int h261_decode_gob_header(H261Context *h){
 
     if(s->qscale==0) {
         av_log(s->avctx, AV_LOG_ERROR, "qscale has forbidden 0 value\n");
-        if (s->avctx->error_recognition >= FF_ER_COMPLIANT)
+        if (s->avctx->err_recognition & AV_EF_BITSTREAM)
             return -1;
     }
 
@@ -599,10 +599,6 @@ retry:
     s->current_picture.f.pict_type = s->pict_type;
     s->current_picture.f.key_frame = s->pict_type == AV_PICTURE_TYPE_I;
 
-#if FF_API_HURRY_UP
-    /* skip everything if we are in a hurry>=5 */
-    if(avctx->hurry_up>=5) return get_consumed_bytes(s, buf_size);
-#endif
     if(  (avctx->skip_frame >= AVDISCARD_NONREF && s->pict_type==AV_PICTURE_TYPE_B)
        ||(avctx->skip_frame >= AVDISCARD_NONKEY && s->pict_type!=AV_PICTURE_TYPE_I)
        || avctx->skip_frame >= AVDISCARD_ALL)
@@ -624,8 +620,8 @@ retry:
     }
     MPV_frame_end(s);
 
-assert(s->current_picture.pict_type == s->current_picture_ptr->pict_type);
-assert(s->current_picture.pict_type == s->pict_type);
+assert(s->current_picture.f.pict_type == s->current_picture_ptr->f.pict_type);
+assert(s->current_picture.f.pict_type == s->pict_type);
     *pict= *(AVFrame*)s->current_picture_ptr;
     ff_print_debug_info(s, pict);
 

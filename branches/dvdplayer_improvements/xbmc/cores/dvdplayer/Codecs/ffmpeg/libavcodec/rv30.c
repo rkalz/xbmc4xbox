@@ -261,7 +261,6 @@ static av_cold int rv30_decode_init(AVCodecContext *avctx)
     if(avctx->extradata_size - 8 < (r->rpr - 1) * 2){
         av_log(avctx, AV_LOG_ERROR, "Insufficient extradata - need at least %d bytes, got %d\n",
                6 + r->rpr * 2, avctx->extradata_size);
-        return AVERROR(EINVAL);
     }
     r->parse_slice_header = rv30_parse_slice_header;
     r->decode_intra_types = rv30_decode_intra_types;
@@ -281,7 +280,7 @@ AVCodec ff_rv30_decoder = {
     .close          = ff_rv34_decode_end,
     .decode         = ff_rv34_decode_frame,
     .capabilities   = CODEC_CAP_DR1 | CODEC_CAP_DELAY,
-    .flush = ff_mpeg_flush,
-    .long_name = NULL_IF_CONFIG_SMALL("RealVideo 3.0"),
-    .pix_fmts= ff_pixfmt_list_420,
+    .flush          = ff_mpeg_flush,
+    .long_name      = NULL_IF_CONFIG_SMALL("RealVideo 3.0"),
+    .pix_fmts       = ff_pixfmt_list_420,
 };
