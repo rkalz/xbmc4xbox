@@ -107,7 +107,7 @@ bool CDVDVideoCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
   // set any special options
   for(CDVDCodecOptions::iterator it = options.begin(); it != options.end(); it++)
   {
-    m_dllAvCodec.av_set_string(m_pCodecContext, it->m_name.c_str(), it->m_value.c_str());
+    m_dllAvUtil.av_set_string3(m_pCodecContext, it->m_name.c_str(), it->m_value.c_str(), 0, NULL);
   }
   
   if (m_dllAvCodec.avcodec_open(m_pCodecContext, pCodec) < 0)
