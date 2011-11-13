@@ -178,7 +178,7 @@ bool CDVDAudioCodecPassthroughFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptio
 
   /* set the stream's parameters */
   m_pStream->stream_copy        = 1;
-  m_pStream->codec->codec_type  = CODEC_TYPE_AUDIO;
+  m_pStream->codec->codec_type  = AVMEDIA_TYPE_AUDIO;
   m_pStream->codec->codec_id    = hints.codec;
   m_pStream->codec->sample_rate = hints.samplerate;
   m_pStream->codec->sample_fmt  = SAMPLE_FMT_S16;
