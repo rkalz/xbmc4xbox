@@ -8,11 +8,11 @@ This reverts commit 3bd624b4ee355328382295af411f5343b1329f43.
  libavformat/aviobuf.c |    4 ----
  1 files changed, 0 insertions(+), 4 deletions(-)
 
-diff --git a/libavformat/aviobuf.c b/libavformat/aviobuf.c
-index c6cea6a..b9aa1ec 100644
---- a/libavformat/aviobuf.c
-+++ b/libavformat/aviobuf.c
-@@ -280,10 +280,6 @@ int url_feof(AVIOContext *s)
+Index: ffmpeg/libavformat/aviobuf.c
+===================================================================
+--- ffmpeg.orig/libavformat/aviobuf.c	2011-11-13 19:00:33.563572500 +0000
++++ ffmpeg/libavformat/aviobuf.c	2011-11-13 19:00:36.127258900 +0000
+@@ -278,10 +278,6 @@
  {
      if(!s)
          return 0;
@@ -23,6 +23,3 @@ index c6cea6a..b9aa1ec 100644
      return s->eof_reached;
  }
  
--- 
-1.7.4.1
-
