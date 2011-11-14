@@ -13,8 +13,8 @@ xbmc_clean ()
 xbmc_configure ()
 {
   echo "Configuring ..."
-  CFLAGS="-D_XBOX -fno-common -msse -mfpmath=sse -pipe"
-  LDFLAGS="-static-libgcc -Wl,--enable-auto-import"
+  CFLAGS="-D_XBOX -msse -mfpmath=sse -pipe"
+  LDFLAGS="-Wl,--enable-auto-import"
   PARAMS=" \
   --cpu=pentium3 \
   --enable-gpl \
