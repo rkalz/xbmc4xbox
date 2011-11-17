@@ -106,7 +106,7 @@ bool CDVDAudioCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
   }
   
   m_bOpenedCodec = true;
-  m_iSampleFormat = SAMPLE_FMT_NONE;
+  m_iSampleFormat = AV_SAMPLE_FMT_NONE;
   return true;
 }
 
@@ -170,7 +170,7 @@ int CDVDAudioCodecFFmpeg::Decode(BYTE* pData, int iSize)
   else
     m_iBuffered = 0;
 
-  if(m_pCodecContext->sample_fmt != SAMPLE_FMT_S16 && m_iBufferSize1 > 0)
+  if(m_pCodecContext->sample_fmt != AV_SAMPLE_FMT_S16 && m_iBufferSize1 > 0)
   {
     if(m_pConvert && m_pCodecContext->sample_fmt != m_iSampleFormat)
     {
@@ -186,7 +186,7 @@ int CDVDAudioCodecFFmpeg::Decode(BYTE* pData, int iSize)
 
     if(!m_pConvert)
     {
-      CLog::Log(LOGERROR, "CDVDAudioCodecFFmpeg::Decode - Unable to convert %d to SAMPLE_FMT_S16", m_pCodecContext->sample_fmt);
+      CLog::Log(LOGERROR, "CDVDAudioCodecFFmpeg::Decode - Unable to convert %d to AV_SAMPLE_FMT_S16", m_pCodecContext->sample_fmt);
       m_iBufferSize1 = 0;
       m_iBufferSize2 = 0;
       return iBytesUsed;
@@ -199,7 +199,7 @@ int CDVDAudioCodecFFmpeg::Decode(BYTE* pData, int iSize)
     int         len     = m_iBufferSize1 / istr[0];
     if(m_dllAvCodec.av_audio_convert(m_pConvert, obuf, ostr, ibuf, istr, len) < 0)
     {
-      CLog::Log(LOGERROR, "CDVDAudioCodecFFmpeg::Decode - Unable to convert %d to SAMPLE_FMT_S16", (int)m_pCodecContext->sample_fmt);
+      CLog::Log(LOGERROR, "CDVDAudioCodecFFmpeg::Decode - Unable to convert %d to AV_SAMPLE_FMT_S16", (int)m_pCodecContext->sample_fmt);
       m_iBufferSize1 = 0;
       m_iBufferSize2 = 0;
       return iBytesUsed;
