@@ -34,7 +34,7 @@ xbmc_configure ()
   --disable-avconv \
   \
   --disable-muxers \
-  --enable-muxer=spdif \
+  --enable-muxer=spdif,adts \
   --disable-encoders \
   --disable-devices \
   --disable-bsfs \
