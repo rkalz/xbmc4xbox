@@ -168,7 +168,7 @@ static void flush_buffer(AVIOContext *s)
 
 void avio_w8(AVIOContext *s, int b)
 {
-    *(s->buf_ptr)++ = b;
+    *s->buf_ptr++ = b;
     if (s->buf_ptr >= s->buf_end)
         flush_buffer(s);
 }
@@ -573,6 +573,10 @@ static void fill_buffer(AVIOContext *s)
     uint8_t *dst= !s->max_packet_size && s->buf_end - s->buffer < s->buffer_size ? s->buf_end : s->buffer;
     int len= s->buffer_size - (dst - s->buffer);
     int max_buffer_size = s->max_packet_size ? s->max_packet_size : IO_BUFFER_SIZE;
+
+    /* can't fill the buffer without read_packet, just set EOF if appropiate */
+    if (!s->read_packet && s->buf_ptr >= s->buf_end)
+        s->eof_reached = 1;
 
     /* no need to do anything if EOF already reached */
     if (s->eof_reached)
