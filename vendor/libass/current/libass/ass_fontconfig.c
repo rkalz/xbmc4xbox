@@ -3,19 +3,17 @@
  *
  * This file is part of libass.
  *
- * libass is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
  *
- * libass is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with libass; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include "config.h"
@@ -24,6 +22,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <inttypes.h>
@@ -57,11 +56,14 @@ struct fc_instance {
  *
  * \param lib library instance
  * \param priv fontconfig instance
- * \param family font family
+ * \param family font fullname
+ * \param bold weight attribute
+ * \param italic italic attribute
  * \return font set
  */
-static FcFontSet *match_fullname(ASS_Library *lib, FCInstance *priv,
-                                 const char *family)
+static FcFontSet *
+match_fullname(ASS_Library *lib, FCInstance *priv, const char *family,
+               unsigned bold, unsigned italic)
 {
     FcFontSet *sets[2];
     FcFontSet *result = FcFontSetCreate();
@@ -79,13 +81,24 @@ static FcFontSet *match_fullname(ASS_Library *lib, FCInstance *priv,
         for (fi = 0; fi < set->nfont; fi++) {
             FcPattern *pat = set->fonts[fi];
             char *fullname;
-            int pi = 0;
+            int pi = 0, at;
+            FcBool ol;
             while (FcPatternGetString(pat, FC_FULLNAME, pi++,
-                   (FcChar8 **) &fullname) == FcResultMatch)
+                   (FcChar8 **) &fullname) == FcResultMatch) {
+                if (FcPatternGetBool(pat, FC_OUTLINE, 0, &ol) != FcResultMatch
+                    || ol != FcTrue)
+                    continue;
+                if (FcPatternGetInteger(pat, FC_SLANT, 0, &at) != FcResultMatch
+                    || at < italic)
+                    continue;
+                if (FcPatternGetInteger(pat, FC_WEIGHT, 0, &at) != FcResultMatch
+                    || at < bold)
+                    continue;
                 if (strcasecmp(fullname, family) == 0) {
                     FcFontSetAdd(result, FcPatternDuplicate(pat));
                     break;
                 }
+            }
         }
     }
 
@@ -168,7 +181,7 @@ static char *select_font(ASS_Library *library, FCInstance *priv,
         goto error;
 
     fsorted = FcFontSort(priv->config, pat, FcTrue, NULL, &result);
-    ffullname = match_fullname(library, priv, family);
+    ffullname = match_fullname(library, priv, family, bold, italic);
     if (!fsorted || !ffullname)
         goto error;
 
@@ -369,7 +382,7 @@ static void process_fontdata(FCInstance *priv, ASS_Library *library,
         num_faces = face->num_faces;
 
         pattern =
-            FcFreeTypeQueryFace(face, (unsigned char *) name, 0,
+            FcFreeTypeQueryFace(face, (unsigned char *) name, face_index,
                                 FcConfigGetBlanks(priv->config));
         if (!pattern) {
             ass_msg(library, MSGL_WARN, "%s failed", "FcFreeTypeQueryFace");
@@ -506,14 +519,14 @@ int fontconfig_update(FCInstance *priv)
 
 void fontconfig_done(FCInstance *priv)
 {
+
+    if (priv) {
 #ifdef CONFIG_FONTCONFIG
-    if (priv && priv->config)
-        FcConfigDestroy(priv->config);
+        if (priv->config)
+            FcConfigDestroy(priv->config);
 #endif
-    if (priv && priv->path_default)
         free(priv->path_default);
-    if (priv && priv->family_default)
         free(priv->family_default);
-    if (priv)
-        free(priv);
+    }
+    free(priv);
 }
