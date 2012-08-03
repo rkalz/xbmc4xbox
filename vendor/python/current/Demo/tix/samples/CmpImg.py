@@ -1,6 +1,6 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
 #
-# $Id: CmpImg.py 36560 2004-07-18 06:16:08Z tim_one $
+# $Id$
 #
 # Tix Demostration Program
 #
