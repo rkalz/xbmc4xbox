@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  *
  */
 
+#include "stdafx.h"
 #include "GUIPythonWindow.h"
 #include "pyutil.h"
 #include "window.h"
@@ -26,7 +27,6 @@
 #include "action.h"
 #include "GUIWindowManager.h"
 #include "../XBPython.h"
-#include "utils/log.h"
 
 using namespace PYXBMC;
 
@@ -45,13 +45,13 @@ CGUIPythonWindow::~CGUIPythonWindow(void)
 
 bool CGUIPythonWindow::OnAction(const CAction &action)
 {
-  // call the base class first, then call python
+  // do the base class window first, and the call to python after this
   bool ret = CGUIWindow::OnAction(action);
 
   // workaround - for scripts which try to access the active control (focused) when there is none.
   // for example - the case when the mouse enters the screen.
   CGUIControl *pControl = GetFocusedControl();
-  if (action.IsMouse() && !pControl)
+  if (action.id == ACTION_MOUSE && !pControl)
      return ret;
 
   if(pCallbackWindow)
@@ -65,14 +65,6 @@ bool CGUIPythonWindow::OnAction(const CAction &action)
     PulseActionEvent();
   }
   return ret;
-}
-
-bool CGUIPythonWindow::OnBack(int actionID)
-{
-  // if we have a callback window then python handles the closing
-  if (!pCallbackWindow)
-    return CGUIWindow::OnBack(actionID);
-  return true;
 }
 
 bool CGUIPythonWindow::OnMessage(CGUIMessage& message)

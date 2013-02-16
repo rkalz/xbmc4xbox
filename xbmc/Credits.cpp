@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,8 +19,7 @@
  *
  */
 
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #define _WCTYPE_INLINE_DEFINED
 #include <process.h>
 #include "GUIFontManager.h"
@@ -34,10 +33,6 @@
 #include "SkinInfo.h"
 #include "GUIFont.h"
 #include "FileSystem/SpecialProtocol.h"
-#include "SectionLoader.h"
-#include "utils/CharsetConverter.h"
-
-#include <list>
 
 using namespace std;
 

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,8 +19,7 @@
  *
  */
 
-#include "system.h"
-#include "interfaces/Builtins.h"
+#include "stdafx.h"
 #include "ApplicationMessenger.h"
 #include "Application.h"
 #ifdef _XBOX
@@ -33,16 +32,20 @@
 #include "Util.h"
 #include "utils/URIUtils.h"
 #include "lib/libPython/XBPython.h"
-#include "pictures/GUIWindowSlideShow.h"
+#include "GUIWindowSlideShow.h"
 #include "lib/libGoAhead/XBMChttp.h"
 #include "xbox/network.h"
 #include "GUIWindowManager.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "FileItem.h"
 #include "GUIDialog.h"
-#include "SectionLoader.h"
-#include "lib/libPython/xbmcmodule/GUIPythonWindowDialog.h"
-#include "lib/libPython/xbmcmodule/GUIPythonWindowXMLDialog.h"
+
+
+#include "SingleLock.h"
+
+
+
+CApplicationMessenger g_applicationMessenger;
 
 using namespace std;
 
@@ -203,7 +206,7 @@ case TMSG_POWERDOWN:
 #ifdef _XBOX
     case TMSG_QUIT:
       {
-        CBuiltins::Execute("XBMC.Dashboard()");
+        CUtil::ExecBuiltIn("XBMC.Dashboard()");
       }
       break;
 #else
@@ -349,7 +352,7 @@ case TMSG_POWERDOWN:
           else
             URIUtils::CreateArchivePath(strPath, "rar", pMsg->strParam.c_str(), "");
 
-          CUtil::GetRecursiveListing(strPath, items, g_settings.m_pictureExtensions);
+          CUtil::GetRecursiveListing(strPath, items, g_stSettings.m_pictureExtensions);
           if (items.Size() > 0)
           {
             for (int i=0;i<items.Size();++i)
@@ -387,7 +390,7 @@ case TMSG_POWERDOWN:
           CUtil::GetRecursiveListing(g_settings.GetMusicFanartFolder(), items, ".tbn");
         }
         else
-          CUtil::GetRecursiveListing(strPath, items, g_settings.m_pictureExtensions);
+          CUtil::GetRecursiveListing(strPath, items, g_stSettings.m_pictureExtensions);
 
         if (items.Size() > 0)
         {
@@ -453,19 +456,19 @@ case TMSG_POWERDOWN:
       switch (m_pXbmcHttp->xbmcCommand(pMsg->strParam))
       {
       case 1:
-        g_application.getApplicationMessenger().Restart();
+        g_applicationMessenger.Restart();
         break;
       case 2:
-        g_application.getApplicationMessenger().Shutdown();
+        g_applicationMessenger.Shutdown();
         break;
       case 3:
-        g_application.getApplicationMessenger().RebootToDashBoard();
+        g_applicationMessenger.RebootToDashBoard();
         break;
       case 4:
-        g_application.getApplicationMessenger().Reset();
+        g_applicationMessenger.Reset();
         break;
       case 5:
-        g_application.getApplicationMessenger().RestartApp();
+        g_applicationMessenger.RestartApp();
         break;
       }
     }
@@ -482,7 +485,7 @@ case TMSG_POWERDOWN:
       break;
 
     case TMSG_EXECUTE_BUILT_IN:
-      CBuiltins::Execute(pMsg->strParam.c_str());
+      CUtil::ExecBuiltIn(pMsg->strParam.c_str());
       break;
 
     case TMSG_PLAYLISTPLAYER_PLAY:
@@ -522,19 +525,7 @@ case TMSG_POWERDOWN:
 
     case TMSG_NETWORKMESSAGE:
       {
-        g_application.getNetwork().NetworkMessage((CNetwork::EMESSAGE)pMsg->dwParam1, pMsg->dwParam2);
-      }
-      break;
-
-    case TMSG_GUI_PYTHON_DIALOG:
-      {
-        if (pMsg->lpVoid)
-        { // TODO: This is ugly - really these python dialogs should just be normal XBMC dialogs
-          if (pMsg->dwParam1)
-            ((CGUIPythonWindowXMLDialog *)pMsg->lpVoid)->Show_Internal(pMsg->dwParam2 > 0);
-          else
-            ((CGUIPythonWindowDialog *)pMsg->lpVoid)->Show_Internal(pMsg->dwParam2 > 0);
-        }
+        g_network.NetworkMessage((CNetwork::EMESSAGE)pMsg->dwParam1, pMsg->dwParam2);
       }
       break;
   }

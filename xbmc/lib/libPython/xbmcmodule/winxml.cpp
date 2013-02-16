@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "winxml.h"
 #include "lib/libPython/python/Include/Python.h"
 #include "../XBPythonDll.h"
@@ -91,6 +91,9 @@ namespace PYXBMC
         if (!XFILE::CFile::Exists(strSkinPath))
         {
           skinInfo.Load(basePath);
+          // if no skin.xml file exists default to PAL_4x3 and PAL_16x9
+          if (skinInfo.GetDefaultResolution() == INVALID)
+            skinInfo.SetDefaults();
           strSkinPath = skinInfo.GetSkinPath(strXMLname, &res, basePath);
 
           if (!XFILE::CFile::Exists(strSkinPath))

@@ -27,14 +27,13 @@
 #include "avcodec.h"
 #include "libavutil/common.h" /* for av_reverse */
 #include "bytestream.h"
-#include "internal.h"
 #include "pcm_tablegen.h"
 
 #define MAX_CHANNELS 64
 
 static av_cold int pcm_encode_init(AVCodecContext *avctx)
 {
-    avctx->frame_size = 0;
+    avctx->frame_size = 1;
     switch(avctx->codec->id) {
     case CODEC_ID_PCM_ALAW:
         pcm_alaw_tableinit();
@@ -78,10 +77,10 @@ static av_cold int pcm_encode_close(AVCodecContext *avctx)
         bytestream_put_##endian(&dst, v); \
     }
 
-static int pcm_encode_frame(AVCodecContext *avctx, AVPacket *avpkt,
-                            const AVFrame *frame, int *got_packet_ptr)
+static int pcm_encode_frame(AVCodecContext *avctx,
+                            unsigned char *frame, int buf_size, void *data)
 {
-    int n, sample_size, v, ret;
+    int n, sample_size, v;
     const short *samples;
     unsigned char *dst;
     const uint8_t *srcu8;
@@ -92,14 +91,9 @@ static int pcm_encode_frame(AVCodecContext *avctx, AVPacket *avpkt,
     const uint32_t *samples_uint32_t;
 
     sample_size = av_get_bits_per_sample(avctx->codec->id)/8;
-    n           = frame->nb_samples * avctx->channels;
-    samples     = (const short *)frame->data[0];
-
-    if ((ret = ff_alloc_packet(avpkt, n * sample_size))) {
-        av_log(avctx, AV_LOG_ERROR, "Error getting output packet\n");
-        return ret;
-    }
-    dst = avpkt->data;
+    n = buf_size / sample_size;
+    samples = data;
+    dst = frame;
 
     switch(avctx->codec->id) {
     case CODEC_ID_PCM_U32LE:
@@ -136,7 +130,7 @@ static int pcm_encode_frame(AVCodecContext *avctx, AVPacket *avpkt,
         ENCODE(uint16_t, be16, samples, dst, n, 0, 0x8000)
         break;
     case CODEC_ID_PCM_S8:
-        srcu8 = frame->data[0];
+        srcu8= data;
         for(;n>0;n--) {
             v = *srcu8++;
             *dst++ = v - 128;
@@ -192,10 +186,9 @@ static int pcm_encode_frame(AVCodecContext *avctx, AVPacket *avpkt,
     default:
         return -1;
     }
+    //avctx->frame_size = (dst - frame) / (sample_size * avctx->channels);
 
-    avpkt->size = frame->nb_samples * avctx->channels * sample_size;
-    *got_packet_ptr = 1;
-    return 0;
+    return dst - frame;
 }
 
 typedef struct PCMDecode {
@@ -481,9 +474,8 @@ AVCodec ff_ ## name_ ## _encoder = {            \
     .type        = AVMEDIA_TYPE_AUDIO,          \
     .id          = id_,                         \
     .init        = pcm_encode_init,             \
-    .encode2     = pcm_encode_frame,            \
+    .encode      = pcm_encode_frame,            \
     .close       = pcm_encode_close,            \
-    .capabilities = CODEC_CAP_VARIABLE_FRAME_SIZE, \
     .sample_fmts = (const enum AVSampleFormat[]){sample_fmt_,AV_SAMPLE_FMT_NONE}, \
     .long_name = NULL_IF_CONFIG_SMALL(long_name_), \
 }

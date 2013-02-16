@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -22,8 +22,6 @@
  */
 
 #include "DVDDemux.h"
-
-#include <memory>
 
 class CDVDOverlayCodecFFmpeg;
 class CDVDInputStream;
@@ -64,7 +62,7 @@ private:
 
   typedef struct STimestamp
   {
-    int64_t pos;
+    __int64 pos;
     double  pts;
     int     id;
   } STimestamp;

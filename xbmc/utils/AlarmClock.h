@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,11 +21,10 @@
  *
  */
 
-#include "utils/StdString.h"
+#include "StdString.h"
 #include "Stopwatch.h"
 #include "CriticalSection.h"
 #include "Thread.h"
-#include "utils/log.h"
 
 #include <map>
 

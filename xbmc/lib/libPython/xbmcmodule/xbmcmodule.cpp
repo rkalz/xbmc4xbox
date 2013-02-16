@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "lib/libPython/python/Include/Python.h"
 #include "../XBPythonDll.h"
 #include "player.h"
@@ -30,24 +30,19 @@
 #include "infotagvideo.h"
 #include "infotagmusic.h"
 #include "lib/libGoAhead/XBMChttp.h"
-#include "GUIInfoManager.h"
+#include "utils/GUIInfoManager.h"
 #include "GUIWindowManager.h"
 #include "GUIAudioManager.h"
 #include "Application.h"
-#include "ApplicationMessenger.h"
-#include "utils/Crc32.h"
+#include "Crc32.h"
 #include "Util.h"
 #include "FileSystem/File.h"
 #include "FileSystem/SpecialProtocol.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "TextureManager.h"
 #include "language.h"
-#include "LangInfo.h"
 #include "PythonSettings.h"
-#include "SectionLoader.h"
 #include "utils/URIUtils.h"
-#include "CharsetConverter.h"
-#include "utils/log.h"
 
 // include for constants
 #include "pyutil.h"
@@ -118,7 +113,7 @@ namespace PYXBMC
 
     ThreadMessage tMsg = {TMSG_WRITE_SCRIPT_OUTPUT};
     tMsg.strParam = s_line;
-    g_application.getApplicationMessenger().SendMessage(tMsg);
+    g_applicationMessenger.SendMessage(tMsg);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -182,7 +177,7 @@ namespace PYXBMC
   PyObject* XBMC_Shutdown(PyObject *self, PyObject *args)
   {
     ThreadMessage tMsg = {TMSG_SHUTDOWN};
-    g_application.getApplicationMessenger().SendMessage(tMsg);
+    g_applicationMessenger.SendMessage(tMsg);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -198,7 +193,7 @@ namespace PYXBMC
   PyObject* XBMC_Dashboard(PyObject *self, PyObject *args)
   {
     ThreadMessage tMsg = {TMSG_DASHBOARD};
-    g_application.getApplicationMessenger().SendMessage(tMsg);
+    g_applicationMessenger.SendMessage(tMsg);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -214,7 +209,7 @@ namespace PYXBMC
   PyObject* XBMC_Restart(PyObject *self, PyObject *args)
   {
     ThreadMessage tMsg = {TMSG_RESTART};
-    g_application.getApplicationMessenger().SendMessage(tMsg);
+    g_applicationMessenger.SendMessage(tMsg);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -236,7 +231,7 @@ namespace PYXBMC
 
     ThreadMessage tMsg = {TMSG_EXECUTE_SCRIPT};
     tMsg.strParam = cLine;
-    g_application.getApplicationMessenger().SendMessage(tMsg);
+    g_applicationMessenger.SendMessage(tMsg);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -258,7 +253,7 @@ namespace PYXBMC
     char *cLine = NULL;
     if (!PyArg_ParseTuple(args, (char*)"s", &cLine)) return NULL;
 
-    g_application.getApplicationMessenger().ExecBuiltIn(cLine);
+    g_applicationMessenger.ExecBuiltIn(cLine);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -859,11 +854,11 @@ namespace PYXBMC
 
     CStdString result;
     if (strcmpi(media, "video") == 0)
-      result = g_settings.m_videoExtensions;
+      result = g_stSettings.m_videoExtensions;
     else if (strcmpi(media, "music") == 0)
-      result = g_settings.m_musicExtensions;
+      result = g_stSettings.m_musicExtensions;
     else if (strcmpi(media, "picture") == 0)
-      result = g_settings.m_pictureExtensions;
+      result = g_stSettings.m_pictureExtensions;
     else
     {
       PyErr_SetString(PyExc_ValueError, "media = (video, music, picture)");

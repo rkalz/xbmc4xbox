@@ -30,7 +30,7 @@
 
 #include "debug.h"
 
-static cmyth_debug_ctx_t refmem_debug_ctx = CMYTH_DEBUG_CTX_INIT("refmem",
+static mvp_debug_ctx_t refmem_debug_ctx = MVP_DEBUG_CTX_INIT("refmem",
 							     REF_DBG_NONE,
 							     NULL);
 /*
@@ -51,7 +51,7 @@ static cmyth_debug_ctx_t refmem_debug_ctx = CMYTH_DEBUG_CTX_INIT("refmem",
 void
 refmem_dbg_level(int l)
 {
-	__cmyth_dbg_setlevel(&refmem_debug_ctx, l);
+	mvp_dbg_setlevel(&refmem_debug_ctx, l);
 }
 
 /*
@@ -70,7 +70,7 @@ refmem_dbg_level(int l)
 void
 refmem_dbg_all()
 {
-	__cmyth_dbg_setlevel(&refmem_debug_ctx, REF_DBG_ALL);
+	mvp_dbg_setlevel(&refmem_debug_ctx, REF_DBG_ALL);
 }
 
 /*
@@ -89,7 +89,7 @@ refmem_dbg_all()
 void
 refmem_dbg_none()
 {
-	__cmyth_dbg_setlevel(&refmem_debug_ctx, REF_DBG_NONE);
+	mvp_dbg_setlevel(&refmem_debug_ctx, REF_DBG_NONE);
 }
 
 /*
@@ -113,6 +113,6 @@ refmem_dbg(int level, char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	__cmyth_dbg(&refmem_debug_ctx, level, fmt, ap);
+	mvp_dbg(&refmem_debug_ctx, level, fmt, ap);
 	va_end(ap);
 }

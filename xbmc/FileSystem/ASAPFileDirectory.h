@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 #pragma once
 
 #include "MusicFileDirectory.h"
-#include "DllASAP.h"
+#include "cores/paplayer/DllASAP.h"
 
 namespace XFILE
 {
@@ -33,6 +33,6 @@ namespace XFILE
     virtual ~CASAPFileDirectory(void);
   private:
     DllASAP m_dll;
-    virtual int GetTrackCount(const CStdString& strPath);
+    virtual int GetTrackCount(const CStdString& strPath); 
   };
 }

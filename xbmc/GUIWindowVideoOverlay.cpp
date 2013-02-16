@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,8 +19,9 @@
  *
  */
 
+#include "stdafx.h"
 #include "GUIWindowVideoOverlay.h"
-#include "GUIInfoManager.h"
+#include "utils/GUIInfoManager.h"
 #include "GUIWindowManager.h"
 
 #define CONTROL_PLAYTIME     2
@@ -52,7 +53,7 @@ void CGUIWindowVideoOverlay::FrameMove()
   CGUIDialog::FrameMove();
 }
 
-bool CGUIWindowVideoOverlay::OnMouseEvent(const CPoint &point, const CMouseEvent &event)
+bool CGUIWindowVideoOverlay::OnMouse(const CPoint &point)
 {
   return false;
 }

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,13 +19,12 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 
 #ifdef HAS_EVENT_SERVER
 
 #include "EventPacket.h"
 #include "Socket.h"
-#include "utils/log.h"
 #ifdef _XBOX
 #include "lib/libcdio/inttypes.h"
 #endif

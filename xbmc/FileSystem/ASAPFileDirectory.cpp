@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,9 +19,10 @@
  *
  */
 
+#include "stdafx.h"
 #include "ASAPFileDirectory.h"
 #include "FileSystem/File.h"
-#include "music/tags/MusicInfoTagLoaderASAP.h"
+#include "MusicInfoTagLoaderASAP.h"
 
 using namespace XFILE;
 
@@ -38,7 +39,7 @@ int CASAPFileDirectory::GetTrackCount(const CStdString &strPath)
 {
   if (!m_dll.Load())
     return 0;
-
+  
   MUSIC_INFO::CMusicInfoTagLoaderASAP loader;
   loader.Load(strPath,m_tag);
   m_tag.SetDuration(0); // ignore duration or all songs get duration of track 1

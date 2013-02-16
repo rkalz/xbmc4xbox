@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -18,15 +18,14 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
+#include "stdafx.h"
 #include "XMLUtils.h"
 #include "ScraperSettings.h"
 #include "FileSystem/File.h"
 #include "FileSystem/Directory.h"
-#include "FileSystem/CurlFile.h"
+#include "FileSystem/FileCurl.h"
 #include "utils/ScraperParser.h"
 #include "utils/ScraperUrl.h"
-#include "utils/CharsetConverter.h"
-#include "utils/log.h"
 
 #include <sstream>
 
@@ -74,7 +73,7 @@ bool CScraperSettings::LoadSettingsXML(const CStdString& strScraper, const CStdS
   vector<CStdString> strHTML;
   if (url)
   {
-    XFILE::CCurlFile http;
+    XFILE::CFileCurl http;
     for (unsigned int i=0;i<url->m_url.size();++i)
     {
       CStdString strCurrHTML;

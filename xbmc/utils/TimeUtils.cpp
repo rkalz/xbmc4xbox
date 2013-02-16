@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 
 #include "system.h"
 #include "TimeUtils.h"
-#include "XBDateTime.h"
+#include "DateTime.h"
 
 int64_t CurrentHostCounter(void)
 {
@@ -37,20 +37,10 @@ int64_t CurrentHostFrequency(void)
   return( (int64_t)Frequency.QuadPart );
 }
 
-unsigned int CTimeUtils::frameTime = 0;
-
-void CTimeUtils::UpdateFrameTime()
-{
-  frameTime = GetTimeMS();
-}
-
 unsigned int CTimeUtils::GetFrameTime()
 {
   // we don't have an actual frametime on Xbox so just return timeGetTime()
-#ifdef _XBOX
-  UpdateFrameTime();
-#endif
-  return frameTime;
+  return timeGetTime();
 }
 
 unsigned int CTimeUtils::GetTimeMS()

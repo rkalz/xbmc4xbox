@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,27 +19,26 @@
  *
  */
 
+#include "stdafx.h"
 #include "GUIWindowMusicInfo.h"
 #include "GUIWindowManager.h"
 #include "Util.h"
 #include "utils/URIUtils.h"
 #include "GUIImage.h"
-#include "pictures/Picture.h"
-#include "dialogs/GUIDialogFileBrowser.h"
+#include "Picture.h"
+#include "GUIDialogFileBrowser.h"
 #include "GUIPassword.h"
-#include "music/MusicDatabase.h"
-#include "music/LastFmManager.h"
-#include "music/tags/MusicInfoTag.h"
+#include "MusicDatabase.h"
+#include "LastFmManager.h"
+#include "MusicInfoTag.h"
 #include "URL.h"
 #include "FileSystem/File.h"
 #include "FileItem.h"
-#include "video/VideoInfoTag.h"
-#include "storage/MediaManager.h"
+#include "VideoInfoTag.h"
+#include "MediaManager.h"
 #include "FileSystem/Directory.h"
 #include "utils/AsyncFileCopy.h"
-#include "settings/AdvancedSettings.h"
-#include "LocalizeStrings.h"
-#include "utils/log.h"
+#include "AdvancedSettings.h"
 
 using namespace XFILE;
 
@@ -309,7 +308,7 @@ void CGUIWindowMusicInfo::Update()
   }
 
   // disable the GetThumb button if the user isn't allowed it
-  CONTROL_ENABLE_ON_CONDITION(CONTROL_BTN_GET_THUMB, g_settings.GetCurrentProfile().canWriteDatabases() || g_passwordManager.bMasterUser);
+  CONTROL_ENABLE_ON_CONDITION(CONTROL_BTN_GET_THUMB, g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].canWriteDatabases() || g_passwordManager.bMasterUser);
 
   if (!m_album.strArtist.IsEmpty() && CLastFmManager::GetInstance()->IsLastFmEnabled())
   {

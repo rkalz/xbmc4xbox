@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,8 +19,7 @@
  *
  */
 
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "DVDSubtitlesLibass.h"
 #include "DVDClock.h"
 #include "FileSystem/SpecialProtocol.h"
@@ -32,7 +31,6 @@ CDVDSubtitlesLibass::CDVDSubtitlesLibass()
 
   m_track = NULL;
   m_library = NULL;
-  m_renderer = NULL;
   m_references = 1;
 
   if(!m_dll.Load())

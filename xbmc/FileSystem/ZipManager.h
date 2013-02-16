@@ -2,7 +2,7 @@
 #define ZIP_MANAGER_H_
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -30,7 +30,7 @@
 #define CHDR_SIZE 46
 #define ECDREC_SIZE 22
 
-#include  "utils/StdString.h"
+#include  "StdString.h"
 
 #include <memory.h>
 #include <vector>
@@ -51,7 +51,7 @@ struct SZipEntry {
   unsigned short eclength; // extra field length (central file header)
   unsigned short clength; // file comment length (central file header)
   unsigned int lhdrOffset; // Relative offset of local header
-  int64_t offset;         // offset in file to compressed data
+  __int64 offset;         // offset in file to compressed data
   char name[255];
 
   SZipEntry()
@@ -90,7 +90,7 @@ struct SZipEntry {
     memcpy(&eclength,&SNewItem.eclength,sizeof(unsigned short));
     memcpy(&clength,&SNewItem.clength,sizeof(unsigned short));
     memcpy(&lhdrOffset,&SNewItem.lhdrOffset,sizeof(unsigned int));
-    memcpy(&offset,&SNewItem.offset,sizeof(int64_t));
+    memcpy(&offset,&SNewItem.offset,sizeof(__int64));
     memcpy(name,SNewItem.name,255*sizeof(char));
   }
 };
@@ -110,7 +110,7 @@ public:
   static void readCHeader(const char* buffer, SZipEntry& info);
 private:
   std::map<CStdString,std::vector<SZipEntry> > mZipMap;
-  std::map<CStdString,int64_t> mZipDate;
+  std::map<CStdString,__int64> mZipDate;
 };
 
 extern CZipManager g_ZipManager;

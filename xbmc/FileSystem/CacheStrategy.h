@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -23,7 +23,6 @@
 #ifndef XFILECACHESTRATEGY_H
 #define XFILECACHESTRATEGY_H
 
-#include <stdint.h>
 #ifdef _LINUX
 #include "PlatformDefs.h"
 #include "XHandlePublic.h"
@@ -46,14 +45,14 @@ public:
   virtual ~CCacheStrategy();
 
   virtual int Open() = 0;
-  virtual void Close() = 0;
+  virtual int Close() = 0;
 
   virtual int WriteToCache(const char *pBuffer, size_t iSize) = 0;
   virtual int ReadFromCache(char *pBuffer, size_t iMaxSize) = 0;
-  virtual int64_t WaitForData(unsigned int iMinAvail, unsigned int iMillis) = 0;
+  virtual __int64 WaitForData(unsigned int iMinAvail, unsigned int iMillis) = 0;
 
-  virtual int64_t Seek(int64_t iFilePosition) = 0;
-  virtual void Reset(int64_t iSourcePosition) = 0;
+  virtual __int64 Seek(__int64 iFilePosition, int iWhence) = 0;
+  virtual void Reset(__int64 iSourcePosition) = 0;
 
   virtual void EndOfInput(); // mark the end of the input stream so that Read will know when to return EOF
   virtual bool IsEndOfInput();
@@ -72,25 +71,25 @@ public:
     virtual ~CSimpleFileCache();
 
   virtual int Open() ;
-  virtual void Close() ;
+  virtual int Close() ;
 
   virtual int WriteToCache(const char *pBuffer, size_t iSize) ;
   virtual int ReadFromCache(char *pBuffer, size_t iMaxSize) ;
-  virtual int64_t WaitForData(unsigned int iMinAvail, unsigned int iMillis) ;
+  virtual __int64 WaitForData(unsigned int iMinAvail, unsigned int iMillis) ;
 
-  virtual int64_t Seek(int64_t iFilePosition);
-  virtual void Reset(int64_t iSourcePosition);
+  virtual __int64 Seek(__int64 iFilePosition, int iWhence);
+  virtual void Reset(__int64 iSourcePosition);
   virtual void EndOfInput();
 
-  int64_t  GetAvailableRead();
+  __int64  GetAvailableRead();
 
 protected:
   HANDLE  m_hCacheFileRead;
   HANDLE  m_hCacheFileWrite;
   HANDLE  m_hDataAvailEvent;
-  volatile int64_t m_nStartPosition;
-  volatile int64_t m_nWritePosition;
-  volatile int64_t m_nReadPosition;
+  volatile __int64 m_nStartPosition;
+  volatile __int64 m_nWritePosition;
+  volatile __int64 m_nReadPosition;
 };
 
 }

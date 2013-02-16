@@ -18,13 +18,12 @@
 * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "Win32DirectSound.h"
 #include "AudioContext.h"
 #include "KS.h"
 #include "Ksmedia.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 
 
 void CWin32DirectSound::DoWork()
@@ -51,7 +50,7 @@ CWin32DirectSound::CWin32DirectSound(IAudioCallback* pCallback, int iChannels, u
   m_uiSamplesPerSec = uiSamplesPerSec;
   m_uiBitsPerSample = uiBitsPerSample;
 
-  m_nCurrentVolume = g_settings.m_nVolumeLevel;
+  m_nCurrentVolume = g_stSettings.m_nVolumeLevel;
 
   WAVEFORMATEXTENSIBLE wfxex = {0};
   wfxex.Format.nChannels       = iChannels;
@@ -97,7 +96,7 @@ CWin32DirectSound::CWin32DirectSound(IAudioCallback* pCallback, int iChannels, u
   }
   
   m_pBuffer->Stop();
-  m_pBuffer->SetVolume( g_settings.m_nVolumeLevel );
+  m_pBuffer->SetVolume( g_stSettings.m_nVolumeLevel );
 
   m_bIsAllocated = true;
   m_nextPacket = 0;

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *
  */
  
-#include "utils/log.h"
+#include "stdafx.h"
 #include "DVDInputStreamFile.h"
 #include "utils/URIUtils.h"
 #include "FileSystem/File.h"
@@ -44,15 +44,18 @@ bool CDVDInputStreamFile::IsEOF()
 
 bool CDVDInputStreamFile::Open(const char* strFile, const std::string& content)
 {
-  if (!CDVDInputStream::Open(strFile, content))
-    return false;
+  if (!CDVDInputStream::Open(strFile, content)) return false;
 
   m_pFile = new CFile();
-  if (!m_pFile)
-    return false;
+  if (!m_pFile) return false;
+
+  unsigned int flags = READ_TRUNCATED | READ_BITRATE | READ_CHUNKED;
+  
+  if( URIUtils::IsInternetStream( CStdString(strFile) ) )
+    flags |= READ_CACHED;
 
   // open file in binary mode
-  if (!m_pFile->Open(strFile, READ_TRUNCATED | READ_BITRATE | READ_CHUNKED))
+  if (!m_pFile->Open(strFile, flags))
   {
     delete m_pFile;
     m_pFile = NULL;
@@ -92,14 +95,14 @@ int CDVDInputStreamFile::Read(BYTE* buf, int buf_size)
   return (int)(ret & 0xFFFFFFFF);
 }
 
-int64_t CDVDInputStreamFile::Seek(int64_t offset, int whence)
+__int64 CDVDInputStreamFile::Seek(__int64 offset, int whence)
 {
   if(!m_pFile) return -1;
 
   if(whence == SEEK_POSSIBLE)
     return m_pFile->IoControl(IOCTRL_SEEK_POSSIBLE, NULL);
 
-  int64_t ret = m_pFile->Seek(offset, whence);
+  __int64 ret = m_pFile->Seek(offset, whence);
 
   /* if we succeed, we are not eof anymore */
   if( ret >= 0 ) m_eof = false;
@@ -107,19 +110,11 @@ int64_t CDVDInputStreamFile::Seek(int64_t offset, int whence)
   return ret;
 }
 
-int64_t CDVDInputStreamFile::GetLength()
+__int64 CDVDInputStreamFile::GetLength()
 {
   if (m_pFile)
     return m_pFile->GetLength();
   return 0;
-}
-
-bool CDVDInputStreamFile::GetCacheStatus(XFILE::SCacheStatus *status)
-{
-  if(m_pFile && m_pFile->IoControl(IOCTRL_CACHE_STATUS, status) >= 0)
-    return true;
-  else
-    return false;
 }
 
 BitstreamStats CDVDInputStreamFile::GetBitstreamStats() const 
@@ -141,9 +136,3 @@ int CDVDInputStreamFile::GetBlockSize()
     return 0;
 }
 
-void CDVDInputStreamFile::SetReadRate(unsigned rate)
-{
-  unsigned maxrate = rate + 1024 * 1024 / 8;
-  if(m_pFile->IoControl(IOCTRL_CACHE_SETRATE, &maxrate) >= 0)
-    CLog::Log(LOGDEBUG, "CDVDInputStreamFile::SetReadRate - set cache throttle rate to %u bytes per second", maxrate);
-}

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 
 #include "AudioDecoder.h"
 #include "CodecFactory.h"
-#include "settings/GUISettings.h"
+#include "GUISettings.h"
 #include "FileItem.h"
 #include "utils/SingleLock.h"
 #include "utils/log.h"

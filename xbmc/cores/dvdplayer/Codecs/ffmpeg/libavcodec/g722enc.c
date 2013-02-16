@@ -32,15 +32,6 @@
 
 #define FREEZE_INTERVAL 128
 
-/* This is an arbitrary value. Allowing insanely large values leads to strange
-   problems, so we limit it to a reasonable value */
-#define MAX_FRAME_SIZE 32768
-
-/* We clip the value of avctx->trellis to prevent data type overflows and
-   undefined behavior. Using larger values is insanely slow anyway. */
-#define MIN_TRELLIS 0
-#define MAX_TRELLIS 16
-
 static av_cold int g722_encode_init(AVCodecContext * avctx)
 {
     G722Context *c = avctx->priv_data;
@@ -62,40 +53,6 @@ static av_cold int g722_encode_init(AVCodecContext * avctx)
             c->paths[i] = av_mallocz(max_paths * sizeof(**c->paths));
             c->node_buf[i] = av_mallocz(2 * frontier * sizeof(**c->node_buf));
             c->nodep_buf[i] = av_mallocz(2 * frontier * sizeof(**c->nodep_buf));
-        }
-    }
-
-    if (avctx->frame_size) {
-        /* validate frame size */
-        if (avctx->frame_size & 1 || avctx->frame_size > MAX_FRAME_SIZE) {
-            int new_frame_size;
-
-            if (avctx->frame_size == 1)
-                new_frame_size = 2;
-            else if (avctx->frame_size > MAX_FRAME_SIZE)
-                new_frame_size = MAX_FRAME_SIZE;
-            else
-                new_frame_size = avctx->frame_size - 1;
-
-            av_log(avctx, AV_LOG_WARNING, "Requested frame size is not "
-                   "allowed. Using %d instead of %d\n", new_frame_size,
-                   avctx->frame_size);
-            avctx->frame_size = new_frame_size;
-        }
-    } else {
-        /* This is arbitrary. We use 320 because it's 20ms @ 16kHz, which is
-           a common packet size for VoIP applications */
-        avctx->frame_size = 320;
-    }
-
-    if (avctx->trellis) {
-        /* validate trellis */
-        if (avctx->trellis < MIN_TRELLIS || avctx->trellis > MAX_TRELLIS) {
-            int new_trellis = av_clip(avctx->trellis, MIN_TRELLIS, MAX_TRELLIS);
-            av_log(avctx, AV_LOG_WARNING, "Requested trellis value is not "
-                   "allowed. Using %d instead of %d\n", new_trellis,
-                   avctx->trellis);
-            avctx->trellis = new_trellis;
         }
     }
 
@@ -128,8 +85,8 @@ static inline void filter_samples(G722Context *c, const int16_t *samples,
     c->prev_samples[c->prev_samples_pos++] = samples[0];
     c->prev_samples[c->prev_samples_pos++] = samples[1];
     ff_g722_apply_qmf(c->prev_samples + c->prev_samples_pos - 24, &xout1, &xout2);
-    *xlow  = xout1 + xout2 >> 14;
-    *xhigh = xout1 - xout2 >> 14;
+    *xlow  = xout1 + xout2 >> 13;
+    *xhigh = xout1 - xout2 >> 13;
     if (c->prev_samples_pos >= PREV_SAMPLES_BUF_SIZE) {
         memmove(c->prev_samples,
                 c->prev_samples + c->prev_samples_pos - 22,
@@ -160,12 +117,13 @@ static inline int encode_low(const struct G722Band* state, int xlow)
     return (diff < 0 ? (i < 2 ? 63 : 33) : 61) - i;
 }
 
-static void g722_encode_trellis(G722Context *c, int trellis,
-                                uint8_t *dst, int nb_samples,
-                                const int16_t *samples)
+static int g722_encode_trellis(AVCodecContext *avctx,
+                               uint8_t *dst, int buf_size, void *data)
 {
+    G722Context *c = avctx->priv_data;
+    const int16_t *samples = data;
     int i, j, k;
-    int frontier = 1 << trellis;
+    int frontier = 1 << avctx->trellis;
     struct TrellisNode **nodes[2];
     struct TrellisNode **nodes_next[2];
     int pathn[2] = {0, 0}, froze = -1;
@@ -181,7 +139,7 @@ static void g722_encode_trellis(G722Context *c, int trellis,
         nodes[i][0]->state = c->band[i];
     }
 
-    for (i = 0; i < nb_samples >> 1; i++) {
+    for (i = 0; i < buf_size; i++) {
         int xlow, xhigh;
         struct TrellisNode *next[2];
         int heap_pos[2] = {0, 0};
@@ -313,28 +271,8 @@ static void g722_encode_trellis(G722Context *c, int trellis,
     }
     c->band[0] = nodes[0][0]->state;
     c->band[1] = nodes[1][0]->state;
-}
 
-static av_always_inline void encode_byte(G722Context *c, uint8_t *dst,
-                                         const int16_t *samples)
-{
-    int xlow, xhigh, ilow, ihigh;
-    filter_samples(c, samples, &xlow, &xhigh);
-    ihigh = encode_high(&c->band[1], xhigh);
-    ilow  = encode_low (&c->band[0], xlow);
-    ff_g722_update_high_predictor(&c->band[1], c->band[1].scale_factor *
-                                ff_g722_high_inv_quant[ihigh] >> 10, ihigh);
-    ff_g722_update_low_predictor(&c->band[0], ilow >> 2);
-    *dst = ihigh << 6 | ilow;
-}
-
-static void g722_encode_no_trellis(G722Context *c,
-                                   uint8_t *dst, int nb_samples,
-                                   const int16_t *samples)
-{
-    int i;
-    for (i = 0; i < nb_samples; i += 2)
-        encode_byte(c, dst++, &samples[i]);
+    return i;
 }
 
 static int g722_encode_frame(AVCodecContext *avctx,
@@ -342,22 +280,22 @@ static int g722_encode_frame(AVCodecContext *avctx,
 {
     G722Context *c = avctx->priv_data;
     const int16_t *samples = data;
-    int nb_samples;
-
-    nb_samples = avctx->frame_size - (avctx->frame_size & 1);
+    int i;
 
     if (avctx->trellis)
-        g722_encode_trellis(c, avctx->trellis, dst, nb_samples, samples);
-    else
-        g722_encode_no_trellis(c, dst, nb_samples, samples);
+        return g722_encode_trellis(avctx, dst, buf_size, data);
 
-    /* handle last frame with odd frame_size */
-    if (nb_samples < avctx->frame_size) {
-        int16_t last_samples[2] = { samples[nb_samples], samples[nb_samples] };
-        encode_byte(c, &dst[nb_samples >> 1], last_samples);
+    for (i = 0; i < buf_size; i++) {
+        int xlow, xhigh, ihigh, ilow;
+        filter_samples(c, &samples[2*i], &xlow, &xhigh);
+        ihigh = encode_high(&c->band[1], xhigh);
+        ilow  = encode_low(&c->band[0], xlow);
+        ff_g722_update_high_predictor(&c->band[1], c->band[1].scale_factor *
+                                      ff_g722_high_inv_quant[ihigh] >> 10, ihigh);
+        ff_g722_update_low_predictor(&c->band[0], ilow >> 2);
+        *dst++ = ihigh << 6 | ilow;
     }
-
-    return (avctx->frame_size + 1) >> 1;
+    return i;
 }
 
 AVCodec ff_adpcm_g722_encoder = {
@@ -368,7 +306,6 @@ AVCodec ff_adpcm_g722_encoder = {
     .init           = g722_encode_init,
     .close          = g722_encode_close,
     .encode         = g722_encode_frame,
-    .capabilities   = CODEC_CAP_SMALL_LAST_FRAME,
     .long_name      = NULL_IF_CONFIG_SMALL("G.722 ADPCM"),
     .sample_fmts    = (const enum AVSampleFormat[]){AV_SAMPLE_FMT_S16,AV_SAMPLE_FMT_NONE},
 };

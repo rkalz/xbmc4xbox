@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "action.h"
 #include "pyutil.h"
 
@@ -66,12 +66,12 @@ namespace PYXBMC
     
     if (pyAction)
     {
-      pyAction->id = action.GetID();
-      pyAction->buttonCode = action.GetButtonCode();
-      pyAction->fAmount1 = action.GetAmount();
-      pyAction->fAmount2 = action.GetAmount(1);
-      pyAction->fRepeat = action.GetRepeat();
-      pyAction->strAction = action.GetName().c_str();
+      pyAction->id = action.id;
+      pyAction->buttonCode = action.buttonCode;
+      pyAction->fAmount1 = action.amount1;
+      pyAction->fAmount2 = action.amount2;
+      pyAction->fRepeat = action.repeat;
+      pyAction->strAction = action.strAction.c_str();
     }
 
     return (PyObject*)pyAction;
@@ -171,7 +171,7 @@ namespace PYXBMC
     "Action class.\n"
     "\n"
     "For backwards compatibility reasons the == operator is extended so that it"
-    "can compare an action with other actions and action.GetID() with numbers"
+    "can compare an action with other actions and action.id with numbers"
     "  example: (action == ACTION_MOVE_LEFT)"
     "");
 

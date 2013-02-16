@@ -878,7 +878,7 @@ static void end_frame(AVFilterLink *inlink)
 
 AVFilter avfilter_vf_mp = {
     .name      = "mp",
-    .description = NULL_IF_CONFIG_SMALL("Apply a libmpcodecs filter to the input video."),
+    .description = NULL_IF_CONFIG_SMALL("libmpcodecs wrapper."),
     .init = init,
     .priv_size = sizeof(MPContext),
     .query_formats = query_formats,

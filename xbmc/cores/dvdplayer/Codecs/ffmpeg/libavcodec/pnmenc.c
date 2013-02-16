@@ -20,6 +20,7 @@
  */
 
 #include "avcodec.h"
+#include "bytestream.h"
 #include "pnm.h"
 
 

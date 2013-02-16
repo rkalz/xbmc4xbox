@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,12 +19,11 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "keyboard.h"
 #include "pyutil.h"
 #include "GUIWindowManager.h"
-#include "dialogs/GUIDialogKeyboard.h"
-#include "ApplicationMessenger.h"
+#include "GUIDialogKeyboard.h"
 
 using namespace std;
 

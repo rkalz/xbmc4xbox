@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,8 +20,7 @@
  */
 
 
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "PluginDirectory.h"
 #include "utils/URIUtils.h"
 #ifdef HAS_PYTHON
@@ -30,11 +29,10 @@
 #include "../utils/SingleLock.h"
 #include "PluginSettings.h"
 #include "GUIWindowManager.h"
-#include "dialogs/GUIDialogProgress.h"
+#include "GUIDialogProgress.h"
 #include "FileSystem/File.h"
-#include "settings/GUISettings.h"
+#include "GUISettings.h"
 #include "FileItem.h"
-#include "LocalizeStrings.h"
 
 using namespace XFILE;
 using namespace std;

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2009 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,7 +20,7 @@
  */
 
 // python.h should always be included first before any other includes
-#include "system.h"
+#include "stdafx.h"
 #include "Python/Include/Python.h"
 #include "Python/Include/osdefs.h"
 #include "XBPythonDll.h"
@@ -28,10 +28,8 @@
 #include "FileSystem/Directory.h"
 #include "FileItem.h"
 #include "GUIWindowManager.h"
-#include "dialogs/GUIDialogKaiToast.h"
+#include "GUIDialogKaiToast.h"
 #include "utils/URIUtils.h"
-#include "LocalizeStrings.h"
-#include "utils/log.h"
 
 #include "XBPyThread.h"
 #include "XBPython.h"

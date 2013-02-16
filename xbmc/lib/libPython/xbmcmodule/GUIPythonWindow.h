@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -45,7 +45,6 @@ public:
   virtual ~CGUIPythonWindow(void);
   virtual bool    OnMessage(CGUIMessage& message);
   virtual bool    OnAction(const CAction &action);
-  virtual bool    OnBack(int actionID);
   void             SetCallbackWindow(PyObject *object);
   void             WaitForActionEvent(unsigned int timeout);
   void             PulseActionEvent();

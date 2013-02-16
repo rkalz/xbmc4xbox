@@ -2,7 +2,7 @@
 #define SCRAPER_URL_H
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -23,12 +23,12 @@
  */
 
 #include "tinyXML/tinyxml.h"
-#include "utils/StdString.h"
+#include "StdString.h"
 
 
 #include <vector>
 
-namespace XFILE { class CCurlFile; }
+namespace XFILE { class CFileCurl; }
 
 class CScraperUrl
 {
@@ -63,7 +63,7 @@ public:
   const SUrlEntry GetFirstThumb() const;
   const SUrlEntry GetSeasonThumb(int) const;
   void Clear();
-  static bool Get(const SUrlEntry&, std::string&, XFILE::CCurlFile& http,
+  static bool Get(const SUrlEntry&, std::string&, XFILE::CFileCurl& http,
                  const CStdString& cacheContext);
   static bool DownloadThumbnail(const CStdString &thumb, const SUrlEntry& entry);
   static void ClearCache();

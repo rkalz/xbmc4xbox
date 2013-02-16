@@ -127,7 +127,6 @@ static inline void put_marker(PutBitContext *p, int code)
 
 #define PREDICT(ret, topleft, top, left, predictor)\
     switch(predictor){\
-        case 0: ret= 0; break;\
         case 1: ret= left; break;\
         case 2: ret= top; break;\
         case 3: ret= topleft; break;\

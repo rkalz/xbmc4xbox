@@ -30,7 +30,6 @@
 #include "get_bits.h"
 #include "dnxhddata.h"
 #include "dsputil.h"
-#include "thread.h"
 
 typedef struct DNXHDContext {
     AVCodecContext *avctx;
@@ -366,7 +365,6 @@ static int dnxhd_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
     DNXHDContext *ctx = avctx->priv_data;
     AVFrame *picture = data;
     int first_field = 1;
-    int ret;
 
     av_dlog(avctx, "frame size %d\n", buf_size);
 
@@ -387,14 +385,12 @@ static int dnxhd_decode_frame(AVCodecContext *avctx, void *data, int *data_size,
 
     if (first_field) {
         if (ctx->picture.data[0])
-            ff_thread_release_buffer(avctx, &ctx->picture);
-        if ((ret = ff_thread_get_buffer(avctx, &ctx->picture)) < 0) {
+            avctx->release_buffer(avctx, &ctx->picture);
+        if (avctx->get_buffer(avctx, &ctx->picture) < 0) {
             av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
-            return ret;
+            return -1;
         }
     }
-
-    ff_thread_finish_setup(avctx);
 
     dnxhd_decode_macroblocks(ctx, buf + 0x280, buf_size - 0x280);
 
@@ -415,7 +411,7 @@ static av_cold int dnxhd_decode_close(AVCodecContext *avctx)
     DNXHDContext *ctx = avctx->priv_data;
 
     if (ctx->picture.data[0])
-        ff_thread_release_buffer(avctx, &ctx->picture);
+        avctx->release_buffer(avctx, &ctx->picture);
     free_vlc(&ctx->ac_vlc);
     free_vlc(&ctx->dc_vlc);
     free_vlc(&ctx->run_vlc);
@@ -430,6 +426,6 @@ AVCodec ff_dnxhd_decoder = {
     .init           = dnxhd_decode_init,
     .close          = dnxhd_decode_close,
     .decode         = dnxhd_decode_frame,
-    .capabilities   = CODEC_CAP_DR1 | CODEC_CAP_FRAME_THREADS,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("VC3/DNxHD"),
 };

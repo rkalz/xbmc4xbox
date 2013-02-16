@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,11 @@
  *
  */
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "FileItem.h"
-#include "settings/AdvancedSettings.h"
-#include "pictures/Picture.h"
-#include "video/VideoInfoTag.h"
+#include "AdvancedSettings.h"
+#include "Picture.h"
+#include "VideoInfoTag.h"
 #include "Util.h"
 #include "FileSystem/StackDirectory.h"
 

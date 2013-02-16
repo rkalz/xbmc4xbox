@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -59,7 +59,6 @@ class CDVDInputStreamNavigator
   , public CDVDInputStream::IDisplayTime
   , public CDVDInputStream::IChapter
   , public CDVDInputStream::ISeekTime
-  , public CDVDInputStream::IMenus
 {
 public:
   CDVDInputStreamNavigator(IDVDPlayer* player);
@@ -68,17 +67,17 @@ public:
   virtual bool Open(const char* strFile, const std::string& content);
   virtual void Close();
   virtual int Read(BYTE* buf, int buf_size);
-  virtual int64_t Seek(int64_t offset, int whence);
+  virtual __int64 Seek(__int64 offset, int whence);
   virtual bool Pause(double dTime) { return false; };
   virtual int GetBlockSize() { return DVDSTREAM_BLOCK_SIZE_DVD; }
   virtual bool IsEOF() { return m_bEOF; }
-  virtual int64_t GetLength()             { return 0; }
-  virtual ENextStream NextStream() ;
+  virtual __int64 GetLength()             { return 0; }
 
   void ActivateButton();
   void SelectButton(int iButton);
   void SkipStill();
   void SkipWait();
+  void SkipHold();
   void OnUp();
   void OnDown();
   void OnLeft();
@@ -95,6 +94,7 @@ public:
   bool GetCurrentButtonInfo(CDVDOverlaySpu* pOverlayPicture, CDVDDemuxSPU* pSPU, int iButtonType /* 0 = selection, 1 = action (clicked)*/);
 
   bool IsInMenu() { return m_bInMenu; }
+  bool IsHeld();
 
   int GetActiveSubtitleStream();
   std::string GetSubtitleStreamLanguage(int iId);
@@ -155,13 +155,13 @@ protected:
 
   int m_iTotalTime;
   int m_iTime;
-  int64_t m_iCellStart; // start time of current cell in pts units (90khz clock)
+  __int64 m_iCellStart; // start time of current cell in pts units (90khz clock)
 
   bool m_bInMenu;
 
-  int64_t m_iVobUnitStart;
-  int64_t m_iVobUnitStop;
-  int64_t m_iVobUnitCorrection;
+  __int64 m_iVobUnitStart;
+  __int64 m_iVobUnitStop;
+  __int64 m_iVobUnitCorrection;
 
   int m_iTitleCount;
   int m_iTitle;

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "DVDPerformanceCounter.h"
 #include "DVDMessageQueue.h"
 
@@ -67,7 +67,7 @@ HRESULT __stdcall DVDPerformanceCounterVideoQueue(PLARGE_INTEGER numerator, PLAR
   return S_OK;
 }
 
-inline int64_t get_thread_cpu_usage(ProcessPerformance* p)
+inline __int64 get_thread_cpu_usage(ProcessPerformance* p)
 {
   if (p->hThread)
   {
@@ -86,8 +86,8 @@ inline int64_t get_thread_cpu_usage(ProcessPerformance* p)
     FILETIME_TO_ULARGE_INTEGER(p->timer_thread, current_time_thread);
     FILETIME_TO_ULARGE_INTEGER(p->timer_system, current_time_system);
 
-    int64_t threadTime = (p->timer_thread.QuadPart - old_time_thread.QuadPart);
-    int64_t systemTime = (p->timer_system.QuadPart - old_time_system.QuadPart);
+    __int64 threadTime = (p->timer_thread.QuadPart - old_time_thread.QuadPart);
+    __int64 systemTime = (p->timer_system.QuadPart - old_time_system.QuadPart);
 
     if (systemTime > 0 && threadTime > 0) return ((threadTime * 100) / systemTime);
   }

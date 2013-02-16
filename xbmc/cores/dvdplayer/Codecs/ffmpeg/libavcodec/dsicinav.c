@@ -147,11 +147,11 @@ static int cin_decode_huffman(const unsigned char *src, int src_size, unsigned c
     return dst_cur - dst;
 }
 
-static int cin_decode_lzss(const unsigned char *src, int src_size, unsigned char *dst, int dst_size)
+static void cin_decode_lzss(const unsigned char *src, int src_size, unsigned char *dst, int dst_size)
 {
     uint16_t cmd;
     int i, sz, offset, code;
-    unsigned char *dst_end = dst + dst_size, *dst_start = dst;
+    unsigned char *dst_end = dst + dst_size;
     const unsigned char *src_end = src + src_size;
 
     while (src < src_end && dst < dst_end) {
@@ -162,8 +162,6 @@ static int cin_decode_lzss(const unsigned char *src, int src_size, unsigned char
             } else {
                 cmd = AV_RL16(src); src += 2;
                 offset = cmd >> 4;
-                if ((int) (dst - dst_start) < offset + 1)
-                    return AVERROR_INVALIDDATA;
                 sz = (cmd & 0xF) + 2;
                 /* don't use memcpy/memmove here as the decoding routine (ab)uses */
                 /* buffer overlappings to repeat bytes in the destination */
@@ -175,8 +173,6 @@ static int cin_decode_lzss(const unsigned char *src, int src_size, unsigned char
             }
         }
     }
-
-    return 0;
 }
 
 static void cin_decode_rle(const unsigned char *src, int src_size, unsigned char *dst, int dst_size)
@@ -206,7 +202,13 @@ static int cinvideo_decode_frame(AVCodecContext *avctx,
     const uint8_t *buf = avpkt->data;
     int buf_size = avpkt->size;
     CinVideoContext *cin = avctx->priv_data;
-    int i, y, palette_type, palette_colors_count, bitmap_frame_type, bitmap_frame_size, res = 0;
+    int i, y, palette_type, palette_colors_count, bitmap_frame_type, bitmap_frame_size;
+
+    cin->frame.buffer_hints = FF_BUFFER_HINTS_VALID | FF_BUFFER_HINTS_PRESERVE | FF_BUFFER_HINTS_REUSABLE;
+    if (avctx->reget_buffer(avctx, &cin->frame)) {
+        av_log(cin->avctx, AV_LOG_ERROR, "delphinecinvideo: reget_buffer() failed to allocate a frame\n");
+        return -1;
+    }
 
     palette_type = buf[0];
     palette_colors_count = AV_RL16(buf+1);
@@ -232,6 +234,8 @@ static int cinvideo_decode_frame(AVCodecContext *avctx,
             bitmap_frame_size -= 4;
         }
     }
+    memcpy(cin->frame.data[1], cin->palette, sizeof(cin->palette));
+    cin->frame.palette_has_changed = 1;
 
     /* note: the decoding routines below assumes that surface.width = surface.pitch */
     switch (bitmap_frame_type) {
@@ -264,31 +268,17 @@ static int cinvideo_decode_frame(AVCodecContext *avctx,
           cin->bitmap_table[CIN_CUR_BMP], cin->bitmap_size);
         break;
     case 38:
-        res = cin_decode_lzss(buf, bitmap_frame_size,
-                              cin->bitmap_table[CIN_CUR_BMP],
-                              cin->bitmap_size);
-        if (res < 0)
-            return res;
+        cin_decode_lzss(buf, bitmap_frame_size,
+          cin->bitmap_table[CIN_CUR_BMP], cin->bitmap_size);
         break;
     case 39:
-        res = cin_decode_lzss(buf, bitmap_frame_size,
-                              cin->bitmap_table[CIN_CUR_BMP],
-                              cin->bitmap_size);
-        if (res < 0)
-            return res;
+        cin_decode_lzss(buf, bitmap_frame_size,
+          cin->bitmap_table[CIN_CUR_BMP], cin->bitmap_size);
         cin_apply_delta_data(cin->bitmap_table[CIN_PRE_BMP],
           cin->bitmap_table[CIN_CUR_BMP], cin->bitmap_size);
         break;
     }
 
-    cin->frame.buffer_hints = FF_BUFFER_HINTS_VALID | FF_BUFFER_HINTS_PRESERVE | FF_BUFFER_HINTS_REUSABLE;
-    if (avctx->reget_buffer(avctx, &cin->frame)) {
-        av_log(cin->avctx, AV_LOG_ERROR, "delphinecinvideo: reget_buffer() failed to allocate a frame\n");
-        return -1;
-    }
-
-    memcpy(cin->frame.data[1], cin->palette, sizeof(cin->palette));
-    cin->frame.palette_has_changed = 1;
     for (y = 0; y < cin->avctx->height; ++y)
         memcpy(cin->frame.data[0] + (cin->avctx->height - 1 - y) * cin->frame.linesize[0],
           cin->bitmap_table[CIN_CUR_BMP] + y * cin->avctx->width,

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,9 +19,10 @@
  *
  */
 
+#include "stdafx.h"
 #include "DVDInputStreamTV.h"
 #include "FileSystem/MythFile.h"
-#include "Filesystem/SlingboxFile.h"
+#include "Filesystem/Slingbox.h"
 #include "URL.h"
 
 using namespace XFILE;
@@ -100,10 +101,10 @@ int CDVDInputStreamTV::Read(BYTE* buf, int buf_size)
   return (int)(ret & 0xFFFFFFFF);
 }
 
-int64_t CDVDInputStreamTV::Seek(int64_t offset, int whence)
+__int64 CDVDInputStreamTV::Seek(__int64 offset, int whence)
 {
   if(!m_pFile) return -1;
-  int64_t ret = m_pFile->Seek(offset, whence);
+  __int64 ret = m_pFile->Seek(offset, whence);
 
   /* if we succeed, we are not eof anymore */
   if( ret >= 0 ) m_eof = false;
@@ -111,7 +112,7 @@ int64_t CDVDInputStreamTV::Seek(int64_t offset, int whence)
   return ret;
 }
 
-int64_t CDVDInputStreamTV::GetLength()
+__int64 CDVDInputStreamTV::GetLength()
 {
   if (!m_pFile) return 0;
   return m_pFile->GetLength();
@@ -160,15 +161,15 @@ bool CDVDInputStreamTV::SeekTime(int iTimeInMsec)
   return false;
 }
 
-CDVDInputStream::ENextStream CDVDInputStreamTV::NextStream()
+bool CDVDInputStreamTV::NextStream()
 {
-  if(!m_pFile) return NEXTSTREAM_NONE;
+  if(!m_pFile) return false;
   if(m_pFile->SkipNext())
   {
     m_eof = false;
-    return NEXTSTREAM_OPEN;
+    return true;
   }
-  return NEXTSTREAM_NONE;
+  return false;
 }
 
 bool CDVDInputStreamTV::CanRecord()

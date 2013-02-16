@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,10 +19,10 @@
  *
  */
 
+#include "stdafx.h"
 #include "ViewDatabase.h"
 #include "utils/URIUtils.h"
 #include "ViewState.h"
-#include "utils/log.h"
 
 //********************************************************************************************************************************
 CViewDatabase::CViewDatabase(void)
@@ -75,7 +75,7 @@ bool CViewDatabase::GetViewState(const CStdString &path, int window, CViewState 
     URIUtils::AddSlashAtEnd(path1);
     if (path1.IsEmpty()) path1 = "root://";
 
-    CStdString sql = PrepareSQL("select * from view where window = %i and path like '%s'", window, path1.c_str());
+    CStdString sql = FormatSQL("select * from view where window = %i and path like '%s'", window, path1.c_str());
     m_pDS->query(sql.c_str());
 
     if (!m_pDS->eof())
@@ -106,19 +106,19 @@ bool CViewDatabase::SetViewState(const CStdString &path, int window, const CView
     URIUtils::AddSlashAtEnd(path1);
     if (path1.IsEmpty()) path1 = "root://";
 
-    CStdString sql = PrepareSQL("select idView from view where window = %i and path like '%s'", window, path1.c_str());
+    CStdString sql = FormatSQL("select idView from view where window = %i and path like '%s'", window, path1.c_str());
     m_pDS->query(sql.c_str());
     if (!m_pDS->eof())
     { // update the view
       int idView = m_pDS->fv("idView").get_asInt();
       m_pDS->close();
-      sql = PrepareSQL("update view set viewMode=%i,sortMethod=%i,sortOrder=%i where idView=%i", state.m_viewMode, (int)state.m_sortMethod, (int)state.m_sortOrder, idView);
+      sql = FormatSQL("update view set viewMode=%i,sortMethod=%i,sortOrder=%i where idView=%i", state.m_viewMode, (int)state.m_sortMethod, (int)state.m_sortOrder, idView);
       m_pDS->exec(sql.c_str());
     }
     else
     { // add the view
       m_pDS->close();
-      sql = PrepareSQL("insert into view (idView, path, window, viewMode, sortMethod, sortOrder) values(NULL, '%s', %i, %i, %i, %i)", path1.c_str(), window, state.m_viewMode, (int)state.m_sortMethod, (int)state.m_sortOrder);
+      sql = FormatSQL("insert into view (idView, path, window, viewMode, sortMethod, sortOrder) values(NULL, '%s', %i, %i, %i, %i)", path1.c_str(), window, state.m_viewMode, (int)state.m_sortMethod, (int)state.m_sortOrder);
       m_pDS->exec(sql.c_str());
     }
   }
@@ -136,7 +136,7 @@ bool CViewDatabase::ClearViewStates(int windowID)
     if (NULL == m_pDB.get()) return false;
     if (NULL == m_pDS.get()) return false;
 
-    CStdString sql = PrepareSQL("delete from view where window = %i", windowID);
+    CStdString sql = FormatSQL("delete from view where window = %i", windowID);
     m_pDS->exec(sql.c_str());
   }
   catch (...)

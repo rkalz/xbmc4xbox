@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -35,14 +35,14 @@ class CDVDSubtitleStream
 public:
   CDVDSubtitleStream();
   virtual ~CDVDSubtitleStream();
-
+  
   bool Open(const std::string& strFile);
   int Read(char* buf, int buf_size);
   long Seek(long offset, int whence);
 
   char* ReadLine(char* pBuffer, int iLen);
   //wchar* ReadLineW(wchar* pBuffer, int iLen) { return NULL; };
-
+  
   std::stringstream m_stringstream;
 };
 

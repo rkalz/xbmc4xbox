@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,9 +20,6 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
-
-#include "utils/SingleLock.h"
-
 #include <queue>
 
 class CFileItem;
@@ -61,8 +58,6 @@ class CGUIDialog;
 #define TMSG_HTTPAPI              400
 
 #define TMSG_NETWORKMESSAGE         500
-
-#define TMSG_GUI_PYTHON_DIALOG        605
 
 typedef struct
 {

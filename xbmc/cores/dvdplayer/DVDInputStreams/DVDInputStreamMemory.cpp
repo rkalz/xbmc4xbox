@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  *
  */
  
+#include "stdafx.h"
 #include "DVDInputStreamMemory.h"
 
 CDVDInputStreamMemory::CDVDInputStreamMemory() : CDVDInputStream(DVDSTREAM_TYPE_MEMORY)
@@ -74,7 +75,7 @@ int CDVDInputStreamMemory::Read(BYTE* buf, int buf_size)
   return iBytesToCopy;
 }
 
-int64_t CDVDInputStreamMemory::Seek(int64_t offset, int whence)
+__int64 CDVDInputStreamMemory::Seek(__int64 offset, int whence)
 {
   switch (whence)
   {
@@ -101,7 +102,7 @@ int64_t CDVDInputStreamMemory::Seek(int64_t offset, int whence)
   return m_iDataPos;
 }
 
-int64_t CDVDInputStreamMemory::GetLength()
+__int64 CDVDInputStreamMemory::GetLength()
 {
   return m_iDataSize;
 }

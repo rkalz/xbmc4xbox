@@ -5,7 +5,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -27,13 +27,11 @@
 
 #include "GUIListItem.h"
 #include "utils/Archive.h"
-#include "utils/ISerializable.h"
-#include "XBDateTime.h"
+#include "DateTime.h"
 #include "SortFileItem.h"
 #include "utils/LabelFormatter.h"
 #include "GUIPassword.h"
 #include "utils/CriticalSection.h"
-#include "video/VideoDatabase.h"
 
 #include <vector>
 #include "boost/shared_ptr.hpp"
@@ -62,7 +60,7 @@ class CMediaSource;
   \sa CFileItemList
   */
 class CFileItem :
-  public CGUIListItem, public IArchivable, public ISerializable
+      public CGUIListItem, public ISerializable
 {
 public:
   CFileItem(void);
@@ -84,8 +82,7 @@ public:
 
   void Reset();
   const CFileItem& operator=(const CFileItem& item);
-  virtual void Archive(CArchive& ar);
-  virtual void Serialize(CVariant& value);
+  virtual void Serialize(CArchive& ar);
   virtual bool IsFileItem() const { return true; };
 
   bool Exists(bool bUseCache = true) const;
@@ -151,7 +148,6 @@ public:
   void SetFileSizeLabel();
   virtual void SetLabel(const CStdString &strLabel);
   CURL GetAsUrl() const;
-  VIDEODB_CONTENT_TYPE GetVideoContentType() const;
   bool IsLabelPreformated() const { return m_bLabelPreformated; }
   void SetLabelPreformated(bool bYesNo) { m_bLabelPreformated=bYesNo; }
   bool SortsOnTop() const { return m_specialSort == SORT_ON_TOP; }
@@ -353,7 +349,7 @@ public:
   CFileItemList();
   CFileItemList(const CStdString& strPath);
   virtual ~CFileItemList();
-  virtual void Archive(CArchive& ar);
+  virtual void Serialize(CArchive& ar);
   CFileItemPtr operator[] (int iItem);
   const CFileItemPtr operator[] (int iItem) const;
   CFileItemPtr operator[] (const CStdString& strPath);

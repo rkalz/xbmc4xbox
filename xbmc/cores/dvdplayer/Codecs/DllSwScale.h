@@ -23,7 +23,7 @@ extern "C" {
 #include "Codecs/ffmpeg/libswscale/rgb2rgb.h"
 }
 
-#include "settings/Settings.h"
+#include "settings.h"
 
 class DllSwScaleInterface
 {

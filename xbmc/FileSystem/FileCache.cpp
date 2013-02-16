@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,18 +19,15 @@
  *
  */
 
-#include "utils/log.h" 
+#include "stdafx.h" 
 
-#include "AutoPtrHandle.h"
 #include "FileCache.h"
 #include "utils/Thread.h"
 #include "File.h"
 #include "URL.h"
-#include "utils/TimeUtils.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 
-#include "MemBufferCache.h"
-#include "CircularCache.h"
+#include "CacheMemBuffer.h"
 #include "utils/SingleLock.h"
 
 using namespace AUTOPTR;
@@ -38,62 +35,18 @@ using namespace XFILE;
  
 #define READ_CACHE_CHUNK_SIZE (64*1024)
 
-class CWriteRate
-{
-public:
-  CWriteRate()
-  {
-    m_stamp = CTimeUtils::GetTimeMS();
-    m_pos   = 0;
-    m_pause = 0;
-  }
-
-  void Reset(int64_t pos)
-  {
-    m_stamp = CTimeUtils::GetTimeMS();
-    m_pos   = pos;
-  }
-
-  unsigned Rate(int64_t pos, unsigned int time_bias = 0)
-  {
-    const unsigned ts = CTimeUtils::GetTimeMS() + time_bias;
-    if (ts == m_stamp)
-      return 0;
-    return (unsigned)(1000 * (pos - m_pos) / (ts - m_stamp));
-  }
-
-  void Pause()
-  {
-    m_pause = CTimeUtils::GetTimeMS();
-  }
-
-  void Resume()
-  {
-    m_stamp += CTimeUtils::GetTimeMS() - m_pause;
-    m_pause  = 0;
-  }
-
-private:
-  unsigned m_stamp;
-  int64_t  m_pos;
-  unsigned m_pause;
-};
-
-
 CFileCache::CFileCache()
 {
    m_bDeleteCache = true;
    m_nSeekResult = 0;
    m_seekPos = 0;
    m_readPos = 0;
-   m_writePos = 0;
 
-   if (g_advancedSettings.m_cacheMemBufferSize == 0)
+   if (!g_advancedSettings.m_cacheMemBufferSize)
      m_pCache = new CSimpleFileCache();
    else
-     m_pCache = new CCircularCache(g_advancedSettings.m_cacheMemBufferSize, g_advancedSettings.m_cacheMemBufferSize);
+     m_pCache = new CacheMemBuffer();
    m_seekPossible = 0;
-   m_cacheFull = false;
 }
 
 CFileCache::CFileCache(CCacheStrategy *pCache, bool bDeleteCache)
@@ -102,9 +55,7 @@ CFileCache::CFileCache(CCacheStrategy *pCache, bool bDeleteCache)
   m_bDeleteCache = bDeleteCache;
   m_seekPos = 0;
   m_readPos = 0;
-  m_writePos = 0;
   m_nSeekResult = 0;
-  m_chunkSize = 0;
 }
 
 CFileCache::~CFileCache()
@@ -126,8 +77,7 @@ void CFileCache::SetCacheStrategy(CCacheStrategy *pCache, bool bDeleteCache)
   m_bDeleteCache = bDeleteCache;
 }
 
-IFile *CFileCache::GetFileImp()
-{
+IFile *CFileCache::GetFileImp() {
   return m_source.GetImplemenation();
 }
 
@@ -139,8 +89,7 @@ bool CFileCache::Open(const CURL& url)
 
   CLog::Log(LOGDEBUG,"CFileCache::Open - opening <%s> using cache", url.GetFileName().c_str());
 
-  if (!m_pCache)
-  {
+  if (!m_pCache) {
     CLog::Log(LOGERROR,"CFileCache::Open - no cache strategy defined");
     return false;
   }
@@ -148,16 +97,14 @@ bool CFileCache::Open(const CURL& url)
   m_sourcePath = url.Get();
 
   // open cache strategy
-  if (m_pCache->Open() != CACHE_RC_OK)
-  {
+  if (m_pCache->Open() != CACHE_RC_OK) {
     CLog::Log(LOGERROR,"CFileCache::Open - failed to open cache");
     Close();
     return false;
   }
 
   // opening the source file.
-  if (!m_source.Open(m_sourcePath, READ_NO_CACHE | READ_TRUNCATED | READ_CHUNKED))
-  {
+  if(!m_source.Open(m_sourcePath, READ_NO_CACHE | READ_TRUNCATED | READ_CHUNKED)) {
     CLog::Log(LOGERROR,"%s - failed to open source <%s>", __FUNCTION__, m_sourcePath.c_str());
     Close();
     return false;
@@ -165,13 +112,8 @@ bool CFileCache::Open(const CURL& url)
 
   // check if source can seek
   m_seekPossible = m_source.IoControl(IOCTRL_SEEK_POSSIBLE, NULL);
-  m_chunkSize = CFile::GetChunkSize(m_source.GetChunkSize(), READ_CACHE_CHUNK_SIZE);
 
   m_readPos = 0;
-  m_writePos = 0;
-  m_writeRate = 1024 * 1024;
-  m_writeRateActual = 0;
-  m_cacheFull = false;
   m_seekEvent.Reset();
   m_seekEnded.Reset();
 
@@ -182,24 +124,23 @@ bool CFileCache::Open(const CURL& url)
 
 void CFileCache::Process()
 {
-  if (!m_pCache)
-  {
+  if (!m_pCache) {
     CLog::Log(LOGERROR,"CFileCache::Process - sanity failed. no cache strategy");
     return;
   }
 
+  // setup read chunks size
+  int chunksize = CFile::GetChunkSize(m_source.GetChunkSize(), READ_CACHE_CHUNK_SIZE);
+
   // create our read buffer
-  auto_aptr<char> buffer(new char[m_chunkSize]);
+  auto_aptr<char> buffer(new char[chunksize]);
   if (buffer.get() == NULL)
   {
     CLog::Log(LOGERROR, "%s - failed to allocate read buffer", __FUNCTION__);
     return;
   }
 
-  CWriteRate limiter;
-  CWriteRate average;
-
-  while (!m_bStop)
+  while(!m_bStop)
   {
     // check for seek events
     if (m_seekEvent.WaitMSec(0))
@@ -213,38 +154,13 @@ void CFileCache::Process()
         m_seekPossible = m_source.IoControl(IOCTRL_SEEK_POSSIBLE, NULL);
       }
       else
-      {
         m_pCache->Reset(m_seekPos);
-        average.Reset(m_seekPos);
-        limiter.Reset(m_seekPos);
-        m_writePos = m_seekPos;
-        m_readPos = m_seekPos;
-        m_cacheFull = false;
-      }
 
       m_seekEnded.Set();
     }
 
-    while (m_writeRate)
-    {
-      if (m_writePos - m_readPos < m_writeRate)
-      {
-        limiter.Reset(m_writePos);
-        break;
-      }
-
-      if (limiter.Rate(m_writePos) < m_writeRate)
-        break;
-
-      if (m_seekEvent.WaitMSec(100))
-      {
-        m_seekEvent.Set();
-        break;
-      }
-    }
-
-    int iRead = m_source.Read(buffer.get(), m_chunkSize);
-    if (iRead == 0)
+    int iRead = m_source.Read(buffer.get(), chunksize);
+    if(iRead == 0)
     {
       CLog::Log(LOGINFO, "CFileCache::Process - Hit eof.");
       m_pCache->EndOfInput();
@@ -279,14 +195,7 @@ void CFileCache::Process()
         break;
       }
       else if (iWrite == 0)
-      {
-        m_cacheFull = true;
-        average.Pause();
         m_pCache->m_space.WaitMSec(5);
-        average.Resume();
-      }
-      else
-        m_cacheFull = false;
 
       iTotalWrite += iWrite;
 
@@ -297,12 +206,6 @@ void CFileCache::Process()
         break;
       }
     }
-
-    m_writePos += iTotalWrite;
-
-    // under estimate write rate by a second, to
-    // avoid uncertainty at start of caching
-    m_writeRateActual = average.Rate(m_writePos, 1000);
   }
 }
 
@@ -311,7 +214,7 @@ void CFileCache::OnExit()
   m_bStop = true;
 
   // make sure cache is set to mark end of file (read may be waiting).
-  if (m_pCache)
+  if(m_pCache)
     m_pCache->EndOfInput();
 
   // just in case someone's waiting...
@@ -328,15 +231,14 @@ int CFileCache::Stat(const CURL& url, struct __stat64* buffer)
   return CFile::Stat(url.Get(), buffer);
 }
 
-unsigned int CFileCache::Read(void* lpBuf, int64_t uiBufSize)
+unsigned int CFileCache::Read(void* lpBuf, __int64 uiBufSize)
 {
   CSingleLock lock(m_sync);
-  if (!m_pCache)
-  {
+  if (!m_pCache) {
     CLog::Log(LOGERROR,"%s - sanity failed. no cache strategy!", __FUNCTION__);
     return 0;
   }
-  int64_t iRc;
+  __int64 iRc;
 
 retry:
   // attempt to read
@@ -369,18 +271,17 @@ retry:
   return 0;
 }
 
-int64_t CFileCache::Seek(int64_t iFilePosition, int iWhence)
+__int64 CFileCache::Seek(__int64 iFilePosition, int iWhence)
 {
   CSingleLock lock(m_sync);
 
-  if (!m_pCache)
-  {
+  if (!m_pCache) {
     CLog::Log(LOGERROR,"%s - sanity failed. no cache strategy!", __FUNCTION__);
     return -1;
   }
 
-  int64_t iCurPos = m_readPos;
-  int64_t iTarget = iFilePosition;
+  __int64 iCurPos = m_readPos;
+  __int64 iTarget = iFilePosition;
   if (iWhence == SEEK_END)
     iTarget = GetLength() + iTarget;
   else if (iWhence == SEEK_CUR)
@@ -391,37 +292,24 @@ int64_t CFileCache::Seek(int64_t iFilePosition, int iWhence)
   if (iTarget == m_readPos)
     return m_readPos;
 
-  if ((m_nSeekResult = m_pCache->Seek(iTarget)) != iTarget)
+  if ((m_nSeekResult = m_pCache->Seek(iTarget, SEEK_SET)) != iTarget)
   {
-    if (m_seekPossible == 0)
+    if(m_seekPossible == 0)
       return m_nSeekResult;
 
-    /* never request closer to end than 2k, speeds up tag reading */
-    m_seekPos = std::min(iTarget, std::max((int64_t)0, m_source.GetLength() - m_chunkSize));
-
+    m_seekPos = iTarget;
     m_seekEvent.Set();
     if (!m_seekEnded.WaitMSec(INFINITE))
     {
       CLog::Log(LOGWARNING,"%s - seek to %"PRId64" failed.", __FUNCTION__, m_seekPos);
       return -1;
     }
-
-    /* wait for any remainin data */
-    if(m_seekPos < iTarget)
-    {
-      CLog::Log(LOGDEBUG,"%s - waiting for position %"PRId64".", __FUNCTION__, iTarget);
-      if(m_pCache->WaitForData((unsigned)(iTarget - m_seekPos), 10000) < iTarget - m_seekPos)
-      {
-        CLog::Log(LOGWARNING,"%s - failed to get remaining data", __FUNCTION__);
-        return -1;
-      }
-      m_pCache->Seek(iTarget);
-    }
-    m_readPos = iTarget;
     m_seekEvent.Reset();
+    m_seekPos = -1;
   }
-  else
-    m_readPos = iTarget;
+
+  if (m_nSeekResult >= 0)
+    m_readPos = m_nSeekResult;
 
   return m_nSeekResult;
 }
@@ -437,12 +325,12 @@ void CFileCache::Close()
   m_source.Close();
 }
 
-int64_t CFileCache::GetPosition()
+__int64 CFileCache::GetPosition()
 {
   return m_readPos;
 }
 
-int64_t CFileCache::GetLength()
+__int64 CFileCache::GetLength()
 {
   return m_source.GetLength();
 }
@@ -469,15 +357,6 @@ int CFileCache::IoControl(EIoControl request, void* param)
   {
     SCacheStatus* status = (SCacheStatus*)param;
     status->forward = m_pCache->WaitForData(0, 0);
-    status->maxrate = m_writeRate;
-    status->currate = m_writeRateActual;
-    status->full    = m_cacheFull;
-    return 0;
-  }
-
-  if (request == IOCTRL_CACHE_SETRATE)
-  {
-    m_writeRate = *(unsigned*)param;
     return 0;
   }
 

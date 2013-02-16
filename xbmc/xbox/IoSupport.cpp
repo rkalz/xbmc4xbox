@@ -22,10 +22,9 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "system.h"
+#include "stdafx.h"
 #include "IoSupport.h"
-#include "settings/Settings.h"
-#include "utils/log.h"
+#include "Settings.h"
 #ifdef HAS_UNDOCUMENTED
 #ifdef _XBOX
 #include "Undocumented.h"

@@ -50,7 +50,7 @@ extern "C" {
 
 }
 
-#include "settings/Settings.h"
+#include "settings.h"
 
 // callback used for logging
 void ff_avutil_log(void* ptr, int level, const char* format, va_list va);

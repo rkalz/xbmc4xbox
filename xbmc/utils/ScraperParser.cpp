@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "ScraperParser.h"
 
 #ifdef _LINUX
@@ -32,11 +32,10 @@
 #include "FileSystem/File.h"
 #include "FileSystem/Directory.h"
 #include "Util.h"
-#include "settings/AdvancedSettings.h"
+#include "AdvancedSettings.h"
 #include "FileItem.h"
 #include "CharsetConverter.h"
 #include "utils/URIUtils.h"
-#include "log.h"
 
 #include <sstream>
 #include <cstring>
@@ -328,24 +327,21 @@ void CScraperParser::ParseExpression(const CStdString& input, CStdString& dest, 
       // nasty hack #1 - & means \0 in a replace string
       strCurOutput.Replace("&","!!!AMPAMP!!!");
       char* result = reg.GetReplaceString(strCurOutput.c_str());
-      if (result)
+      if (result && strlen(result))
       {
-        if (strlen(result))
+        CStdString strResult(result);
+        strResult.Replace("!!!AMPAMP!!!","&");
+        Clean(strResult);
+        ReplaceBuffers(strResult);
+        if (iCompare > -1)
         {
-          CStdString strResult(result);
-          strResult.Replace("!!!AMPAMP!!!","&");
-          Clean(strResult);
-          ReplaceBuffers(strResult);
-          if (iCompare > -1)
-          {
-            CStdString strResultNoCase = strResult;
-            strResultNoCase.ToLower();
-            if (strResultNoCase.Find(m_param[iCompare-1]) != -1)
-              dest += strResult;
-          }
-          else
+          CStdString strResultNoCase = strResult;
+          strResultNoCase.ToLower();
+          if ((size_t) strResultNoCase.Find(m_param[iCompare-1]) != -1)
             dest += strResult;
         }
+        else
+          dest += strResult;
 
         free(result);
       }

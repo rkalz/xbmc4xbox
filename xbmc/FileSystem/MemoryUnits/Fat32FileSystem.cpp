@@ -18,13 +18,11 @@
 * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "Fat32FileSystem.h"
 #include "Fat32Device.h"
 #include "utils/MemoryUnitManager.h"
 #include "FileItem.h"
-#include "CharsetConverter.h"
 
 namespace XFILE
 {

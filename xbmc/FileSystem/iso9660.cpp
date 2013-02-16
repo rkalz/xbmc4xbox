@@ -18,7 +18,7 @@
 * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include "system.h" 
+#include "stdafx.h" 
 /*
  Redbook   : CDDA 
  Yellowbook : CDROM
@@ -40,8 +40,8 @@ ISO9660
  
 */
 #include "iso9660.h"
-#include "utils/CharsetConverter.h"
-#include "storage/DetectDVDType.h"  // for MODE2_DATA_SIZE etc.
+
+#include "DetectDVDType.h"  // for MODE2_DATA_SIZE etc.
 //#define _DEBUG_OUTPUT 1
 
 static CRITICAL_SECTION m_critSection;
@@ -887,7 +887,7 @@ long iso9660::ReadFile(HANDLE hFile, byte *pBuffer, long lSize)
   while (lSize > 0 && pContext->m_dwFilePos <= pContext->m_dwFileSize)
   {
     pContext->m_dwCurrentBlock = (DWORD) (pContext->m_dwFilePos / sectorSize);
-    int64_t iOffsetInBuffer = pContext->m_dwFilePos - (sectorSize * pContext->m_dwCurrentBlock);
+    __int64 iOffsetInBuffer = pContext->m_dwFilePos - (sectorSize * pContext->m_dwCurrentBlock);
     pContext->m_dwCurrentBlock += pContext->m_dwStartBlock;
 
     //char szBuf[256];
@@ -925,12 +925,12 @@ long iso9660::ReadFile(HANDLE hFile, byte *pBuffer, long lSize)
   return iBytesRead;
 }
 //************************************************************************************
-int64_t iso9660::Seek(HANDLE hFile, int64_t lOffset, int whence)
+__int64 iso9660::Seek(HANDLE hFile, __int64 lOffset, int whence)
 {
   iso9660::isofile* pContext = GetFileContext(hFile);
   if (!pContext) return -1;
 
-  int64_t dwFilePos = pContext->m_dwFilePos;
+  __int64 dwFilePos = pContext->m_dwFilePos;
   switch (whence)
   {
   case SEEK_SET:
@@ -960,7 +960,7 @@ int64_t iso9660::Seek(HANDLE hFile, int64_t lOffset, int whence)
 
 
 //************************************************************************************
-int64_t iso9660::GetFileSize(HANDLE hFile)
+__int64 iso9660::GetFileSize(HANDLE hFile)
 {
   iso9660::isofile* pContext = GetFileContext(hFile);
   if (!pContext) return -1;
@@ -968,7 +968,7 @@ int64_t iso9660::GetFileSize(HANDLE hFile)
 }
 
 //************************************************************************************
-int64_t iso9660::GetFilePosition(HANDLE hFile)
+__int64 iso9660::GetFilePosition(HANDLE hFile)
 {
   iso9660::isofile* pContext = GetFileContext(hFile);
   if (!pContext) return -1;

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,17 +19,15 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "PlayListPlayer.h"
-#include "playlists/PlayListFactory.h"
+#include "PlayListFactory.h"
 #include "Application.h"
 #include "PartyModeManager.h"
-#include "settings/AdvancedSettings.h"
+#include "AdvancedSettings.h"
 #include "GUIWindowManager.h"
-#include "GUIUserMessages.h"
-#include "dialogs/GUIDialogOK.h"
-#include "playlists/PlayList.h"
-#include "utils/log.h"
+#include "GUIDialogOK.h"
+#include "PlayList.h"
 
 using namespace PLAYLIST;
 

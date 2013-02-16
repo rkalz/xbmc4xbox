@@ -71,8 +71,6 @@ typedef struct {
     pthread_t circular_buffer_thread;
     pthread_mutex_t mutex;
     pthread_cond_t cond;
-    int thread_started;
-    volatile int exit_thread;
 #endif
     uint8_t tmp[UDP_MAX_PKT_SIZE+4];
     int remaining_in_dg;
@@ -329,7 +327,7 @@ static void *circular_buffer_task( void *_URLContext)
     fd_set rfds;
     struct timeval tv;
 
-    while(!s->exit_thread) {
+    for(;;) {
         int left;
         int ret;
         int len;
@@ -527,36 +525,18 @@ static int udp_open(URLContext *h, const char *uri, int flags)
 
 #if HAVE_PTHREADS
     if (!is_output && s->circular_buffer_size) {
-        int ret;
-
         /* start the task going */
         s->fifo = av_fifo_alloc(s->circular_buffer_size);
-        ret = pthread_mutex_init(&s->mutex, NULL);
-        if (ret != 0) {
-            av_log(h, AV_LOG_ERROR, "pthread_mutex_init failed : %s\n", strerror(ret));
+        pthread_mutex_init(&s->mutex, NULL);
+        pthread_cond_init(&s->cond, NULL);
+        if (pthread_create(&s->circular_buffer_thread, NULL, circular_buffer_task, h)) {
+            av_log(h, AV_LOG_ERROR, "pthread_create failed\n");
             goto fail;
         }
-        ret = pthread_cond_init(&s->cond, NULL);
-        if (ret != 0) {
-            av_log(h, AV_LOG_ERROR, "pthread_cond_init failed : %s\n", strerror(ret));
-            goto cond_fail;
-        }
-        ret = pthread_create(&s->circular_buffer_thread, NULL, circular_buffer_task, h);
-        if (ret != 0) {
-            av_log(h, AV_LOG_ERROR, "pthread_create failed : %s\n", strerror(ret));
-            goto thread_fail;
-        }
-        s->thread_started = 1;
     }
 #endif
 
     return 0;
-#if HAVE_PTHREADS
- thread_fail:
-    pthread_cond_destroy(&s->cond);
- cond_fail:
-    pthread_mutex_destroy(&s->mutex);
-#endif
  fail:
     if (udp_fd >= 0)
         closesocket(udp_fd);
@@ -637,20 +617,12 @@ static int udp_write(URLContext *h, const uint8_t *buf, int size)
 static int udp_close(URLContext *h)
 {
     UDPContext *s = h->priv_data;
-    int ret;
 
     if (s->is_multicast && (h->flags & AVIO_FLAG_READ))
         udp_leave_multicast_group(s->udp_fd, (struct sockaddr *)&s->dest_addr);
     closesocket(s->udp_fd);
     av_fifo_free(s->fifo);
 #if HAVE_PTHREADS
-    if (s->thread_started) {
-        s->exit_thread = 1;
-        ret = pthread_join(s->circular_buffer_thread, NULL);
-        if (ret != 0)
-            av_log(h, AV_LOG_ERROR, "pthread_join(): %s\n", strerror(ret));
-    }
-
     pthread_mutex_destroy(&s->mutex);
     pthread_cond_destroy(&s->cond);
 #endif
@@ -665,5 +637,4 @@ URLProtocol ff_udp_protocol = {
     .url_close           = udp_close,
     .url_get_file_handle = udp_get_file_handle,
     .priv_data_size      = sizeof(UDPContext),
-    .flags               = URL_PROTOCOL_FLAG_NETWORK,
 };

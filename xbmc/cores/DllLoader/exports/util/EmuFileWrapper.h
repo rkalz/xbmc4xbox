@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,17 +21,8 @@
  *
  */
 
-#include <stdio.h>
-
-#include "system.h"
-
 #define MAX_EMULATED_FILES    50
 #define FILE_WRAPPER_OFFSET   0x00000100
-
-namespace XFILE
-{
-  class CFile;
-}
 
 typedef struct stEmuFileObject
 {

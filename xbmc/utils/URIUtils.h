@@ -20,7 +20,7 @@
  */
 #pragma once
 
-#include "utils/StdString.h"
+#include "StdString.h"
 
 class CURL;
 

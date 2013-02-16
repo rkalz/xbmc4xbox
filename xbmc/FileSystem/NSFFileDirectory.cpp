@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,9 +19,10 @@
  *
  */
 
+#include "stdafx.h"
 #include "NSFFileDirectory.h"
-#include "music/tags/MusicInfoTagLoaderNSF.h"
-#include "music/tags/MusicInfoTag.h"
+#include "MusicInfoTagLoaderNSF.h"
+#include "MusicInfoTag.h"
 
 using namespace MUSIC_INFO;
 using namespace XFILE;

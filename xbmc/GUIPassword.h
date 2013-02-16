@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,8 +21,6 @@
  *
  */
 
-#include "utils/StdString.h"
-
 class CFileItem;
 class CMediaSource;
 
@@ -30,6 +28,9 @@ class CMediaSource;
 #include <map>
 
 typedef std::vector<CMediaSource> VECSOURCES;
+
+typedef std::map<CStdString, CStdString> MAPPASSWORDS;
+typedef std::map<CStdString, CStdString>::iterator IMAPPASSWORDS;
 
 typedef enum
 {
@@ -68,6 +69,8 @@ public:
   void LockSources(bool lock);
   void RemoveSourceLocks();
   bool IsDatabasePathUnlocked(CStdString& strPath, VECSOURCES& VECSOURCES);
+
+	MAPPASSWORDS			m_mapSMBPasswordCache; // SMB share password cache
 
   bool bMasterUser;
   int iMasterLockRetriesLeft;

@@ -18,12 +18,11 @@
 * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include "utils/log.h"
-#include "DAAPFile.h"
+#include "stdafx.h"
+#include "FileDAAP.h"
 #include "DAAPDirectory.h"
-#include "SectionLoader.h"
 #include "utils/URIUtils.h"
-#include "music/tags/MusicInfoTag.h"
+#include "MusicInfoTag.h"
 #include "FileItem.h"
 
 namespace XFILE

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -23,9 +23,9 @@
 #define LIBSCROBBLER_H__
 
 #include <vector>
-#include "utils/StdString.h"
+#include "StdString.h"
 #include "Thread.h"
-#include "FileSystem/CurlFile.h"
+#include "FileSystem/FileCurl.h"
 #include "CriticalSection.h"
 
 #define SCROBBLER_USER_ERROR_BADAUTH  1
@@ -130,7 +130,7 @@ protected:
   CStdString m_strHandshakeTimeStamp;
   SubmissionJournalEntry m_CurrentTrack;
   HANDLE m_hEvent;
-  XFILE::CCurlFile  *m_pHttp;
+  XFILE::CFileCurl  *m_pHttp;
   CCriticalSection  m_queueLock;
   CCriticalSection  m_actionLock;
   std::vector<SubmissionJournalEntry> m_vecSubmissionQueue;

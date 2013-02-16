@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,8 +19,7 @@
  *
  */
  
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "PlayerCoreFactory.h"
 #include "../dvdplayer/DVDPlayer.h"
 #ifdef HAS_XBOX_HARDWARE
@@ -32,18 +31,16 @@
 #include "../modplayer.h"
 #endif
 #include "../paplayer/paplayer.h"
-#include "dialogs/GUIDialogContextMenu.h"
+#include "GUIDialogContextMenu.h"
 #include "XBAudioConfig.h"
-#include "FileSystem/CurlFile.h"
+#include "FileSystem/FileCurl.h"
 #include "utils/HttpHeader.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "URL.h"
 #include "GUIWindowManager.h"
 #include "FileItem.h"
 #include "PlayerCoreConfig.h"
 #include "PlayerSelectionRule.h"
-#include "LocalizeStrings.h"
-#include "AutoPtrHandle.h"
 
 using namespace AUTOPTR;
 
@@ -244,23 +241,51 @@ PLAYERCOREID CPlayerCoreFactory::GetDefaultPlayer( const CFileItem& item )
 
 PLAYERCOREID CPlayerCoreFactory::SelectPlayerDialog(VECPLAYERCORES &vecCores, float posX, float posY)
 {
-  CContextButtons choices;
-  if (vecCores.size())
+
+  CGUIDialogContextMenu *pMenu = (CGUIDialogContextMenu *)g_windowManager.GetWindow(WINDOW_DIALOG_CONTEXT_MENU);
+
+  // Reset menu
+  pMenu->Initialize();
+
+  // Add all possible players
+  auto_aptr<int> btn_Cores(NULL);
+  if( vecCores.size() > 0 )
   {    
+    btn_Cores = new int[ vecCores.size() ];
+    btn_Cores[0] = 0;
+
+    CStdString strCaption;
+
     //Add default player
-    CStdString strCaption = CPlayerCoreFactory::GetPlayerName(vecCores[0]);
+    strCaption = CPlayerCoreFactory::GetPlayerName(vecCores[0]);
     strCaption += " (";
     strCaption += g_localizeStrings.Get(13278);
     strCaption += ")";
-    choices.Add(0, strCaption);
+    btn_Cores[0] = pMenu->AddButton(strCaption);
 
     //Add all other players
     for( unsigned int i = 1; i < vecCores.size(); i++ )
-      choices.Add(i, CPlayerCoreFactory::GetPlayerName(vecCores[i]));
+    {
+      strCaption = CPlayerCoreFactory::GetPlayerName(vecCores[i]);
+      btn_Cores[i] = pMenu->AddButton(strCaption);
+    }
+  }
 
-    int choice = CGUIDialogContextMenu::ShowAndGetChoice(choices);
-    if (choice >= 0)
-      return vecCores[choice];
+  // Display menu
+  if (posX && posY)
+    pMenu->OffsetPosition(posX, posY);
+  else
+    pMenu->CenterWindow();
+  pMenu->DoModal();
+
+  //Check what player we selected
+  int btnid = pMenu->GetButton();
+  for( unsigned int i = 0; i < vecCores.size(); i++ )
+  {
+    if( btnid == btn_Cores[i] )
+    {
+      return vecCores[i];
+    }
   }
 
   return EPC_NONE;

@@ -19,7 +19,7 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "URIUtils.h"
 #include "FileItem.h"
 #include "FileSystem/HDDirectory.h"
@@ -29,12 +29,11 @@
 #include "FileSystem/DirectoryCache.h"
 #include "FileSystem/SpecialProtocol.h"
 #include "FileSystem/MythDirectory.h"
-#include "network/DNSNameCache.h"
-#include "Application.h"
-#include "settings/Settings.h"
+#include "DNSNameCache.h"
+#include "xbox/network.h"
+#include "Settings.h"
 #include "URL.h"
-#include "utils/StringUtils.h"
-#include "utils/log.h"
+#include "StringUtils.h"
 
 using namespace std;
 using namespace XFILE;
@@ -86,9 +85,9 @@ void URIUtils::RemoveExtension(CStdString& strFileName)
     strExtension += "|";
 
     CStdString strFileMask;
-    strFileMask = g_settings.m_pictureExtensions;
-    strFileMask += "|" + g_settings.m_musicExtensions;
-    strFileMask += "|" + g_settings.m_videoExtensions;
+    strFileMask = g_stSettings.m_pictureExtensions;
+    strFileMask += "|" + g_stSettings.m_musicExtensions;
+    strFileMask += "|" + g_stSettings.m_videoExtensions;
     strFileMask += "|.py|.xml|.milk|.xpr|.cdg";
     strFileMask += "|";
 
@@ -458,8 +457,8 @@ bool URIUtils::IsOnLAN(const CStdString& strPath)
   if(address != INADDR_NONE)
   {
     // check if we are on the local subnet
-    unsigned long subnet = ntohl(inet_addr(g_application.getNetwork().m_networkinfo.subnet));
-    unsigned long local  = ntohl(inet_addr(g_application.getNetwork().m_networkinfo.ip));
+    unsigned long subnet = ntohl(inet_addr(g_network.m_networkinfo.subnet));
+    unsigned long local  = ntohl(inet_addr(g_network.m_networkinfo.ip));
     if( (address & subnet) == (local & subnet) )
       return true;
   }

@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -31,15 +31,12 @@ public:
   virtual bool Open(const char* strFile, const std::string &content);
   virtual void Close();
   virtual int Read(BYTE* buf, int buf_size);
-  virtual int64_t Seek(int64_t offset, int whence);
+  virtual __int64 Seek(__int64 offset, int whence);
   virtual bool Pause(double dTime) { return false; };
   virtual bool IsEOF();
-  virtual int64_t GetLength();
+  virtual __int64 GetLength();
   virtual BitstreamStats GetBitstreamStats() const ;
   virtual int GetBlockSize();
-  virtual void SetReadRate(unsigned rate);
-  virtual bool GetCacheStatus(XFILE::SCacheStatus *status);
-
 protected:
   XFILE::CFile* m_pFile;
   bool m_eof;

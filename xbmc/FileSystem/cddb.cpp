@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -27,15 +27,13 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "cddb.h"
-#include "network/DNSNameCache.h"
-#include "music/tags/Id3Tag.h"
-#include "settings/AdvancedSettings.h"
+#include "DNSNameCache.h"
+#include "Id3Tag.h"
+#include "AdvancedSettings.h"
 #include "utils/URIUtils.h"
 #include "FileSystem/File.h"
-#include "utils/CharsetConverter.h"
 
 using namespace std;
 using namespace MUSIC_INFO;

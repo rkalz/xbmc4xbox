@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,10 @@
  *
  */
 
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "DirectoryCache.h"
 #include "utils/URIUtils.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "FileItem.h"
 
 using namespace std;
@@ -68,7 +67,7 @@ bool CDirectoryCache::GetDirectory(const CStdString& strPath, CFileItemList &ite
 {
   CSingleLock lock (m_cs);
 
-  CStdString storedPath = URIUtils::SubstitutePath(strPath);
+  CStdString storedPath = strPath;
   URIUtils::RemoveSlashAtEnd(storedPath);
 
   ciCache i = m_cache.find(storedPath);
@@ -107,7 +106,7 @@ void CDirectoryCache::SetDirectory(const CStdString& strPath, const CFileItemLis
   // this is the best solution for now.
   CSingleLock lock (m_cs);
 
-  CStdString storedPath = URIUtils::SubstitutePath(strPath);
+  CStdString storedPath = strPath;
   URIUtils::RemoveSlashAtEnd(storedPath);
 
   ClearDirectory(storedPath);
@@ -131,7 +130,7 @@ void CDirectoryCache::ClearDirectory(const CStdString& strPath)
 {
   CSingleLock lock (m_cs);
 
-  CStdString storedPath = URIUtils::SubstitutePath(strPath);
+  CStdString storedPath = strPath;
   URIUtils::RemoveSlashAtEnd(storedPath);
 
   iCache i = m_cache.find(storedPath);
@@ -143,7 +142,7 @@ void CDirectoryCache::ClearSubPaths(const CStdString& strPath)
 {
   CSingleLock lock (m_cs);
 
-  CStdString storedPath = URIUtils::SubstitutePath(strPath);
+  CStdString storedPath = strPath;
   URIUtils::RemoveSlashAtEnd(storedPath);
 
   iCache i = m_cache.begin();

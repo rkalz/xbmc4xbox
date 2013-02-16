@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,11 @@
  *
  */
 
+#include "stdafx.h"
 #include "lastfmscrobbler.h"
 #include "Application.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "utils/URIUtils.h"
-#include "LocalizeStrings.h"
 
 long CLastfmScrobbler::m_instanceLock = 0;
 CLastfmScrobbler *CLastfmScrobbler::m_pInstance = NULL;
@@ -62,7 +62,7 @@ void CLastfmScrobbler::RemoveInstance()
 void CLastfmScrobbler::LoadCredentials()
 {
   SetUsername(g_guiSettings.GetString("scrobbler.lastfmusername"));
-  SetPassword(g_guiSettings.GetString("scrobbler.lastfmpass"));
+  SetPassword(g_guiSettings.GetString("scrobbler.lastfmpassword"));
 }
 
 CStdString CLastfmScrobbler::GetJournalFileName()
@@ -97,7 +97,7 @@ void CLastfmScrobbler::NotifyUser(int error)
 bool CLastfmScrobbler::CanScrobble()
 {
   return (!g_guiSettings.GetString("scrobbler.lastfmusername").IsEmpty()  &&
-          !g_guiSettings.GetString("scrobbler.lastfmpass").IsEmpty()  &&
+          !g_guiSettings.GetString("scrobbler.lastfmpassword").IsEmpty()  &&
          (g_guiSettings.GetBool("scrobbler.lastfmsubmit") ||
           g_guiSettings.GetBool("scrobbler.lastfmsubmitradio")));
 }

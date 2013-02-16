@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,17 +20,17 @@
  */
 
 
-#include "system.h"
+#include "stdafx.h"
 #include "VirtualDirectory.h"
-#include "DirectoryFactory.h"
+#include "FactoryDirectory.h"
 #include "Util.h"
-#include "settings/Profile.h"
+#include "Profile.h"
 #include "Directory.h"
 #include "DirectoryCache.h"
 #ifdef HAS_XBOX_HARDWARE
 #include "utils/MemoryUnitManager.h"
 #endif
-#include "storage/DetectDVDType.h"
+#include "DetectDVDType.h"
 #include "FileSystem/File.h"
 #include "FileItem.h"
 #include "utils/URIUtils.h"
@@ -131,7 +131,7 @@ bool CVirtualDirectory::GetDirectory(const CStdString& strPath, CFileItemList &i
       strIcon = "DefaultHardDisk.png";
 
     pItem->SetIconImage(strIcon);
-    if (share.m_iHasLock == 2 && g_settings.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE)
+    if (share.m_iHasLock == 2 && g_settings.m_vecProfiles[0].getLockMode() != LOCK_MODE_EVERYONE)
       pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_LOCKED);
     else
       pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_NONE);

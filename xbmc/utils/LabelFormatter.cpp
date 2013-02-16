@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,16 +19,15 @@
  *
  */
 
+#include "stdafx.h"
 #include "LabelFormatter.h"
-#include "settings/GUISettings.h"
+#include "GUISettings.h"
 #include "RegExp.h"
 #include "Util.h"
-#include "video/VideoInfoTag.h"
-#include "music/tags/MusicInfoTag.h"
+#include "VideoInfoTag.h"
+#include "MusicInfoTag.h"
 #include "FileItem.h"
 #include "utils/URIUtils.h"
-#include "utils/StringUtils.h"
-#include "LocalizeStrings.h"
 
 using namespace MUSIC_INFO;
 

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *
  */
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -44,12 +44,12 @@ XBOX Front LED control
 OFF/Green/Red/Orange/Cycle
 10.11.2004 GeminiServer
 */
+#include "stdafx.h"
 #include "LED.h"
 #include "SystemInfo.h"
 #include "xbox/XKUtils.h"
 #include "LCD.h"
-#include "settings/GUISettings.h"
-#include "utils/log.h"
+#include "GUISettings.h"
 
 #include <conio.h>
 

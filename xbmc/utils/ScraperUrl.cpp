@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,15 +19,16 @@
  *
  */
 
+#include "stdafx.h"
 #include "XMLUtils.h"
 #include "ScraperUrl.h"
-#include "settings/AdvancedSettings.h"
+#include "AdvancedSettings.h"
 #include "Util.h"
 #include "CharsetConverter.h"
 #include "URL.h"
-#include "FileSystem/CurlFile.h"
-#include "FileSystem/ZipFile.h"
-#include "pictures/Picture.h"
+#include "FileSystem/FileCurl.h"
+#include "FileSystem/FileZip.h"
+#include "Picture.h"
 #include "utils/URIUtils.h"
 
 #include <cstring>
@@ -157,11 +158,7 @@ const CScraperUrl::SUrlEntry CScraperUrl::GetFirstThumb() const
     if (iter->m_type == URL_TYPE_GENERAL)
       return *iter;
   }
-
   SUrlEntry result;
-  result.m_type = URL_TYPE_GENERAL;
-  result.m_post = false;
-  result.m_isgz = false;
   result.m_season = -1;
   return result;
 }
@@ -173,16 +170,12 @@ const CScraperUrl::SUrlEntry CScraperUrl::GetSeasonThumb(int season) const
     if (iter->m_type == URL_TYPE_SEASON && iter->m_season == season)
       return *iter;
   }
-
   SUrlEntry result;
-  result.m_type = URL_TYPE_GENERAL;
-  result.m_post = false;
-  result.m_isgz = false;
   result.m_season = -1;
   return result;
 }
 
-bool CScraperUrl::Get(const SUrlEntry& scrURL, string& strHTML, XFILE::CCurlFile& http, const CStdString& cacheContext1)
+bool CScraperUrl::Get(const SUrlEntry& scrURL, string& strHTML, XFILE::CFileCurl& http, const CStdString& cacheContext1)
 {
   CURL url(scrURL.m_url);
   http.SetReferer(scrURL.m_spoof);
@@ -230,7 +223,7 @@ bool CScraperUrl::Get(const SUrlEntry& scrURL, string& strHTML, XFILE::CCurlFile
 
   if (scrURL.m_url.Find(".zip") > -1 )
   {
-    XFILE::CZipFile file;
+    XFILE::CFileZip file;
     CStdString strBuffer;
     int iSize = file.UnpackFromMemory(strBuffer,strHTML,scrURL.m_isgz);
     if (iSize)
@@ -274,7 +267,7 @@ bool CScraperUrl::DownloadThumbnail(const CStdString &thumb, const CScraperUrl::
     return false;
   }
 
-  XFILE::CCurlFile http;
+  XFILE::CFileCurl http;
   http.SetReferer(entry.m_spoof);
   CStdString thumbData;
   if (http.Get(entry.m_url, thumbData))

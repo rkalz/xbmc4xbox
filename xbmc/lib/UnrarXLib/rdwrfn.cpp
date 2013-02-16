@@ -1,6 +1,6 @@
 #include "rar.hpp"
 #include "URL.h"
-#include "dialogs/GUIDialogProgress.h"
+#include "GUIDialogProgress.h"
 
 ComprDataIO::ComprDataIO()
 {

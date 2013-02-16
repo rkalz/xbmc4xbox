@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,9 +19,10 @@
  *
  */
 
+#include "stdafx.h"
 #include "FileItem.h"
 
-#include "settings/AdvancedSettings.h"
+#include "AdvancedSettings.h"
 #include "DVDInputStreamRTMP.h"
 #include "FileSystem/IFile.h"
 #include "utils/SingleLock.h"
@@ -190,7 +191,7 @@ int CDVDInputStreamRTMP::Read(BYTE* buf, int buf_size)
   return i;
 }
 
-int64_t CDVDInputStreamRTMP::Seek(int64_t offset, int whence)
+__int64 CDVDInputStreamRTMP::Seek(__int64 offset, int whence)
 {
   if (whence == SEEK_POSSIBLE)
     return 0;
@@ -213,9 +214,14 @@ bool CDVDInputStreamRTMP::SeekTime(int iTimeInMsec)
   return false;
 }
 
-int64_t CDVDInputStreamRTMP::GetLength()
+__int64 CDVDInputStreamRTMP::GetLength()
 {
   return -1;
+}
+
+bool CDVDInputStreamRTMP::NextStream()
+{
+  return false;
 }
 
 bool CDVDInputStreamRTMP::Pause(double dTime)

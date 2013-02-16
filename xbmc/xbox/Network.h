@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,8 +20,6 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
-
-#include "utils/CriticalSection.h"
 
 struct network_info
 {
@@ -85,3 +83,5 @@ private:
   void NetworkUp();
   CCriticalSection  m_critSection;
 };
+
+extern CNetwork g_network;

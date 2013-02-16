@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,12 +19,12 @@
  *
  */
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "SIDCodec.h"
 #include "cores/DllLoader/DllLoader.h"
 #include "Util.h"
-#include "music/tags/MusicInfoTagLoaderSid.h"
-#include "music/tags/MusicInfoTag.h"
+#include "MusicInfoTagLoaderSid.h"
+#include "MusicInfoTag.h"
 #include "FileItem.h"
 #include "utils/URIUtils.h"
 

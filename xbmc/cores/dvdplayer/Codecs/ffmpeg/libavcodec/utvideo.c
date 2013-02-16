@@ -31,7 +31,6 @@
 #include "bytestream.h"
 #include "get_bits.h"
 #include "dsputil.h"
-#include "thread.h"
 
 enum {
     PRED_NONE = 0,
@@ -283,116 +282,43 @@ static void restore_median(uint8_t *src, int step, int stride,
     }
 }
 
-/* UtVideo interlaced mode treats every two lines as a single one,
- * so restoring function should take care of possible padding between
- * two parts of the same "line".
- */
-static void restore_median_il(uint8_t *src, int step, int stride,
-                              int width, int height, int slices, int rmode)
-{
-    int i, j, slice;
-    int A, B, C;
-    uint8_t *bsrc;
-    int slice_start, slice_height;
-    const int cmask = ~(rmode ? 3 : 1);
-    const int stride2 = stride << 1;
-
-    for (slice = 0; slice < slices; slice++) {
-        slice_start    = ((slice * height) / slices) & cmask;
-        slice_height   = ((((slice + 1) * height) / slices) & cmask) - slice_start;
-        slice_height >>= 1;
-
-        bsrc = src + slice_start * stride;
-
-        // first line - left neighbour prediction
-        bsrc[0] += 0x80;
-        A = bsrc[0];
-        for (i = step; i < width * step; i += step) {
-            bsrc[i] += A;
-            A = bsrc[i];
-        }
-        for (i = 0; i < width * step; i += step) {
-            bsrc[stride + i] += A;
-            A = bsrc[stride + i];
-        }
-        bsrc += stride2;
-        if (slice_height == 1)
-            continue;
-        // second line - first element has top predition, the rest uses median
-        C = bsrc[-stride2];
-        bsrc[0] += C;
-        A = bsrc[0];
-        for (i = step; i < width * step; i += step) {
-            B = bsrc[i - stride2];
-            bsrc[i] += mid_pred(A, B, (uint8_t)(A + B - C));
-            C = B;
-            A = bsrc[i];
-        }
-        for (i = 0; i < width * step; i += step) {
-            B = bsrc[i - stride];
-            bsrc[stride + i] += mid_pred(A, B, (uint8_t)(A + B - C));
-            C = B;
-            A = bsrc[stride + i];
-        }
-        bsrc += stride2;
-        // the rest of lines use continuous median prediction
-        for (j = 2; j < slice_height; j++) {
-            for (i = 0; i < width * step; i += step) {
-                B = bsrc[i - stride2];
-                bsrc[i] += mid_pred(A, B, (uint8_t)(A + B - C));
-                C = B;
-                A = bsrc[i];
-            }
-            for (i = 0; i < width * step; i += step) {
-                B = bsrc[i - stride];
-                bsrc[i + stride] += mid_pred(A, B, (uint8_t)(A + B - C));
-                C = B;
-                A = bsrc[i + stride];
-            }
-            bsrc += stride2;
-        }
-    }
-}
-
 static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPacket *avpkt)
 {
     const uint8_t *buf = avpkt->data;
     int buf_size = avpkt->size;
+    const uint8_t *buf_end = buf + buf_size;
     UtvideoContext *c = avctx->priv_data;
+    const uint8_t *ptr;
     int i, j;
     const uint8_t *plane_start[5];
     int plane_size, max_slice_size = 0, slice_start, slice_end, slice_size;
     int ret;
-    GetByteContext gb;
 
     if (c->pic.data[0])
-        ff_thread_release_buffer(avctx, &c->pic);
+        avctx->release_buffer(avctx, &c->pic);
 
     c->pic.reference = 3;
     c->pic.buffer_hints = FF_BUFFER_HINTS_VALID;
-    if ((ret = ff_thread_get_buffer(avctx, &c->pic)) < 0) {
+    if ((ret = avctx->get_buffer(avctx, &c->pic)) < 0) {
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         return ret;
     }
 
-    ff_thread_finish_setup(avctx);
-
     /* parse plane structure to retrieve frame flags and validate slice offsets */
-    bytestream2_init(&gb, buf, buf_size);
+    ptr = buf;
     for (i = 0; i < c->planes; i++) {
-        plane_start[i] = gb.buffer;
-        if (bytestream2_get_bytes_left(&gb) < 256 + 4 * c->slices) {
+        plane_start[i] = ptr;
+        if (buf_end - ptr < 256 + 4 * c->slices) {
             av_log(avctx, AV_LOG_ERROR, "Insufficient data for a plane\n");
             return AVERROR_INVALIDDATA;
         }
-        bytestream2_skipu(&gb, 256);
+        ptr += 256;
         slice_start = 0;
         slice_end   = 0;
         for (j = 0; j < c->slices; j++) {
-            slice_end   = bytestream2_get_le32u(&gb);
+            slice_end   = bytestream_get_le32(&ptr);
             slice_size  = slice_end - slice_start;
-            if (slice_end <= 0 || slice_size <= 0 ||
-                bytestream2_get_bytes_left(&gb) < slice_end) {
+            if (slice_size < 0) {
                 av_log(avctx, AV_LOG_ERROR, "Incorrect slice size\n");
                 return AVERROR_INVALIDDATA;
             }
@@ -400,14 +326,18 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
             max_slice_size = FFMAX(max_slice_size, slice_size);
         }
         plane_size = slice_end;
-        bytestream2_skipu(&gb, plane_size);
+        if (buf_end - ptr < plane_size) {
+            av_log(avctx, AV_LOG_ERROR, "Plane size is bigger than available data\n");
+            return AVERROR_INVALIDDATA;
+        }
+        ptr += plane_size;
     }
-    plane_start[c->planes] = gb.buffer;
-    if (bytestream2_get_bytes_left(&gb) < c->frame_info_size) {
+    plane_start[c->planes] = ptr;
+    if (buf_end - ptr < c->frame_info_size) {
         av_log(avctx, AV_LOG_ERROR, "Not enough data for frame information\n");
         return AVERROR_INVALIDDATA;
     }
-    c->frame_info = bytestream2_get_le32u(&gb);
+    c->frame_info = AV_RL32(ptr);
     av_log(avctx, AV_LOG_DEBUG, "frame information flags %X\n", c->frame_info);
 
     c->frame_pred = (c->frame_info >> 8) & 3;
@@ -451,18 +381,10 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
                                c->frame_pred == PRED_LEFT);
             if (ret)
                 return ret;
-            if (c->frame_pred == PRED_MEDIAN) {
-                if (!c->interlaced) {
-                    restore_median(c->pic.data[i], 1, c->pic.linesize[i],
-                                   avctx->width >> !!i, avctx->height >> !!i,
-                                   c->slices, !i);
-                } else {
-                    restore_median_il(c->pic.data[i], 1, c->pic.linesize[i],
-                                      avctx->width  >> !!i,
-                                      avctx->height >> !!i,
-                                      c->slices, !i);
-                }
-            }
+            if (c->frame_pred == PRED_MEDIAN)
+                restore_median(c->pic.data[i], 1, c->pic.linesize[i],
+                               avctx->width >> !!i, avctx->height >> !!i,
+                               c->slices, !i);
         }
         break;
     case PIX_FMT_YUV422P:
@@ -473,17 +395,9 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPac
                                c->frame_pred == PRED_LEFT);
             if (ret)
                 return ret;
-            if (c->frame_pred == PRED_MEDIAN) {
-                if (!c->interlaced) {
-                    restore_median(c->pic.data[i], 1, c->pic.linesize[i],
-                                   avctx->width >> !!i, avctx->height,
-                                   c->slices, 0);
-                } else {
-                    restore_median_il(c->pic.data[i], 1, c->pic.linesize[i],
-                                      avctx->width >> !!i, avctx->height,
-                                      c->slices, 0);
-                }
-            }
+            if (c->frame_pred == PRED_MEDIAN)
+                restore_median(c->pic.data[i], 1, c->pic.linesize[i],
+                               avctx->width >> !!i, avctx->height, c->slices, 0);
         }
         break;
     }
@@ -556,7 +470,7 @@ static av_cold int decode_end(AVCodecContext *avctx)
     UtvideoContext * const c = avctx->priv_data;
 
     if (c->pic.data[0])
-        ff_thread_release_buffer(avctx, &c->pic);
+        avctx->release_buffer(avctx, &c->pic);
 
     av_freep(&c->slice_bits);
 
@@ -571,7 +485,7 @@ AVCodec ff_utvideo_decoder = {
     .init           = decode_init,
     .close          = decode_end,
     .decode         = decode_frame,
-    .capabilities   = CODEC_CAP_DR1 | CODEC_CAP_FRAME_THREADS,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name      = NULL_IF_CONFIG_SMALL("Ut Video"),
 };
 

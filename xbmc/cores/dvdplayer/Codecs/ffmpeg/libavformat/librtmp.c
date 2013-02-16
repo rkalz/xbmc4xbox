@@ -162,7 +162,6 @@ URLProtocol ff_rtmp_protocol = {
     .url_read_seek       = rtmp_read_seek,
     .url_get_file_handle = rtmp_get_file_handle,
     .priv_data_size      = sizeof(RTMP),
-    .flags               = URL_PROTOCOL_FLAG_NETWORK,
 };
 
 URLProtocol ff_rtmpt_protocol = {
@@ -175,7 +174,6 @@ URLProtocol ff_rtmpt_protocol = {
     .url_read_seek       = rtmp_read_seek,
     .url_get_file_handle = rtmp_get_file_handle,
     .priv_data_size      = sizeof(RTMP),
-    .flags               = URL_PROTOCOL_FLAG_NETWORK,
 };
 
 URLProtocol ff_rtmpe_protocol = {
@@ -188,7 +186,6 @@ URLProtocol ff_rtmpe_protocol = {
     .url_read_seek       = rtmp_read_seek,
     .url_get_file_handle = rtmp_get_file_handle,
     .priv_data_size      = sizeof(RTMP),
-    .flags               = URL_PROTOCOL_FLAG_NETWORK,
 };
 
 URLProtocol ff_rtmpte_protocol = {
@@ -201,7 +198,6 @@ URLProtocol ff_rtmpte_protocol = {
     .url_read_seek       = rtmp_read_seek,
     .url_get_file_handle = rtmp_get_file_handle,
     .priv_data_size      = sizeof(RTMP),
-    .flags               = URL_PROTOCOL_FLAG_NETWORK,
 };
 
 URLProtocol ff_rtmps_protocol = {
@@ -214,5 +210,4 @@ URLProtocol ff_rtmps_protocol = {
     .url_read_seek       = rtmp_read_seek,
     .url_get_file_handle = rtmp_get_file_handle,
     .priv_data_size      = sizeof(RTMP),
-    .flags               = URL_PROTOCOL_FLAG_NETWORK,
 };

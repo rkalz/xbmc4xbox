@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "window.h"
 #include "dialog.h"
 #include "winxml.h"
@@ -413,9 +413,9 @@ namespace PYXBMC
     PyXBMCGUILock();
     // if it's a dialog, we have to activate it a bit different
     if (WindowDialog_Check(self))
-      ((CGUIPythonWindowDialog*)self->pWindow)->Show();
+  	  ((CGUIPythonWindowDialog*)self->pWindow)->Activate(ACTIVE_WINDOW);
     else if (WindowXMLDialog_Check(self))
-      ((CGUIPythonWindowXMLDialog*)self->pWindow)->Show();
+  	  ((CGUIPythonWindowXMLDialog*)self->pWindow)->Activate(ACTIVE_WINDOW);
     else
       g_windowManager.ActivateWindow(self->iWindowId);
     PyXBMCGUIUnlock();
@@ -446,9 +446,9 @@ namespace PYXBMC
 
     // if it's a dialog, we have to close it a bit different
     if (WindowDialog_Check(self))
-      ((CGUIPythonWindowDialog*)self->pWindow)->Show(false);
+  	  ((CGUIPythonWindowDialog*)self->pWindow)->Close();
     else if (WindowXMLDialog_Check(self))
-      ((CGUIPythonWindowXMLDialog*)self->pWindow)->Show(false);
+      ((CGUIPythonWindowXMLDialog*)self->pWindow)->Close();
     else
       g_windowManager.ActivateWindow(self->iOldWindowId);
     self->iOldWindowId = 0;
@@ -464,16 +464,16 @@ namespace PYXBMC
     "\n"
     "This method will recieve all actions that the main program will send\n"
     "to this window.\n"
-    "By default, only the PREVIOUS_MENU and NAV_BACK actions are handled.\n"
+    "By default, only the PREVIOUS_MENU action is handled.\n"
     "Overwrite this method to let your script handle all actions.\n"
-    "Don't forget to capture ACTION_PREVIOUS_MENU or ACTION_NAV_BACK, else the user can't close this window.");
+    "Don't forget to capture ACTION_PREVIOUS_MENU, else the user can't close this window.");
 
   PyObject* Window_OnAction(Window *self, PyObject *args)
   {
     Action* action;
     if (!PyArg_ParseTuple(args, (char*)"O", &action)) return NULL;
 
-    if(action->id == ACTION_PREVIOUS_MENU || action->id == ACTION_NAV_BACK)
+    if(action->id == ACTION_PREVIOUS_MENU)
     {
       Window_Close(self, args);
     }

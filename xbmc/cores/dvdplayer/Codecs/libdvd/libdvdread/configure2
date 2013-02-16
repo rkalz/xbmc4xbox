@@ -50,7 +50,7 @@ STATIC=yes
 PREFIX=/usr/local/
 INSTALLSTRIP=-s
 USEDEBUG=-g
-optimizations="-O2"
+optimizations="-O3"
 
 for opt do
   optval=`echo $opt | cut -d '=' -f 2-`

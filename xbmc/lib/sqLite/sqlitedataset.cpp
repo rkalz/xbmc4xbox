@@ -27,7 +27,7 @@
  **********************************************************************/
 
 
-#include "system.h"
+#include "stdafx.h"
 #include <iostream>
 #include <string>
 

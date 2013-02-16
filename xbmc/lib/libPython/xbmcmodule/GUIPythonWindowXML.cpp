@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,10 +19,11 @@
  *
  */
 
+#include "stdafx.h"
 #include "GUIPythonWindowXML.h"
 #include "GUIWindow.h"
 #include "pyutil.h"
-#include "windows/GUIMediaWindow.h"
+#include "GUIMediaWindow.h"
 #include "window.h"
 #include "control.h"
 #include "action.h"
@@ -32,8 +33,6 @@
 #include "FileSystem/File.h"
 #include "TextureManager.h"
 #include "../XBPython.h"
-#include "LocalizeStrings.h"
-#include "utils/log.h"
 
 using namespace std;
 
@@ -70,8 +69,8 @@ bool CGUIPythonWindowXML::Update(const CStdString &strPath)
 
 bool CGUIPythonWindowXML::OnAction(const CAction &action)
 {
-  // call the base class first, then call python
-  bool ret = CGUIWindow::OnAction(action);
+  // do the base class window first, and the call to python after this
+  bool ret = CGUIWindow::OnAction(action);  // we don't currently want the mediawindow actions here
   if(pCallbackWindow)
   {
     PyXBMCAction* inf = new PyXBMCAction;
@@ -83,14 +82,6 @@ bool CGUIPythonWindowXML::OnAction(const CAction &action)
     PulseActionEvent();
   }
   return ret;
-}
-
-bool CGUIPythonWindowXML::OnBack(int actionID)
-{
-  // if we have a callback window then python handles the closing
-  if (!pCallbackWindow)
-    return CGUIWindow::OnBack(actionID);
-  return true;
 }
 
 bool CGUIPythonWindowXML::OnClick(int iItem) {
@@ -203,8 +194,11 @@ bool CGUIPythonWindowXML::OnMessage(CGUIMessage& message)
           }
           else if (controlClicked->IsContainer() && message.GetParam1() == ACTION_MOUSE_RIGHT_CLICK)
           {
+            CAction action;
+            action.id = ACTION_CONTEXT_MENU;
+
             PyXBMCAction* inf = new PyXBMCAction;
-            inf->pObject = Action_FromAction(CAction(ACTION_CONTEXT_MENU));
+            inf->pObject = Action_FromAction(action);
             inf->pCallbackWindow = pCallbackWindow;
 
             // aquire lock?

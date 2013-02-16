@@ -22,8 +22,8 @@
 #include "DVDAudioCodecPassthroughFFmpeg.h"
 #include "DVDCodecs/DVDCodecs.h"
 #include "DVDStreamInfo.h"
-#include "settings/GUISettings.h"
-#include "settings/Settings.h"
+#include "GUISettings.h"
+#include "Settings.h"
 #include "utils/log.h"
 
 //These values are forced to allow spdif out
@@ -56,6 +56,8 @@ CDVDAudioCodecPassthroughFFmpeg::CDVDAudioCodecPassthroughFFmpeg(void)
   m_SampleRate   = 0;
 
   m_Codec        = NULL;
+  m_Encoder      = NULL;
+  m_InitEncoder  = true;
   
   /* make enough room for at-least two audio frames */
   m_DecodeSize   = 0;
@@ -299,7 +301,7 @@ bool CDVDAudioCodecPassthroughFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptio
     return false;
 
   // TODO - this is only valid for video files, and should be moved somewhere else
-  if( hints.channels == 2 && g_settings.m_currentVideoSettings.m_OutputToAllSpeakers )
+  if( hints.channels == 2 && g_stSettings.m_currentVideoSettings.m_OutputToAllSpeakers )
   {
     CLog::Log(LOGINFO, "CDVDAudioCodecPassthroughFFmpeg::Open - disabled passthrough due to video OTAS");
     return false;
@@ -336,6 +338,7 @@ bool CDVDAudioCodecPassthroughFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptio
       }
 
     m_Codec   = NULL;
+    m_Encoder = NULL;
   }
 
   if (!SetupMuxer(hints, "spdif", m_SPDIF))

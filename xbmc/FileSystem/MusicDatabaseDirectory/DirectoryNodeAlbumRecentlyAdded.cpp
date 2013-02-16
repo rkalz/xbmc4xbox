@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,10 +19,10 @@
  *
  */
 
+#include "stdafx.h"
 #include "DirectoryNodeAlbumRecentlyAdded.h"
-#include "music/MusicDatabase.h"
+#include "MusicDatabase.h"
 #include "FileItem.h"
-#include "LocalizeStrings.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 

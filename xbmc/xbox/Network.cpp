@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,22 +19,23 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 
 #include "Network.h"
 #ifdef HAS_XBOX_NETWORK
 #include "Undocumented.h"
 #endif
 #include "Application.h"
-#include "FileSystem/SmbFile.h"
+#include "FileSystem/FileSmb.h"
 #include "lib/libscrobbler/lastfmscrobbler.h"
 #include "lib/libscrobbler/librefmscrobbler.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "GUIWindowManager.h"
-#include "ApplicationMessenger.h"
-#include "utils/RssReader.h"
-#include "utils/Weather.h"
-#include "utils/log.h"
+#include "../utils/RssReader.h"
+#include "../utils/Weather.h"
+
+// global network variable
+CNetwork g_network;
 
 // Time to wait before we give up on network init
 #define WAIT_TIME 10000
@@ -298,7 +299,7 @@ void CNetwork::NetworkDown()
   m_lastlink = 0;
   m_laststate = 0;
   m_networkup = false;
-  g_application.getApplicationMessenger().NetworkMessage(SERVICES_DOWN, 0);
+  g_applicationMessenger.NetworkMessage(SERVICES_DOWN, 0);
 }
 
 void CNetwork::NetworkUp()
@@ -323,7 +324,7 @@ void CNetwork::NetworkUp()
 
   m_networkup = true;
   
-  g_application.getApplicationMessenger().NetworkMessage(SERVICES_UP, 0);
+  g_applicationMessenger.NetworkMessage(SERVICES_UP, 0);
 }
 
 /* update network state, call repeatedly while return value is XNET_GET_XNADDR_PENDING */

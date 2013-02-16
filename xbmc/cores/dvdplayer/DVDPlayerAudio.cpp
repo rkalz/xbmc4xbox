@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,9 +19,8 @@
  *
  */
  
-#include "system.h"
-#include "utils/log.h"
-#include "settings/GUISettings.h"
+#include "stdafx.h"
+#include "GUISettings.h"
 #include "DVDPlayerAudio.h"
 #include "DVDPlayer.h"
 #include "DVDCodecs/Audio/DVDAudioCodec.h"
@@ -29,8 +28,7 @@
 #include "DVDCodecs/DVDFactoryCodec.h"
 #include "DVDPerformanceCounter.h"
 #include "utils/TimeUtils.h"
-#include "utils/MathUtils.h"
-#include "utils/SingleLock.h"
+#include "Util.h"
 
 #include <sstream>
 #include <iomanip>
@@ -92,7 +90,7 @@ double CPTSOutputQueue::Current()
   return m_current.pts + min(m_current.duration, (CDVDClock::GetAbsoluteClock() - m_current.timestamp));
 }
 
-void CPTSInputQueue::Add(int64_t bytes, double pts)
+void CPTSInputQueue::Add(__int64 bytes, double pts)
 {
   CSingleLock lock(m_sync);
 
@@ -105,7 +103,7 @@ void CPTSInputQueue::Flush()
 
   m_list.clear();
 }
-double CPTSInputQueue::Get(int64_t bytes, bool consume)
+double CPTSInputQueue::Get(__int64 bytes, bool consume)
 {
   CSingleLock lock(m_sync);
 

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,16 +19,16 @@
  *
  */
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "FileSystem/File.h"
 #include "Favourites.h"
 #include "Util.h"
 #include "utils/URIUtils.h"
 #include "Key.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "FileItem.h"
-#include "video/VideoInfoTag.h"
-#include "settings/AdvancedSettings.h"
+#include "VideoInfoTag.h"
+#include "AdvancedSettings.h"
 
 bool CFavourites::Load(CFileItemList &items)
 {

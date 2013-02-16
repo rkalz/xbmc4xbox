@@ -5,7 +5,7 @@
 
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -30,6 +30,16 @@
 #define DEBUG_MOUSE
 #define DEBUG_KEYBOARD
 #include "system.h"
+#include "gui3d.h"
+
+#include <vector>
+#include <list>
+#include <map>
+#include <set>
+#include <memory>
+#include <queue>
+#include "StdString.h"
+#include "StringUtils.h"
 
 #ifdef _XBOX
 #if defined(_DEBUG) && defined(_MEMTRACKING)
@@ -40,6 +50,24 @@
 #define new new( _NORMAL_BLOCK, __FILE__, __LINE__)
 #endif
 #endif
+
+// guilib internal
+#include "LocalizeStrings.h"
+
+#include "utils/CriticalSection.h"
+#include "utils/SingleLock.h"
+#include "utils/Event.h"
+#include "utils/Archive.h"
+#include "utils/log.h"
+#include "utils/CharsetConverter.h"
+#include "LangInfo.h"
+
+#include "SectionLoader.h"
+#include "ApplicationMessenger.h"
+#include "utils/AutoPtrHandle.h"
+
+// Often used
+#include "GUIUserMessages.h"
 
 #ifdef _XBOX
 #ifdef QueryPerformanceFrequency

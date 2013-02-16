@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,8 +19,7 @@
  *
  */
  
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 
 #include "system.h"
 #include "DVDFactoryCodec.h"
@@ -140,7 +139,7 @@ CDVDVideoCodec* CDVDFactoryCodec::CreateVideoCodec( CDVDStreamInfo &hint )
   if( pixelrate > 1400.0f*720.0f*30.0f && (hint.fpsrate/hint.fpsscale) < 100 && hint.codec != CODEC_ID_VP8)
   {
     CLog::Log(LOGINFO, "CDVDFactoryCodec - High video resolution detected %dx%d, trying half resolution decoding ", hint.width, hint.height);    
-    options.m_keys.push_back(CDVDCodecOption("lowres","1"));
+    options.push_back(CDVDCodecOption("lowres","1"));    
   }
 
   if( (pCodec = OpenCodec(new CDVDVideoCodecFFmpeg(), hint, options)) ) return pCodec;

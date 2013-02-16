@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,17 +20,14 @@
  */
 
 #pragma once
-#include "utils/Thread.h"
+#include "../../utils/Thread.h"
 
 #include "DVDAudio.h"
 #include "DVDClock.h"
 #include "DVDMessageQueue.h"
 #include "DVDDemuxers/DVDDemuxUtils.h"
 #include "DVDStreamInfo.h"
-#include "utils/BitstreamStats.h"
-
-#include <list>
-#include <queue>
+#include "../../utils/BitstreamStats.h"
 
 class CDVDPlayer;
 class CDVDAudioCodec;
@@ -76,12 +73,12 @@ public:
 class CPTSInputQueue
 {
 private:
-  typedef std::list<std::pair<int64_t, double> >::iterator IT;
-  std::list<std::pair<int64_t, double> > m_list;
+  typedef std::list<std::pair<__int64, double> >::iterator IT;
+  std::list<std::pair<__int64, double> > m_list;
   CCriticalSection m_sync;
 public:
-  void   Add(int64_t bytes, double pts);
-  double Get(int64_t bytes, bool consume);
+  void   Add(__int64 bytes, double pts);
+  double Get(__int64 bytes, bool consume);
   void   Flush();
 };
 
@@ -103,10 +100,7 @@ public:
 
   // waits until all available data has been rendered
   void WaitForBuffers();
-  bool AcceptsData() const                              { return !m_messageQueue.IsFull(); }
-  bool HasData() const                                  { return m_messageQueue.GetDataSize() > 0; }
-  int  GetLevel() const                                 { return m_messageQueue.GetLevel(); }
-  bool IsInited() const                                 { return m_messageQueue.IsInited(); }
+  bool AcceptsData()                                    { return !m_messageQueue.IsFull(); }
   void SendMessage(CDVDMsg* pMsg, int priority = 0)     { m_messageQueue.Put(pMsg, priority); }
 
   void SetVolume(long nVolume)                          { m_dvdAudio.SetVolume(nVolume); }
@@ -118,6 +112,8 @@ public:
   // holds stream information for current playing stream
   CDVDStreamInfo m_streaminfo;
 
+  CDVDMessageQueue m_messageQueue;
+  CDVDMessageQueue& m_messageParent;
   CPTSOutputQueue m_ptsOutput;
   CPTSInputQueue  m_ptsInput;
 
@@ -131,9 +127,6 @@ protected:
   virtual void Process();
 
   int DecodeFrame(DVDAudioFrame &audioframe, bool bDropPacket);
-
-  CDVDMessageQueue m_messageQueue;
-  CDVDMessageQueue& m_messageParent;
 
   double m_audioClock;
 

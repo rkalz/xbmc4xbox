@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,7 +21,6 @@
  *
  */
 
-#include "system.h"
 #include "XBApplicationEx.h"
 
 #include "IMsgTargetCallback.h"
@@ -30,24 +29,21 @@
 class CFileItem;
 class CFileItemList;
 
-#include "dialogs/GUIDialogSeekBar.h"
-#include "dialogs/GUIDialogKaiToast.h"
-#include "dialogs/GUIDialogVolumeBar.h"
-#include "dialogs/GUIDialogMuteBug.h"
-#include "windows/GUIWindowPointer.h"   // Mouse pointer
+#include "GUIDialogSeekBar.h"
+#include "GUIDialogKaiToast.h"
+#include "GUIDialogVolumeBar.h"
+#include "GUIDialogMuteBug.h"
+#include "GUIWindowPointer.h"   // Mouse pointer
 
-#include "xbox/Network.h"
 #include "utils/Idle.h"
 #include "utils/DelayController.h"
 #include "cores/IPlayer.h"
 #include "cores/playercorefactory/PlayerCoreFactory.h"
 #include "PlayListPlayer.h"
-#include "storage/DetectDVDType.h"
+#include "DetectDVDType.h"
 #include "Autorun.h"
-#include "video/Bookmark.h"
+#include "Bookmark.h"
 #include "utils/Stopwatch.h"
-#include "ApplicationMessenger.h"
-
 
 class CWebServer;
 class CXBFileZilla;
@@ -100,7 +96,7 @@ public:
   void RestartApp();
   void LoadSkin(const CStdString& strSkin);
   void UnloadSkin();
-  bool LoadUserWindows();
+  bool LoadUserWindows(const CStdString& strSkinPath);
   void DelayLoadSkin();
   void CancelDelayLoadSkin();
   void ReloadSkin();
@@ -118,7 +114,7 @@ public:
   virtual void OnPlayBackSeekChapter(int iChapter);
   virtual void OnPlayBackSpeedChanged(int iSpeed);
   bool PlayMedia(const CFileItem& item, int iPlaylist = PLAYLIST_MUSIC);
-  bool ProcessAndStartPlaylist(const CStdString& strPlayList, PLAYLIST::CPlayList& playlist, int iPlaylist, int track=0);
+  bool ProcessAndStartPlaylist(const CStdString& strPlayList, PLAYLIST::CPlayList& playlist, int iPlaylist);
   bool PlayFile(const CFileItem& item, bool bRestart = false);
   void SaveFileState();
   void UpdateFileState();
@@ -163,10 +159,6 @@ public:
   double GetTotalTime() const;
   double GetTime() const;
   float GetPercentage() const;
-
-  // Get the percentage of data currently cached/buffered (aq/vq + FileCache) from the input stream if applicable.
-  float GetCachePercentage() const;
-
   void SeekPercentage(float percent);
   void SeekTime( double dTime = 0.0 );
   void ResetPlayTime();
@@ -175,12 +167,7 @@ public:
   void RestoreMusicScanSettings();
   void UpdateLibraries();
   void CheckMusicPlaylist();
-
-  CApplicationMessenger& getApplicationMessenger();
-  CNetwork& getNetwork();
-
-  bool ExecuteXBMCAction(std::string action);
-
+  
   CGUIDialogVolumeBar m_guiDialogVolumeBar;
   CGUIDialogSeekBar m_guiDialogSeekBar;
   CGUIDialogKaiToast m_guiDialogKaiToast;
@@ -203,7 +190,7 @@ public:
   inline bool IsInScreenSaver() { return m_bScreenSave; };
   int m_iScreenSaveLock; // spiff: are we checking for a lock? if so, ignore the screensaver state, if -1 we have failed to input locks
 
-  unsigned int m_skinReloadTime;
+  DWORD m_dwSkinTime;
   bool m_bIsPaused;
   bool m_bPlaybackStarting;
 
@@ -275,11 +262,8 @@ protected:
   static bool AlwaysProcess(const CAction& action);
 
   void SaveCurrentFileSettings();
-
+  
   void InitDirectoriesXbox();
-
-  CApplicationMessenger m_applicationMessenger;
-  CNetwork m_network;
   
 #ifdef HAS_EVENT_SERVER
   std::map<std::string, std::map<int, float> > m_lastAxisMap;

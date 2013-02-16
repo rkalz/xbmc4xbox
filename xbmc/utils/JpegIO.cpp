@@ -23,13 +23,12 @@
 
 #include "include.h"
 #include "lib/libexif/libexif.h"
-#include "settings/GUISettings.h"
-#include "settings/Settings.h"
+#include "GUISettings.h"
+#include "Settings.h"
 #include "../xbmc/FileSystem/File.h"
 #include "utils/log.h"
 #include "JpegIO.h"
 #include "XBTF.h"
-#include "utils/log.h"
 
 #include <setjmp.h>
 
@@ -302,7 +301,6 @@ bool CJpegIO::CreateThumbnailFromSurface(unsigned char* buffer, unsigned int wid
   else
   {
     CLog::Log(LOGWARNING, "JpegIO::CreateThumbnailFromSurface Unsupported format");
-    free(result);
     return false;
   }
 

@@ -2,7 +2,7 @@
 #define __EVENT_CLIENT_H__
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -27,7 +27,7 @@
 #include "CriticalSection.h"
 #include "Socket.h"
 #include "EventPacket.h"
-#include "settings/GUISettings.h"
+#include "GUISettings.h"
 #include <map>
 #include <queue>
 

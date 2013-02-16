@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -18,7 +18,7 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
-#include "system.h"
+#include "stdafx.h"
 #include "osdmenu.h"
 #include "GUIFontManager.h"
 
@@ -103,8 +103,8 @@ void COSDMenu::Draw()
   pSubMenu->Draw();
 
 
-  //  g_graphicsContext.Get3DDevice()->SetSoftDisplayFilter(g_settings.m_bSoften);
-  // g_graphicsContext.Get3DDevice()->SetFlickerFilter(g_settings.m_bSoften ? 5 : 1);
+  //  g_graphicsContext.Get3DDevice()->SetSoftDisplayFilter(g_stSettings.m_bSoften);
+  // g_graphicsContext.Get3DDevice()->SetFlickerFilter(g_stSettings.m_bSoften ? 5 : 1);
 }
 
 bool COSDMenu::OnAction(IExecutor& executor, const CAction& action)

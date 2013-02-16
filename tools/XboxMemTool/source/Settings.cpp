@@ -1,6 +1,6 @@
 
 #include "..\stdafx.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 
 #define ELEMENT_REGISTERED_PDB_FILES    "RegisteredSymbolFiles"
 

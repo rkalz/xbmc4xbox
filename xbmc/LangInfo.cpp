@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,10 @@
  *
  */
 
+#include "stdafx.h"
 #include "LangInfo.h"
-#include "settings/AdvancedSettings.h"
-#include "settings/GUISettings.h"
-#include "LocalizeStrings.h"
-#include "utils/log.h"
+#include "AdvancedSettings.h"
+#include "GUISettings.h"
 
 using namespace std;
 

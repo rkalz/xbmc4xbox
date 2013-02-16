@@ -19,9 +19,7 @@ OBJS-$(HAVE_MMX)           +=  x86/rgb2rgb.o            \
                                x86/swscale_mmx.o        \
                                x86/yuv2rgb_mmx.o
 OBJS-$(HAVE_VIS)           +=  sparc/yuv2rgb_vis.o
-MMX-OBJS-$(HAVE_YASM)      +=  x86/input.o              \
-                               x86/output.o             \
-                               x86/scale.o
+OBJS-$(HAVE_YASM)          +=  x86/scale.o
 
 $(SUBDIR)x86/swscale_mmx.o: CFLAGS += $(NOREDZONE_FLAGS)
 

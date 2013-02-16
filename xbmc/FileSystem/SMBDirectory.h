@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,7 +21,7 @@
  */
 
 #include "IDirectory.h"
-#include "SmbFile.h"
+#include "FileSmb.h"
 
 namespace XFILE
 {

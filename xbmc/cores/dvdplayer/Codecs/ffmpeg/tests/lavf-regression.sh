@@ -155,8 +155,6 @@ fi
 
 if [ -n "$do_png" ] ; then
 do_image_formats png
-do_image_formats png "-pix_fmt gray16be"
-do_image_formats png "-pix_fmt rgb48be"
 fi
 
 if [ -n "$do_bmp" ] ; then
@@ -181,10 +179,6 @@ fi
 
 if [ -n "$do_pcx" ] ; then
 do_image_formats pcx
-fi
-
-if [ -n "$do_dpx" ] ; then
-do_image_formats dpx
 fi
 
 # audio only

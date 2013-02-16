@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,12 +19,12 @@
  *
  */
  
-#include "utils/log.h"
+#include "stdafx.h"
 #include "DVDMessageQueue.h"
 #include "DVDDemuxers/DVDDemuxUtils.h"
 #include "SingleLock.h"
 #include "DVDClock.h"
-#include "utils/MathUtils.h"
+#include "Util.h"
 
 using namespace std;
 
@@ -255,23 +255,10 @@ int CDVDMessageQueue::GetLevel() const
   if(m_iDataSize == 0)
     return 0;
 
-  if(IsDataBased())
+  if(m_TimeBack  == DVD_NOPTS_VALUE
+  || m_TimeFront == DVD_NOPTS_VALUE
+  || m_TimeFront <= m_TimeBack)
     return min(100, 100 * m_iDataSize / m_iMaxDataSize);
 
   return min(100, MathUtils::round_int(100.0 * m_TimeSize * (m_TimeFront - m_TimeBack) / DVD_TIME_BASE ));
-}
-
-int CDVDMessageQueue::GetTimeSize() const
-{
-  if(IsDataBased())
-    return 0;
-  else
-    return (m_TimeFront - m_TimeBack) / DVD_TIME_BASE;
-}
-
-bool CDVDMessageQueue::IsDataBased() const
-{
-  return (m_TimeBack == DVD_NOPTS_VALUE  ||
-          m_TimeFront == DVD_NOPTS_VALUE ||
-          m_TimeFront <= m_TimeBack);
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -22,21 +22,20 @@
  */
 
 #include "../../xbox/PlatformDefs.h"
-#include "utils/StdString.h"
+#include "StdString.h"
 
 namespace XFILE
 {
   class CFile;
 }
-class CVariant;
 
 class CArchive;
 
-class IArchivable
+class ISerializable
 {
 public:
-  virtual void Archive(CArchive& ar) = 0;
-  virtual ~IArchivable() {}
+  virtual void Serialize(CArchive& ar) = 0;
+  virtual ~ISerializable() {}
 };
 
 class CArchive
@@ -50,16 +49,12 @@ public:
   CArchive& operator<<(int i);
   CArchive& operator<<(unsigned int i);
   CArchive& operator<<(int64_t i64);
-  CArchive& operator<<(uint64_t ui64);
   CArchive& operator<<(bool b);
   CArchive& operator<<(char c);
   CArchive& operator<<(const CStdString& str);
   CArchive& operator<<(const CStdStringW& str);
   CArchive& operator<<(const SYSTEMTIME& time);
-  CArchive& operator<<(IArchivable& obj);
-  CArchive& operator<<(const CVariant& variant);
-  CArchive& operator<<(const std::vector<std::string>& strArray);
-  CArchive& operator<<(const std::vector<int>& iArray);
+  CArchive& operator<<(ISerializable& obj);
 
   // loading
   CArchive& operator>>(float& f);
@@ -67,16 +62,12 @@ public:
   CArchive& operator>>(int& i);
   CArchive& operator>>(unsigned int& i);
   CArchive& operator>>(int64_t& i64);
-  CArchive& operator>>(uint64_t& ui64);
   CArchive& operator>>(bool& b);
   CArchive& operator>>(char& c);
   CArchive& operator>>(CStdString& str);
   CArchive& operator>>(CStdStringW& str);
   CArchive& operator>>(SYSTEMTIME& time);
-  CArchive& operator>>(IArchivable& obj);
-  CArchive& operator>>(CVariant& variant);
-  CArchive& operator>>(std::vector<std::string>& strArray);
-  CArchive& operator>>(std::vector<int>& iArray);
+  CArchive& operator>>(ISerializable& obj);
 
   bool IsLoading();
   bool IsStoring();
@@ -89,7 +80,7 @@ protected:
   void FlushBuffer();
   XFILE::CFile* m_pFile;
   int m_iMode;
-  uint8_t *m_pBuffer;
+  LPBYTE m_pBuffer;
   int m_BufferPos;
 };
 

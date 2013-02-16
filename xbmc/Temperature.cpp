@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,9 +19,8 @@
  *
  */
 
-#include "LangInfo.h"
+#include "stdafx.h"
 #include "Temperature.h"
-#include "LocalizeStrings.h"
 
 
 CTemperature::CTemperature()
@@ -378,7 +377,7 @@ CTemperature CTemperature::CreateFromCelsius(double value)
   return CTemperature(value*1.8f+32.0f);
 }
 
-void CTemperature::Archive(CArchive& ar)
+void CTemperature::Serialize(CArchive& ar)
 {
   if (ar.IsStoring())
   {

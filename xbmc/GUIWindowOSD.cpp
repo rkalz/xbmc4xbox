@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,10 +19,10 @@
  *
  */
 
+#include "stdafx.h"
 #include "GUIWindowOSD.h"
 #include "Application.h"
 #include "GUIWindowManager.h"
-#include "GUIUserMessages.h"
 
 CGUIWindowOSD::CGUIWindowOSD(void)
     : CGUIDialog(WINDOW_OSD, "VideoOSD.xml")
@@ -44,17 +44,21 @@ void CGUIWindowOSD::FrameMove()
   if (m_autoClosing)
   {
     // check for movement of mouse or a submenu open
-    if (g_Mouse.IsActive() || g_windowManager.IsWindowActive(WINDOW_DIALOG_AUDIO_OSD_SETTINGS)
+    if (g_Mouse.HasMoved() || g_windowManager.IsWindowActive(WINDOW_DIALOG_AUDIO_OSD_SETTINGS)
                            || g_windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_OSD_SETTINGS)
                            || g_windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_BOOKMARKS))
-      SetAutoClose(100); // enough for 10fps
+      SetAutoClose(3000);
   }
   CGUIDialog::FrameMove();
 }
 
 bool CGUIWindowOSD::OnAction(const CAction &action)
 {
-  if (action.GetID() == ACTION_NEXT_ITEM || action.GetID() == ACTION_PREV_ITEM)
+  // keyboard or controller movement should prevent autoclosing
+  if (action.id != ACTION_MOUSE && m_autoClosing)
+    SetAutoClose(3000);
+
+  if (action.id == ACTION_NEXT_ITEM || action.id == ACTION_PREV_ITEM)
   {
     // these could indicate next chapter if video supports it
     if (g_application.m_pPlayer != NULL && g_application.m_pPlayer->OnAction(action))
@@ -64,21 +68,15 @@ bool CGUIWindowOSD::OnAction(const CAction &action)
   return CGUIDialog::OnAction(action);
 }
 
-bool CGUIWindowOSD::OnMouseEvent(const CPoint &point, const CMouseEvent &event)
+bool CGUIWindowOSD::OnMouse(const CPoint &point)
 {
-  if (event.m_id == ACTION_MOUSE_WHEEL_UP)
-  {
-    return g_application.OnAction(CAction(ACTION_ANALOG_SEEK_FORWARD, 0.5f));
-  }
-  if (event.m_id == ACTION_MOUSE_WHEEL_DOWN)
-  {
-    return g_application.OnAction(CAction(ACTION_ANALOG_SEEK_FORWARD, 0.5f));
-  }
-  if (event.m_id == ACTION_MOUSE_LEFT_CLICK)
+  if (g_Mouse.bClick[MOUSE_LEFT_BUTTON])
   { // pause
-    return g_application.OnAction(CAction(ACTION_PAUSE));
+    CAction action;
+    action.id = ACTION_PAUSE;
+    return g_application.OnAction(action);
   }
-  return CGUIDialog::OnMouseEvent(point, event);
+  return CGUIDialog::OnMouse(point);
 }
 
 bool CGUIWindowOSD::OnMessage(CGUIMessage& message)

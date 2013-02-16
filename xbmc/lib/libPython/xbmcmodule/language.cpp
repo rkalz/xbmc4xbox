@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,12 +19,11 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "language.h"
 #include "pyutil.h"
 #include "utils/URIUtils.h"
-#include "settings/GUISettings.h"
-#include "utils/CharsetConverter.h"
+#include "GUISettings.h"
 
 #ifndef __GNUC__
 #pragma code_seg("PY_TEXT")

@@ -20,7 +20,7 @@
 */
 
 #include "IFileSystem.h"
-#include "FileSystem/HDFile.h"
+#include "FileSystem/FileHD.h"
 
 class CFatXFileSystem : public IFileSystem
 {

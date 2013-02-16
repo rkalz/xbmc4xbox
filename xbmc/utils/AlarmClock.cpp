@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,12 +19,9 @@
  *
  */
 
+#include "stdafx.h"
 #include "AlarmClock.h"
 #include "Application.h"
-#include "ApplicationMessenger.h"
-#include "LocalizeStrings.h"
-#include "utils/SingleLock.h"
-#include "utils/log.h"
 
 CAlarmClock g_alarmClock;
 
@@ -113,7 +110,7 @@ void CAlarmClock::stop(const CStdString& strName)
     g_application.m_guiDialogKaiToast.QueueNotification(CGUIDialogKaiToast::Info, strAlarmClock, strMessage);
   else
   {
-    g_application.getApplicationMessenger().ExecBuiltIn(iter->second.m_strCommand);
+    g_applicationMessenger.ExecBuiltIn(iter->second.m_strCommand);
     if (iter->second.m_loop)
     {
       iter->second.watch.Reset();

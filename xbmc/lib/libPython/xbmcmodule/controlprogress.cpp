@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "lib/libPython/python/Include/Python.h"
 #include "GUIProgressControl.h"
 #include "control.h"
@@ -106,7 +106,7 @@ namespace PYXBMC
       (float)pControl->dwWidth,(float)pControl->dwHeight,
       (CStdString)pControl->strTextureBg,(CStdString)pControl->strTextureLeft,
       (CStdString)pControl->strTextureMid,(CStdString)pControl->strTextureRight,
-      (CStdString)pControl->strTextureOverlay);
+      (CStdString)pControl->strTextureOverlay, 0, 0);
 
     if (pControl->pGUIControl && pControl->colorDiffuse)
         ((CGUIProgressControl *)pControl->pGUIControl)->SetColorDiffuse(pControl->colorDiffuse);

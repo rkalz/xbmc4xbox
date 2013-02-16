@@ -15,6 +15,7 @@
 // NCSA Telnet FTP server. Has LIST = NLST (and bad NLST for directories).
 //-----------------------------------------------------------------------------------
 
+#include "stdafx.h"
 #include <time.h>
 #include "FTPParse.h"
 
@@ -132,9 +133,9 @@ static long getlong(char *buf,int len)
   return u;
 }
 
-static int64_t getint64(char *buf,int len)
+static __int64 getint64(char *buf,int len)
 {
-  int64_t u = 0;
+  __int64 u = 0;
   while (len-- > 0)
     u = u * 10 + (*buf++ - '0');
   return u;
@@ -145,7 +146,7 @@ int ftpparse(struct ftpparse *fp,char *buf,int len)
   int i;
   int j;
   int state;
-  int64_t size;
+  __int64 size;
   long year;
   long month;
   long mday;

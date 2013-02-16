@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,14 +19,13 @@
  *
  */
 
+#include "stdafx.h"
 #include "FTPDirectory.h"
 #include "FTPParse.h"
 #include "URL.h"
 #include "utils/URIUtils.h"
-#include "utils/StringUtils.h"
-#include "CurlFile.h"
+#include "FileCurl.h"
 #include "FileItem.h"
-#include "utils/CharsetConverter.h"
 
 using namespace XFILE;
 
@@ -35,7 +34,7 @@ CFTPDirectory::~CFTPDirectory(void){}
 
 bool CFTPDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items)
 {
-  CCurlFile reader;
+  CFileCurl reader;
 
   CURL url(strPath);
 
@@ -100,7 +99,7 @@ bool CFTPDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items
 
 bool CFTPDirectory::Exists(const char* strPath)
 {
-  CCurlFile ftp;
+  CFileCurl ftp;
   CURL url(strPath);
   return ftp.Exists(url);
 }

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -34,12 +34,12 @@ public:
   virtual bool    Open(const char* file, const std::string &content);
   virtual void    Close();
   virtual int     Read(BYTE* buf, int buf_size);
-  virtual int64_t Seek(int64_t offset, int whence) { return -1; }
+  virtual __int64 Seek(__int64 offset, int whence) { return -1; }
   virtual bool Pause(double dTime) { return false; };
   virtual bool    IsEOF();
-  virtual int64_t GetLength()                      { return -1; }
+  virtual __int64 GetLength()                      { return -1; }
 
-  virtual ENextStream NextStream() { return m_startup ? NEXTSTREAM_OPEN : NEXTSTREAM_NONE; }
+  virtual bool    NextStream()                     { return m_startup; }
 
   virtual void    Abort();
 

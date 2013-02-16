@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
-#include "system.h"
+#include "stdafx.h"
 #include <vector>
 #include "MediaSource.h"
 #ifdef HAS_XBOX_HARDWARE
@@ -81,6 +81,15 @@ struct XBOXDETECTION
   std::vector<bool> client_informed;
 };
 
+namespace MathUtils
+{
+  inline int round_int (double x);
+  inline int ceil_int (double x);
+  inline int truncate_int(double x);
+}
+
+
+
 class CUtil
 {
 public:
@@ -89,6 +98,9 @@ public:
   static bool GetVolumeFromFileName(const CStdString& strFileName, CStdString& strFileTitle, CStdString& strVolumeNumber);
   static void CleanString(const CStdString& strFileName, CStdString& strTitle, CStdString& strTitleAndYear, CStdString& strYear, bool bRemoveExtension = false, bool bCleanChars = true);
   static CStdString GetTitleFromPath(const CStdString& strFileNameAndPath, bool bIsFolder = false);
+  static bool IsBuiltIn(const CStdString& execString);
+  static void GetBuiltInHelp(CStdString &help);
+  static int ExecBuiltIn(const CStdString& execString);
   static void GetQualifiedFilename(const CStdString &strBasePath, CStdString &strFilename);
   static bool InstallTrainer(CTrainer& trainer);
   static bool RemoveTrainer();

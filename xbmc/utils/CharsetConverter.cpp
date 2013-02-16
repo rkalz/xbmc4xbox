@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,14 +19,10 @@
  *
  */
 
-#include "system.h"
-#include "CharsetConverter.h"
+#include "stdafx.h"
 #include "Util.h"
 #include "ArabicShaping.h"
-#include "settings/GUISettings.h"
-#include "LangInfo.h"
-#include "utils/SingleLock.h"
-#include "utils/log.h"
+#include "GUISettings.h"
 
 #ifndef _LINUX
 #include "lib/libiconv/iconv.h"

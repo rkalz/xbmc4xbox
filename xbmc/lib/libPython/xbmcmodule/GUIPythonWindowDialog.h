@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -23,23 +23,18 @@
 
 #include "GUIPythonWindow.h"
 
-class CApplicationMessenger;
-
 class CGUIPythonWindowDialog : public CGUIPythonWindow
 {
 public:
   CGUIPythonWindowDialog(int id);
   virtual ~CGUIPythonWindowDialog(void);
   virtual bool    OnMessage(CGUIMessage& message);
-  void            Show(bool show = true);
+  void            Activate(int parentId);
+  virtual void    Close();
   virtual bool    IsDialogRunning() const { return m_bRunning; }
   virtual bool    IsDialog() const { return true;};
   virtual bool    IsModalDialog() const { return true; };
 
 protected:
-  friend class CApplicationMessenger;
-  void Show_Internal(bool show = true);
-
-private:
   bool             m_bRunning;
 };

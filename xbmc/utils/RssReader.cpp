@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,22 +20,19 @@
  */
 
 
-#include "system.h"
+#include "stdafx.h"
 #include "RssReader.h"
 #include "utils/HTMLUtil.h"
-#include "Application.h"
-#include "settings/GUISettings.h"
+#include "xbox/network.h"
+#include "GUISettings.h"
 #include "URL.h"
-#include "LocalizeStrings.h"
 #include "FileSystem/File.h"
-#include "FileSystem/CurlFile.h"
+#include "FileSystem/FileCurl.h"
 #ifdef __APPLE__
 #include "CocoaUtils.h"
 #endif
 #include "SystemInfo.h"
 #include "GUIRSSControl.h"
-#include "utils/CharsetConverter.h"
-#include "utils/log.h"
 
 using namespace std;
 using namespace XFILE;
@@ -128,7 +125,7 @@ void CRssReader::Process()
     m_strFeed[iFeed] = "";
     m_strColors[iFeed] = "";
 
-    CCurlFile http;
+    CFileCurl http;
     http.SetUserAgent(m_userAgent);
     http.SetTimeout(2);
     CStdString strXML;
@@ -140,7 +137,7 @@ void CRssReader::Process()
     CURL url(strUrl);
 
     // we wait for the network to come up
-    if ((url.GetProtocol() == "http" || url.GetProtocol() == "https") && !g_application.getNetwork().IsAvailable())
+    if ((url.GetProtocol() == "http" || url.GetProtocol() == "https") && !g_network.IsAvailable())
       strXML = "<rss><item><title>"+g_localizeStrings.Get(15301)+"</title></item></rss>";
     else
     {

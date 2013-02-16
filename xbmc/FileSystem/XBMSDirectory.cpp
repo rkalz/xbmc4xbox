@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,12 +20,11 @@
  */
 
 
+#include "stdafx.h"
 #include "XBMSDirectory.h"
-#include "SectionLoader.h"
 #include "utils/URIUtils.h"
 #include "URL.h"
 #include "FileItem.h"
-#include "utils/CharsetConverter.h"
 
 using namespace XFILE;
 
@@ -205,7 +204,7 @@ bool CXBMSDirectory::GetDirectory(const CStdString& strPathUtf8, CFileItemList &
       pstrModificationStart += strlen("<MODIFICATION>");
       strncpy(szModification, pstrModificationStart, pstrModificationEnd - pstrModificationStart);
       szModification[pstrModificationEnd - pstrModificationStart] = 0;
-      int64_t lTimeDate = _atoi64(szModification);
+      __int64 lTimeDate = _atoi64(szModification);
 
       FILETIME fileTime, localTime;
       LONGLONG ll = Int32x32To64(lTimeDate, 10000000) + 116444736000000000LL;

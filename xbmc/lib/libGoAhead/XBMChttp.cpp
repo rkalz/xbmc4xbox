@@ -9,45 +9,41 @@
 
 /********************************* Includes ***********************************/
 
-#include "system.h"
+#include "stdafx.h"
 #include "WebServer.h"
 #include "XBMChttp.h"
 #include "includes.h"
 #include "GUIWindowManager.h"
-#include "GUIUserMessages.h"
 
-#include "playlists/PlayListFactory.h"
+#include "PlayListFactory.h"
 #include "Application.h"
-#include "ApplicationMessenger.h"
 #include "Util.h"
 #include "PlayListPlayer.h"
 #include "FileSystem/HDDirectory.h" 
 #include "FileSystem/CDDADirectory.h"
 #include "FileSystem/SpecialProtocol.h"
-#include "video/VideoDatabase.h"
+#include "VideoDatabase.h"
 #include "ProgramDatabase.h"
 #include "GUIButtonControl.h"
-#include "GUIInfoManager.h"
-#include "pictures/Picture.h"
-#include "music/tags/MusicInfoTagLoaderFactory.h"
-#include "music/infoscanner/MusicInfoScraper.h"
-#include "music/MusicDatabase.h"
-#include "pictures/GUIWindowSlideShow.h"
-#include "windows/GUIMediaWindow.h"
-#include "windows/GUIWindowFileManager.h"
+#include "utils/GUIInfoManager.h"
+#include "Picture.h"
+#include "MusicInfoTagLoaderFactory.h"
+#include "utils/MusicInfoScraper.h"
+#include "MusicDatabase.h"
+#include "GUIWindowSlideShow.h"
+#include "GUIMediaWindow.h"
+#include "GUIWindowFileManager.h"
 #include "GUIButtonScroller.h"
 #include "FileSystem/Directory.h"
 #include "FileSystem/VirtualDirectory.h"
 #include "utils/UdpClient.h"
 #include "xbox/XKHDD.h"
 #include "FileSystem/Directory.h"
-#include "playlists/PlayList.h"
-#include "music/tags/MusicInfoTag.h"
-#include "pictures/PictureInfoTag.h"
-#include "settings/AdvancedSettings.h"
+#include "PlayList.h"
+#include "musicInfoTag.h"
+#include "PictureInfoTag.h"
+#include "AdvancedSettings.h"
 #include "utils/URIUtils.h"
-#include "LocalizeStrings.h"
-#include "utils/log.h"
 
 #ifdef _WIN32PC
 extern "C" FILE *fopen_utf8(const char *_Filename, const char *_Mode);
@@ -259,11 +255,11 @@ CStdString CXbmcHttp::procMask(CStdString mask)
 {
   mask=mask.ToLower();
   if(mask=="[music]")
-    return g_settings.m_musicExtensions;
+    return g_stSettings.m_musicExtensions;
   if(mask=="[video]")
-    return g_settings.m_videoExtensions;
+    return g_stSettings.m_videoExtensions;
   if(mask=="[pictures]")
-    return g_settings.m_pictureExtensions;
+    return g_stSettings.m_pictureExtensions;
   if(mask=="[files]")
     return "";
   return mask;
@@ -353,12 +349,12 @@ int CXbmcHttp::SetResponse(const CStdString &response)
   if (response.length()>=closeTag.length())
   {
     if ((response.Right(closeTag.length())!=closeTag) && closeFinalTag) 
-      return g_application.getApplicationMessenger().SetResponse(response+closeTag);
+      return g_applicationMessenger.SetResponse(response+closeTag);
   }
   else 
     if (closeFinalTag)
-      return g_application.getApplicationMessenger().SetResponse(response+closeTag);
-  return g_application.getApplicationMessenger().SetResponse(response);
+      return g_applicationMessenger.SetResponse(response+closeTag);
+  return g_applicationMessenger.SetResponse(response);
 }
 
 int CXbmcHttp::displayDir(int numParas, CStdString paras[]) 
@@ -531,7 +527,7 @@ bool CXbmcHttp::LoadPlayList(CStdString strPath, int iPlaylist, bool clearList, 
   if ((playlist.size() == 1) && (autoStart))
   {
     // just 1 song? then play it (no need to have a playlist of 1 song)
-    g_application.getApplicationMessenger().MediaPlay(playlistItem->GetPath());
+    g_applicationMessenger.MediaPlay(playlistItem->GetPath());
     return true;
   }
 
@@ -545,7 +541,7 @@ bool CXbmcHttp::LoadPlayList(CStdString strPath, int iPlaylist, bool clearList, 
     {
       g_playlistPlayer.SetCurrentPlaylist(iPlaylist);
       g_playlistPlayer.Reset();
-      g_application.getApplicationMessenger().PlayListPlayerPlay();
+      g_applicationMessenger.PlayListPlayerPlay();
       return true;
     } 
     else
@@ -664,19 +660,19 @@ int CXbmcHttp::xbmcGetMediaLocation(int numParas, CStdString paras[])
   case MUSIC:
     {
       pShares = &g_settings.m_musicSources;
-      strMask = g_settings.m_musicExtensions;
+      strMask = g_stSettings.m_musicExtensions;
     }
     break;
   case VIDEO:
     {
       pShares = &g_settings.m_videoSources;
-      strMask = g_settings.m_videoExtensions;
+      strMask = g_stSettings.m_videoExtensions;
     }
     break;
   case PICTURES:
     {
       pShares = &g_settings.m_pictureSources;
-      strMask = g_settings.m_pictureExtensions;
+      strMask = g_stSettings.m_pictureExtensions;
     }
     break;
   case FILES:
@@ -1800,8 +1796,9 @@ int CXbmcHttp::xbmcGetGUIStatus()
         output += closeTag+openTag+"Type:Button";
         if (strTmp!="")
           output += closeTag+openTag+"Description:" + strTmp;
-        if (((CGUIButtonControl *)pControl)->HasClickActions())
-          output += closeTag+openTag+"Execution:" + ((CGUIButtonControl *)pControl)->GetClickActions().GetFirstAction();
+        CStdStringArray actions = ((CGUIButtonControl *)pControl)->GetClickActions();
+        if (actions.size())
+          output += closeTag+openTag+"Execution:" + actions[0];
       }
       else if (pControl->GetControlType() == CGUIControl::GUICONTROL_BUTTONBAR)
       {
@@ -1917,7 +1914,7 @@ int CXbmcHttp::xbmcPlayerPlayFile(int numParas, CStdString paras[])
   }
   else
   {
-    g_application.getApplicationMessenger().MediaPlay(paras[0]);
+    g_applicationMessenger.MediaPlay(paras[0]);
     if(g_application.IsPlaying())
       return SetResponse(openTag+"OK");
   }
@@ -2192,29 +2189,38 @@ int CXbmcHttp::xbmcAction(int numParas, CStdString paras[], int theAction)
   case 1:
     if (showingSlideshow) {
       CGUIWindowSlideShow *pSlideShow = (CGUIWindowSlideShow *)g_windowManager.GetWindow(WINDOW_SLIDESHOW);
-      if (pSlideShow)
-        pSlideShow->OnAction(CAction(ACTION_PAUSE));
+      if (pSlideShow) {
+        CAction action;
+        action.id = ACTION_PAUSE;
+        pSlideShow->OnAction(action);    
+      }
     }
     else
-      g_application.getApplicationMessenger().MediaPause();
+      g_applicationMessenger.MediaPause();
     return SetResponse(openTag+"OK");
     break;
   case 2:
     if (showingSlideshow) {
       CGUIWindowSlideShow *pSlideShow = (CGUIWindowSlideShow *)g_windowManager.GetWindow(WINDOW_SLIDESHOW);
-      if (pSlideShow)
-        pSlideShow->OnAction(CAction(ACTION_STOP));
+      if (pSlideShow) {
+        CAction action;
+        action.id = ACTION_STOP;
+        pSlideShow->OnAction(action);    
+      }
     }
     else
       //g_application.StopPlaying();
-      g_application.getApplicationMessenger().MediaStop();
+      g_applicationMessenger.MediaStop();
     return SetResponse(openTag+"OK");
     break;
   case 3:
     if (showingSlideshow) {
       CGUIWindowSlideShow *pSlideShow = (CGUIWindowSlideShow *)g_windowManager.GetWindow(WINDOW_SLIDESHOW);
-      if (pSlideShow)
-        pSlideShow->OnAction(CAction(ACTION_NEXT_PICTURE));
+      if (pSlideShow) {
+        CAction action;
+        action.id = ACTION_NEXT_PICTURE;
+        pSlideShow->OnAction(action);
+      }
     }
     else
       g_playlistPlayer.PlayNext();
@@ -2223,8 +2229,11 @@ int CXbmcHttp::xbmcAction(int numParas, CStdString paras[], int theAction)
   case 4:
     if (showingSlideshow) {
       CGUIWindowSlideShow *pSlideShow = (CGUIWindowSlideShow *)g_windowManager.GetWindow(WINDOW_SLIDESHOW);
-      if (pSlideShow)
-        pSlideShow->OnAction(CAction(ACTION_PREV_PICTURE));
+      if (pSlideShow) {
+        CAction action;
+        action.id = ACTION_PREV_PICTURE;
+        pSlideShow->OnAction(action);    
+      }
     }
     else
       g_playlistPlayer.PlayPrevious();
@@ -2235,7 +2244,9 @@ int CXbmcHttp::xbmcAction(int numParas, CStdString paras[], int theAction)
     {
       CGUIWindowSlideShow *pSlideShow = (CGUIWindowSlideShow *)g_windowManager.GetWindow(WINDOW_SLIDESHOW);
       if (pSlideShow) {
-        pSlideShow->OnAction(CAction(ACTION_ROTATE_PICTURE));
+        CAction action;
+        action.id = ACTION_ROTATE_PICTURE;
+        pSlideShow->OnAction(action);  
         return SetResponse(openTag+"OK");
       }
       else
@@ -2250,8 +2261,11 @@ int CXbmcHttp::xbmcAction(int numParas, CStdString paras[], int theAction)
       CGUIWindowSlideShow *pSlideShow = (CGUIWindowSlideShow *)g_windowManager.GetWindow(WINDOW_SLIDESHOW);
       if (pSlideShow) {
         if (numParas>1) {
-          CAction action(ACTION_ANALOG_MOVE, (float)atof(paras[0]), (float)atof(paras[1]));
-          pSlideShow->OnAction(action);
+          CAction action;
+          action.id = ACTION_ANALOG_MOVE;
+          action.amount1=(float) atof(paras[0]);
+          action.amount2=(float) atof(paras[1]);
+          pSlideShow->OnAction(action);    
           return SetResponse(openTag+"OK");
         }
         else
@@ -2270,7 +2284,9 @@ int CXbmcHttp::xbmcAction(int numParas, CStdString paras[], int theAction)
       if (pSlideShow) {
         if (numParas>0)
         {
-          pSlideShow->OnAction(CAction(ACTION_ZOOM_LEVEL_NORMAL+atoi(paras[0])));
+          CAction action;
+          action.id = ACTION_ZOOM_LEVEL_NORMAL+atoi(paras[0]);
+          pSlideShow->OnAction(action);    
           return SetResponse(openTag+"OK");
         }
         else
@@ -2374,7 +2390,7 @@ int CXbmcHttp::xbmcChooseAlbum(int numParas, CStdString paras[])
     try
     {
       CMusicAlbumInfo musicInfo;//("", "") ;
-      XFILE::CCurlFile http;
+      XFILE::CFileCurl http;
       SScraperInfo info; // TODO - WTF is this code supposed to do?
       if (musicInfo.Load(http,info))
       {
@@ -2416,7 +2432,7 @@ int CXbmcHttp::xbmcDownloadInternetFile(int numParas, CStdString paras[])
           tempSkipWebFooterHeader=paras[1].ToLower() == "bare";
         if (numParas>2)
           tempSkipWebFooterHeader=paras[2].ToLower() == "bare";
-        XFILE::CCurlFile http;
+        XFILE::CFileCurl http;
         http.Download(src, dest);
         CStdString encoded="";
         encoded=encodeFileToBase64(dest, 80);
@@ -2574,7 +2590,7 @@ int CXbmcHttp::xbmcShowPicture(int numParas, CStdString paras[])
   {
     if (!playableFile(paras[0]))
       return SetResponse(openTag+"Error:Unable to open file");
-    g_application.getApplicationMessenger().PictureShow(paras[0]);
+    g_applicationMessenger.PictureShow(paras[0]);
     return SetResponse(openTag+"OK");
   }
 }
@@ -2599,7 +2615,7 @@ int CXbmcHttp::xbmcExecBuiltIn(int numParas, CStdString paras[])
     return SetResponse(openTag+"Error:Missing parameter");
   else
   {
-    g_application.getApplicationMessenger().ExecBuiltIn(paras[0]);
+    g_applicationMessenger.ExecBuiltIn(paras[0]);
     return SetResponse(openTag+"OK");
   }
 }
@@ -2679,57 +2695,57 @@ int CXbmcHttp::xbmcSTSetting(int numParas, CStdString paras[])
     for (i=0; i<numParas; i++)
     {
       if (paras[i]=="myvideowatchmode")
-        tmp.Format("%i",g_settings.m_iMyVideoWatchMode);
+        tmp.Format("%i",g_stSettings.m_iMyVideoWatchMode);
       else if (paras[i]=="mymusicstartwindow")
-        tmp.Format("%i",g_settings.m_iMyMusicStartWindow);
+        tmp.Format("%i",g_stSettings.m_iMyMusicStartWindow);
       else if (paras[i]=="videostartwindow")
-        tmp.Format("%i",g_settings.m_iVideoStartWindow);
+        tmp.Format("%i",g_stSettings.m_iVideoStartWindow);
       else if (paras[i]=="myvideostack")
-        tmp.Format("%i",g_settings.m_iMyVideoStack);
+        tmp.Format("%i",g_stSettings.m_iMyVideoStack);
       else if (paras[i]=="additionalsubtitledirectorychecked")
-        tmp.Format("%i",g_settings.iAdditionalSubtitleDirectoryChecked);
+        tmp.Format("%i",g_stSettings.iAdditionalSubtitleDirectoryChecked);
       else if (paras[i]=="httpapibroadcastport")
-        tmp.Format("%i",g_settings.m_HttpApiBroadcastPort);
+        tmp.Format("%i",g_stSettings.m_HttpApiBroadcastPort);
       else if (paras[i]=="httpapibroadcastlevel")
-        tmp.Format("%i",g_settings.m_HttpApiBroadcastLevel);
+        tmp.Format("%i",g_stSettings.m_HttpApiBroadcastLevel);
       else if (paras[i]=="volumelevel")
-        tmp.Format("%i",g_settings.m_nVolumeLevel);
+        tmp.Format("%i",g_stSettings.m_nVolumeLevel);
       else if (paras[i]=="dynamicrangecompressionlevel")
-        tmp.Format("%i",g_settings.m_dynamicRangeCompressionLevel);
+        tmp.Format("%i",g_stSettings.m_dynamicRangeCompressionLevel);
       else if (paras[i]=="premutevolumelevel")
-        tmp.Format("%i",g_settings.m_iPreMuteVolumeLevel);
+        tmp.Format("%i",g_stSettings.m_iPreMuteVolumeLevel);
       else if (paras[i]=="systemtimetotalup")
-        tmp.Format("%i",g_settings.m_iSystemTimeTotalUp);
+        tmp.Format("%i",g_stSettings.m_iSystemTimeTotalUp);
       else if (paras[i]=="mute")
-        tmp = (g_settings.m_bMute==0) ? "False" : "True";
+        tmp = (g_stSettings.m_bMute==0) ? "False" : "True";
       else if (paras[i]=="myvideonavflatten")
-        tmp = (g_settings.m_bMyVideoNavFlatten==0) ? "False" : "True";
+        tmp = (g_stSettings.m_bMyVideoNavFlatten==0) ? "False" : "True";
       else if (paras[i]=="myvideoplaylistshuffle")
-        tmp = (g_settings.m_bMyVideoPlaylistShuffle==0) ? "False" : "True";
+        tmp = (g_stSettings.m_bMyVideoPlaylistShuffle==0) ? "False" : "True";
       else if (paras[i]=="myvideoplaylistrepeat")
-        tmp = (g_settings.m_bMyVideoPlaylistRepeat==0) ? "False" : "True";
+        tmp = (g_stSettings.m_bMyVideoPlaylistRepeat==0) ? "False" : "True";
       else if (paras[i]=="mymusicisscanning")
-        tmp = (g_settings.m_bMyMusicIsScanning==0) ? "False" : "True";
+        tmp = (g_stSettings.m_bMyMusicIsScanning==0) ? "False" : "True";
       else if (paras[i]=="mymusicplaylistshuffle")
-        tmp = (g_settings.m_bMyMusicPlaylistShuffle==0) ? "False" : "True";
+        tmp = (g_stSettings.m_bMyMusicPlaylistShuffle==0) ? "False" : "True";
       else if (paras[i]=="mymusicplaylistrepeat")
-        tmp = (g_settings.m_bMyMusicPlaylistRepeat==0) ? "False" : "True";
+        tmp = (g_stSettings.m_bMyMusicPlaylistRepeat==0) ? "False" : "True";
       else if (paras[i]=="mymusicsongthumbinvis")
-        tmp = (g_settings.m_bMyMusicSongThumbInVis==0) ? "False" : "True";
+        tmp = (g_stSettings.m_bMyMusicSongThumbInVis==0) ? "False" : "True";
       else if (paras[i]=="mymusicsonginfoinvis")
-        tmp = (g_settings.m_bMyMusicSongInfoInVis==0) ? "False" : "True";
+        tmp = (g_stSettings.m_bMyMusicSongInfoInVis==0) ? "False" : "True";
       else if (paras[i]=="zoomamount")
-        tmp.Format("%f", g_settings.m_fZoomAmount);
+        tmp.Format("%f", g_stSettings.m_fZoomAmount);
       else if (paras[i]=="pixelratio")
-        tmp.Format("%f", g_settings.m_fPixelRatio);
+        tmp.Format("%f", g_stSettings.m_fPixelRatio);
       else if (paras[i]=="pictureextensions")
-        tmp = g_settings.m_pictureExtensions;
+        tmp = g_stSettings.m_pictureExtensions;
       else if (paras[i]=="musicextensions")
-        tmp = g_settings.m_musicExtensions;
+        tmp = g_stSettings.m_musicExtensions;
       else if (paras[i]=="videoextensions")
-        tmp = g_settings.m_videoExtensions;
+        tmp = g_stSettings.m_videoExtensions;
       else if (paras[i]=="logfolder")
-        tmp = g_settings.m_logFolder;
+        tmp = g_stSettings.m_logFolder;
       else
         tmp = "Error:Unknown setting " + paras[i];
       strInfo += openTag + tmp;
@@ -2778,11 +2794,11 @@ int CXbmcHttp::xbmcConfig(int numParas, CStdString paras[])
   {
     //getoption has been deprecated so the following is just to prevent (my) legacy client code breaking (to be removed later)
     if (paras[1]=="pictureextensions")
-      response=openTag+g_settings.m_pictureExtensions;
+      response=openTag+g_stSettings.m_pictureExtensions;
     else if (paras[1]=="videoextensions")
-      response=openTag+g_settings.m_videoExtensions;
+      response=openTag+g_stSettings.m_videoExtensions;
     else if (paras[1]=="musicextensions")
-      response=openTag+g_settings.m_musicExtensions;
+      response=openTag+g_stSettings.m_musicExtensions;
     else
       response=openTag+"Error:Function is deprecated";
     //ret=XbmcWebsHttpAPIConfigGetOption(response, argc, argv);
@@ -2884,13 +2900,13 @@ int CXbmcHttp::xbmcSpinDownHardDisk(int numParas, CStdString paras[])
 
 bool CXbmcHttp::xbmcBroadcast(CStdString message, int level)
 {
-  if  (g_settings.m_HttpApiBroadcastLevel>=level)
+  if  (g_stSettings.m_HttpApiBroadcastLevel>=level)
   {
     if (!pUdpBroadcast)
       pUdpBroadcast = new CUdpBroadcast();
     CStdString msg;
     msg.Format(openBroadcast+message+";%i"+closeBroadcast, level);
-    return pUdpBroadcast->broadcast(msg, g_settings.m_HttpApiBroadcastPort);
+    return pUdpBroadcast->broadcast(msg, g_stSettings.m_HttpApiBroadcastPort);
   }
   else
     return true;
@@ -2906,7 +2922,7 @@ int CXbmcHttp::xbmcBroadcast(int numParas, CStdString paras[])
     if (numParas>1)
       succ=pUdpBroadcast->broadcast(paras[0], atoi(paras[1]));
     else
-      succ=pUdpBroadcast->broadcast(paras[0], g_settings.m_HttpApiBroadcastPort);
+      succ=pUdpBroadcast->broadcast(paras[0], g_stSettings.m_HttpApiBroadcastPort);
     if (succ)
       return SetResponse(openTag+"OK");
     else
@@ -2920,9 +2936,9 @@ int CXbmcHttp::xbmcSetBroadcast(int numParas, CStdString paras[])
 {
   if (numParas>0)
   {
-    g_settings.m_HttpApiBroadcastLevel=atoi(paras[0]);
+    g_stSettings.m_HttpApiBroadcastLevel=atoi(paras[0]);
     if (numParas>1)
-      g_settings.m_HttpApiBroadcastPort=atoi(paras[1]);
+      g_stSettings.m_HttpApiBroadcastPort=atoi(paras[1]);
     return SetResponse(openTag+"OK");
   }
   else
@@ -2932,7 +2948,7 @@ int CXbmcHttp::xbmcSetBroadcast(int numParas, CStdString paras[])
 int CXbmcHttp::xbmcGetBroadcast()
 {
   CStdString tmp;
-  tmp.Format("%i;%i", g_settings.m_HttpApiBroadcastLevel,g_settings.m_HttpApiBroadcastPort);
+  tmp.Format("%i;%i", g_stSettings.m_HttpApiBroadcastLevel,g_stSettings.m_HttpApiBroadcastPort);
   return SetResponse(openTag+tmp);
 }
 
@@ -3063,8 +3079,14 @@ int CXbmcHttp::xbmcOnAction(int numParas, CStdString paras[])
 {
   if (numParas!=1)
     return SetResponse(openTag+"Error:There must be one and only one parameter");
-  g_application.OnAction(CAction(atoi(paras[0])));
-  return SetResponse(openTag+"OK");
+  else
+  {
+    CAction action;
+    action.id = atoi(paras[0]);
+    action.amount1 = 1; // digital button (could change this for repeat acceleration)
+    g_application.OnAction(action);
+    return SetResponse(openTag+"OK");
+  }
 }
 
 int CXbmcHttp::xbmcRecordStatus(int numParas, CStdString paras[])
@@ -3420,15 +3442,15 @@ CStdString CXbmcHttpShim::xbmcProcessCommand( int eid, webs_t wp, char_t *comman
   if (legalCmd)
   {
     if (paras!="")
-      g_application.getApplicationMessenger().HttpApi(cmd+"; "+paras, true);
+      g_applicationMessenger.HttpApi(cmd+"; "+paras, true);
     else
-      g_application.getApplicationMessenger().HttpApi(cmd, true);
+      g_applicationMessenger.HttpApi(cmd, true);
     //wait for response - max 20s
     Sleep(0);
-    response=g_application.getApplicationMessenger().GetResponse();
+    response=g_applicationMessenger.GetResponse();
     while (response=="[No response yet]" && cnt++<200) 
     {
-      response=g_application.getApplicationMessenger().GetResponse();
+      response=g_applicationMessenger.GetResponse();
       CLog::Log(LOGDEBUG, "XBMCHTTPShim: waiting %d", cnt);
       Sleep(100);
     }

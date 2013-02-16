@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,14 +19,12 @@
  *
  */
 
-#include "utils/log.h"
-#include "AutoPtrHandle.h"
+#include "stdafx.h"
 #include "Database.h"
 #include "utils/URIUtils.h"
-#include "settings/Settings.h"
-#include "utils/Crc32.h"
+#include "Settings.h"
+#include "Crc32.h"
 #include "FileSystem/SpecialProtocol.h"
-#include "AutoPtrHandle.h"
 
 using namespace AUTOPTR;
 using namespace dbiplus;
@@ -138,7 +136,7 @@ bool CDatabase::DeleteValues(const CStdString &strTable, const CStdString &strWh
   if (!strWhereClause.IsEmpty())
     strQueryBase.AppendFormat(" WHERE %s", strWhereClause.c_str());
 
-  CStdString strQuery = PrepareSQL(strQueryBase, strTable.c_str());
+  CStdString strQuery = FormatSQL(strQueryBase, strTable.c_str());
 
   bReturn = ExecuteQuery(strQuery);
 
@@ -339,7 +337,7 @@ bool CDatabase::Compress(bool bForce /* =true */)
         if (iCount > MAX_COMPRESS_COUNT)
           iCount = -1;
         m_pDS->close();
-        CStdString strSQL=PrepareSQL("update version set iCompressCount=%i\n",++iCount);
+        CStdString strSQL=FormatSQL("update version set iCompressCount=%i\n",++iCount);
         m_pDS->exec(strSQL.c_str());
         if (iCount != 0)
           return true;
@@ -424,7 +422,7 @@ bool CDatabase::CreateTables()
 
     CLog::Log(LOGINFO, "creating version table");
     m_pDS->exec("CREATE TABLE version (idVersion integer, iCompressCount integer)\n");
-    CStdString strSQL=PrepareSQL("INSERT INTO version (idVersion,iCompressCount) values(%i,0)\n", GetMinVersion());
+    CStdString strSQL=FormatSQL("INSERT INTO version (idVersion,iCompressCount) values(%i,0)\n", GetMinVersion());
     m_pDS->exec(strSQL.c_str());
 
     return true;
@@ -434,7 +432,7 @@ bool CDatabase::UpdateVersionNumber()
 {
   try
   {
-    CStdString strSQL=PrepareSQL("UPDATE version SET idVersion=%i\n", GetMinVersion());
+    CStdString strSQL=FormatSQL("UPDATE version SET idVersion=%i\n", GetMinVersion());
     m_pDS->exec(strSQL.c_str());
   }
   catch(...)

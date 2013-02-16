@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,20 +19,19 @@
  *
  */
 
+#include "stdafx.h"
 #include "PlatformDefs.h"
 #include "scrobbler.h"
 #include "tinyXML/tinyxml.h"
 #include "utils/md5.h"
 #include "utils/log.h"
 #include "Util.h"
-#include "music/tags/MusicInfoTag.h"
+#include "MusicInfoTag.h"
 #include "errors.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "XMLUtils.h"
 #include "Application.h"
 #include "strptime.h"
-#include "LocalizeStrings.h"
-#include "utils/SingleLock.h"
 
 #define SCROBBLER_CLIENT              "xbm"
 //#define SCROBBLER_CLIENT              "tst"     // For testing ONLY!
@@ -189,7 +188,9 @@ void CScrobbler::SetPassword(const CStdString& strPass)
 {
   if (strPass.IsEmpty())
     return;
-  m_strPasswordHash = strPass;
+  XBMC::MD5 md5state;
+  md5state.append(strPass);
+  md5state.getDigest(m_strPasswordHash);
   m_strPasswordHash.ToLower();
   m_bBadAuth = false;
 }
@@ -398,7 +399,7 @@ bool CScrobbler::SaveJournal()
 
 bool CScrobbler::DoHandshake(time_t now)
 {
-  XBMC::XBMC_MD5         authToken;
+  XBMC::MD5         authToken;
   CStdString        strAuthToken;
   CStdString        strTimeStamp;
   CStdString        strResponse;
@@ -631,8 +632,8 @@ void CScrobbler::Process()
   CLog::Log(LOGDEBUG, "%s: Thread started.", m_strLogPrefix.c_str());
   if (!m_pHttp)
   {
-    // Hack since CCurlFile isn't threadsafe
-    if (!(m_pHttp = new XFILE::CCurlFile))
+    // Hack since CFileCurl isn't threadsafe
+    if (!(m_pHttp = new XFILE::CFileCurl))
       return;
   }
   m_bRunThread = true;

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,9 @@
  *
  */
 
+#include "stdafx.h"
 #include "Archive.h"
 #include "FileSystem/File.h"
-#include "Variant.h"
-
-using namespace XFILE;
 
 using namespace XFILE;
 
@@ -35,7 +33,7 @@ CArchive::CArchive(CFile* pFile, int mode)
   m_iMode = mode;
 
   m_pBuffer = new BYTE[BUFFER_MAX];
-  memset(m_pBuffer, 0, BUFFER_MAX);
+  memset(m_pBuffer, 0, sizeof(m_pBuffer));
 
   m_BufferPos = 0;
 }
@@ -43,7 +41,9 @@ CArchive::CArchive(CFile* pFile, int mode)
 CArchive::~CArchive()
 {
   FlushBuffer();
-  delete[] m_pBuffer;
+  if (m_pBuffer != NULL)
+    delete[] m_pBuffer;
+
   m_BufferPos = 0;
 }
 
@@ -117,18 +117,6 @@ CArchive& CArchive::operator<<(int64_t i64)
     FlushBuffer();
 
   memcpy(&m_pBuffer[m_BufferPos], &i64, size);
-  m_BufferPos += size;
-
-  return *this;
-}
-
-CArchive& CArchive::operator<<(uint64_t ui64)
-{
-  int size = sizeof(uint64_t);
-  if (m_BufferPos + size >= BUFFER_MAX)
-    FlushBuffer();
-
-  memcpy(&m_pBuffer[m_BufferPos], &ui64, size);
   m_BufferPos += size;
 
   return *this;
@@ -218,69 +206,9 @@ CArchive& CArchive::operator<<(const SYSTEMTIME& time)
   return *this;
 }
 
-CArchive& CArchive::operator<<(IArchivable& obj)
+CArchive& CArchive::operator<<(ISerializable& obj)
 {
-  obj.Archive(*this);
-
-  return *this;
-}
-
-CArchive& CArchive::operator<<(const CVariant& variant)
-{
-  *this << (int)variant.type();
-  switch (variant.type())
-  {
-  case CVariant::VariantTypeInteger:
-    *this << variant.asInteger();
-    break;
-  case CVariant::VariantTypeUnsignedInteger:
-    *this << variant.asUnsignedInteger();
-    break;
-  case CVariant::VariantTypeBoolean:
-    *this << variant.asBoolean();
-    break;
-  case CVariant::VariantTypeString:
-    *this << CStdString(variant.asString());
-    break;
-  case CVariant::VariantTypeDouble:
-    *this << variant.asDouble();
-    break;
-  case CVariant::VariantTypeArray:
-    *this << variant.size();
-    for (unsigned int index = 0; index < variant.size(); index++)
-      *this << variant[index];
-    break;
-  case CVariant::VariantTypeObject:
-    *this << variant.size();
-    for (CVariant::const_iterator_map itr = variant.begin_map(); itr != variant.end_map(); itr++)
-    {
-      *this << CStdString(itr->first);
-      *this << itr->second;
-    }
-    break;
-  case CVariant::VariantTypeNull:
-  case CVariant::VariantTypeConstNull:
-  default:
-    break;
-  }
-
-  return *this;
-}
-
-CArchive& CArchive::operator<<(const std::vector<std::string>& strArray)
-{
-  *this << (unsigned int)strArray.size();
-  for (unsigned int index = 0; index < strArray.size(); index++)
-    *this << CStdString(strArray.at(index));
-
-  return *this;
-}
-
-CArchive& CArchive::operator<<(const std::vector<int>& iArray)
-{
-  *this << (unsigned int)iArray.size();
-  for (unsigned int index = 0; index < iArray.size(); index++)
-    *this << iArray.at(index);
+  obj.Serialize(*this);
 
   return *this;
 }
@@ -316,13 +244,6 @@ CArchive& CArchive::operator>>(unsigned int& i)
 CArchive& CArchive::operator>>(int64_t& i64)
 {
   m_pFile->Read((void*)&i64, sizeof(int64_t));
-
-  return *this;
-}
-
-CArchive& CArchive::operator>>(uint64_t& ui64)
-{
-  m_pFile->Read((void*)&ui64, sizeof(uint64_t));
 
   return *this;
 }
@@ -372,117 +293,9 @@ CArchive& CArchive::operator>>(SYSTEMTIME& time)
   return *this;
 }
 
-CArchive& CArchive::operator>>(IArchivable& obj)
+CArchive& CArchive::operator>>(ISerializable& obj)
 {
-  obj.Archive(*this);
-
-  return *this;
-}
-
-CArchive& CArchive::operator>>(CVariant& variant)
-{
-  int type;
-  *this >> type;
-  variant = CVariant((CVariant::VariantType)type);
-
-  switch (variant.type())
-  {
-  case CVariant::VariantTypeInteger:
-  {
-    int64_t value;
-    *this >> value;
-    variant = value;
-    break;
-  }
-  case CVariant::VariantTypeUnsignedInteger:
-  {
-    uint64_t value;
-    *this >> value;
-    variant = value;
-    break;
-  }
-  case CVariant::VariantTypeBoolean:
-  {
-    bool value;
-    *this >> value;
-    variant = value;
-    break;
-  }
-  case CVariant::VariantTypeString:
-  {
-    CStdString value;
-    *this >> value;
-    variant = value;
-    break;
-  }
-  case CVariant::VariantTypeDouble:
-  {
-    double value;
-    *this >> value;
-    variant = value;
-    break;
-  }
-  case CVariant::VariantTypeArray:
-  {
-    unsigned int size;
-    *this >> size;
-    for (; size > 0; size--)
-    {
-      CVariant value;
-      *this >> value;
-      variant.append(value);
-    }
-    break;
-  }
-  case CVariant::VariantTypeObject:
-  {
-    unsigned int size;
-    *this >> size;
-    for (; size > 0; size--)
-    {
-      CStdString name;
-      CVariant value;
-      *this >> name;
-      *this >> value;
-      variant[name] = value;
-    }
-    break;
-  }
-  case CVariant::VariantTypeNull:
-  case CVariant::VariantTypeConstNull:
-  default:
-    break;
-  }
-
-  return *this;
-}
-
-CArchive& CArchive::operator>>(std::vector<std::string>& strArray)
-{
-  int size;
-  *this >> size;
-  strArray.clear();
-  for (int index = 0; index < size; index++)
-  {
-    CStdString str;
-    *this >> str;
-    strArray.push_back(str);
-  }
-
-  return *this;
-}
-
-CArchive& CArchive::operator>>(std::vector<int>& iArray)
-{
-  int size;
-  *this >> size;
-  iArray.clear();
-  for (int index = 0; index < size; index++)
-  {
-    int i;
-    *this >> i;
-    iArray.push_back(i);
-  }
+  obj.Serialize(*this);
 
   return *this;
 }

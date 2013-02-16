@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,11 +21,11 @@
 
 #include "Edl.h"
 #include "include.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "utils/URIUtils.h"
 #include "FileSystem/File.h"
 #include "FileSystem/MythFile.h"
-#include "settings/AdvancedSettings.h"
+#include "AdvancedSettings.h"
 
 extern "C"
 {
@@ -214,7 +214,7 @@ bool CEdl::ReadEdl(const CStdString& strMovie, const float fFramesPerSecond)
         StringUtils::SplitString(strFields[i], ".", fieldParts);
         if (fieldParts.size() == 1) // No ms
         {
-          iCutStartEnd[i] = StringUtils::TimeStringToSeconds(fieldParts[0]) * (int64_t)1000; // seconds to ms
+          iCutStartEnd[i] = StringUtils::TimeStringToSeconds(fieldParts[0]) * 1000; // seconds to ms
         }
         else if (fieldParts.size() == 2) // Has ms. Everything after the dot (.) is ms
         {

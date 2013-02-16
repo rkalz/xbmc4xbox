@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,15 +19,14 @@
  *
  */
  
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "DVDAudioCodecPassthrough.h"
 #if defined(USE_LIBDTS_DECODER) || defined(USE_LIBA52_DECODER)
 
 #include "DVDCodecs/DVDCodecs.h"
 #include "DVDStreamInfo.h"
 #include "XBAudioConfig.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 
 #undef  MAX
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
@@ -192,7 +191,7 @@ bool CDVDAudioCodecPassthrough::Open(CDVDStreamInfo &hints, CDVDCodecOptions &op
   {
 
     // TODO - this is only valid for video files, and should be moved somewhere else
-    if( hints.channels == 2 && g_settings.m_currentVideoSettings.m_OutputToAllSpeakers )
+    if( hints.channels == 2 && g_stSettings.m_currentVideoSettings.m_OutputToAllSpeakers )
     {
       CLog::Log(LOGINFO, "CDVDAudioCodecPassthrough::Open - disabled passthrough due to video OTAS");
       return false;

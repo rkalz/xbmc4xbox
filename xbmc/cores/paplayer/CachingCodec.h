@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -28,7 +28,7 @@ class CachingCodec : public ICodec
 {
 public:
   virtual ~CachingCodec() {}
-  virtual int GetCacheLevel() const { return -1; }
+  virtual int GetCacheLevel() { return -1; }
 
 protected:
   XFILE::CFile m_file;

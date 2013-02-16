@@ -667,19 +667,16 @@ static int ebml_read_float(AVIOContext *pb, int size, double *num)
  */
 static int ebml_read_ascii(AVIOContext *pb, int size, char **str)
 {
-    char *res;
-
+    av_free(*str);
     /* EBML strings are usually not 0-terminated, so we allocate one
      * byte more, read the string and NULL-terminate it ourselves. */
-    if (!(res = av_malloc(size + 1)))
+    if (!(*str = av_malloc(size + 1)))
         return AVERROR(ENOMEM);
-    if (avio_read(pb, (uint8_t *) res, size) != size) {
-        av_free(res);
+    if (avio_read(pb, (uint8_t *) *str, size) != size) {
+        av_freep(str);
         return AVERROR(EIO);
     }
-    (res)[size] = '\0';
-    av_free(*str);
-    *str = res;
+    (*str)[size] = '\0';
 
     return 0;
 }
@@ -1226,6 +1223,7 @@ static int matroska_parse_seekhead_entry(MatroskaDemuxContext *matroska, int idx
 static void matroska_execute_seekhead(MatroskaDemuxContext *matroska)
 {
     EbmlList *seekhead_list = &matroska->seekhead;
+    MatroskaSeekhead *seekhead = seekhead_list->elem;
     int64_t before_pos = avio_tell(matroska->ctx->pb);
     int i;
 
@@ -1235,7 +1233,6 @@ static void matroska_execute_seekhead(MatroskaDemuxContext *matroska)
         return;
 
     for (i = 0; i < seekhead_list->nb_elem; i++) {
-        MatroskaSeekhead *seekhead = seekhead_list->elem;
         if (seekhead[i].pos <= before_pos)
             continue;
 
@@ -1491,7 +1488,7 @@ static int matroska_read_header(AVFormatContext *s, AVFormatParameters *ap)
         } else if (codec_id == CODEC_ID_AAC && !track->codec_priv.size) {
             int profile = matroska_aac_profile(track->codec_id);
             int sri = matroska_aac_sri(track->audio.samplerate);
-            extradata = av_mallocz(5 + FF_INPUT_BUFFER_PADDING_SIZE);
+            extradata = av_malloc(5);
             if (extradata == NULL)
                 return AVERROR(ENOMEM);
             extradata[0] = (profile << 3) | ((sri&0x0E) >> 1);
@@ -1506,7 +1503,7 @@ static int matroska_read_header(AVFormatContext *s, AVFormatParameters *ap)
                 extradata_size = 2;
         } else if (codec_id == CODEC_ID_TTA) {
             extradata_size = 30;
-            extradata = av_mallocz(extradata_size + FF_INPUT_BUFFER_PADDING_SIZE);
+            extradata = av_mallocz(extradata_size);
             if (extradata == NULL)
                 return AVERROR(ENOMEM);
             ffio_init_context(&b, extradata, extradata_size, 1,
@@ -1645,7 +1642,7 @@ static int matroska_read_header(AVFormatContext *s, AVFormatParameters *ap)
             av_dict_set(&st->metadata, "mimetype", attachements[j].mime, 0);
             st->codec->codec_id = CODEC_ID_NONE;
             st->codec->codec_type = AVMEDIA_TYPE_ATTACHMENT;
-            st->codec->extradata  = av_malloc(attachements[j].bin.size + FF_INPUT_BUFFER_PADDING_SIZE);
+            st->codec->extradata  = av_malloc(attachements[j].bin.size);
             if(st->codec->extradata == NULL)
                 break;
             st->codec->extradata_size = attachements[j].bin.size;
@@ -1879,31 +1876,15 @@ static int matroska_parse_block(MatroskaDemuxContext *matroska, uint8_t *data,
                 if (!track->audio.pkt_cnt) {
                     if (track->audio.sub_packet_cnt == 0)
                         track->audio.buf_timecode = timecode;
-                    if (st->codec->codec_id == CODEC_ID_RA_288) {
-                        if (size < cfs * h / 2) {
-                            av_log(matroska->ctx, AV_LOG_ERROR,
-                                   "Corrupt int4 RM-style audio packet size\n");
-                            return AVERROR_INVALIDDATA;
-                        }
+                    if (st->codec->codec_id == CODEC_ID_RA_288)
                         for (x=0; x<h/2; x++)
                             memcpy(track->audio.buf+x*2*w+y*cfs,
                                    data+x*cfs, cfs);
-                    } else if (st->codec->codec_id == CODEC_ID_SIPR) {
-                        if (size < w) {
-                            av_log(matroska->ctx, AV_LOG_ERROR,
-                                   "Corrupt sipr RM-style audio packet size\n");
-                            return AVERROR_INVALIDDATA;
-                        }
+                    else if (st->codec->codec_id == CODEC_ID_SIPR)
                         memcpy(track->audio.buf + y*w, data, w);
-                    } else {
-                        if (size < sps * w / sps) {
-                            av_log(matroska->ctx, AV_LOG_ERROR,
-                                   "Corrupt generic RM-style audio packet size\n");
-                            return AVERROR_INVALIDDATA;
-                        }
+                    else
                         for (x=0; x<w/sps; x++)
                             memcpy(track->audio.buf+sps*(h*x+((h+1)/2)*(y&1)+(y>>1)), data+x*sps, sps);
-                    }
 
                     if (++track->audio.sub_packet_cnt >= h) {
                         if (st->codec->codec_id == CODEC_ID_SIPR)
@@ -2048,12 +2029,11 @@ static int matroska_read_seek(AVFormatContext *s, int stream_index,
     }
 
     if (!st->nb_index_entries)
-        return -1;
+        return 0;
     timestamp = FFMAX(timestamp, st->index_entries[0].timestamp);
 
     if ((index = av_index_search_timestamp(st, timestamp, flags)) < 0) {
-        if (avio_seek(s->pb, st->index_entries[st->nb_index_entries-1].pos, SEEK_SET) < 0)
-            return -1;
+        avio_seek(s->pb, st->index_entries[st->nb_index_entries-1].pos, SEEK_SET);
         matroska->current_id = 0;
         while ((index = av_index_search_timestamp(st, timestamp, flags)) < 0) {
             matroska_clear_queue(matroska);
@@ -2062,11 +2042,16 @@ static int matroska_read_seek(AVFormatContext *s, int stream_index,
         }
     }
 
+    matroska_clear_queue(matroska);
     if (index < 0)
         return 0;
 
     index_min = index;
     for (i=0; i < matroska->tracks.nb_elem; i++) {
+        tracks[i].audio.pkt_cnt = 0;
+        tracks[i].audio.sub_packet_cnt = 0;
+        tracks[i].audio.buf_timecode = AV_NOPTS_VALUE;
+        tracks[i].end_timecode = 0;
         if (tracks[i].type == MATROSKA_TRACK_TYPE_SUBTITLE
             && !tracks[i].stream->discard != AVDISCARD_ALL) {
             index_sub = av_index_search_timestamp(tracks[i].stream, st->index_entries[index].timestamp, AVSEEK_FLAG_BACKWARD);
@@ -2077,16 +2062,7 @@ static int matroska_read_seek(AVFormatContext *s, int stream_index,
         }
     }
 
-    if (avio_seek(s->pb, st->index_entries[index_min].pos, SEEK_SET) < 0)
-        return -1;
-
-    matroska_clear_queue(matroska);
-    for (i=0; i < matroska->tracks.nb_elem; i++) {
-        tracks[i].audio.pkt_cnt = 0;
-        tracks[i].audio.sub_packet_cnt = 0;
-        tracks[i].audio.buf_timecode = AV_NOPTS_VALUE;
-        tracks[i].end_timecode = 0;
-    }
+    avio_seek(s->pb, st->index_entries[index_min].pos, SEEK_SET);
     matroska->current_id = 0;
     matroska->skip_to_keyframe = !(flags & AVSEEK_FLAG_ANY);
     matroska->skip_to_timecode = st->index_entries[index].timestamp;

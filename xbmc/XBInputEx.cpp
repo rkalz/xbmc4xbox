@@ -2,11 +2,11 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "system.h"
+#include "stdafx.h"
 #include <stdio.h>
 #include "XBInputEx.h"
-#include "settings/Settings.h"
-#include "utils/log.h"
+#include "Settings.h"
+
 
 //#define REMOTE_DEBUG 1
 #define IR_REMOTE_MIN_COUNTER 61

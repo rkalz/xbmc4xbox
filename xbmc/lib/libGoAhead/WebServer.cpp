@@ -9,11 +9,10 @@
  * See the file "license.txt" for usage and redistribution license requirements
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "WebServer.h"
 #include "XBMCweb.h"
 #include "FileSystem/SpecialProtocol.h"
-#include "utils/log.h"
 
 #ifdef SPYCE_SUPPORT
 #include "SpyceModule.h"

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  A port of Mohammed Yousif's C Arabic shaping code
@@ -22,6 +22,7 @@
  *
  */
 
+#include "stdafx.h"
 #include <malloc.h>
 #include "ArabicShaping.h"
 

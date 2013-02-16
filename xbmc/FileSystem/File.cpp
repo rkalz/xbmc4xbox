@@ -18,7 +18,7 @@
 * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "File.h"
 #include "FileFactory.h"
 #include "Application.h"
@@ -39,6 +39,59 @@ using namespace std;
 #ifndef __GNUC__
 #pragma warning (disable:4244)
 #endif
+
+class CAsyncFileCallback
+  : public CThread
+{
+public:
+  ~CAsyncFileCallback()
+  {
+    StopThread();
+  }
+
+  CAsyncFileCallback(IFileCallback* callback, void* context)
+  {
+    m_callback = callback;
+    m_context = context;
+    m_percent = 0;
+    m_speed = 0.0f;
+    m_cancel = false;
+    Create();
+  }
+
+  virtual void Process()
+  {
+    while(!m_bStop)
+    {
+      m_event.WaitMSec(1000/30);
+      if (m_callback)
+        if(!m_callback->OnFileCallback(m_context, m_percent, m_speed))
+          if(!m_cancel)
+            m_cancel = true;
+    }
+  }
+
+  void SetStatus(int percent, float speed)
+  {
+    m_percent = percent;
+    m_speed = speed;
+    m_event.Set();
+  }
+
+  bool IsCanceled()
+  {
+    return m_cancel;
+  }
+
+private:
+  IFileCallback* m_callback;
+  void* m_context;
+  int   m_percent;
+  float m_speed;
+  CEvent m_event;
+  bool m_cancel;
+};
+
 
 //*********************************************************************************************
 CFile::CFile()
@@ -75,6 +128,7 @@ char* get() { return p; }
 bool CFile::Cache(const CStdString& strFileName, const CStdString& strDest, XFILE::IFileCallback* pCallback, void* pContext)
 {
   CFile file;
+  CAsyncFileCallback* helper = NULL;
 
   // special case for zips - ignore caching
   CURL url(strFileName);
@@ -82,6 +136,13 @@ bool CFile::Cache(const CStdString& strFileName, const CStdString& strDest, XFIL
     url.SetOptions("?cache=no");
   if (file.Open(url.Get(), READ_TRUNCATED))
   {
+    if (file.GetLength() <= 0)
+    {
+      CLog::Log(LOGWARNING, "FILE::cache: the file %s has a length of 0 bytes", strFileName.c_str());
+      file.Close();
+      // no need to return false here.  Technically, we should create the new file and leave it at that
+//      return false;
+    }
 
     CFile newFile;
     if (URIUtils::IsHD(strDest)) // create possible missing dirs
@@ -123,6 +184,14 @@ bool CFile::Cache(const CStdString& strFileName, const CStdString& strDest, XFIL
       return false;
     }
 
+    /* larger then 1 meg, let's do rendering async */
+    // Async render cannot be done in SDL builds because of the resulting ThreadMessage deadlock
+    // we should call CAsyncFileCopy::Copy() instead.
+#if defined(_XBOX)
+    if( file.GetLength() > 1024*1024 )
+      helper = new CAsyncFileCallback(pCallback, pContext);
+#endif
+
     // 128k is optimal for xbox
     int iBufferSize = 128 * 1024;
 
@@ -130,21 +199,26 @@ bool CFile::Cache(const CStdString& strFileName, const CStdString& strDest, XFIL
     int iRead, iWrite;
 
     UINT64 llFileSize = file.GetLength();
+    UINT64 llFileSizeOrg = llFileSize;
     UINT64 llPos = 0;
+    int ipercent = 0;
 
     CStopWatch timer;
     timer.StartZero();
     float start = 0.0f;
-    while (true)
+    while (llFileSize > 0)
     {
       g_application.ResetScreenSaver();
+      unsigned int iBytesToRead = iBufferSize;
 
-      iRead = file.Read(buffer.get(), iBufferSize);
+      /* make sure we don't try to read more than filesize*/
+      if (iBytesToRead > llFileSize) iBytesToRead = llFileSize;
+
+      iRead = file.Read(buffer.get(), iBytesToRead);
       if (iRead == 0) break;
       else if (iRead < 0)
       {
         CLog::Log(LOGERROR, "%s - Failed read from file %s", __FUNCTION__, strFileName.c_str());
-        llFileSize = (uint64_t)-1;
         break;
       }
 
@@ -161,30 +235,34 @@ bool CFile::Cache(const CStdString& strFileName, const CStdString& strDest, XFIL
       if (iWrite != iRead)
       {
         CLog::Log(LOGERROR, "%s - Failed write to file %s", __FUNCTION__, strDest.c_str());
-        llFileSize = (uint64_t)-1;
         break;
       }
 
+      llFileSize -= iRead;
       llPos += iRead;
 
       // calculate the current and average speeds
       float end = timer.GetElapsedSeconds();
+      float averageSpeed = llPos / end;
+      start = end;
 
-      if (pCallback && end - start > 0.5 && end)
+      float fPercent = 100.0f * (float)llPos / (float)llFileSizeOrg;
+
+      if ((int)fPercent != ipercent)
       {
-        start = end;
-
-        float averageSpeed = llPos / end;
-        int ipercent = 0;
-        if(llFileSize)
-          ipercent = 100 * llPos / llFileSize;
-
-        if(!pCallback->OnFileCallback(pContext, ipercent, averageSpeed))
+        if( helper )
         {
-          CLog::Log(LOGERROR, "%s - User aborted copy", __FUNCTION__);
-          llFileSize = (uint64_t)-1;
-          break;
+          helper->SetStatus((int)fPercent, averageSpeed);
+          if(helper->IsCanceled())
+            break;
         }
+        else if( pCallback )
+        {
+          if (!pCallback->OnFileCallback(pContext, ipercent, averageSpeed))
+            break;
+        }
+
+        ipercent = (int)fPercent;
       }
     }
 
@@ -192,8 +270,10 @@ bool CFile::Cache(const CStdString& strFileName, const CStdString& strDest, XFIL
     newFile.Close();
     file.Close();
 
+    delete helper;
+
     /* verify that we managed to completed the file */
-    if (llFileSize && llPos != llFileSize)
+    if (llPos != llFileSizeOrg)
     {
       CFile::Delete(strDest);
       return false;
@@ -220,7 +300,7 @@ bool CFile::Open(const CStdString& strFileName, unsigned int flags)
     }
 
     CURL url(strFileName);
-    if ( (flags & READ_NO_CACHE) == 0 && URIUtils::IsInternetStream(url, true) && !CUtil::IsPicture(strFileName) )
+    if ( (flags & READ_NO_CACHE) == 0 && URIUtils::IsInternetStream(url) && !CUtil::IsPicture(strFileName) )
       m_flags |= READ_CACHED;
 
     if (m_flags & READ_CACHED)
@@ -393,7 +473,7 @@ int CFile::Stat(const CStdString& strFileName, struct __stat64* buffer)
   return -1;
 }
 
-unsigned int CFile::Read(void *lpBuf, int64_t uiBufSize)
+unsigned int CFile::Read(void *lpBuf, __int64 uiBufSize)
 {
   if (!m_pFile)
     return 0;
@@ -498,7 +578,7 @@ void CFile::Flush()
 }
 
 //*********************************************************************************************
-int64_t CFile::Seek(int64_t iFilePosition, int iWhence)
+__int64 CFile::Seek(__int64 iFilePosition, int iWhence)
 {
   if (!m_pFile)
     return -1;
@@ -531,7 +611,7 @@ int64_t CFile::Seek(int64_t iFilePosition, int iWhence)
 }
 
 //*********************************************************************************************
-int64_t CFile::GetLength()
+__int64 CFile::GetLength()
 {
   try
   {
@@ -553,7 +633,7 @@ int64_t CFile::GetLength()
 }
 
 //*********************************************************************************************
-int64_t CFile::GetPosition()
+__int64 CFile::GetPosition()
 {
   if (!m_pFile)
     return -1;
@@ -645,7 +725,7 @@ bool CFile::ReadString(char *szLine, int iLineLength)
   return false;
 }
 
-int CFile::Write(const void* lpBuf, int64_t uiBufSize)
+int CFile::Write(const void* lpBuf, __int64 uiBufSize)
 {
   try
   {
@@ -854,7 +934,7 @@ CFileStreamBuffer::pos_type CFileStreamBuffer::seekoff(
   setg(0,0,0);
   setp(0,0);
 
-  int64_t position = -1;
+  __int64 position = -1;
 #ifndef _LINUX
   try
   {
@@ -921,7 +1001,7 @@ bool CFileStream::Open(const CURL& filename)
   return false;
 }
 
-int64_t CFileStream::GetLength()
+__int64 CFileStream::GetLength()
 {
   return m_file->GetLength();
 }

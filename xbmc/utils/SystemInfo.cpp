@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,15 +19,14 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "SystemInfo.h"
 #include <conio.h>
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "utils/log.h"
 #include "cores/DllLoader/DllLoader.h"
-#include "GUIInfoManager.h"
-#include "FileSystem/CurlFile.h"
-#include "LocalizeStrings.h"
+#include "utils/GUIInfoManager.h"
+#include "FileSystem/FileCurl.h"
 #ifdef HAS_XBOX_HARDWARE
 #include "xbox/Undocumented.h"
 #include "xbox/XKUtils.h"
@@ -36,7 +35,7 @@
 #include "xbox/XKRC4.h"
 extern "C" XPP_DEVICE_TYPE XDEVICE_TYPE_IR_REMOTE_TABLE;
 #endif
-#include "FileSystem/CurlFile.h"
+#include "FileSystem/FileCurl.h"
 CSysInfo g_sysinfo;
 
 void CBackgroundSystemInfoLoader::GetInformation()
@@ -304,7 +303,7 @@ struct Bios * CSysInfo::LoadBiosSigns()
 }
 char* CSysInfo::MD5Buffer(char *buffer, long PosizioneInizio,int KBytes)
 {
-  XBMC::XBMC_MD5 mdContext;
+  XBMC::MD5 mdContext;
   CStdString md5sumstring;
   mdContext.append((unsigned char *)(buffer + PosizioneInizio), KBytes * 1024);
   mdContext.getDigest(md5sumstring);
@@ -1108,7 +1107,7 @@ CStdString CSysInfo::GetModCHIPDetected()
 CStdString CSysInfo::MD5BufferNew(char *buffer,long PosizioneInizio,int KBytes)
 {
   CStdString strReturn;
-  XBMC::XBMC_MD5 mdContext;
+  XBMC::MD5 mdContext;
   mdContext.append((unsigned char *)(buffer + PosizioneInizio), KBytes * 1024);
   mdContext.getDigest(strReturn);
   return strReturn;
@@ -1712,7 +1711,7 @@ CStdString CSysInfo::GetSystemUpTime(bool bTotalUptime)
   if(bTotalUptime)
   {
     //Total Uptime
-    iInputMinutes = g_settings.m_iSystemTimeTotalUp + ((int)(timeGetTime() / 60000));
+    iInputMinutes = g_stSettings.m_iSystemTimeTotalUp + ((int)(timeGetTime() / 60000));
   }
   else
   {
@@ -1745,7 +1744,7 @@ CStdString CSysInfo::GetSystemUpTime(bool bTotalUptime)
 CStdString CSysInfo::GetInternetState()
 {
   // Internet connection state!
-  XFILE::CCurlFile http;
+  XFILE::CFileCurl http;
   m_bInternetState = http.IsInternet();
   if (m_bInternetState)
     return g_localizeStrings.Get(13296);
