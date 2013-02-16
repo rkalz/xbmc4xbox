@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,12 +19,11 @@
  *
  */
  
-#include "utils/log.h"
+#include "stdafx.h"
 #include "dll_tracker_critical_section.h"
 #include "dll_tracker.h"
 #include "dll.h"
 #include "DllLoader.h"
-#include "utils/SingleLock.h"
 #include "exports/emu_kernel32.h"
 
 extern "C" inline void tracker_critical_section_track(uintptr_t caller, LPCRITICAL_SECTION cs)

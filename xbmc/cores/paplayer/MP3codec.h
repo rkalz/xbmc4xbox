@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -22,7 +22,7 @@
  */
 
 #include "CachingCodec.h"
-#include "music/tags/MusicInfoTagLoaderMP3.h"
+#include "MusicInfoTagLoaderMP3.h"
 #include "DllMadCodec.h"
 
 class MP3Codec : public CachingCodec

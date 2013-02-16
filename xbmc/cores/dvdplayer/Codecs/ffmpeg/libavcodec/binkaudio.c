@@ -91,9 +91,9 @@ static av_cold int decode_init(AVCodecContext *avctx)
         frame_len_bits = 11;
     }
 
-    if (avctx->channels < 1 || avctx->channels > MAX_CHANNELS) {
-        av_log(avctx, AV_LOG_ERROR, "invalid number of channels: %d\n", avctx->channels);
-        return AVERROR_INVALIDDATA;
+    if (avctx->channels > MAX_CHANNELS) {
+        av_log(avctx, AV_LOG_ERROR, "too many channels: %d\n", avctx->channels);
+        return -1;
     }
 
     s->version_b = avctx->extradata && avctx->extradata[3] == 'b';

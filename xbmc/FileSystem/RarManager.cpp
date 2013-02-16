@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,19 +19,18 @@
  *
  */
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "RarManager.h"
 #include "lib/UnrarXLib/rar.hpp"
 #include "Util.h"
 #include "utils/URIUtils.h"
 #include "utils/SingleLock.h"
 #include "GUIWindowManager.h"
-#include "dialogs/GUIDialogYesNo.h"
+#include "GUIDialogYesNo.h"
 #include "FileSystem/Directory.h"
 #include "FileSystem/SpecialProtocol.h"
-#include "settings/AdvancedSettings.h"
+#include "AdvancedSettings.h"
 #include "FileItem.h"
-#include "utils/CharsetConverter.h"
 
 #include <set>
 

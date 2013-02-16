@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,8 +19,7 @@
  *
  */
 
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -34,11 +33,11 @@
 #include <signal.h>
 #include "Util.h"
 #include "FileSystem/IDirectory.h"
-#include "FileSystem/DirectoryFactory.h"
+#include "FileSystem/FactoryDirectory.h"
 #include "FileSystem/SpecialProtocol.h"
 #include "URL.h"
 #include "FileSystem/File.h"
-#include "settings/GUISettings.h"
+#include "GUISettings.h"
 #include "FileItem.h"
 #include "utils/URIUtils.h"
 

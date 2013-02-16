@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,13 +19,12 @@
  *
  */
 
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "cdioSupport.h"
 #include "lib/libcdio/cdio.h"
 #include "lib/libcdio/logging.h"
 #include "lib/libcdio/Util.h"
-#include "utils/SingleLock.h"
+
 
 using namespace MEDIA_DETECT;
 

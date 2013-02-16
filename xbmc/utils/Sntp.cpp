@@ -31,15 +31,14 @@ to maintain a single distribution point for the source code.
 
 /////////////////////////////////  Includes  //////////////////////////////////
 
+#include "stdafx.h"
 #ifndef _INC_MATH
 #include <math.h>
 #endif
 #include "Sntp.h"
-#include "network/DNSNameCache.h"
-#include "Application.h"
-#include "settings/GUISettings.h"
-#include "AutoPtrHandle.h"
-#include "log.h"
+#include "DNSNameCache.h"
+#include "xbox/Network.h"
+#include "GUISettings.h"
 
 using namespace AUTOPTR;
 
@@ -708,7 +707,7 @@ void CSNTPClient::Update()
   // update once every 5 minutes
   m_dwTimeout = GetTickCount() + 5*60*1000;
 
-  if(!g_application.getNetwork().IsAvailable())
+  if(!g_network.IsAvailable())
   {
     CLog::Log(LOGDEBUG, __FUNCTION__" - No network available");
     return;

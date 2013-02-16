@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,9 @@
  *
  */
 
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "modplayer.h"
-#include "settings/Settings.h"
-#include "SectionLoader.h"
+#include "Settings.h"
 #include "FileItem.h"
 #include "FileSystem/File.h"
 
@@ -84,7 +82,7 @@ ModPlayer::ModPlayer(IPlayerCallback& callback) : IPlayer(callback)
     CLog::Log(LOGERROR, "ModPlayer: Could not initialize sound, reason: %s", MikMod_strerror(mikxboxGetErrno()));
   }
 
-  SetVolume(g_settings.m_nVolumeLevel);
+  SetVolume(g_stSettings.m_nVolumeLevel);
   // mikxboxSetMusicVolume(127);
   mikxboxSetCallback(ModCallback);
 }

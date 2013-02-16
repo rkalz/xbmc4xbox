@@ -118,17 +118,12 @@ IF NOT EXIST Release_LTCG\default.xbe GOTO COMPILE
   cd ..\..
   xcopy "skin\Confluence\BUILD\Confluence" "BUILD\skin\Confluence" /E /Q /I /Y /EXCLUDE:exclude.txt
 
-  cd "skin\Confluence Lite"
-  CALL build.bat
-  cd ..\..
-  xcopy "skin\Confluence Lite\BUILD\Confluence Lite" "BUILD\skin\Confluence Lite" /E /Q /I /Y /EXCLUDE:exclude.txt
-	
   xcopy credits BUILD\credits /Q /I /Y /EXCLUDE:exclude.txt
   xcopy language BUILD\language /E /Q /I /Y /EXCLUDE:exclude.txt
   xcopy screensavers BUILD\screensavers /E /Q /I /Y /EXCLUDE:exclude.txt
   xcopy visualisations BUILD\visualisations /E /Q /I /Y /EXCLUDE:exclude.txt
   xcopy system BUILD\system /E /Q /I /Y /EXCLUDE:exclude.txt
-  xcopy web\XBMC_Reloaded BUILD\web /E /Q /I /Y /EXCLUDE:exclude.txt
+  rem %rar% x web\Project_Mayhem_webserver*.rar build\web\
   xcopy media   BUILD\media   /E /Q /I /Y /EXCLUDE:exclude.txt
   xcopy plugins BUILD\plugins /E /Q /I /Y /EXCLUDE:exclude.txt
   xcopy sounds  BUILD\sounds  /E /Q /I /Y /EXCLUDE:exclude.txt

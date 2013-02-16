@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,21 +20,19 @@
  */
 
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "LastFMDirectory.h"
 #include "DirectoryCache.h"
 #include "Util.h"
-#include "music/tags/MusicInfoTag.h"
+#include "MusicInfoTag.h"
 #include "URL.h"
 #include "GUIWindowManager.h"
-#include "dialogs/GUIDialogOK.h"
-#include "dialogs/GUIDialogProgress.h"
-#include "dialogs/GUIDialogKeyboard.h"
-#include "settings/GUISettings.h"
+#include "GUIDialogOK.h"
+#include "GUIDialogProgress.h"
+#include "GUIDialogKeyboard.h"
+#include "GUISettings.h"
 #include "FileItem.h"
-#include "CurlFile.h"
-#include "utils/StringUtils.h"
-#include "LocalizeStrings.h"
+#include "FileCurl.h"
 
 using namespace MUSIC_INFO;
 using namespace XFILE;
@@ -631,7 +629,7 @@ DIR_CACHE_TYPE CLastFMDirectory::GetCacheType(const CStdString& strPath) const
 
 void CLastFMDirectory::Run()
 {
-  XFILE::CCurlFile http;
+  XFILE::CFileCurl http;
   if (!http.Download(m_strSource, m_strDestination))
     m_Error=true;
 

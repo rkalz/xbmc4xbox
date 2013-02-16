@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,10 +19,10 @@
  *
  */
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "EncoderFlac.h"
 #include "FileSystem/File.h"
-#include "settings/GUISettings.h"
+#include "GUISettings.h"
 
 CEncoderFlac::CEncoderFlac() : m_encoder(0), m_samplesBuf(new FLAC__int32[SAMPLES_BUF_SIZE])
 {

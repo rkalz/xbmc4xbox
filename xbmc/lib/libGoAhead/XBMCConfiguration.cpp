@@ -1,5 +1,6 @@
+#include "stdafx.h"
 
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "XBMCConfiguration.h"
 #include "utils/URIUtils.h"
 #include "includes.h"

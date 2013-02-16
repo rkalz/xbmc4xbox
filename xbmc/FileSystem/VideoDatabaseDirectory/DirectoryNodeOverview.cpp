@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,12 +19,12 @@
  *
  */
 
-#include "video/VideoDatabase.h"
+#include "stdafx.h"
+#include "VideoDatabase.h"
 #include "DirectoryNodeOverview.h"
-#include "settings/AdvancedSettings.h"
-#include "settings/Settings.h"
+#include "AdvancedSettings.h"
+#include "Settings.h"
 #include "FileItem.h"
-#include "LocalizeStrings.h"
 
 using namespace XFILE::VIDEODATABASEDIRECTORY;
 using namespace std;
@@ -72,21 +72,21 @@ bool CDirectoryNodeOverview::GetContent(CFileItemList& items) const
   vector<pair<const char*, int> > vec;
   if (hasMovies)
   {
-    if (g_settings.m_bMyVideoNavFlatten)
+    if (g_stSettings.m_bMyVideoNavFlatten)
       vec.push_back(make_pair("1/2", 342));
     else
       vec.push_back(make_pair("1", 342));   // Movies
   }
   if (hasTvShows)
   {
-    if (g_settings.m_bMyVideoNavFlatten)
+    if (g_stSettings.m_bMyVideoNavFlatten)
       vec.push_back(make_pair("2/2", 20343));
     else
       vec.push_back(make_pair("2", 20343)); // TV Shows
   }
   if (hasMusicVideos)
   {
-    if (g_settings.m_bMyVideoNavFlatten)
+    if (g_stSettings.m_bMyVideoNavFlatten)
       vec.push_back(make_pair("3/2", 20389));
     else
       vec.push_back(make_pair("3", 20389)); // Music Videos

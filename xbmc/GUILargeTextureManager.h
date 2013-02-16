@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -25,6 +25,8 @@
 #include "utils/CriticalSection.h"
 #include "TextureManager.h"
 
+#include <assert.h>
+
 class CGUILargeTextureManager : public CThread
 {
 public:
@@ -42,14 +44,53 @@ protected:
   class CLargeTexture
   {
   public:
+    CLargeTexture(const CStdString &path)
+    {
+      m_path = path;
+      m_orientation = 0;
+      m_refCount = 1;
+      m_timeToDelete = 0;
+    };
 
-    CLargeTexture(const CStdString &path);
-    virtual ~CLargeTexture();
+    virtual ~CLargeTexture()
+    {
+      assert(m_refCount == 0);
+      m_texture.Free();
+    };
 
-    void AddRef();
-    bool DecrRef(bool deleteImmediately);
-    bool DeleteIfRequired();
-    void SetTexture(LPDIRECT3DTEXTURE8 texture, int width, int height, int orientation);
+    void AddRef() { m_refCount++; };
+    bool DecrRef(bool deleteImmediately)
+    {
+      assert(m_refCount);
+      m_refCount--;
+      if (m_refCount == 0)
+      {
+        if (deleteImmediately)
+          delete this;
+        else
+          m_timeToDelete = timeGetTime() + TIME_TO_DELETE;
+        return true;
+      }
+      return false;
+    };
+
+    bool DeleteIfRequired()
+    {
+      if (m_refCount == 0 && m_timeToDelete < timeGetTime())
+      {
+        delete this;
+        return true;
+      }
+      return false;
+    };
+
+    void SetTexture(LPDIRECT3DTEXTURE8 texture, int width, int height, int orientation)
+    {
+      assert(!m_texture.size());
+      if (texture)
+        m_texture.Set(texture, width, height);
+      m_orientation = orientation;
+    };
 
     const CStdString &GetPath() const { return m_path; };
     const CTexture &GetTexture() const { return m_texture; };

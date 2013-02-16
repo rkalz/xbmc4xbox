@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -27,8 +27,6 @@ typedef std::vector<CStdString> VECPROGRAMPATHS;
 #define COMPARE_PERCENTAGE_MIN 0.50f // 50%
 
 #define PROGRAM_DATABASE_NAME "MyPrograms6.db"
-
-class CFileItem;
 
 class CProgramDatabase : public CDatabase
 {

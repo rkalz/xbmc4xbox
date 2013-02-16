@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2009 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,16 +19,11 @@
  *
  */
 
+#include "stdafx.h"
 #include <math.h>
 #include "StreamDetails.h"
-#include "StreamUtils.h"
-#include "Variant.h"
 
-void CStreamDetail::Archive(CArchive &ar)
-{
-  // there's nothing to do here, the type is stored externally and parent isn't stored
-}
-void CStreamDetail::Serialize(CVariant &value)
+void CStreamDetail::Serialize(CArchive &ar)
 {
   // there's nothing to do here, the type is stored externally and parent isn't stored
 }
@@ -38,9 +33,9 @@ CStreamDetailVideo::CStreamDetailVideo() :
 {
 }
 
-void CStreamDetailVideo::Archive(CArchive& ar)
+void CStreamDetailVideo::Serialize(CArchive& ar)
 {
-  CStreamDetail::Archive(ar);
+  CStreamDetail::Serialize(ar);
   if (ar.IsStoring())
   {
     ar << m_strCodec;
@@ -58,14 +53,6 @@ void CStreamDetailVideo::Archive(CArchive& ar)
     ar >> m_iDuration;
   }
 }
-void CStreamDetailVideo::Serialize(CVariant& value)
-{
-  value["codec"] = m_strCodec;
-  value["aspect"] = m_fAspect;
-  value["height"] = m_iHeight;
-  value["width"] = m_iWidth;
-  value["duration"] = m_iDuration;
-}
 
 bool CStreamDetailVideo::IsWorseThan(CStreamDetail *that)
 {
@@ -82,9 +69,9 @@ CStreamDetailAudio::CStreamDetailAudio() :
 {
 }
 
-void CStreamDetailAudio::Archive(CArchive& ar)
+void CStreamDetailAudio::Serialize(CArchive& ar)
 {
-  CStreamDetail::Archive(ar);
+  CStreamDetail::Serialize(ar);
   if (ar.IsStoring())
   {
     ar << m_strCodec;
@@ -98,11 +85,23 @@ void CStreamDetailAudio::Archive(CArchive& ar)
     ar >> m_iChannels;
   }
 }
-void CStreamDetailAudio::Serialize(CVariant& value)
+
+int CStreamDetailAudio::GetCodecPriority() const
 {
-  value["codec"] = m_strCodec;
-  value["language"] = m_strLanguage;
-  value["channels"] = m_iChannels;
+  // technically, truehd, dtsma, and flac are equivalently good (they're all lossless)
+  if (m_strCodec == "flac")
+    return 6;
+  if (m_strCodec == "dtsma")
+    return 5;
+  if (m_strCodec == "truehd")
+    return 4;
+  if (m_strCodec == "eac3")
+    return 3;
+  if (m_strCodec == "dca")
+    return 2;
+  if (m_strCodec == "ac3")
+    return 1;
+  return 0;
 }
 
 bool CStreamDetailAudio::IsWorseThan(CStreamDetail *that)
@@ -117,8 +116,8 @@ bool CStreamDetailAudio::IsWorseThan(CStreamDetail *that)
   if (m_iChannels > sda->m_iChannels)
     return false;
 
-  // In case of a tie, revert to codec priority
-  return StreamUtils::GetCodecPriority(sda->m_strCodec) > StreamUtils::GetCodecPriority(m_strCodec);
+  // In case of a tie, flac > eac3 > dts > ac3 > all else.
+  return sda->GetCodecPriority() > GetCodecPriority();
 }
 
 CStreamDetailSubtitle::CStreamDetailSubtitle() :
@@ -126,9 +125,9 @@ CStreamDetailSubtitle::CStreamDetailSubtitle() :
 {
 }
 
-void CStreamDetailSubtitle::Archive(CArchive& ar)
+void CStreamDetailSubtitle::Serialize(CArchive& ar)
 {
-  CStreamDetail::Archive(ar);
+  CStreamDetail::Serialize(ar);
   if (ar.IsStoring())
   {
     ar << m_strLanguage;
@@ -137,10 +136,6 @@ void CStreamDetailSubtitle::Archive(CArchive& ar)
   {
     ar >> m_strLanguage;
   }
-}
-void CStreamDetailSubtitle::Serialize(CVariant& value)
-{
-  value["language"] = m_strLanguage;
 }
 
 bool CStreamDetailSubtitle::IsWorseThan(CStreamDetail *that)
@@ -371,7 +366,7 @@ CStdString CStreamDetails::GetSubtitleLanguage(int idx) const
     return "";
 }
 
-void CStreamDetails::Archive(CArchive& ar)
+void CStreamDetails::Serialize(CArchive& ar)
 {
   if (ar.IsStoring())
   {
@@ -404,28 +399,6 @@ void CStreamDetails::Archive(CArchive& ar)
     }
 
     DetermineBestStreams();
-  }
-}
-void CStreamDetails::Serialize(CVariant& value)
-{
-  std::vector<CStreamDetail *>::const_iterator iter;
-  CVariant v;
-  for (iter = m_vecItems.begin(); iter != m_vecItems.end(); iter++)
-  {
-    v.clear();
-    (*iter)->Serialize(v);
-    switch ((*iter)->m_eType)
-    {
-    case CStreamDetail::AUDIO:
-      value["audio"].push_back(v);
-      break;
-    case CStreamDetail::VIDEO:
-      value["video"].push_back(v);
-      break;
-    case CStreamDetail::SUBTITLE:
-      value["subtitle"].push_back(v);
-      break;
-    }
   }
 }
 

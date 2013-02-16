@@ -15,7 +15,7 @@ extern "C"
 {
 #endif
 
-#include "input/XBIRRemote.h"
+#include "XBIRRemote.h"
 
 #ifdef __cplusplus
 }

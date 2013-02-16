@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -24,6 +24,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
+#include "stdafx.h"
 #include "IMDB.h"
 #include "Util.h"
 #include "HTMLUtil.h"
@@ -31,16 +32,13 @@
 #include "RegExp.h"
 #include "ScraperParser.h"
 #include "NfoFile.h"
-#include "dialogs/GUIDialogProgress.h"
-#include "settings/Settings.h"
+#include "GUIDialogProgress.h"
+#include "Settings.h"
 #include "fstrcmp.h"
-#include "dialogs/GUIDialogOK.h"
+#include "GUIDialogOK.h"
 #include "Application.h"
 #include "GUIWindowManager.h"
 #include "utils/URIUtils.h"
-#include "LocalizeStrings.h"
-#include "CharsetConverter.h"
-#include "utils/log.h"
 
 using namespace HTML;
 using namespace std;

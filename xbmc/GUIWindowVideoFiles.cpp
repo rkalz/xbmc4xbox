@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,28 +19,28 @@
  *
  */
 
+#include "stdafx.h"
 #include "GUIWindowVideoFiles.h"
 #include "Util.h"
 #include "utils/URIUtils.h"
-#include "pictures/Picture.h"
+#include "Picture.h"
 #include "utils/IMDB.h"
-#include "GUIInfoManager.h"
-#include "playlists/PlayListFactory.h"
+#include "utils/GUIInfoManager.h"
+#include "PlayListFactory.h"
 #include "Application.h"
 #include "NfoFile.h"
 #include "PlayListPlayer.h"
 #include "GUIPassword.h"
-#include "dialogs/GUIDialogMediaSource.h"
-#include "settings/GUIDialogContentSettings.h"
-#include "video/dialogs/GUIDialogVideoScan.h"
+#include "GUIDialogMediaSource.h"
+#include "GUIDialogContentSettings.h"
+#include "GUIDialogVideoScan.h"
 #include "FileSystem/MultiPathDirectory.h"
 #include "utils/RegExp.h"
 #include "GUIWindowManager.h"
-#include "dialogs/GUIDialogOK.h"
-#include "dialogs/GUIDialogYesNo.h"
+#include "GUIDialogOK.h"
+#include "GUIDialogYesNo.h"
 #include "FileSystem/File.h"
-#include "playlists/PlayList.h"
-#include "utils/log.h"
+#include "PlayList.h"
 
 using namespace std;
 using namespace MEDIA_DETECT;
@@ -74,9 +74,85 @@ bool CGUIWindowVideoFiles::OnMessage(CGUIMessage& message)
   {
   case GUI_MSG_WINDOW_INIT:
     {
+      // check for a passed destination path
+      CStdString strDestination = message.GetStringParam();
+      if (!strDestination.IsEmpty())
+      {
+        message.SetStringParam("");
+        g_stSettings.m_iVideoStartWindow = GetID();
+        CLog::Log(LOGINFO, "Attempting to quickpath to: %s", strDestination.c_str());
+        // reset directory path, as we have effectively cleared it here
+        m_history.ClearPathHistory();
+      }
+
       // is this the first time accessing this window?
-      if (m_vecItems->GetPath() == "?" && message.GetStringParam().IsEmpty())
-        m_vecItems->SetPath(g_settings.m_defaultVideoSource);
+      // a quickpath overrides the a default parameter
+      if (m_vecItems->GetPath() == "?" && strDestination.IsEmpty())
+      {
+        m_vecItems->SetPath(strDestination = g_settings.m_defaultVideoSource);
+        CLog::Log(LOGINFO, "Attempting to default to: %s", strDestination.c_str());
+      }
+
+      // try to open the destination path
+      if (!strDestination.IsEmpty())
+      {
+        // open root
+        if (strDestination.Equals("$ROOT"))
+        {
+          m_vecItems->SetPath("");
+          CLog::Log(LOGINFO, "  Success! Opening root listing.");
+        }
+        // open playlists location
+        else if (strDestination.Equals("$PLAYLISTS"))
+        {
+          m_vecItems->SetPath("special://videoplaylists/");
+          CLog::Log(LOGINFO, "  Success! Opening destination path: %s", m_vecItems->GetPath().c_str());
+        }
+        else
+        {
+          // default parameters if the jump fails
+          m_vecItems->SetPath("");
+
+          bool bIsSourceName = false;
+
+          SetupShares();
+          VECSOURCES shares;
+          m_rootDir.GetSources(shares);
+          int iIndex = CUtil::GetMatchingSource(strDestination, shares, bIsSourceName);
+          if (iIndex > -1)
+          {
+            bool bDoStuff = true;
+            if (iIndex < (int)shares.size() && shares[iIndex].m_iHasLock == 2)
+            {
+              CFileItem item(shares[iIndex]);
+              if (!g_passwordManager.IsItemUnlocked(&item,"video"))
+              {
+                m_vecItems->SetPath(""); // no u don't
+                bDoStuff = false;
+                CLog::Log(LOGINFO, "  Failure! Failed to unlock destination path: %s", strDestination.c_str());
+              }
+            }
+            // set current directory to matching share
+            if (bDoStuff)
+            {
+              if (bIsSourceName)
+                m_vecItems->SetPath(shares[iIndex].strPath);
+              else
+                m_vecItems->SetPath(strDestination);
+              CLog::Log(LOGINFO, "  Success! Opened destination path: %s", strDestination.c_str());
+            }
+          }
+          else
+          {
+            CLog::Log(LOGERROR, "  Failed! Destination parameter (%s) does not match a valid source!", strDestination.c_str());
+          }
+        }
+
+        // check for network up
+        if (URIUtils::IsRemote(m_vecItems->GetPath()) && !WaitForNetwork())
+          m_vecItems->SetPath("");
+        SetHistoryForPath(m_vecItems->GetPath());
+      }
 
       return CGUIWindowVideoBase::OnMessage(message);
     }
@@ -94,10 +170,10 @@ bool CGUIWindowVideoFiles::OnMessage(CGUIMessage& message)
         // toggle between the following states:
         //   0 : no stacking
         //   1 : stacking
-        g_settings.m_iMyVideoStack++;
+        g_stSettings.m_iMyVideoStack++;
 
-        if (g_settings.m_iMyVideoStack > STACK_SIMPLE)
-          g_settings.m_iMyVideoStack = STACK_NONE;
+        if (g_stSettings.m_iMyVideoStack > STACK_SIMPLE)
+          g_stSettings.m_iMyVideoStack = STACK_NONE;
 
         g_settings.Save();
         UpdateButtons();
@@ -148,7 +224,7 @@ bool CGUIWindowVideoFiles::OnMessage(CGUIMessage& message)
 
 bool CGUIWindowVideoFiles::OnAction(const CAction &action)
 {
-  if (action.GetID() == ACTION_TOGGLE_WATCHED)
+  if (action.id == ACTION_TOGGLE_WATCHED)
   {
     CFileItemPtr pItem = m_vecItems->Get(m_viewControl.GetSelectedItem());
     if (pItem->IsParentFolder())
@@ -173,12 +249,12 @@ void CGUIWindowVideoFiles::UpdateButtons()
       CONTROL_ENABLE(CONTROL_STACK);
       if (stack->GetControlType() == CGUIControl::GUICONTROL_RADIO)
       {
-        SET_CONTROL_SELECTED(GetID(), CONTROL_STACK, g_settings.m_iMyVideoStack == STACK_SIMPLE);
+        SET_CONTROL_SELECTED(GetID(), CONTROL_STACK, g_stSettings.m_iMyVideoStack == STACK_SIMPLE);
         SET_CONTROL_LABEL(CONTROL_STACK, 14000);  // Stack
       }
       else
       {
-        SET_CONTROL_LABEL(CONTROL_STACK, g_settings.m_iMyVideoStack + 14000);
+        SET_CONTROL_LABEL(CONTROL_STACK, g_stSettings.m_iMyVideoStack + 14000);
       }
     }
     else
@@ -208,7 +284,7 @@ bool CGUIWindowVideoFiles::GetDirectory(const CStdString &strDirectory, CFileIte
     m_stackingAvailable = false;
     m_cleaningAvailable = false;
   }
-  else if (!items.IsStack() && g_settings.m_iMyVideoStack != STACK_NONE)
+  else if (!items.IsStack() && g_stSettings.m_iMyVideoStack != STACK_NONE)
     items.Stack();
 
   if ((!info2.strContent.IsEmpty() && !info2.strContent.Equals("None")) && items.GetContent().IsEmpty())
@@ -400,7 +476,7 @@ void CGUIWindowVideoFiles::GetContextButtons(int itemNumber, CContextButtons &bu
       if (pScanDlg && pScanDlg->IsScanning())
         buttons.Add(CONTEXT_BUTTON_STOP_SCANNING, 13353);  // Stop Scanning
       if (g_guiSettings.GetBool("videolibrary.enabled") && !item->IsDVD() && item->GetPath() != "add" &&
-         (g_settings.GetCurrentProfile().canWriteDatabases() || g_passwordManager.bMasterUser))
+         (g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].canWriteDatabases() || g_passwordManager.bMasterUser))
       {
         CGUIDialogVideoScan *pScanDlg = (CGUIDialogVideoScan *)g_windowManager.GetWindow(WINDOW_DIALOG_VIDEO_SCAN);
         if (!pScanDlg || (pScanDlg && !pScanDlg->IsScanning()))
@@ -426,7 +502,7 @@ void CGUIWindowVideoFiles::GetContextButtons(int itemNumber, CContextButtons &bu
         if (pScanDlg && pScanDlg->IsScanning())
           buttons.Add(CONTEXT_BUTTON_STOP_SCANNING, 13353);
         if (g_guiSettings.GetBool("videolibrary.enabled") && 
-          (g_settings.GetCurrentProfile().canWriteDatabases() || g_passwordManager.bMasterUser))
+          (g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].canWriteDatabases() || g_passwordManager.bMasterUser))
         {
           SScraperInfo info;
           VIDEO::SScanSettings settings;
@@ -571,27 +647,4 @@ bool CGUIWindowVideoFiles::OnContextButton(int itemNumber, CONTEXT_BUTTON button
 void CGUIWindowVideoFiles::OnQueueItem(int iItem)
 {
   CGUIWindowVideoBase::OnQueueItem(iItem);
-}
-
-CStdString CGUIWindowVideoFiles::GetStartFolder(const CStdString &dir)
-{
-  SetupShares();
-  VECSOURCES shares;
-  m_rootDir.GetSources(shares);
-  bool bIsSourceName = false;
-  int iIndex = CUtil::GetMatchingSource(dir, shares, bIsSourceName);
-  if (iIndex > -1)
-  {
-    if (iIndex < (int)shares.size() && shares[iIndex].m_iHasLock == 2)
-    {
-      CFileItem item(shares[iIndex]);
-      if (!g_passwordManager.IsItemUnlocked(&item,"video"))
-        return "";
-    }
-    // set current directory to matching share
-    if (bIsSourceName)
-      return shares[iIndex].strPath;
-    return dir;
-  }
-  return CGUIWindowVideoBase::GetStartFolder(dir);
 }

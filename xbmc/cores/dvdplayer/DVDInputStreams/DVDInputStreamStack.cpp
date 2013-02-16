@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *
  */
  
-#include "utils/log.h"
+#include "stdafx.h"
 #include "DVDInputStreamStack.h"
 #include "FileItem.h"
 #include "FileSystem/File.h"
@@ -132,9 +132,9 @@ int CDVDInputStreamStack::Read(BYTE* buf, int buf_size)
   return (int)ret;
 }
 
-int64_t CDVDInputStreamStack::Seek(int64_t offset, int whence)
+__int64 CDVDInputStreamStack::Seek(__int64 offset, int whence)
 {
-  int64_t pos, len;
+  __int64 pos, len;
 
   if     (whence == SEEK_SET)
     pos = offset;
@@ -151,7 +151,7 @@ int64_t CDVDInputStreamStack::Seek(int64_t offset, int whence)
     if(len + it->length > pos)
     {
       TFile   file     = it->file;
-      int64_t file_pos = pos - len;
+      __int64 file_pos = pos - len;
       if(file->GetPosition() != file_pos)
       {
         if(file->Seek(file_pos, SEEK_SET) < 0)
@@ -169,7 +169,7 @@ int64_t CDVDInputStreamStack::Seek(int64_t offset, int whence)
   return -1;
 }
 
-int64_t CDVDInputStreamStack::GetLength()
+__int64 CDVDInputStreamStack::GetLength()
 {
   return m_length;
 }

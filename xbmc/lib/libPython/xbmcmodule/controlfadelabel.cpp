@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "lib/libPython/python/Include/Python.h"
 #include "../XBPythonDll.h"
 #include "GUIFadeLabelControl.h"
@@ -112,6 +112,7 @@ namespace PYXBMC
       (float)pControl->dwHeight,
       label, 
       true,
+      CScrollInfo::defaultSpeed,
       0,
       true);
 

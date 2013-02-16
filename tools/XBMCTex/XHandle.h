@@ -2,7 +2,7 @@
 #define __X_HANDLE__
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -24,12 +24,12 @@
 
 #ifndef _WIN32
 
-#include "../utils/StdString.h"
+#include "../../guilib/StdString.h"
 #include <SDL/SDL_mutex.h>
 #include <SDL/SDL_thread.h>
 
 #include "PlatformDefs.h"
-#include "utils/StringUtils.h"
+#include "StringUtils.h"
 
 struct CXHandle {
 

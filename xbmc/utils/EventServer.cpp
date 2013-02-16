@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,10 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 
 #ifdef HAS_EVENT_SERVER
 
-#include "interfaces/Builtins.h"
 #include "EventServer.h"
 #include "EventPacket.h"
 #include "EventClient.h"
@@ -31,11 +30,9 @@
 #include "CriticalSection.h"
 #include "Application.h"
 #include "Util.h"
-#include "input/ButtonTranslator.h"
+#include "ButtonTranslator.h"
 #include "SingleLock.h"
 #include "GUIAudioManager.h"
-#include "utils/log.h"
-
 #include <map>
 #include <queue>
 
@@ -323,6 +320,7 @@ bool CEventServer::ExecuteNextAction()
   EnterCriticalSection(m_critSection);
 
   CEventAction actionEvent;
+  CAction action;
   map<unsigned long, CEventClient*>::iterator iter = m_clients.begin();
 
   while (iter != m_clients.end())
@@ -334,17 +332,17 @@ bool CEventServer::ExecuteNextAction()
       switch(actionEvent.actionType)
       {
       case AT_EXEC_BUILTIN:
-        CBuiltins::Execute(actionEvent.actionName);
+        CUtil::ExecBuiltIn(actionEvent.actionName);
         break;
 
       case AT_BUTTON:
-        {
-          int actionID;
-          CButtonTranslator::TranslateActionString(actionEvent.actionName.c_str(), actionID);
-          CAction action(actionID, 1.0f, 0.0f, actionEvent.actionName);
-          g_audioManager.PlayActionSound(action);
-          g_application.OnAction(action);
-        }
+        CButtonTranslator::TranslateActionString(actionEvent.actionName.c_str(), action.id);
+        action.strAction = actionEvent.actionName;
+        action.repeat  = 0.0f;
+        action.amount1 = 1.0f;
+        action.amount2 = 1.0f;
+        g_audioManager.PlayActionSound(action);
+        g_application.OnAction(action);
         break;
       }
       return true;

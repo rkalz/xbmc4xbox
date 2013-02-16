@@ -18,7 +18,7 @@
 * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include "system.h"
+#include "stdafx.h"
 #include "CriticalSection.h"
 #ifdef _XBOX
 #include "xbox/Undocumented.h"
@@ -52,7 +52,8 @@ CCriticalSection::CCriticalSection(const CCriticalSection& section)
 CCriticalSection& CCriticalSection::operator=(const CCriticalSection& section)
 {
   if (this == &section) return * this;
-
+ 
+  InitializeCriticalSection(&m_critSection);
   return *this;
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,7 +21,7 @@
  */
 
 #include "IDirectory.h"
-#include "FileSystem/CurlFile.h"
+#include "FileSystem/FileCurl.h"
 #include "tinyXML/tinyxml.h"
 #include "utils/Thread.h"
 
@@ -62,7 +62,7 @@ protected:
   bool m_Downloaded;
   TiXmlDocument m_xmlDoc;
 
-  XFILE::CCurlFile m_http;
+  XFILE::CFileCurl m_http;
 
   CStdString m_objtype;
   CStdString m_objname;

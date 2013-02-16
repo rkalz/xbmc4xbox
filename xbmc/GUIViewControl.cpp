@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,13 +19,12 @@
  *
  */
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "GUIViewControl.h"
 #include "GUIWindowManager.h"
 #include "utils/URIUtils.h"
 #include "FileItem.h"
-#include "GUIInfoManager.h"
-#include "LocalizeStrings.h"
+#include "utils/GUIInfoManager.h"
 
 CGUIViewControl::CGUIViewControl(void)
 {

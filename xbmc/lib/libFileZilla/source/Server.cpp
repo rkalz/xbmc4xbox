@@ -31,7 +31,6 @@
 #include "Permissions.h"
 #include "FileLogger.h"
 #include "version.h"
-#include "utils/log.h"
 
 #if defined(_XBOX)
 #include "utils/Log.h"

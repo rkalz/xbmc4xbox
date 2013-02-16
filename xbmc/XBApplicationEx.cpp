@@ -10,11 +10,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 //-----------------------------------------------------------------------------
 
-#include "system.h"
+#include "stdafx.h"
 #include "XBApplicationEx.h"
 #include "XBVideoConfig.h"
-#include "settings/Settings.h"
-#include "utils/log.h"
+#include "Settings.h"
 
 //-----------------------------------------------------------------------------
 // Global access to common members

@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,7 +20,6 @@
  *
  */
 
-#include "utils/CriticalSection.h"
 #include "utils/Thread.h"
 
 typedef struct cmyth_ringbuf   *cmyth_ringbuf_t;
@@ -47,7 +46,6 @@ public:
   static CMythSession*  AquireSession(const CURL& url);
   static void           ReleaseSession(CMythSession*);
   static void           CheckIdle();
-  static void           LogCMyth(int level, char *msg);
 
   class IEventListener
   {
@@ -60,8 +58,6 @@ public:
   cmyth_conn_t     GetControl();
   cmyth_database_t GetDatabase();
   DllLibCMyth*     GetLibrary();
-  cmyth_proglist_t GetAllRecordedPrograms();
-  void             ResetAllRecordedPrograms();
 
   void             SetFileItemMetaData(CFileItem &item, cmyth_proginfo_t program);
 
@@ -77,8 +73,6 @@ private:
   bool             CanSupport(const CURL& url);
   void             Disconnect();
 
-  void             SetSeasonAndEpisode(const cmyth_proginfo_t &program, int *season, int *epsiode);
-
   IEventListener*  m_listener;
   cmyth_conn_t     m_control;
   cmyth_conn_t     m_event;
@@ -90,7 +84,6 @@ private:
   DllLibCMyth*     m_dll;
   CCriticalSection m_section;
   unsigned int     m_timestamp;
-  cmyth_proglist_t m_all_recorded; // Cache of all_recorded programs.
 
   static CCriticalSection            m_section_session;
   static std::vector<CMythSession*>  m_sessions;

@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -32,11 +32,8 @@ int64_t CurrentHostFrequency(void);
 class CTimeUtils
 {
 public:
-  static void UpdateFrameTime();      ///< update the frame time.  Not threadsafe
-  static unsigned int GetFrameTime(); ///< returns the frame time in MS.  Not threadsafe
+  static unsigned int GetFrameTime();
   static unsigned int GetTimeMS();
   static CDateTime GetLocalTime(time_t time);
-private:
-  static unsigned int frameTime;
 };
 

@@ -27,10 +27,13 @@
 
 // The idiosyncrasies of GSM-in-WAV are explained at http://kbs.cs.tu-berlin.de/~jutta/toast.html
 
+#include "avcodec.h"
 #include <gsm/gsm.h>
 
-#include "avcodec.h"
-#include "gsm.h"
+// gsm.h misses some essential constants
+#define GSM_BLOCK_SIZE 33
+#define GSM_MS_BLOCK_SIZE 65
+#define GSM_FRAME_SIZE 160
 
 static av_cold int libgsm_encode_init(AVCodecContext *avctx) {
     if (avctx->channels > 1) {

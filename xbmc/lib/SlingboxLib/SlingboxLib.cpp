@@ -16,8 +16,7 @@
 // The Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include "system.h"
-#include <stdio.h>
+#include "stdafx.h"
 #include "SlingboxLib.h"
 
 extern "C" {

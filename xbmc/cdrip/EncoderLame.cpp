@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,10 @@
  *
  */
 
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "EncoderLame.h"
-#include "music/tags/Id3Tag.h"
-#include "settings/GUISettings.h"
+#include "Id3Tag.h"
+#include "GUISettings.h"
 
 #ifdef _WIN32PC
 extern "C" FILE *fopen_utf8(const char *_Filename, const char *_Mode);
@@ -100,7 +99,7 @@ bool CEncoderLame::Init(const char* strFile, int iInChannels, int iInRate, int i
     strSettings.Format("%s%i", "--preset cbr ", g_guiSettings.GetInt("audiocds.bitrate"));
     parse_args_from_string(m_pGlobalFlags, strSettings.c_str(), m_inPath, m_outPath);
     //lame_set_mode(pGlobalFlags, JOINT_STEREO);
-    //lame_set_brate(pGlobalFlags, g_settings.m_iRipBitRate);
+    //lame_set_brate(pGlobalFlags, g_stSettings.m_iRipBitRate);
   }
   else
   {

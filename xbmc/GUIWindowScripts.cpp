@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,16 +19,17 @@
  *
  */
 
+#include "stdafx.h"
 #include "GUIWindowScripts.h"
 #include "utils/URIUtils.h"
 #include "lib/libPython/XBPython.h"
 #include "GUIWindowScriptsInfo.h"
 #include "GUIWindowManager.h"
-#include "windows/GUIWindowFileManager.h"
+#include "GUIWindowFileManager.h"
 #include "FileSystem/File.h"
 #include "FileItem.h"
 #include "ScriptSettings.h"
-#include "dialogs/GUIDialogPluginSettings.h"
+#include "GUIDialogPluginSettings.h"
 #include "LocalizeStrings.h"
 
 using namespace XFILE;
@@ -53,7 +54,7 @@ CGUIWindowScripts::~CGUIWindowScripts()
 
 bool CGUIWindowScripts::OnAction(const CAction &action)
 {
-  if (action.GetID() == ACTION_SHOW_INFO)
+  if (action.id == ACTION_SHOW_INFO)
   {
     OnInfo();
     return true;
@@ -68,7 +69,7 @@ bool CGUIWindowScripts::OnMessage(CGUIMessage& message)
   case GUI_MSG_WINDOW_INIT:
     {
       if (m_vecItems->GetPath() == "?")
-        m_vecItems->SetPath("Q:\\scripts"); //g_settings.m_szDefaultScripts;
+        m_vecItems->SetPath("Q:\\scripts"); //g_stSettings.m_szDefaultScripts;
 
       return CGUIMediaWindow::OnMessage(message);
     }

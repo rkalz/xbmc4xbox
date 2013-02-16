@@ -77,10 +77,6 @@ static int vp6_parse_header(VP56Context *s, const uint8_t *buf, int buf_size,
         cols = buf[3];  /* number of stored macroblock cols */
         /* buf[4] is number of displayed macroblock rows */
         /* buf[5] is number of displayed macroblock cols */
-        if (!rows || !cols) {
-            av_log(s->avctx, AV_LOG_ERROR, "Invalid size %dx%d\n", cols << 4, rows << 4);
-            return 0;
-        }
 
         if (!s->macroblocks || /* first frame */
             16*cols != s->avctx->coded_width ||
@@ -101,7 +97,7 @@ static int vp6_parse_header(VP56Context *s, const uint8_t *buf, int buf_size,
             vrt_shift = 5;
         s->sub_version = sub_version;
     } else {
-        if (!s->sub_version || !s->avctx->coded_width || !s->avctx->coded_height)
+        if (!s->sub_version)
             return 0;
 
         if (separated_coeff || !s->filter_header) {
@@ -387,7 +383,7 @@ static void vp6_parse_coeff_huffman(VP56Context *s)
                 if (coeff_idx)
                     break;
             } else {
-                if (get_bits_left(&s->gb) <= 0)
+                if (get_bits_count(&s->gb) >= s->gb.size_in_bits)
                     return;
                 coeff = get_vlc2(&s->gb, vlc_coeff->table, 9, 3);
                 if (coeff == 0) {

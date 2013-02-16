@@ -48,7 +48,7 @@
 #include "config.h"
 
 #ifdef _XBOX
-#include "utils/StdString.h"
+#include "..\..\..\guilib\stdstring.h"
 #endif
 
 #include "MFC64bitFix.h"

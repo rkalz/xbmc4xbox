@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,8 +20,7 @@
  *
  */
 
-#include "utils/StdString.h"
-#include "Database.h"
+#include "StdString.h"
 #include "tinyXML/tinyxml.h"
 #include <vector>
 
@@ -112,7 +111,7 @@ public:
                     TEXTIN_FIELD
                   };
  
-  CStdString GetWhereClause(CDatabase *db, const CStdString& strType);
+  CStdString GetWhereClause(const CStdString& strType);
   void TranslateStrings(const char *field, const char *oper, const char *parameter);
   static DATABASE_FIELD TranslateField(const char *field);
   static CStdString     TranslateField(DATABASE_FIELD field);
@@ -165,8 +164,8 @@ public:
   bool GetOrderAscending() const { return m_orderAscending; };
 
   void AddRule(const CSmartPlaylistRule &rule);
-  CStdString GetWhereClause(CDatabase *db, bool needWhere = true);
-  CStdString GetOrderClause(CDatabase *db);
+  CStdString GetWhereClause(bool needWhere = true);
+  CStdString GetOrderClause();
 
   const std::vector<CSmartPlaylistRule> &GetRules() const;
 

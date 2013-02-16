@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,10 @@
  *
  */
  
-#include "utils/log.h"
+#include "stdafx.h"
 #include "dll_tracker_socket.h"
 #include "DllLoader.h"
 #include "dll_tracker.h"
-#include "utils/SingleLock.h"
 #include "exports/emu_socket.h"
 
 extern "C" void tracker_socket_track(uintptr_t caller, SOCKET socket)

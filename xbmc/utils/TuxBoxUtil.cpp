@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -22,24 +22,22 @@
 //
 // GeminiServer
 //
+#include "stdafx.h"
 #include "TuxBoxUtil.h"
 #include "Util.h"
 #include "utils/URIUtils.h"
-#include "FileSystem/CurlFile.h"
-#include "dialogs/GUIDialogContextMenu.h"
+#include "FileSystem/FileCurl.h"
+#include "GUIDialogContextMenu.h"
 #include "Application.h"
-#include "ApplicationMessenger.h"
 #include "GUIInfoManager.h"
-#include "video/VideoInfoTag.h"
+#include "VideoInfoTag.h"
 #include "GUIWindowManager.h"
-#include "dialogs/GUIDialogOK.h"
-#include "dialogs/GUIDialogYesNo.h"
+#include "GUIDialogOK.h"
+#include "GUIDialogYesNo.h"
 #include "FileSystem/File.h"
 #include "URL.h"
-#include "settings/AdvancedSettings.h"
+#include "AdvancedSettings.h"
 #include "FileItem.h"
-#include "LocalizeStrings.h"
-#include "utils/log.h"
 
 using namespace XFILE;
 using namespace std;
@@ -119,7 +117,7 @@ void CTuxBoxService::Process()
         if (strCurrentServiceName != g_tuxbox.sCurSrvData.service_name && g_application.IsPlaying() && !g_tuxbox.sZapstream.available)
         {
           CLog::Log(LOGDEBUG," - ERROR: Non controlled channel change detected! Stopping current playing stream!");
-          g_application.getApplicationMessenger().MediaStop();
+          g_applicationMessenger.MediaStop();
           break;
         }
       }
@@ -462,7 +460,7 @@ bool CTuxBoxUtil::ZapToUrl(CURL url, CStdString strOptions, int ipoint)
   }
     
   //Send ZAP Command
-  CCurlFile http;
+  CFileCurl http;
   if(http.Open(strZapUrl+strPostUrl))
   {
     //DEBUG LOG
@@ -607,7 +605,7 @@ bool CTuxBoxUtil::GetZapUrl(const CStdString& strPath, CFileItem &items )
       }
       
       if (g_application.IsPlaying() && !g_tuxbox.sZapstream.available)
-        g_application.getApplicationMessenger().MediaStop();
+        g_applicationMessenger.MediaStop();
 
       strLabel.Format("%s: %s %s-%s",items.GetLabel().c_str(), sCurSrvData.current_event_date.c_str(),sCurSrvData.current_event_start.c_str(), sCurSrvData.current_event_start.c_str());
       strLabel2.Format("%s", sCurSrvData.current_event_description.c_str());
@@ -639,7 +637,7 @@ bool CTuxBoxUtil::GetZapUrl(const CStdString& strPath, CFileItem &items )
 bool CTuxBoxUtil::InitZapstream(const CStdString& strPath)
 {
   CURL url(strPath);
-  CCurlFile http;
+  CFileCurl http;
   int iTryConnect = 0;
   int iTimeout = 2;
 
@@ -683,7 +681,7 @@ bool CTuxBoxUtil::InitZapstream(const CStdString& strPath)
 bool CTuxBoxUtil::SetAudioChannel( const CStdString& strPath, const AUDIOCHANNEL& sAC )
 {
   CURL url(strPath);
-  CCurlFile http;
+  CFileCurl http;
   int iTryConnect = 0;
   int iTimeout = 2;
 
@@ -751,7 +749,7 @@ bool CTuxBoxUtil::GetHttpXML(CURL url,CStdString strRequestType)
   url.SetFileName("");
   
   //Open 
-  CCurlFile http;
+  CFileCurl http;
   http.SetTimeout(20);
   if(http.Open(url)) 
   {
@@ -1455,19 +1453,33 @@ bool CTuxBoxUtil::GetGUIRequestedAudioChannel(AUDIOCHANNEL& sRequestedAC)
     return false;
 
   // popup the context menu
-  CContextButtons buttons;
-
-  // add the needed Audio buttons
-  for (unsigned int i = 0; i < sCurSrvData.audio_channels.size(); ++i)
-    buttons.Add(i, sCurSrvData.audio_channels[i].name);
-
-  int channel = CGUIDialogContextMenu::ShowAndGetChoice(buttons);
-  if (channel >= 0)
+  CGUIDialogContextMenu *pMenu;
+  pMenu = (CGUIDialogContextMenu *)g_windowManager.GetWindow(WINDOW_DIALOG_CONTEXT_MENU);
+  if (pMenu)
   {
-    sRequestedAC = sCurSrvData.audio_channels[channel];
-    sCurSrvData.requested_audio_channel = channel;
-    CLog::Log(LOGDEBUG, "%s - Audio channel %s requested.", __FUNCTION__, sRequestedAC.name.c_str());
-    return true;
+    // load Audio context menu
+    pMenu->Initialize();
+
+    vector<int> btn;
+
+    // add the needed Audio buttons
+    for (vector<sAudioChannel>::iterator sChannel = sCurSrvData.audio_channels.begin(); sChannel!=sCurSrvData.audio_channels.end(); ++sChannel)
+      btn.push_back(pMenu->AddButton(sChannel->name));
+
+    pMenu->CenterWindow();
+    pMenu->DoModal();
+    int btnid = pMenu->GetButton();
+
+    for(int i=0; btn[i] >0; i++)
+    {
+      if(btnid == btn[i])
+      {
+        sRequestedAC = sCurSrvData.audio_channels[i];
+        sCurSrvData.requested_audio_channel = i;
+        CLog::Log(LOGDEBUG, "%s - Audio channel %s requested.", __FUNCTION__, sCurSrvData.audio_channels[i].name.c_str());
+        return true;
+      }
+    }
   }
   return false;
 }
@@ -1485,25 +1497,36 @@ bool CTuxBoxUtil::GetVideoSubChannels(CStdString& strVideoSubChannelName, CStdSt
 
   // IsPlaying, Stop it..
   if(g_application.IsPlaying())
-    g_application.getApplicationMessenger().MediaStop();
+    g_applicationMessenger.MediaStop();
 
   // popup the context menu
-  CContextButtons buttons;
-
-  // add the needed Audio buttons
-  for (unsigned int i = 0; i < vVideoSubChannel.name.size(); ++i)
-    buttons.Add(i, vVideoSubChannel.name[i]);
-
-  // get selected Video Sub Channel name and reference zap
-  int channel = CGUIDialogContextMenu::ShowAndGetChoice(buttons);
-  if (channel >= 0)
+  CGUIDialogContextMenu *pMenu;
+  pMenu = (CGUIDialogContextMenu *)g_windowManager.GetWindow(WINDOW_DIALOG_CONTEXT_MENU);
+  if (pMenu)
   {
-    strVideoSubChannelName = vVideoSubChannel.name[channel];
-    strVideoSubChannelPid = vVideoSubChannel.reference[channel];
-    vVideoSubChannel.name.clear();
-    vVideoSubChannel.reference.clear();
-    vVideoSubChannel.selected.clear();
-    return true;
+    pMenu->Initialize();
+    // load Video Sub Channels to context menu
+    vector<int> btn;
+    for (unsigned int i=0; vVideoSubChannel.name.size() > i; ++i)
+      btn.push_back(pMenu->AddButton(vVideoSubChannel.name[i]));
+    
+    pMenu->CenterWindow();
+    pMenu->DoModal();
+    // get selected Video Sub Channel name and reference zap
+    int btnid = pMenu->GetButton();
+    for(int i=0; btn[i] >0; i++)
+    {
+      if(btnid == btn[i])
+      {
+        strVideoSubChannelName = vVideoSubChannel.name[i];
+        strVideoSubChannelPid = vVideoSubChannel.reference[i];
+        btn.clear();
+        vVideoSubChannel.name.clear();
+        vVideoSubChannel.reference.clear();
+        vVideoSubChannel.selected.clear();
+        return true;
+      }
+    }
   }
   return false;
 }
@@ -1595,34 +1618,46 @@ CStdString CTuxBoxUtil::GetSubMode(int iMode, CStdString& strXMLRootString, CStd
   }
   
   // popup the context menu
-  // FIXME: Localize these
-  CContextButtons choices;
-  choices.Add(1, "All");
-  choices.Add(2, "Satellites");
-  choices.Add(3, "Providers");
-  choices.Add(4, "Bouquets");
+  CGUIDialogContextMenu *pMenu;
+  pMenu = (CGUIDialogContextMenu *)g_windowManager.GetWindow(WINDOW_DIALOG_CONTEXT_MENU);
+  if (pMenu)
+  {
+    // load Audio context menu
+    pMenu->Initialize();
+    // add the needed Audio buttons
+    int iSubmode_1 = pMenu->AddButton("All"); //;
+    int iSubmode_2 = pMenu->AddButton("Satellites"); //;
+    int iSubmode_3 = pMenu->AddButton("Providers");
+    int iSubmode_4 = pMenu->AddButton("Bouquets");
+    
+    pMenu->CenterWindow();
+    pMenu->DoModal();
+    int btnid = pMenu->GetButton();
+    if(btnid == iSubmode_1)
+    {
+      iSubmode = 1;
+      strXMLRootString.Format("services");
+      strXMLChildString.Format("service");
+    }
+    else if(btnid == iSubmode_2)
+    {
+      iSubmode = 2;
+      strXMLRootString.Format("satellites");
+      strXMLChildString.Format("satellite");
 
-  int iSubMode = CGUIDialogContextMenu::ShowAndGetChoice(choices);
-  if (iSubMode == 1)
-  {
-    strXMLRootString.Format("services");
-    strXMLChildString.Format("service");
-  }
-  else if (iSubmode == 2)
-  {
-    strXMLRootString.Format("satellites");
-    strXMLChildString.Format("satellite");
-  }
-  else if (iSubmode == 3)
-  {
-    strXMLRootString.Format("providers");
-    strXMLChildString.Format("provider");
-  }
-  else // if (iSubmode == 4 || iSubMode < 0)
-  {
-    iSubMode = 4;
-    strXMLRootString.Format("bouquets");
-    strXMLChildString.Format("bouquet");
+    }
+    else if(btnid == iSubmode_3)
+    {
+      iSubmode = 3;
+      strXMLRootString.Format("providers");
+      strXMLChildString.Format("provider");
+    }
+    else if(btnid == iSubmode_4)
+    {
+      iSubmode = 4;
+      strXMLRootString.Format("bouquets");
+      strXMLChildString.Format("bouquet");
+    }
   }
   strSubMode.Format("xml/services?mode=%i&submode=%i",iMode,iSubmode);
   return strSubMode;

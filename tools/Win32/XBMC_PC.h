@@ -1,4 +1,3 @@
-#include "utils/StdString.h"
 
 class CXBMC_PC
 {

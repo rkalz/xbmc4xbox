@@ -7,11 +7,10 @@
 //
 // Copyright (c) Microsoft Corporation. All rights reserved.
 //-----------------------------------------------------------------------------
-#include "stdafx.h"
+#include "../../xbmc/stdafx.h"
 #include "XBMC_PC.h"
 #include <d3d8.h>
-#include "Application.h"
-#include "ApplicationMessenger.h"
+#include "../../xbmc/Application.h"
 
 //-----------------------------------------------------------------------------
 // Resource defines
@@ -121,25 +120,25 @@ LRESULT CXBMC_PC::MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
           }
 					break;
         case ID_RESOLUTION_PAL4X3:
-          g_application.getApplicationMessenger().ExecBuiltIn("Resolution(PAL)");
+          g_applicationMessenger.ExecBuiltIn("Resolution(PAL)");
           break;
         case ID_RESOLUTION_PAL16X9:
-          g_application.getApplicationMessenger().ExecBuiltIn("Resolution(PAL16x9)");
+          g_applicationMessenger.ExecBuiltIn("Resolution(PAL16x9)");
           break;
         case ID_RESOLUTION_NTSC4X3:
-          g_application.getApplicationMessenger().ExecBuiltIn("Resolution(NTSC)");
+          g_applicationMessenger.ExecBuiltIn("Resolution(NTSC)");
           break;
         case ID_RESOLUTION_NTSC16X9:
-          g_application.getApplicationMessenger().ExecBuiltIn("Resolution(NTSC16x9)");
+          g_applicationMessenger.ExecBuiltIn("Resolution(NTSC16x9)");
           break;
         case ID_RESOLUTION_720P:
-          g_application.getApplicationMessenger().ExecBuiltIn("Resolution(720p)");
+          g_applicationMessenger.ExecBuiltIn("Resolution(720p)");
           break;
         case ID_RESOLUTION_1080I:
-          g_application.getApplicationMessenger().ExecBuiltIn("Resolution(1080i)");
+          g_applicationMessenger.ExecBuiltIn("Resolution(1080i)");
           break;
         case ID_SKIN_RELOAD:
-          g_application.getApplicationMessenger().ExecBuiltIn("ReloadSkin");
+          g_applicationMessenger.ExecBuiltIn("ReloadSkin");
           break;
         case ID_SKIN_ACTIVATEWINDOW:
           OnActivateWindow();
@@ -179,7 +178,7 @@ void CXBMC_PC::OnActivateWindow()
     {
       CStdString command;
       command.Format("ActivateWindow(%s)", window.c_str());
-      g_application.getApplicationMessenger().ExecBuiltIn(command);
+      g_applicationMessenger.ExecBuiltIn(command);
     }
   }
   m_inDialog = false;
@@ -197,7 +196,7 @@ void CXBMC_PC::OnExecuteBuiltin()
     // now activate the window
     if (!command.IsEmpty())
     {
-      g_application.getApplicationMessenger().ExecBuiltIn(command);
+      g_applicationMessenger.ExecBuiltIn(command);
     }
   }
   m_inDialog = false;

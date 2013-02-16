@@ -18,6 +18,7 @@
 * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#include "stdafx.h"
 #include "IFile.h"
 
 
@@ -45,7 +46,7 @@ bool IFile::ReadString(char *szLine, int iLineLength)
 {
   if(Seek(0, SEEK_CUR) < 0) return false;
 
-  int64_t iFilePos = GetPosition();
+  __int64 iFilePos = GetPosition();
   int iBytesRead = Read( (unsigned char*)szLine, iLineLength - 1);
   if (iBytesRead <= 0)
     return false;

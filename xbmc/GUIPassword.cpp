@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,23 +19,20 @@
  *
  */
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "GUIPassword.h"
 #include "Application.h"
-#include "ApplicationMessenger.h"
-#include "dialogs/GUIDialogNumeric.h"
-#include "dialogs/GUIDialogGamepad.h"
-#include "dialogs/GUIDialogKeyboard.h"
-#include "settings/GUIDialogLockSettings.h"
-#include "settings/GUIDialogProfileSettings.h"
+#include "GUIDialogNumeric.h"
+#include "GUIDialogGamepad.h"
+#include "GUIDialogKeyboard.h"
+#include "GUIDialogLockSettings.h"
+#include "GUIDialogProfileSettings.h"
 #include "Util.h"
 #include "URL.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "GUIWindowManager.h"
-#include "GUIUserMessages.h"
-#include "dialogs/GUIDialogOK.h"
+#include "GUIDialogOK.h"
 #include "FileItem.h"
-#include "LocalizeStrings.h"
 
 CGUIPassword g_passwordManager;
 
@@ -43,6 +40,7 @@ CGUIPassword::CGUIPassword(void)
 {
   iMasterLockRetriesLeft = -1;
   bMasterUser = false;
+  m_SMBShare = "";
 }
 CGUIPassword::~CGUIPassword(void)
 {}
@@ -53,7 +51,7 @@ bool CGUIPassword::IsItemUnlocked(CFileItem* pItem, const CStdString &strType)
   // \param pItem The share folder item to access
   // \param strType The type of share being accessed, e.g. "music", "video", etc. See CSettings::UpdateSources()
   // \return If access is granted, returns \e true
-  if (g_settings.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE)
+  if (g_settings.m_vecProfiles[0].getLockMode() == LOCK_MODE_EVERYONE)
     return true;
 
   while (pItem->m_iHasLock > 1)
@@ -122,6 +120,35 @@ bool CGUIPassword::IsItemUnlocked(CFileItem* pItem, const CStdString &strType)
   return true;
 }
 
+void CGUIPassword::SetSMBShare(const CStdString &strPath)
+{
+  m_SMBShare = strPath;
+}
+
+CStdString CGUIPassword::GetSMBShare()
+{
+  return m_SMBShare;
+}
+
+bool CGUIPassword::GetSMBShareUserPassword()
+{
+  CURL url(m_SMBShare);
+  CStdString passcode;
+  CStdString username = url.GetUserName();
+  CStdString outusername = username;
+  CStdString share;
+  share = url.GetWithoutUserDetails();
+
+  if (!CGUIDialogLockSettings::ShowAndGetUserAndPassword(outusername,passcode,share))
+    return false;
+
+  url.SetPassword(passcode);
+  url.SetUserName(outusername);
+  m_SMBShare = url.Get();
+
+  return true;
+}
+
 bool CGUIPassword::CheckStartUpLock()
 {
   // prompt user for mastercode if the mastercode was set b4 or by xml
@@ -130,14 +157,14 @@ bool CGUIPassword::CheckStartUpLock()
   if (iMasterLockRetriesLeft == -1)
     iMasterLockRetriesLeft = g_guiSettings.GetInt("masterlock.maxretries");
   if (g_passwordManager.iMasterLockRetriesLeft == 0) g_passwordManager.iMasterLockRetriesLeft = 1;
-  CStdString strPassword = g_settings.GetMasterProfile().getLockCode();
-  if (g_settings.GetMasterProfile().getLockMode() == 0)
+  CStdString strPassword = g_settings.m_vecProfiles[0].getLockCode();
+  if (g_settings.m_vecProfiles[0].getLockMode() == 0)
     iVerifyPasswordResult = 0;
   else
   {
     for (int i=1; i <= g_passwordManager.iMasterLockRetriesLeft; i++)
     {
-      iVerifyPasswordResult = VerifyPassword(g_settings.GetMasterProfile().getLockMode(), strPassword, strHeader);
+      iVerifyPasswordResult = VerifyPassword(g_settings.m_vecProfiles[0].getLockMode(), strPassword, strHeader);
       if (iVerifyPasswordResult != 0 )
       {
         CStdString strLabel,strLabel1;
@@ -168,24 +195,24 @@ bool CGUIPassword::CheckStartUpLock()
   }
   else
   {
-    g_application.getApplicationMessenger().Shutdown(); // Turn off the box
+    g_applicationMessenger.Shutdown(); // Turn off the box
     return false;
   }
 }
 
 bool CGUIPassword::SetMasterLockMode(bool bDetails)
 {
-  CProfile* profile = g_settings.GetProfile(0);
-  if (profile)
+  CGUIDialogLockSettings* pDialog = (CGUIDialogLockSettings*)g_windowManager.GetWindow(WINDOW_DIALOG_LOCK_SETTINGS);
+  if (pDialog)
   {
-    CProfile::CLock locks = profile->GetLocks();
-    if (CGUIDialogLockSettings::ShowAndGetLock(locks, 12360, true, bDetails))
-    {
-      profile->SetLocks(locks);
+    CProfile& profile=g_settings.m_vecProfiles.at(0);
+    if (pDialog->ShowAndGetLock(profile._iLockMode,profile._strLockCode,profile._bLockMusic,profile._bLockVideo,profile._bLockPictures,profile._bLockPrograms,profile._bLockFiles,profile._bLockSettings,12360,true,bDetails))
       return true;
-    }
+
+    return false;
   }
-  return false;
+
+  return true;
 }
 
 bool CGUIPassword::IsProfileLockUnlocked(int iProfile)
@@ -200,24 +227,21 @@ bool CGUIPassword::IsProfileLockUnlocked(int iProfile, bool& bCanceled)
     return true;
   int iProfileToCheck=iProfile;
   if (iProfile == -1)
-    iProfileToCheck = g_settings.GetCurrentProfileIndex();
+    iProfileToCheck = g_settings.m_iLastLoadedProfileIndex;
   if (iProfileToCheck == 0)
     return IsMasterLockUnlocked(true,bCanceled);
   else
   {
-    CProfile *profile = g_settings.GetProfile(iProfileToCheck);
-    if (!profile)
-      return false;
-    if (profile->getDate().IsEmpty() &&
-       (g_settings.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE ||
-        profile->getLockMode() == LOCK_MODE_EVERYONE))
+    if (g_settings.m_vecProfiles[iProfileToCheck].getDate().IsEmpty() && 
+       (g_settings.m_vecProfiles[0].getLockMode() == LOCK_MODE_EVERYONE || 
+        g_settings.m_vecProfiles[iProfileToCheck].getLockMode() == LOCK_MODE_EVERYONE))
     {
       if (CGUIDialogProfileSettings::ShowForProfile(iProfileToCheck,false))
         return true;
     }
     else
-       if (g_settings.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE)
-        return CheckLock(profile->getLockMode(),profile->getLockCode(),20095,bCanceled);
+       if (g_settings.m_vecProfiles[0].getLockMode() != LOCK_MODE_EVERYONE)
+        return CheckLock(g_settings.m_vecProfiles[iProfileToCheck].getLockMode(),g_settings.m_vecProfiles[iProfileToCheck].getLockCode(),20095,bCanceled);
   }
 
   return true;
@@ -234,11 +258,11 @@ bool CGUIPassword::IsMasterLockUnlocked(bool bPromptUser, bool& bCanceled)
   bCanceled = false;
   if (iMasterLockRetriesLeft == -1)
     iMasterLockRetriesLeft = g_guiSettings.GetInt("masterlock.maxretries");
-  if ((LOCK_MODE_EVERYONE < g_settings.GetMasterProfile().getLockMode() && !bMasterUser) && !bPromptUser)
+  if ((LOCK_MODE_EVERYONE < g_settings.m_vecProfiles[0].getLockMode() && !bMasterUser) && !bPromptUser)
     // not unlocked, but calling code doesn't want to prompt user
     return false;
 
-  if (g_passwordManager.bMasterUser || g_settings.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE)
+  if (g_passwordManager.bMasterUser || g_settings.m_vecProfiles[0].getLockMode() == LOCK_MODE_EVERYONE)
     return true;
 
   if (iMasterLockRetriesLeft == 0)
@@ -250,8 +274,8 @@ bool CGUIPassword::IsMasterLockUnlocked(bool bPromptUser, bool& bCanceled)
   // no, unlock since we are allowed to prompt
   int iVerifyPasswordResult = -1;
   CStdString strHeading = g_localizeStrings.Get(20075);
-  CStdString strPassword = g_settings.GetMasterProfile().getLockCode();
-  iVerifyPasswordResult = VerifyPassword(g_settings.GetMasterProfile().getLockMode(), strPassword, strHeading);
+  CStdString strPassword = g_settings.m_vecProfiles[0].getLockCode();
+  iVerifyPasswordResult = VerifyPassword(g_settings.m_vecProfiles[0].getLockMode(), strPassword, strHeading);
   if (1 == iVerifyPasswordResult)
     UpdateMasterLockRetryCount(false);
 
@@ -289,7 +313,7 @@ void CGUIPassword::UpdateMasterLockRetryCount(bool bResetCount)
         {
           // Shutdown enabled, tell the user we're shutting off
           CGUIDialogOK::ShowAndGetInput(12345, 12346, 12347, 0);
-          g_application.getApplicationMessenger().Shutdown();
+          g_applicationMessenger.Shutdown();
           return ;
         }
         // Tell the user they ran out of retry attempts
@@ -324,7 +348,7 @@ bool CGUIPassword::CheckLock(LockType btnType, const CStdString& strPassword, in
 {
   bCanceled = false;
   if (btnType == LOCK_MODE_EVERYONE || strPassword.Equals("-")        || 
-      g_settings.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE || g_passwordManager.bMasterUser)
+      g_settings.m_vecProfiles[0].getLockMode() == LOCK_MODE_EVERYONE || g_passwordManager.bMasterUser)
     return true;
 
   int iVerifyPasswordResult = -1;
@@ -371,26 +395,26 @@ bool CGUIPassword::CheckMenuLock(int iWindowID)
   switch (iSwitch)
   {
     case WINDOW_SETTINGS_MENU:  // Settings
-      bCheckPW = g_settings.GetCurrentProfile().settingsLocked();
+      bCheckPW = g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].settingsLocked();
       break;
     case WINDOW_FILES:          // Files
-      bCheckPW = g_settings.GetCurrentProfile().filesLocked();
+      bCheckPW = g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].filesLocked();
       break;
     case WINDOW_PROGRAMS:       // Programs
     case WINDOW_SCRIPTS:
-      bCheckPW = g_settings.GetCurrentProfile().programsLocked();
+      bCheckPW = g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].programsLocked();
       break;
     case WINDOW_GAMESAVES:
-      bCheckPW = g_settings.GetCurrentProfile().programsLocked();
+      bCheckPW = g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].programsLocked();
       break;
     case WINDOW_MUSIC_FILES:    // Music
-      bCheckPW = g_settings.GetCurrentProfile().musicLocked();
+      bCheckPW = g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].musicLocked();
       break;
     case WINDOW_VIDEO_FILES:    // Video
-      bCheckPW = g_settings.GetCurrentProfile().videoLocked();
+      bCheckPW = g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].videoLocked();
       break;
     case WINDOW_PICTURES:       // Pictures
-      bCheckPW = g_settings.GetCurrentProfile().picturesLocked();
+      bCheckPW = g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].picturesLocked();
       break;
     case WINDOW_SETTINGS_PROFILES:
       bCheckPW = true;
@@ -403,6 +427,33 @@ bool CGUIPassword::CheckMenuLock(int iWindowID)
     return IsMasterLockUnlocked(true); //Now let's check the PW if we need!
   else
     return true;
+}
+CStdString CGUIPassword::GetSMBAuthFilename(const CStdString& strAuth)
+{
+  /// \brief Gets the path of an authenticated share
+  /// \param strAuth The SMB style path
+  /// \return Path to share with proper username/password, or same as imput if none found in db
+  CURL urlIn(strAuth);
+  CStdString strPath(strAuth);
+
+  CStdString strShare;  // it's only the server\share we're interested in authenticating
+  strShare  = urlIn.GetHostName();
+  strShare += "/";
+  strShare += urlIn.GetShareName();
+
+  IMAPPASSWORDS it = m_mapSMBPasswordCache.find(strShare);
+  if(it != m_mapSMBPasswordCache.end())
+  {
+    // if share found in cache use it to supply username and password
+    CURL url(it->second);		// map value contains the full url of the originally authenticated share. map key is just the share
+    CStdString strPassword = url.GetPassWord();
+
+    CStdString strUserName = url.GetUserName();
+    urlIn.SetPassword(strPassword);
+    urlIn.SetUserName(strUserName);
+    strPath = urlIn.Get();
+  }
+  return strPath;
 }
 
 bool CGUIPassword::LockSource(const CStdString& strType, const CStdString& strName, bool bState)
@@ -464,7 +515,7 @@ void CGUIPassword::RemoveSourceLocks()
 
 bool CGUIPassword::IsDatabasePathUnlocked(CStdString& strPath, VECSOURCES& vecSources)
 {
-  if (g_passwordManager.bMasterUser || g_settings.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE)
+  if (g_passwordManager.bMasterUser || g_settings.m_vecProfiles[0].getLockMode() == LOCK_MODE_EVERYONE)
     return true;
 
   // try to find the best matching source

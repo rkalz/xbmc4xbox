@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,26 +18,24 @@
  *
  */
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "GUIWindowGameSaves.h"
 #include "Util.h"
 #include "FileSystem/ZipManager.h"
-#include "dialogs/GUIDialogFileBrowser.h"
-#include "windows/GUIWindowFileManager.h"
+#include "GUIDialogFileBrowser.h"
+#include "GUIWindowFileManager.h"
 #include "GUIPassword.h"
 #include <fstream>
 //#include "Utils/HTTP.h"  // For Download Function
-#include "storage/MediaManager.h"
+#include "MediaManager.h"
 #include "utils/LabelFormatter.h"
-#include "music/tags/MusicInfoTag.h"// todo - program tags
+#include "MusicInfoTag.h"// todo - program tags
 #include "GUIWindowManager.h"
-#include "dialogs/GUIDialogProgress.h"
-#include "dialogs/GUIDialogYesNo.h"
+#include "GUIDialogProgress.h"
+#include "GUIDialogYesNo.h"
 #include "FileSystem/Directory.h"
 #include "FileItem.h"
 #include "utils/URIUtils.h"
-#include "LocalizeStrings.h"
-#include "utils/CharsetConverter.h"
 
 using namespace XFILE;
 using namespace XFILE;

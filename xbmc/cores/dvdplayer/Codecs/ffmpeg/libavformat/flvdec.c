@@ -143,6 +143,18 @@ static int parse_keyframes_index(AVFormatContext *s, AVIOContext *ioc, AVStream 
     int64_t *filepositions = NULL;
     int ret = AVERROR(ENOSYS);
     int64_t initial_pos = avio_tell(ioc);
+    AVDictionaryEntry *creator = av_dict_get(s->metadata, "metadatacreator",
+                                             NULL, 0);
+
+    if (creator && !strcmp(creator->value, "MEGA")) {
+        /* Files with this metadatacreator tag seem to have filepositions
+         * pointing at the 4 trailer bytes of the previous packet,
+         * which isn't the norm (nor what we expect here, nor what
+         * jwplayer + lighttpd expect, nor what flvtool2 produces).
+         * Just ignore the index in this case, instead of risking trying
+         * to adjust it to something that might or might not work. */
+        return 0;
+    }
 
     if(vstream->nb_index_entries>0){
         av_log(s, AV_LOG_WARNING, "Skiping duplicate index\n");
@@ -177,7 +189,7 @@ static int parse_keyframes_index(AVFormatContext *s, AVIOContext *ioc, AVStream 
 
         for (i = 0; i < arraylen && avio_tell(ioc) < max_pos - 1; i++) {
             if (avio_r8(ioc) != AMF_DATA_TYPE_NUMBER)
-                goto invalid;
+                goto finish;
             current_array[0][i] = av_int2double(avio_rb64(ioc));
         }
         if (times && filepositions) {
@@ -188,22 +200,11 @@ static int parse_keyframes_index(AVFormatContext *s, AVIOContext *ioc, AVStream 
         }
     }
 
-    if (timeslen == fileposlen && fileposlen>1 && max_pos <= filepositions[0]) {
-        int64_t dts, size0, size1;
-        avio_seek(ioc, filepositions[1]-4, SEEK_SET);
-        size0 = avio_rb32(ioc);
-                avio_r8(ioc);
-        size1 = avio_rb24(ioc);
-        dts   = avio_rb24(ioc);
-        dts  |= avio_r8(ioc) << 24;
-        if (size0 > filepositions[1] || FFABS(dts - times[1]*1000)>5000/*arbitraray threshold to detect invalid index*/)
-            goto invalid;
+    if (timeslen == fileposlen && fileposlen && max_pos <= filepositions[0]) {
          for(i = 0; i < timeslen; i++)
              av_add_index_entry(vstream, filepositions[i], times[i]*1000, 0, 0, AVINDEX_KEYFRAME);
-    } else {
-invalid:
+    } else
         av_log(s, AV_LOG_WARNING, "Invalid keyframes object, skipping.\n");
-    }
 
 finish:
     av_freep(&times);
@@ -452,8 +453,7 @@ static int flv_read_packet(AVFormatContext *s, AVPacket *pkt)
     int stream_type=-1;
     int64_t next, pos;
     int64_t dts, pts = AV_NOPTS_VALUE;
-    int av_uninit(channels);
-    int av_uninit(sample_rate);
+    int sample_rate, channels;
     AVStream *st = NULL;
 
  for(;;avio_skip(s->pb, 4)){ /* pkt size is repeated at end. skip it */
@@ -592,8 +592,8 @@ static int flv_read_packet(AVFormatContext *s, AVPacket *pkt)
                 return ret;
             if (st->codec->codec_id == CODEC_ID_AAC) {
                 MPEG4AudioConfig cfg;
-                if (avpriv_mpeg4audio_get_config(&cfg, st->codec->extradata,
-                                             st->codec->extradata_size * 8, 1) >= 0) {
+                avpriv_mpeg4audio_get_config(&cfg, st->codec->extradata,
+                                             st->codec->extradata_size * 8, 1);
                 st->codec->channels = cfg.channels;
                 if (cfg.ext_sample_rate)
                     st->codec->sample_rate = cfg.ext_sample_rate;
@@ -601,7 +601,6 @@ static int flv_read_packet(AVFormatContext *s, AVPacket *pkt)
                     st->codec->sample_rate = cfg.sample_rate;
                 av_dlog(s, "mp4a config channels %d sample rate %d\n",
                         st->codec->channels, st->codec->sample_rate);
-                }
             }
 
             ret = AVERROR(EAGAIN);

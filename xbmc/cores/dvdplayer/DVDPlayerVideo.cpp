@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,10 @@
  *
  */
  
-#include "system.h"
-#include "utils/log.h"
-#include "settings/AdvancedSettings.h"
-#include "settings/GUISettings.h"
-#include "settings/Settings.h"
+#include "stdafx.h"
+#include "AdvancedSettings.h"
+#include "GUISettings.h"
+#include "Settings.h"
 #include "DVDPlayer.h"
 #include "DVDPlayerVideo.h"
 #include "DVDCodecs/DVDFactoryCodec.h"
@@ -31,7 +30,7 @@
 #include "DVDCodecs/Video/DVDVideoPPFFmpeg.h"
 #include "DVDDemuxers/DVDDemux.h"
 #include "DVDDemuxers/DVDDemuxUtils.h"
-#include "utils/MathUtils.h"
+#include "../../Util.h"
 #include "DVDOverlayRenderer.h"
 #include "DVDPerformanceCounter.h"
 #include "DVDCodecs/DVDCodecs.h"
@@ -496,7 +495,7 @@ void CDVDPlayerVideo::Process()
 
             //Deinterlace if codec said format was interlaced or if we have selected we want to deinterlace
             //this video
-            EINTERLACEMETHOD mInt = g_settings.m_currentVideoSettings.m_InterlaceMethod;
+            EINTERLACEMETHOD mInt = g_stSettings.m_currentVideoSettings.m_InterlaceMethod;
             if( mInt == VS_INTERLACEMETHOD_DEINTERLACE )
             {
               if (!sPostProcessType.empty())
@@ -504,7 +503,7 @@ void CDVDPlayerVideo::Process()
               sPostProcessType += g_advancedSettings.m_videoPPFFmpegDeint;
             }
 
-            if (g_settings.m_currentVideoSettings.m_PostProcess)
+            if (g_stSettings.m_currentVideoSettings.m_PostProcess)
             {
               if (!sPostProcessType.empty())
                 sPostProcessType += ",";
@@ -700,40 +699,11 @@ void CDVDPlayerVideo::Flush()
   m_messageQueue.Put(new CDVDMsg(CDVDMsg::GENERAL_FLUSH), 1);
 }
 
-int CDVDPlayerVideo::GetLevel()
-{
-  int level = m_messageQueue.GetLevel();
-
-  // fast exit, if the message queue is full, we do not care about the codec queue.
-  if (level == 100)
-    return level;
-
-  // Now for the harder choices, the message queue could be time or size based.
-  // In order to return the proper summed level, we need to know which.
-  if (m_messageQueue.IsDataBased())
-  {
-    int datasize = m_messageQueue.GetDataSize();
-    if (m_pVideoCodec)
-      datasize += m_pVideoCodec->GetDataSize();
-    return min(100, (int)(100 * datasize / (m_messageQueue.GetMaxDataSize() * m_messageQueue.GetMaxTimeSize())));
-  }
-  else
-  {
-    double timesize = m_messageQueue.GetTimeSize();
-    if (m_pVideoCodec)
-      timesize += m_pVideoCodec->GetTimeSize();
-    return min(100, MathUtils::round_int(100.0 * m_messageQueue.GetMaxTimeSize() * timesize));
-  }
-
-  return level;
-}
-
 #ifdef HAS_VIDEO_PLAYBACK
 void CDVDPlayerVideo::ProcessOverlays(DVDVideoPicture* pSource, YV12Image* pDest, double pts)
 {
   // remove any overlays that are out of time
-  if (m_started)
-    m_pOverlayContainer->CleanUp(pts - m_iSubtitleDelay);
+  m_pOverlayContainer->CleanUp(pts - m_iSubtitleDelay);
 
   if(pSource->format != DVDVideoPicture::FMT_YUV420P)
     return;
@@ -1039,7 +1009,7 @@ std::string CDVDPlayerVideo::GetPlayerInfo()
 {
   std::ostringstream s;
   s << "fr:"     << fixed << setprecision(3) << m_fFrameRate;
-  s << ", vq:"   << setw(2) << min(99,GetLevel()) << "%";
+  s << ", vq:"   << setw(2) << min(99,m_messageQueue.GetLevel()) << "%";
   s << ", dc:"   << m_codecname;
   s << ", Mb/s:" << fixed << setprecision(2) << (double)GetVideoBitrate() / (1024.0*1024.0);
   s << ", drop:" << m_iDroppedFrames;

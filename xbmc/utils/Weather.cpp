@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,25 +19,22 @@
  *
  */
 
+#include "stdafx.h"
 #include "Weather.h"
 #include "FileSystem/ZipManager.h"
 #include "FileSystem/RarManager.h"
-#include "FileSystem/CurlFile.h"
+#include "FileSystem/FileCurl.h"
 #include "XMLUtils.h"
 #include "Temperature.h"
 #include "xbox/network.h"
-#include "Util.h"
+#include "../Util.h"
 #include "Application.h"
-#include "settings/GUISettings.h"
+#include "GUISettings.h"
 #include "GUIWindowManager.h"
-#include "dialogs/GUIDialogProgress.h"
-#include "dialogs/GUIDialogSelect.h"
-#include "XBDateTime.h"
-#include "LangInfo.h"
+#include "GUIDialogProgress.h"
+#include "GUIDialogSelect.h"
+#include "DateTime.h"
 #include "FileSystem/Directory.h"
-#include "LocalizeStrings.h"
-#include "utils/CharsetConverter.h"
-#include "utils/log.h"
 
 using namespace std;
 using namespace XFILE;
@@ -100,13 +97,13 @@ CWeather g_weatherManager;
 
 void CBackgroundWeatherLoader::GetInformation()
 {
-  if (!g_application.getNetwork().IsAvailable())
+  if (!g_network.IsAvailable())
     return;
 
   CWeather *callback = (CWeather *)m_callback;
   // Download our weather
   CLog::Log(LOGINFO, "WEATHER: Downloading weather");
-  XFILE::CCurlFile httpUtil;
+  XFILE::CFileCurl httpUtil;
   CStdString strURL;
 
   CStdString strSetting;
@@ -564,7 +561,7 @@ bool CWeather::GetSearchResults(const CStdString &strSearch, CStdString &strResu
   //do the download
   CStdString strURL;
   CStdString strXML;
-  XFILE::CCurlFile httpUtil;
+  XFILE::CFileCurl httpUtil;
 
   if (pDlgProgress)
   {

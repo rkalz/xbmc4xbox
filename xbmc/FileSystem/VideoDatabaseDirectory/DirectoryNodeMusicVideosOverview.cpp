@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,15 +19,15 @@
  *
  */
 
+#include "stdafx.h"
 #include "DirectoryNodeMusicVideosOverview.h"
 #include "FileItem.h"
-#include "LocalizeStrings.h"
 
 using namespace XFILE::VIDEODATABASEDIRECTORY;
 
 Node MusicVideoChildren[] = {
                               { NODE_TYPE_GENRE,             1, 135 },
-                              { NODE_TYPE_TITLE_MUSICVIDEOS, 2, 369 },
+                              { NODE_TYPE_TITLE_MOVIES,      2, 369 },
                               { NODE_TYPE_YEAR,              3, 562 },
                               { NODE_TYPE_ACTOR,             4, 133 },
                               { NODE_TYPE_MUSICVIDEOS_ALBUM, 5, 132 },

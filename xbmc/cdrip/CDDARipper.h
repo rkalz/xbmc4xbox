@@ -2,7 +2,7 @@
 #define _CCDDARIPPER_H
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -24,8 +24,6 @@
 
 #include "CDDAReader.h"
 #include "Encoder.h"
-
-class CFileItem;
 
 namespace MUSIC_INFO
 {

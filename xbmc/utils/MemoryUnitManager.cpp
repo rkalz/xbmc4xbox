@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  *
  */
 
+#include "stdafx.h"
 
 #include "xbox/Undocumented.h"
 #include "MemoryUnitManager.h"
@@ -28,8 +29,6 @@
 #include "FileSystem/MemoryUnits/Fat32FileSystem.h"
 #include "Application.h"
 #include "URL.h"
-#include "LocalizeStrings.h"
-#include "utils/log.h"
 
 using namespace std;
 using namespace XFILE;

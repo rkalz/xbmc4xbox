@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,9 +19,9 @@
  *
  */
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "OGGcodec.h"
-#include "music/tags/OggTag.h"
+#include "OggTag.h"
 #include "FileItem.h"
 #include "Util.h"
 #include "utils/URIUtils.h"

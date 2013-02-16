@@ -18,10 +18,9 @@
 * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#include "stdafx.h"
 #include "ResampleDirectSound.h"
 #include "AsyncDirectSound.h"
-
-#include <string>
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction

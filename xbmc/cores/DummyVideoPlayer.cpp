@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -18,14 +18,13 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
-
-#include "utils/log.h"
+ 
+#include "stdafx.h"
 #include "DummyVideoPlayer.h"
 #include "GUIFontManager.h"
-#include "GUIFont.h"
 #include "GUITextLayout.h"
 #include "Application.h"
-#include "settings/AdvancedSettings.h"
+#include "AdvancedSettings.h"
 
 CDummyVideoPlayer::CDummyVideoPlayer(IPlayerCallback& callback)
     : IPlayer(callback),
@@ -86,7 +85,7 @@ void CDummyVideoPlayer::Process()
     {
       g_graphicsContext.Get3DDevice()->BeginScene();
       g_graphicsContext.Clear();
-      g_graphicsContext.SetRenderingResolution(g_graphicsContext.GetVideoResolution(), false);
+      g_graphicsContext.SetRenderingResolution(g_graphicsContext.GetVideoResolution(), 0, 0, false);
       Render();
       if (g_application.NeedRenderFullScreen())
         g_application.RenderFullScreen();

@@ -11,22 +11,21 @@
 
 /********************************* Includes ***********************************/
 
-#include "system.h"
+#include "stdafx.h"
 #include "XBMCweb.h"
 #include "Application.h"
-#include "ApplicationMessenger.h"
 
 #include "Util.h"
 #include "PlayListPlayer.h"
 #include "FileSystem/CDDADirectory.h"
 #include "FileSystem/ZipManager.h"
-#include "playlists/PlayListFactory.h"
-#include "GUIInfoManager.h"
-#include "music/tags/MusicInfoTagLoaderFactory.h"
-#include "music/MusicDatabase.h"
-#include "music/tags/MusicInfoTag.h"
+#include "PlayListFactory.h"
+#include "utils/GUIInfoManager.h"
+#include "MusicInfoTagLoaderFactory.h"
+#include "MusicDatabase.h"
+#include "MusicInfoTag.h"
 #include "FileItem.h"
-#include "playlists/PlayList.h"
+#include "PlayList.h"
 #include "utils/URIUtils.h"
 
 using namespace std;
@@ -324,20 +323,20 @@ int CXbmcWeb::xbmcNavigate( int eid, webs_t wp, char_t *parameter)
           g_playlistPlayer.SetCurrentPlaylist(PLAYLIST_VIDEO);
           strDirectory = g_settings.m_defaultVideoSource;
           shares = &g_settings.m_videoSources;
-          directory->SetMask(g_settings.m_videoExtensions);
+          directory->SetMask(g_stSettings.m_videoExtensions);
         }
         else if (!strcmp(parameter, WEB_MUSIC))
         {
           g_playlistPlayer.SetCurrentPlaylist(PLAYLIST_MUSIC);
           strDirectory = g_settings.m_defaultMusicSource;
           shares = &g_settings.m_musicSources;
-          directory->SetMask(g_settings.m_musicExtensions);
+          directory->SetMask(g_stSettings.m_musicExtensions);
         }
         else if (!strcmp(parameter, WEB_PICTURES))
         {
           strDirectory = g_settings.m_defaultPictureSource;
           shares = &g_settings.m_pictureSources;
-          directory->SetMask(g_settings.m_pictureExtensions);
+          directory->SetMask(g_stSettings.m_pictureExtensions);
         }
         else if (!strcmp(parameter, WEB_PROGRAMS))
         {
@@ -797,7 +796,7 @@ int CXbmcWeb::xbmcCatalog( int eid, webs_t wp, char_t *parameter)
                   g_playlistPlayer.SetCurrentPlaylist(iPlayList);
 
                   // play first item in playlist
-                  g_application.getApplicationMessenger().PlayListPlayerPlay();
+                  g_applicationMessenger.PlayListPlayerPlay();
 
                   // set current file item
                   SetCurrentMediaItem(*playlist[0]);
@@ -807,15 +806,15 @@ int CXbmcWeb::xbmcCatalog( int eid, webs_t wp, char_t *parameter)
               {
                 // just play the file
                 SetCurrentMediaItem(*itm);
-                g_application.getApplicationMessenger().MediaStop();
-                g_application.getApplicationMessenger().MediaPlay(itm->GetPath());
+                g_applicationMessenger.MediaStop();
+                g_applicationMessenger.MediaPlay(itm->GetPath());
               }
             }
             else
             {
               if (GetNavigatorState() == WEB_NAV_PICTURES)
               {
-                g_application.getApplicationMessenger().PictureShow(itm->GetPath());
+                g_applicationMessenger.PictureShow(itm->GetPath());
               }
             }
           }
@@ -833,12 +832,12 @@ int CXbmcWeb::xbmcPlayerPlay( int eid, webs_t wp, char_t *parameter)
 {
   if (currentMediaItem->GetPath().size() > 0)
   {
-    g_application.getApplicationMessenger().MediaPlay(currentMediaItem->GetPath());
+    g_applicationMessenger.MediaPlay(currentMediaItem->GetPath());
   }
   else
   {
     // we haven't played an item through the webinterface yet. Try playing the current playlist
-    g_application.getApplicationMessenger().PlayListPlayerPlay();
+    g_applicationMessenger.PlayListPlayerPlay();
   }
   return 0;
 }
@@ -854,7 +853,7 @@ int CXbmcWeb::xbmcPlayerNext(int eid, webs_t wp, char_t *parameter)
   // activate needed playlist
   g_playlistPlayer.SetCurrentPlaylist(currentPlayList);
 
-  g_application.getApplicationMessenger().PlayListPlayerNext();
+  g_applicationMessenger.PlayListPlayerNext();
   return 0;
 }
 
@@ -869,7 +868,7 @@ int CXbmcWeb::xbmcPlayerPrevious(int eid, webs_t wp, char_t *parameter)
   // activate playlist
   g_playlistPlayer.SetCurrentPlaylist(currentPlayList);
 
-  g_application.getApplicationMessenger().PlayListPlayerPrevious();
+  g_applicationMessenger.PlayListPlayerPrevious();
   return 0;
 }
 
@@ -884,11 +883,11 @@ int CXbmcWeb::xbmcSubtitles( int eid, webs_t wp, char_t *parameter)
 int CXbmcWeb::xbmcProcessCommand( int eid, webs_t wp, char_t *command, char_t *parameter)
 {
   if (!strcmp(command, "play"))								return xbmcPlayerPlay(eid, wp, parameter);
-  else if (!strcmp(command, "stop"))					g_application.getApplicationMessenger().MediaStop();
-  else if (!strcmp(command, "pause"))					g_application.getApplicationMessenger().MediaPause();
-  else if (!strcmp(command, "shutdown"))			g_application.getApplicationMessenger().Shutdown();
-  else if (!strcmp(command, "restart"))				g_application.getApplicationMessenger().Restart();
-  else if (!strcmp(command, "exit"))					g_application.getApplicationMessenger().RebootToDashBoard();
+  else if (!strcmp(command, "stop"))					g_applicationMessenger.MediaStop();
+  else if (!strcmp(command, "pause"))					g_applicationMessenger.MediaPause();
+  else if (!strcmp(command, "shutdown"))			g_applicationMessenger.Shutdown();
+  else if (!strcmp(command, "restart"))				g_applicationMessenger.Restart();
+  else if (!strcmp(command, "exit"))					g_applicationMessenger.RebootToDashBoard();
   else if (!strcmp(command, "show_time"))			return 0;
   else if (!strcmp(command, "remote"))				return xbmcRemoteControl(eid, wp, parameter);			// remote control functions
   else if (!strcmp(command, "navigate"))			return xbmcNavigate(eid, wp, parameter);	// Navigate to a particular interface

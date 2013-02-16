@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,19 +19,19 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "PlayListPlayer.h"
 #include "Util.h"
 #include "utils/URIUtils.h"
 #include "pyplaylist.h"
 #include "lib/libPython/python/Include/structmember.h"
 #include "../XBPythonDll.h"
-#include "playlists/PlayListFactory.h"
+#include "PlayListFactory.h"
 #include "pyutil.h"
 #include "listitem.h"
-#include "playlists/PlayList.h"
-#include "video/VideoInfoTag.h"
-#include "music/tags/MusicInfoTag.h"
+#include "PlayList.h"
+#include "VideoInfoTag.h"
+#include "MusicInfoTag.h"
 
 using namespace std;
 using namespace PLAYLIST;

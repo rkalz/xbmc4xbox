@@ -37,4 +37,3 @@ $(FATE_FFT_FIXED): libavcodec/fft-fixed-test$(EXESUF)
 $(FATE_FFT_FIXED): REF = /dev/null
 
 FATE_TESTS += $(FATE_FFT) $(FATE_FFT_FIXED)
-fate-fft: $(FATE_FFT) $(FATE_FFT_FIXED)

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 
 #ifdef HAS_EVENT_SERVER
 
@@ -27,15 +27,12 @@
 #include "EventPacket.h"
 #include "Application.h"
 #include "SingleLock.h"
-#include "input/ButtonTranslator.h"
+#include "ButtonTranslator.h"
 #include "GraphicContext.h"
 #include "Key.h"
-#include "FileSystem/File.h"
-#include "utils/log.h"
-
 #include <map>
 #include <queue>
-
+#include "FileSystem/File.h"
 
 using namespace EVENTCLIENT;
 using namespace EVENTPACKET;

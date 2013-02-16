@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -33,10 +33,10 @@ public:
   virtual bool    Open(const char* path, const std::string &content);
   virtual void    Close();
   virtual int     Read(BYTE* buf, int buf_size);
-  virtual int64_t Seek(int64_t offset, int whence);
+  virtual __int64 Seek(__int64 offset, int whence);
   virtual bool Pause(double dTime) { return false; };
   virtual bool    IsEOF();
-  virtual int64_t GetLength();
+  virtual __int64 GetLength();
 
 protected:
 
@@ -45,7 +45,7 @@ protected:
   struct TSeg
   {
     TFile   file;
-    int64_t length;
+    __int64 length;
   };
 
   typedef std::vector<TSeg> TSegVec;
@@ -53,6 +53,6 @@ protected:
   TSegVec m_files;  ///< collection of open ptr's to all files in stack
   TFile   m_file;   ///< currently active file
   bool    m_eof;
-  int64_t m_pos;
-  int64_t m_length;
+  __int64 m_pos;
+  __int64 m_length;
 };

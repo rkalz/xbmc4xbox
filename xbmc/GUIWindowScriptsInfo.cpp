@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  *
  */
 
+#include "stdafx.h"
 #include "GUIWindowScriptsInfo.h"
 
 
@@ -33,7 +34,7 @@ CGUIWindowScriptsInfo::~CGUIWindowScriptsInfo(void)
 
 bool CGUIWindowScriptsInfo::OnAction(const CAction &action)
 {
-  if (action.GetID() == ACTION_SHOW_INFO)
+  if (action.id == ACTION_SHOW_INFO)
   {
     // erase debug screen
     strInfo = "";

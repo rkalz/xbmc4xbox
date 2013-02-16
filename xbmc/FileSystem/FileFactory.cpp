@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,32 +20,32 @@
  */
 
 
-#include "system.h"
+#include "stdafx.h"
 #include "FileFactory.h"
-#include "HDFile.h"
-#include "CurlFile.h"
-#include "ShoutcastFile.h"
-#include "LastFMFile.h"
-#include "FileReaderFile.h"
+#include "FileHD.h"
+#include "FileCurl.h"
+#include "FileShoutcast.h"
+#include "FileLastFM.h"
+#include "FileFileReader.h"
 #ifdef HAS_FILESYSTEM
-#include "ISOFile.h"
-#include "SMBFile.h"
-#include "XBMSPFile.h"
-#include "RTVFile.h"
-#include "SndtrkFile.h"
-#include "CDDAFile.h"
-#include "MemUnitFile.h"
-#include "DAAPFile.h"
+#include "FileISO.h"
+#include "FileSMB.h"
+#include "FileXBMSP.h"
+#include "FileRTV.h"
+#include "FileSndtrk.h"
+#include "FileCDDA.h"
+#include "FileMemUnit.h"
+#include "FileDAAP.h"
 #endif
-#include "ZipFile.h"
-#include "RarFile.h"
-#include "MusicDatabaseFile.h"
-#include "SpecialProtocolFile.h"
+#include "FileZip.h"
+#include "FileRar.h"
+#include "FileMusicDatabase.h"
+#include "FileSpecialProtocol.h"
 #include "MultiPathFile.h"
-#include "Application.h"
-#include "TuxBoxFile.h"
-#include "HDHomeRunFile.h"
-#include "SlingboxFile.h"
+#include "xbox/network.h"
+#include "FileTuxBox.h"
+#include "HDHomeRun.h"
+#include "Slingbox.h"
 #include "MythFile.h"
 #include "URL.h"
 #include "utils/log.h"
@@ -71,11 +71,11 @@ IFile* CFileFactory::CreateLoader(const CURL& url)
   CStdString strProtocol = url.GetProtocol();
   strProtocol.MakeLower();
 
-  if (strProtocol == "zip") return new CZipFile();
+  if (strProtocol == "zip") return new CFileZip();
   else if (strProtocol == "rar") return new CFileRar();
   else if (strProtocol == "musicdb") return new CFileMusicDatabase();
   else if (strProtocol == "videodb") return NULL;
-  else if (strProtocol == "special") return new CSpecialProtocolFile();
+  else if (strProtocol == "special") return new CFileSpecialProtocol();
   else if (strProtocol == "multipath") return new CMultiPathFile();
   else if (strProtocol == "file" || strProtocol.IsEmpty()) return new CFileHD();
   else if (strProtocol == "filereader") return new CFileFileReader();
@@ -85,7 +85,7 @@ IFile* CFileFactory::CreateLoader(const CURL& url)
   else if (strProtocol == "cdda") return new CFileCDDA();
   else if (strProtocol.Left(3) == "mem") return new CFileMemUnit();
 #endif
-  if( g_application.getNetwork().IsAvailable() )
+  if( g_network.IsAvailable() )
   {
     if (strProtocol == "http"
     ||  strProtocol == "https"
@@ -94,16 +94,16 @@ IFile* CFileFactory::CreateLoader(const CURL& url)
     ||  strProtocol == "ftp"
     ||  strProtocol == "ftpx"
     ||  strProtocol == "ftps"
-    ||  strProtocol == "rss") return new CCurlFile();
+    ||  strProtocol == "rss") return new CFileCurl();
     else if (strProtocol == "shout") return new CFileShoutcast();
     else if (strProtocol == "lastfm") return new CFileLastFM();
     else if (strProtocol == "tuxbox") return new CFileTuxBox();
-    else if (strProtocol == "hdhomerun") return new CHomeRunFile();
+    else if (strProtocol == "hdhomerun") return new CFileHomeRun();
     else if (strProtocol == "sling") return new CSlingboxFile();
     else if (strProtocol == "myth") return new CMythFile();
     else if (strProtocol == "cmyth") return new CMythFile();
 #ifdef HAS_FILESYSTEM
-    else if (strProtocol == "smb") return new CSmbFile();
+    else if (strProtocol == "smb") return new CFileSMB();
     else if (strProtocol == "xbms") return new CFileXBMSP();
     else if (strProtocol == "rtv") return new CFileRTV();
     else if (strProtocol == "daap") return new CFileDAAP();

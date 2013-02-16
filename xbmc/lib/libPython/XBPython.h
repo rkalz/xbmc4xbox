@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -23,7 +23,6 @@
 
 #include "XBPyThread.h"
 #include "cores/IPlayer.h"
-#include "utils/SingleLock.h"
 
 extern "C" {
   extern void initxbmc(void);
@@ -67,7 +66,6 @@ public:
   int   GetPythonScriptId(int scriptPosition);
   int   evalFile(const char *);
   int   evalFile(const char *, const unsigned int, const char **);
-  int   evalString(const char *, const unsigned int argc = 0, const char ** argv = NULL);
 
   bool  isRunning(int scriptId);
   bool  isStopping(int scriptId);

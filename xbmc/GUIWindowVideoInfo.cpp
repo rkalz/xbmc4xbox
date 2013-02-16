@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,34 +19,32 @@
  *
  */
 
+#include "stdafx.h"
 #include "GUIWindow.h"
 #include "GUIWindowVideoInfo.h"
 #include "Util.h"
 #include "utils/URIUtils.h"
-#include "pictures/Picture.h"
+#include "Picture.h"
 #include "guiImage.h"
-#include "utils/StringUtils.h"
-#include "video/windows/GUIWindowVideoBase.h"
+#include "StringUtils.h"
+#include "GUIWindowVideoBase.h"
 #include "GUIWindowVideoFiles.h"
-#include "dialogs/GUIDialogFileBrowser.h"
-#include "GUIInfoManager.h"
-#include "video/VideoInfoScanner.h"
-#include "video/VideoInfoTag.h"
+#include "GUIDialogFileBrowser.h"
+#include "utils/GUIInfoManager.h"
+#include "VideoInfoScanner.h"
+#include "VideoInfoTag.h"
 #include "GUIWindowManager.h"
-#include "dialogs/GUIDialogOK.h"
-#include "dialogs/GUIDialogYesNo.h"
-#include "dialogs/GUIDialogSelect.h"
-#include "dialogs/GUIDialogProgress.h"
+#include "GUIDialogOK.h"
+#include "GUIDialogYesNo.h"
+#include "GUIDialogSelect.h"
+#include "GUIDialogProgress.h"
 #include "FileSystem/Directory.h"
 #include "FileSystem/File.h"
 #include "FileItem.h"
-#include "storage/MediaManager.h"
+#include "MediaManager.h"
 #include "utils/AsyncFileCopy.h"
-#include "settings/AdvancedSettings.h"
+#include "AdvancedSettings.h"
 #include "GUIUserMessages.h"
-#include "LocalizeStrings.h"
-#include "Application.h"
-#include "ApplicationMessenger.h"
 
 using namespace std;
 using namespace XFILE;
@@ -130,12 +128,12 @@ bool CGUIWindowVideoInfo::OnMessage(CGUIMessage& message)
       SET_CONTROL_HIDDEN(CONTROL_DISC);
       Refresh();
 
-      CONTROL_ENABLE_ON_CONDITION(CONTROL_BTN_REFRESH, (g_settings.GetCurrentProfile().canWriteDatabases() || g_passwordManager.bMasterUser) && !m_movieItem->GetVideoInfoTag()->m_strIMDBNumber.Left(2).Equals("xx"));
-      CONTROL_ENABLE_ON_CONDITION(CONTROL_BTN_GET_THUMB, (g_settings.GetCurrentProfile().canWriteDatabases() || g_passwordManager.bMasterUser) && !m_movieItem->GetVideoInfoTag()->m_strIMDBNumber.Mid(2).Equals("plugin"));
+      CONTROL_ENABLE_ON_CONDITION(CONTROL_BTN_REFRESH, (g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].canWriteDatabases() || g_passwordManager.bMasterUser) && !m_movieItem->GetVideoInfoTag()->m_strIMDBNumber.Left(2).Equals("xx"));
+      CONTROL_ENABLE_ON_CONDITION(CONTROL_BTN_GET_THUMB, (g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].canWriteDatabases() || g_passwordManager.bMasterUser) && !m_movieItem->GetVideoInfoTag()->m_strIMDBNumber.Mid(2).Equals("plugin"));
 
       VIDEODB_CONTENT_TYPE type = GetContentType(m_movieItem.get());
       if (type == VIDEODB_CONTENT_TVSHOWS || type == VIDEODB_CONTENT_MOVIES)
-        CONTROL_ENABLE_ON_CONDITION(CONTROL_BTN_GET_FANART, (g_settings.GetCurrentProfile().canWriteDatabases() || g_passwordManager.bMasterUser) && !m_movieItem->GetVideoInfoTag()->m_strIMDBNumber.Mid(2).Equals("plugin"));
+        CONTROL_ENABLE_ON_CONDITION(CONTROL_BTN_GET_FANART, (g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].canWriteDatabases() || g_passwordManager.bMasterUser) && !m_movieItem->GetVideoInfoTag()->m_strIMDBNumber.Mid(2).Equals("plugin"));
       else 
         CONTROL_DISABLE(CONTROL_BTN_GET_FANART); 
 
@@ -348,7 +346,7 @@ void CGUIWindowVideoInfo::SetMovie(const CFileItem *item)
         if (db.Open())
         {
           CFileItemList items;
-          CStdString where = db.PrepareSQL("where c%02d='%s'", VIDEODB_ID_TV_TITLE, m_movieItem->GetVideoInfoTag()->m_strShowTitle.c_str());
+          CStdString where = db.FormatSQL("where c%02d='%s'", VIDEODB_ID_TV_TITLE, m_movieItem->GetVideoInfoTag()->m_strShowTitle.c_str());
           if (db.GetTvShowsByWhere("", where, items) && items.Size())
             season.GetVideoInfoTag()->m_strPath = items[0]->GetVideoInfoTag()->m_strPath;
           db.Close();
@@ -975,9 +973,9 @@ void CGUIWindowVideoInfo::PlayTrailer()
   Close(true);
 
   if (item.IsPlayList())
-    g_application.getApplicationMessenger().MediaPlay(item);
+    g_applicationMessenger.MediaPlay(item);
   else
-    g_application.getApplicationMessenger().PlayFile(item);
+    g_applicationMessenger.PlayFile(item);
 }
 
 void CGUIWindowVideoInfo::SetLabel(int iControl, const CStdString &strLabel)

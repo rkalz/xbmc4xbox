@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,10 +21,7 @@
  *
  */
 
-#include "utils/StdString.h"
 #include "lib/sqLite/sqlitedataset.h"
-
-#include <memory>
 
 class CDatabase
 {
@@ -47,7 +44,7 @@ public:
 
   /*!
    * @brief Get a single value from a table.
-   * @remarks The values of the strWhereClause and strOrderBy parameters have to be PrepareSQL'ed when used.
+   * @remarks The values of the strWhereClause and strOrderBy parameters have to be FormatSQL'ed when used.
    * @param strTable The table to get the value from.
    * @param strColumn The column to get.
    * @param strWhereClause If set, use this WHERE clause.
@@ -65,7 +62,7 @@ public:
 
   /*!
    * @brief Delete values from a table.
-   * @remarks The value of the strWhereClause parameter has to be PrepareSQL'ed when used.
+   * @remarks The value of the strWhereClause parameter has to be FormatSQL'ed when used.
    * @param strTable The table to delete the values from.
    * @param strWhereClause If set, use this WHERE clause.
    * @return True if the query was executed successfully, false otherwise.

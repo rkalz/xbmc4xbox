@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,8 +19,7 @@
  *
  */
 
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "CDDARipper.h"
 #include "CDDAReader.h"
 #include "Util.h"
@@ -29,20 +28,18 @@
 #include "EncoderVorbis.h"
 #include "EncoderFlac.h"
 #include "FileSystem/CDDADirectory.h"
-#include "storage/DetectDVDType.h"
-#include "music/tags/MusicInfoTagLoaderFactory.h"
+#include "DetectDVDType.h"
+#include "MusicInfoTagLoaderFactory.h"
 #include "utils/LabelFormatter.h"
-#include "music/tags/MusicInfoTag.h"
+#include "MusicInfoTag.h"
 #include "GUIWindowManager.h"
-#include "dialogs/GUIDialogOK.h"
-#include "dialogs/GUIDialogProgress.h"
-#include "dialogs/GUIDialogKeyboard.h"
-#include "settings/GUISettings.h"
+#include "GUIDialogOK.h"
+#include "GUIDialogProgress.h"
+#include "GUIDialogKeyboard.h"
+#include "GUISettings.h"
 #include "FileItem.h"
 #include "FileSystem/SpecialProtocol.h"
 #include "utils/URIUtils.h"
-#include "utils/StringUtils.h"
-#include "LocalizeStrings.h"
 
 using namespace std;
 using namespace XFILE;

@@ -2,7 +2,7 @@
 #define SCRAPER_PARSER_H
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -24,8 +24,8 @@
 
 #include <vector>
 #include "tinyXML/tinyxml.h"
-#include "utils/StdString.h"
-#include "XBDateTime.h"
+#include "StdString.h"
+#include "DateTime.h"
 
 #define MAX_SCRAPER_BUFFERS 20
 

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,12 @@
  *
  */
 
+#include "stdafx.h"
 #include "GUIViewState.h"
-#include "music/GUIViewStateMusic.h"
-#include "video/GUIViewStateVideo.h"
-#include "pictures/GUIViewStatePictures.h"
-#include "programs/GUIViewStatePrograms.h"
+#include "GUIViewStateMusic.h"
+#include "GUIViewStateVideo.h"
+#include "GUIViewStatePictures.h"
+#include "GUIViewStatePrograms.h"
 #include "GUIViewStateScripts.h"
 #include "GUIViewStateGameSaves.h"
 #include "PlayListPlayer.h"
@@ -35,7 +36,7 @@
 #include "AutoSwitch.h"
 #include "GUIWindowManager.h"
 #include "ViewState.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "FileItem.h"
 
 using namespace std;
@@ -285,7 +286,7 @@ bool CGUIViewState::HideParentDirItems()
 
 bool CGUIViewState::DisableAddSourceButtons()
 {
-  if (g_settings.GetCurrentProfile().canWriteSources() || g_passwordManager.bMasterUser)
+  if (g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].canWriteSources() || g_passwordManager.bMasterUser)
     return !g_guiSettings.GetBool("filelists.showaddsourcebuttons");
 
   return true;

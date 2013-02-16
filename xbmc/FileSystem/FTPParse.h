@@ -15,8 +15,6 @@
 #ifndef FTPPARSE_H
 #define FTPPARSE_H
 
-#include <stdint.h>
-
 struct ftpparse 
 {
   char *name;       // not necessarily 0-terminated
@@ -24,7 +22,7 @@ struct ftpparse
   int flagtrycwd;   // 0 if cwd is definitely pointless, 1 otherwise
   int flagtryretr;  // 0 if retr is definitely pointless, 1 otherwise
   int sizetype;
-  int64_t size;        // number of octets
+  __int64 size;        // number of octets
   int mtimetype;
   time_t mtime;     // modification time
   int idtype;

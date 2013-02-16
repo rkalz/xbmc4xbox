@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -22,10 +22,9 @@
 #include "DVDAudioCodecLiba52.h"
 #ifdef USE_LIBA52_DECODER
  
-#include "system.h"
-#include "utils/log.h"
-#include "settings/AdvancedSettings.h"
-#include "settings/GUISettings.h"
+#include "stdafx.h"
+#include "AdvancedSettings.h"
+#include "GUISettings.h"
 #include "DVDStreamInfo.h"
 
 

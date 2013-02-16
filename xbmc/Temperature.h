@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 
 #include "utils/Archive.h"
 
-class CTemperature : public IArchivable
+class CTemperature : public ISerializable
 {
 public:
   CTemperature();
@@ -75,7 +75,7 @@ public:
   CTemperature operator ++(int);
   CTemperature operator --(int);
 
-  virtual void Archive(CArchive& ar);
+  virtual void Serialize(CArchive& ar);
 
   typedef enum _STATE
   {

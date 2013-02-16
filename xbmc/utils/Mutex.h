@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -24,8 +24,6 @@
 //  CMutex - Wrapper for xbox Mutex API
 //
 // by Bobbin007 in 2003
-
-#include "system.h"
 
 class CMutex
 {

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -22,12 +22,11 @@
 #ifndef CRSSDIRECTORY_H_
 #define CRSSDIRECTORY_H_
 
-#include "IFileDirectory.h"
-#include "FileItem.h"
+#include "IDirectory.h"
 
 namespace XFILE
 {
-  class CRSSDirectory : public IFileDirectory
+  class CRSSDirectory : public IDirectory
   {
   public:
     CRSSDirectory();
@@ -35,12 +34,7 @@ namespace XFILE
     virtual bool GetDirectory(const CStdString& strPath, CFileItemList &items);
     virtual bool Exists(const char* strPath);
     virtual bool IsAllowed(const CStdString &strFile) const { return true; };
-    virtual bool ContainsFiles(const CStdString& strPath);
-    virtual DIR_CACHE_TYPE GetCacheType(const CStdString& strPath) const { return DIR_CACHE_ONCE; };
-  protected:
-    // key is path, value is cache invalidation date
-    static std::map<CStdString,CDateTime> m_cache;
-    static CCriticalSection m_section;
+    virtual DIR_CACHE_TYPE GetCacheType(const CStdString& strPath) const { return DIR_CACHE_ALWAYS; };
   };
 }
 

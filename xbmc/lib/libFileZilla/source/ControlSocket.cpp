@@ -33,10 +33,9 @@
 #include "utils/Log.h"
 #include "xbox/IoSupport.h"
 #include "Util.h"
-#include "interfaces/Builtins.h"
 #include "Utils/log.h"
-#include "settings/GUISettings.h"
-#include "Application.h"
+#include "GUISettings.h"
+#include "ApplicationMessenger.h"
 #include "utils/MemoryUnitManager.h"
 #endif
 
@@ -311,7 +310,7 @@ BOOL CControlSocket::SendCurDir(const CStdString command,CStdString curDir)
 
 BOOL CControlSocket::SendDir(const CStdString command,CStdString curDir,const CStdString prompt)
 {
-  if (1 /*g_settings.m_bFTPSingleCharDrives*/
+  if (1 /*g_stSettings.m_bFTPSingleCharDrives*/
     && (curDir.GetLength() >= 2) 
     && (curDir[0] == '/') && isalpha(curDir[1]) && ((curDir.GetLength() == 2) || (curDir[2] == ':')))
   {
@@ -1083,7 +1082,7 @@ void CControlSocket::ParseCommand()
 							if (drive >= 'x' && !g_advancedSettings.m_FTPShowCache)
 								continue;
 
-							if (1 /*g_settings.m_bFTPSingleCharDrives*/)
+							if (1 /*g_stSettings.m_bFTPSingleCharDrives*/)
 							{
 								// modified to be consistent with other xbox ftp behavior: drive 
 								// name is a single character without the ':' at the end
@@ -1832,7 +1831,7 @@ void CControlSocket::ParseCommand()
 							pCurrent->pNext=NULL;
 						}
 
-            if (1 /*g_settings.m_bFTPSingleCharDrives*/
+            if (1 /*g_stSettings.m_bFTPSingleCharDrives*/
               && (iter->dir.GetLength() == 3) 
               && isalpha(iter->dir[0]) && (iter->dir[1] == ':') && (iter->dir[2] == '\\'))
             {
@@ -2175,9 +2174,9 @@ void CControlSocket::ParseCommand()
 	    {
         // check for a built-in function
         CStdString strBuiltIn = fullcommand;
-        if (!CBuiltins::HasCommand(fullcommand))
+        if (!CUtil::IsBuiltIn(fullcommand))
           strBuiltIn = "XBMC." + fullcommand;
-        if (!CBuiltins::HasCommand(strBuiltIn))
+        if (!CUtil::IsBuiltIn(strBuiltIn))
         { // invalid - send error
           Send(_T("500 Invalid built-in function.  Use SITE HELP for a list of valid SITE commands"));
           return;
@@ -2185,7 +2184,7 @@ void CControlSocket::ParseCommand()
         if (strBuiltIn.Equals("xbmc.help", false) || strBuiltIn.Equals("help", false))
         {
           CStdString strHelp;
-          CBuiltins::GetHelp(strHelp);
+          CUtil::GetBuiltInHelp(strHelp);
           Send(_T("200-FTP SITE HELP"));
           int iReturn = strHelp.Find("\n");
           while (iReturn >= 0)
@@ -2212,7 +2211,7 @@ void CControlSocket::ParseCommand()
           // send using a threadmessage...
           ThreadMessage tMsg = {TMSG_EXECUTE_BUILT_IN};
           tMsg.strParam = fullcommand;
-          g_application.getApplicationMessenger().SendMessage(tMsg, true);
+          g_applicationMessenger.SendMessage(tMsg, true);
           Send(_T("200 Executed built in function."));
         }
 		    return;
@@ -2235,7 +2234,7 @@ void CControlSocket::ParseCommand()
             CLog::Log(LOGNOTICE, str);
           }
 
-          int rtn = CBuiltins::Execute(siteargs);
+          int rtn = CUtil::ExecBuiltIn(siteargs);
 
           {
 	          CStdString str;

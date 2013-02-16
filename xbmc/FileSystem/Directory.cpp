@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,16 +19,16 @@
  *
  */
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "Directory.h"
-#include "DirectoryFactory.h"
-#include "FileDirectoryFactory.h"
+#include "FactoryDirectory.h"
+#include "FactoryFileDirectory.h"
 #ifndef _LINUX
 #include "utils/Win32Exception.h"
 #endif
 #include "FileItem.h"
 #include "DirectoryCache.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 
 using namespace std;
 using namespace XFILE;

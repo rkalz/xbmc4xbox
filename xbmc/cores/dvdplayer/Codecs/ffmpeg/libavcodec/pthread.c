@@ -34,20 +34,12 @@
 #if HAVE_SCHED_GETAFFINITY
 #define _GNU_SOURCE
 #include <sched.h>
-#endif
-#if HAVE_GETPROCESSAFFINITYMASK
+#elif HAVE_GETSYSTEMINFO
 #include <windows.h>
-#endif
-#if HAVE_SYSCTL
-#if HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
+#elif HAVE_SYSCTL
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
-#endif
-#if HAVE_SYSCONF
-#include <unistd.h>
 #endif
 
 #include "avcodec.h"
@@ -172,11 +164,10 @@ static int get_logical_cpus(AVCodecContext *avctx)
     if (!ret) {
         nb_cpus = CPU_COUNT(&cpuset);
     }
-#elif HAVE_GETPROCESSAFFINITYMASK
-    DWORD_PTR proc_aff, sys_aff;
-    ret = GetProcessAffinityMask(GetCurrentProcess(), &proc_aff, &sys_aff);
-    if (ret)
-        nb_cpus = av_popcount64(proc_aff);
+#elif HAVE_GETSYSTEMINFO
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    nb_cpus = sysinfo.dwNumberOfProcessors;
 #elif HAVE_SYSCTL && defined(HW_NCPU)
     int mib[2] = { CTL_HW, HW_NCPU };
     size_t len = sizeof(nb_cpus);
@@ -184,17 +175,9 @@ static int get_logical_cpus(AVCodecContext *avctx)
     ret = sysctl(mib, 2, &nb_cpus, &len, NULL, 0);
     if (ret == -1)
         nb_cpus = 0;
-#elif HAVE_SYSCONF && defined(_SC_NPROC_ONLN)
-    nb_cpus = sysconf(_SC_NPROC_ONLN);
-#elif HAVE_SYSCONF && defined(_SC_NPROCESSORS_ONLN)
-    nb_cpus = sysconf(_SC_NPROCESSORS_ONLN);
 #endif
     av_log(avctx, AV_LOG_DEBUG, "detected %d logical cores\n", nb_cpus);
-
-    if  (avctx->height)
-        nb_cpus = FFMIN(nb_cpus, (avctx->height+15)/16);
-
-    return nb_cpus;
+    return FFMIN(nb_cpus, MAX_AUTO_THREADS);
 }
 
 
@@ -304,11 +287,9 @@ static int thread_init(AVCodecContext *avctx)
 
     if (!thread_count) {
         int nb_cpus = get_logical_cpus(avctx);
-        // use number of cores + 1 as thread count if there is more than one
+        // use number of cores + 1 as thread count if there is motre than one
         if (nb_cpus > 1)
-            thread_count = avctx->thread_count = FFMIN(nb_cpus + 1, MAX_AUTO_THREADS);
-        else
-            thread_count = avctx->thread_count = 1;
+            thread_count = avctx->thread_count = nb_cpus + 1;
     }
 
     if (thread_count <= 1) {
@@ -366,7 +347,6 @@ static attribute_align_arg void *frame_worker_thread(void *arg)
     AVCodec *codec = avctx->codec;
 
     while (1) {
-        int i;
         if (p->state == STATE_INPUT_READY && !fctx->die) {
             pthread_mutex_lock(&p->mutex);
             while (p->state == STATE_INPUT_READY && !fctx->die)
@@ -389,12 +369,6 @@ static attribute_align_arg void *frame_worker_thread(void *arg)
         p->state = STATE_INPUT_READY;
 
         pthread_mutex_lock(&p->progress_mutex);
-        for (i = 0; i < MAX_BUFFERS; i++)
-            if (p->progress_used[i] && (p->got_frame || p->result<0 || avctx->codec_id != CODEC_ID_H264)) {
-                p->progress[i][0] = INT_MAX;
-                p->progress[i][1] = INT_MAX;
-            }
-        pthread_cond_broadcast(&p->progress_cond);
         pthread_cond_signal(&p->output_cond);
         pthread_mutex_unlock(&p->progress_mutex);
 
@@ -427,6 +401,7 @@ static int update_context_from_thread(AVCodecContext *dst, AVCodecContext *src, 
 
         dst->has_b_frames = src->has_b_frames;
         dst->idct_algo    = src->idct_algo;
+        dst->slice_count  = src->slice_count;
 
         dst->bits_per_coded_sample = src->bits_per_coded_sample;
         dst->sample_aspect_ratio   = src->sample_aspect_ratio;
@@ -461,9 +436,8 @@ static int update_context_from_thread(AVCodecContext *dst, AVCodecContext *src, 
  *
  * @param dst The destination context.
  * @param src The source context.
- * @return 0 on success, negative error code on failure
  */
-static int update_context_from_user(AVCodecContext *dst, AVCodecContext *src)
+static void update_context_from_user(AVCodecContext *dst, AVCodecContext *src)
 {
 #define copy_fields(s, e) memcpy(&dst->s, &src->s, (char*)&dst->e - (char*)&dst->s);
     dst->flags          = src->flags;
@@ -485,22 +459,6 @@ static int update_context_from_user(AVCodecContext *dst, AVCodecContext *src)
     dst->frame_number     = src->frame_number;
     dst->reordered_opaque = src->reordered_opaque;
     dst->thread_safe_callbacks = src->thread_safe_callbacks;
-
-    if (src->slice_count && src->slice_offset) {
-        if (dst->slice_count < src->slice_count) {
-            int *tmp = av_realloc(dst->slice_offset, src->slice_count *
-                                  sizeof(*dst->slice_offset));
-            if (!tmp) {
-                av_free(dst->slice_offset);
-                return AVERROR(ENOMEM);
-            }
-            dst->slice_offset = tmp;
-        }
-        memcpy(dst->slice_offset, src->slice_offset,
-               src->slice_count * sizeof(*dst->slice_offset));
-    }
-    dst->slice_count = src->slice_count;
-    return 0;
 #undef copy_fields
 }
 
@@ -611,8 +569,7 @@ int ff_thread_decode_frame(AVCodecContext *avctx,
      */
 
     p = &fctx->threads[fctx->next_decoding];
-    err = update_context_from_user(p->avctx, avctx);
-    if (err) return err;
+    update_context_from_user(p->avctx, avctx);
     err = submit_packet(p, avpkt);
     if (err) return err;
 
@@ -738,7 +695,6 @@ static void park_frame_worker_threads(FrameThreadContext *fctx, int thread_count
                 pthread_cond_wait(&p->output_cond, &p->progress_mutex);
             pthread_mutex_unlock(&p->progress_mutex);
         }
-        p->got_frame = 0;
     }
 }
 
@@ -789,7 +745,6 @@ static void frame_thread_free(AVCodecContext *avctx, int thread_count)
         if (i) {
             av_freep(&p->avctx->priv_data);
             av_freep(&p->avctx->internal);
-            av_freep(&p->avctx->slice_offset);
         }
 
         av_freep(&p->avctx);
@@ -810,13 +765,9 @@ static int frame_thread_init(AVCodecContext *avctx)
 
     if (!thread_count) {
         int nb_cpus = get_logical_cpus(avctx);
-        if ((avctx->debug & (FF_DEBUG_VIS_QP | FF_DEBUG_VIS_MB_TYPE)) || avctx->debug_mv)
-            nb_cpus = 1;
-        // use number of cores + 1 as thread count if there is more than one
+        // use number of cores + 1 as thread count if there is motre than one
         if (nb_cpus > 1)
-            thread_count = avctx->thread_count = FFMIN(nb_cpus + 1, MAX_AUTO_THREADS);
-        else
-            thread_count = avctx->thread_count = 1;
+            thread_count = avctx->thread_count = nb_cpus + 1;
     }
 
     if (thread_count <= 1) {
@@ -871,7 +822,7 @@ static int frame_thread_init(AVCodecContext *avctx)
                 err = AVERROR(ENOMEM);
                 goto error;
             }
-            *copy->internal = *src->internal;
+            *(copy->internal) = *(src->internal);
             copy->internal->is_copy = 1;
 
             if (codec->init_thread_copy)
@@ -968,7 +919,7 @@ int ff_thread_get_buffer(AVCodecContext *avctx, AVFrame *f)
         p->requested_frame = f;
         p->state = STATE_GET_BUFFER;
         pthread_mutex_lock(&p->progress_mutex);
-        pthread_cond_broadcast(&p->progress_cond);
+        pthread_cond_signal(&p->progress_cond);
 
         while (p->state != STATE_SETTING_UP)
             pthread_cond_wait(&p->progress_cond, &p->progress_mutex);
@@ -1033,9 +984,6 @@ static void validate_thread_parameters(AVCodecContext *avctx)
     } else if (avctx->codec->capabilities & CODEC_CAP_SLICE_THREADS &&
                avctx->thread_type & FF_THREAD_SLICE) {
         avctx->active_thread_type = FF_THREAD_SLICE;
-    } else if (!(avctx->codec->capabilities & CODEC_CAP_AUTO_THREADS)) {
-        avctx->thread_count       = 1;
-        avctx->active_thread_type = 0;
     }
 }
 

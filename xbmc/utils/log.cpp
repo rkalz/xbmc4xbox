@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,13 +19,13 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "log.h"
 #include <share.h>
 #include "CriticalSection.h"
 #include "SingleLock.h"
-#include "settings/Settings.h"
-#include "settings/AdvancedSettings.h"
+#include "Settings.h"
+#include "AdvancedSettings.h"
 #include "utils/URIUtils.h"
 
 FILE* CLog::fd = NULL;
@@ -66,12 +66,12 @@ void CLog::Log(int loglevel, const char *format, ... )
     if (!fd)
     {
 	  // We should only continue when the logfolder is set
-	  if (g_settings.m_logFolder.IsEmpty()) return;
+	  if (g_stSettings.m_logFolder.IsEmpty()) return;
 
-      // g_settings.m_logFolder is initialized in the CSettings constructor to Q:\\
+      // g_stSettings.m_logFolder is initialized in the CSettings constructor to Q:\\
       // and if we are running from DVD, it's changed to T:\\ in CApplication::Create()
       CStdString LogFile;
-      URIUtils::AddFileToFolder(g_settings.m_logFolder, "xbmc.log", LogFile);
+      URIUtils::AddFileToFolder(g_stSettings.m_logFolder, "xbmc.log", LogFile);
       fd = _fsopen(LogFile, "a+", _SH_DENYWR);
     }
       

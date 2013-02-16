@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,10 +19,11 @@
  *
  */
 
+#include "stdafx.h"
 #include "AutoSwitch.h"
 #include "GUIBaseContainer.h" // for VIEW_TYPE_*
-#include "settings/Settings.h"
-#include "settings/GUISettings.h"
+#include "Settings.h"
+#include "GUISettings.h"
 #include "GUIWindowManager.h"
 #include "FileItem.h"
 

@@ -17,8 +17,7 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "cores/VideoRenderers/RenderManager.h"
 #include "Application.h"
 

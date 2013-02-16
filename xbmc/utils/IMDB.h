@@ -10,7 +10,7 @@
 #endif // _MSC_VER > 1000
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -32,10 +32,10 @@
 
 #include "Thread.h"
 #include "ScraperParser.h"
-#include "video/VideoInfoTag.h"
+#include "VideoInfoTag.h"
 #include "ScraperSettings.h"
-#include "XBDateTime.h"
-#include "FileSystem/CurlFile.h"
+#include "DateTime.h"
+#include "FileSystem/FileCurl.h"
 
 // forward definitions
 class TiXmlDocument;
@@ -83,7 +83,7 @@ protected:
 
   static bool RelevanceSortFunction(const CScraperUrl& left, const CScraperUrl &right);
 
-  XFILE::CCurlFile m_http;
+  XFILE::CFileCurl m_http;
   CScraperParser m_parser;
 
   // threaded stuff

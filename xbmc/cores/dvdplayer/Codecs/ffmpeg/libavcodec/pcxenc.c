@@ -28,7 +28,6 @@
 
 #include "avcodec.h"
 #include "bytestream.h"
-#include "libavutil/imgutils.h"
 
 typedef struct PCXContext {
     AVFrame picture;
@@ -106,7 +105,6 @@ static int pcx_encode_frame(AVCodecContext *avctx,
 
     int bpp, nplanes, i, y, line_bytes, written;
     const uint32_t *pal = NULL;
-    uint32_t palette256[256];
     const uint8_t *src;
 
     *pict = *(AVFrame *)data;
@@ -128,11 +126,6 @@ static int pcx_encode_frame(AVCodecContext *avctx,
     case PIX_FMT_RGB4_BYTE:
     case PIX_FMT_BGR4_BYTE:
     case PIX_FMT_GRAY8:
-        bpp = 8;
-        nplanes = 1;
-        ff_set_systematic_pal2(palette256, avctx->pix_fmt);
-        pal = palette256;
-        break;
     case PIX_FMT_PAL8:
         bpp = 8;
         nplanes = 1;

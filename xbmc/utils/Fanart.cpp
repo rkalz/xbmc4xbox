@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,12 +19,12 @@
  *
  */
 
+#include "stdafx.h"
 #include "Fanart.h"
 #include "tinyXML/tinyxml.h"
 #include "utils/URIUtils.h"
-#include "utils/StringUtils.h"
-#include "pictures/Picture.h"
-#include "FileSystem/CurlFile.h"
+#include "Picture.h"
+#include "FileSystem/FileCurl.h"
 #include "FileSystem/File.h"
 
 const unsigned int CFanart::max_fanart_colors=3;
@@ -145,7 +145,7 @@ bool CFanart::DownloadThumb(unsigned int index, const CStdString &strDestination
     else
       thumbURL = URIUtils::AddFileToFolder(m_url, m_fanart[index].strPreview);
 
-    XFILE::CCurlFile http;
+    XFILE::CFileCurl http;
     if (http.Download(thumbURL, strDestination))
       return true;
   }

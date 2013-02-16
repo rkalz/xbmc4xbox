@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -58,20 +58,19 @@ public:
   int              id;     // demuxerid of current playing stream
   int              source;
   double           dts;    // last dts from demuxer, used to find disncontinuities
-  double           dur;    // last frame expected duration
   CDVDStreamInfo   hint;   // stream hints, used to notice stream changes
   void*            stream; // pointer or integer, identifying stream playing. if it changes stream changed
   bool             inited;
   bool             started; // has the player started
   const StreamType type;
-  const int        player;
   // stuff to handle starting after seek
   double   startpts;
+  CDVDMsg* startsync;
 
-  CCurrentStream(StreamType t, int i)
+  CCurrentStream(StreamType t)
     : type(t)
-    , player(i)
   {
+    startsync = NULL;
     Clear();
   }
 
@@ -80,39 +79,27 @@ public:
     id     = -1;
     source = STREAM_SOURCE_NONE;
     dts    = DVD_NOPTS_VALUE;
-    dur    = DVD_NOPTS_VALUE;
     hint.Clear();
     stream = NULL;
     inited = false;
     started = false;
+    if(startsync)
+      startsync->Release();
+    startsync = NULL;
     startpts  = DVD_NOPTS_VALUE;
-  }
-
-  double dts_end()
-  {
-    if(dts == DVD_NOPTS_VALUE)
-      return DVD_NOPTS_VALUE;
-    if(dur == DVD_NOPTS_VALUE)
-      return dts;
-    return dts + dur;
   }
 };
 
 typedef struct
 {
   StreamType   type;
-  int          type_index;
   std::string  filename;
   std::string  language;
   std::string  name;
   CDemuxStream::EFlags flags;
   int          source;
   int          id;
-  std::string  codec;
-  int          channels;
 } SelectionStream;
-
-typedef std::vector<SelectionStream> SelectionStreams;
 
 class CSelectionStreams
 {
@@ -127,19 +114,11 @@ public:
   }
   std::vector<SelectionStream> m_Streams;
 
-  int              IndexOf (StreamType type, int source, int id) const;
-  int              IndexOf (StreamType type, CDVDPlayer& p) const;
-  int              Count   (StreamType type) const { return IndexOf(type, STREAM_SOURCE_NONE, -1) + 1; }
+  int              IndexOf (StreamType type, int source, int id);
+  int              IndexOf (StreamType type, CDVDPlayer& p);
+  int              Count   (StreamType type) { return IndexOf(type, STREAM_SOURCE_NONE, -1) + 1; }
   SelectionStream& Get     (StreamType type, int index);
   bool             Get     (StreamType type, CDemuxStream::EFlags flag, SelectionStream& out);
-
-  SelectionStreams Get(StreamType type);
-  template<typename Compare> SelectionStreams Get(StreamType type, Compare compare)
-  {
-    SelectionStreams streams = Get(type);
-    std::stable_sort(streams.begin(), streams.end(), compare);
-    return streams;
-  }
 
   void             Clear   (StreamType type, StreamSource source);
   int              Source  (StreamSource source, std::string filename);
@@ -173,8 +152,6 @@ public:
   virtual bool SeekScene(bool bPlus = true);
   virtual void SeekPercentage(float iPercent);
   virtual float GetPercentage();
-  virtual float GetCachePercentage();
-
   virtual void SetVolume(long nVolume)                          { m_dvdPlayerAudio.SetVolume(nVolume); }
   virtual void SetDynamicRangeCompression(long drc)             { m_dvdPlayerAudio.SetDynamicRangeCompression(drc); }
   virtual void GetAudioInfo(CStdString& strAudioInfo);
@@ -194,7 +171,6 @@ public:
   virtual int GetSubtitleCount();
   virtual int GetSubtitle();
   virtual void GetSubtitleName(int iStream, CStdString &strStreamName);
-  virtual void GetSubtitleLanguage(int iStream, CStdString &strStreamLang);
   virtual void SetSubtitle(int iStream);
   virtual bool GetSubtitleVisible();
   virtual void SetSubtitleVisible(bool bVisible);
@@ -211,8 +187,8 @@ public:
   virtual void GetChapterName(CStdString& strChapterName);
   virtual int  SeekChapter(int iChapter);
 
-  virtual void SeekTime(int64_t iTime);
-  virtual int64_t GetTime();
+  virtual void SeekTime(__int64 iTime);
+  virtual __int64 GetTime();
   virtual int GetTotalTime();
   virtual void ToFFRW(int iSpeed);
   virtual bool OnAction(const CAction &action);
@@ -237,7 +213,6 @@ public:
   , CACHESTATE_FULL     // player is filling up the demux queue
   , CACHESTATE_INIT     // player is waiting for first packet of each stream
   , CACHESTATE_PLAY     // player is waiting for players to not be stalled
-  , CACHESTATE_FLUSH    // temporary state player will choose startup between init or full
   };
 
   virtual bool IsCaching() const { return m_caching == CACHESTATE_FULL; }
@@ -273,27 +248,20 @@ protected:
   int GetPlaySpeed()                                                { return m_playSpeed; }
   void SetCaching(ECacheState state);
 
-  int64_t GetTotalTimeInMsec();
-
-  double GetQueueTime();
-  bool GetCachingTimes(double& play_left, double& cache_left, double& file_offset);
-
-
-  void FlushBuffers(bool queued, double pts = DVD_NOPTS_VALUE, bool accurate = true);
+  __int64 GetTotalTimeInMsec();
+  void FlushBuffers(bool queued);
 
   void HandleMessages();
   void HandlePlaySpeed();
   bool IsInMenu() const;
 
-  void SynchronizePlayers(DWORD sources);
+  void SynchronizePlayers(DWORD sources, double pts = DVD_NOPTS_VALUE);
   void SynchronizeDemuxer(DWORD timeout);
   void CheckAutoSceneSkip();
   void CheckContinuity(CCurrentStream& current, DemuxPacket* pPacket);
   bool CheckSceneSkip(CCurrentStream& current);
   bool CheckPlayerInit(CCurrentStream& current, unsigned int source);
   bool CheckStartCaching(CCurrentStream& current);
-  void UpdateCorrection(DemuxPacket* pkt, double correction);
-  void UpdateTimestamps(CCurrentStream& current, DemuxPacket* pPacket);
   void SendPlayerMessage(CDVDMsg* pMsg, unsigned int target);
 
   bool ReadPacket(DemuxPacket*& packet, CDemuxStream*& stream);
@@ -315,7 +283,6 @@ protected:
   ECacheState m_caching;
   CFileItem   m_item;
 
-
   CCurrentStream m_CurrentAudio;
   CCurrentStream m_CurrentVideo;
   CCurrentStream m_CurrentSubtitle;
@@ -330,7 +297,6 @@ protected:
   } m_SpeedState;
 
   int m_errorCount;
-  double m_offset_pts;
 
   CDVDMessageQueue m_messenger;     // thread messenger
 
@@ -382,10 +348,6 @@ protected:
       recording     = false;
       demux_video   = "";
       demux_audio   = "";
-      cache_bytes   = 0;
-      cache_level   = 0.0;
-      cache_delay   = 0.0;
-      cache_offset  = 0.0;
     }
 
     double timestamp;         // last time of update
@@ -406,11 +368,6 @@ protected:
 
     std::string demux_video;
     std::string demux_audio;
-
-    int64_t cache_bytes;   // number of bytes current's cached
-    double  cache_level;   // current estimated required cache level
-    double  cache_delay;   // time until cache is expected to reach estimated level
-    double  cache_offset;  // percentage of file ahead of current position
   } m_State;
   CCriticalSection m_StateSection;
 
@@ -427,13 +384,31 @@ protected:
       commbreak_start = -1;
       commbreak_end = -1;
       seek_to_start = false;
+      reset = 0;
       mute = false;
+    }
+
+    void ResetCutMarker(double timeout)
+    {
+      if(reset != 0
+      && reset + DVD_MSEC_TO_TIME(timeout) > CDVDClock::GetAbsoluteClock())
+        return;
+
+      /*
+       * Reset the automatic EDL skip marker for a cut so automatic seeking can happen again if,
+       * for example, the initial automatic skip ended up back in the cut due to seeking
+       * inaccuracies.
+       */
+      cut = -1;
+
+      reset = CDVDClock::GetAbsoluteClock();
     }
 
     int cut;              // last automatically skipped EDL cut seek position
     int commbreak_start;  // start time of the last commercial break automatically skipped
     int commbreak_end;    // end time of the last commercial break automatically skipped
     bool seek_to_start;   // whether seeking can go back to the start of a previously skipped break
+    double reset;         // last actual reset time
     bool mute;            // whether EDL mute is on
 
   } m_EdlAutoSkipMarkers;

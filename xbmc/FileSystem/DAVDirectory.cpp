@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2009 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -22,16 +22,15 @@
 #include "DAVDirectory.h"
 #include "URL.h"
 #include "Util.h"
-#include "CurlFile.h"
+#include "FileCurl.h"
 #include "FileItem.h"
 #include "utils/RegExp.h"
-#include "settings/AdvancedSettings.h"
-#include "utils/StringUtils.h"
+#include "AdvancedSettings.h"
+#include "StringUtils.h"
 #include "utils/CharsetConverter.h"
 #include "XMLUtils.h"
 #include "utils/strptime.h"
 #include "utils/URIUtils.h"
-#include "utils/log.h"
 
 using namespace XFILE;
 
@@ -172,7 +171,7 @@ void CDAVDirectory::ParseResponse(const TiXmlElement *pElement, CFileItem &item)
 
 bool CDAVDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items)
 {
-  CCurlFile dav;
+  CFileCurl dav;
   CURL url(strPath);
   CStdString strRequest = "PROPFIND";
 
@@ -255,7 +254,7 @@ bool CDAVDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items
 
 bool CDAVDirectory::Exists(const char* strPath)
 {
-  CCurlFile dav;
+  CFileCurl dav;
   CURL url(strPath);
   return dav.Exists(url);
 }

@@ -109,7 +109,7 @@ static void ac3_bit_alloc_calc_bap_c(int16_t *mask, int16_t *psd,
                                      int snr_offset, int floor,
                                      const uint8_t *bap_tab, uint8_t *bap)
 {
-    int bin, band, band_end;
+    int bin, band;
 
     /* special case, if snr offset is -960, set all bap's to zero */
     if (snr_offset == -960) {
@@ -121,14 +121,12 @@ static void ac3_bit_alloc_calc_bap_c(int16_t *mask, int16_t *psd,
     band = ff_ac3_bin_to_band_tab[start];
     do {
         int m = (FFMAX(mask[band] - snr_offset - floor, 0) & 0x1FE0) + floor;
-        band_end = ff_ac3_band_start_tab[++band];
-        band_end = FFMIN(band_end, end);
-
+        int band_end = FFMIN(ff_ac3_band_start_tab[band+1], end);
         for (; bin < band_end; bin++) {
             int address = av_clip((psd[bin] - m) >> 5, 0, 63);
             bap[bin] = bap_tab[address];
         }
-    } while (end > band_end);
+    } while (end > ff_ac3_band_start_tab[band++]);
 }
 
 static void ac3_update_bap_counts_c(uint16_t mant_cnt[16], uint8_t *bap,

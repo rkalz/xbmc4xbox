@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  *
  */
  
+#include "stdafx.h"
 #include "DVDInputStreamHttp.h"
 #include "URL.h"
 
@@ -39,7 +40,7 @@ bool CDVDInputStreamHttp::IsEOF()
 {  
   if(m_pFile && !m_eof)
   {
-    int64_t size = m_pFile->GetLength();
+    __int64 size = m_pFile->GetLength();
     if( size > 0 && m_pFile->GetPosition() >= size )
     {
       m_eof = true;
@@ -54,7 +55,7 @@ bool CDVDInputStreamHttp::Open(const char* strFile, const std::string& content)
 {
   if (!CDVDInputStream::Open(strFile, content)) return false;
 
-  m_pFile = new CCurlFile();
+  m_pFile = new CFileCurl();
   if (!m_pFile) return false;
 
   std::string filename = strFile;
@@ -102,7 +103,7 @@ int CDVDInputStreamHttp::Read(BYTE* buf, int buf_size)
   return (int)(ret & 0xFFFFFFFF);
 }
 
-int64_t CDVDInputStreamHttp::Seek(int64_t offset, int whence)
+__int64 CDVDInputStreamHttp::Seek(__int64 offset, int whence)
 {
   if(!m_pFile)
     return -1;
@@ -110,7 +111,7 @@ int64_t CDVDInputStreamHttp::Seek(int64_t offset, int whence)
   if(whence == SEEK_POSSIBLE)
     return m_pFile->IoControl(IOCTRL_SEEK_POSSIBLE, NULL);
 
-  int64_t ret = m_pFile->Seek(offset, whence);
+  __int64 ret = m_pFile->Seek(offset, whence);
 
   if( ret >= 0 ) m_eof = false;
 
@@ -123,7 +124,7 @@ CHttpHeader* CDVDInputStreamHttp::GetHttpHeader()
   else return NULL;
 }
 
-int64_t CDVDInputStreamHttp::GetLength()
+__int64 CDVDInputStreamHttp::GetLength()
 {
   if (m_pFile)
     return m_pFile->GetLength();

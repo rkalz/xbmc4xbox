@@ -12,7 +12,7 @@
 //#include "List.h"
 #include "Strings.h"
 //#include "Xct.h"
-//#include "settings/Settings.h"
+//#include "Settings.h"
 //=============================
 //		Open.cpp
 //=============================

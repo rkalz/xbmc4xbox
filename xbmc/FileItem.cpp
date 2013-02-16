@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,41 +19,38 @@
  *
  */
 
-#include "system.h"
-#include "utils/log.h"
+#include "stdafx.h"
 #include "FileItem.h"
 #include "Util.h"
 #include "utils/URIUtils.h"
-#include "pictures/Picture.h"
-#include "playlists/PlayListFactory.h"
+#include "Picture.h"
+#include "PlayListFactory.h"
 #include "Shortcut.h"
-#include "utils/Crc32.h"
+#include "Crc32.h"
 #include "FileSystem/DirectoryCache.h"
 #include "FileSystem/StackDirectory.h"
-#include "FileSystem/CurlFile.h"
+#include "FileSystem/FileCurl.h"
 #include "FileSystem/MultiPathDirectory.h"
 #include "FileSystem/MusicDatabaseDirectory.h"
 #include "FileSystem/VideoDatabaseDirectory.h"
-#include "FileSystem/DirectoryFactory.h"
-#include "music/tags/MusicInfoTagLoaderFactory.h"
+#include "FileSystem/FactoryDirectory.h"
+#include "MusicInfoTagLoaderFactory.h"
 #include "CueDocument.h"
-#include "video/VideoDatabase.h"
-#include "music/MusicDatabase.h"
+#include "VideoDatabase.h"
+#include "MusicDatabase.h"
 #include "SortFileItem.h"
 #include "utils/TuxBoxUtil.h"
-#include "video/VideoInfoTag.h"
+#include "VideoInfoTag.h"
 #include "utils/SingleLock.h"
-#include "music/tags/MusicInfoTag.h"
-#include "pictures/PictureInfoTag.h"
-#include "music/Artist.h"
-#include "music/Album.h"
-#include "music/Song.h"
+#include "MusicInfoTag.h"
+#include "PictureInfoTag.h"
+#include "Artist.h"
+#include "Album.h"
+#include "Song.h"
 #include "URL.h"
-#include "settings/Settings.h"
-#include "settings/AdvancedSettings.h"
-#include "LocalizeStrings.h"
+#include "Settings.h"
+#include "AdvancedSettings.h"
 #include "utils/RegExp.h"
-#include "utils/Variant.h"
 
 using namespace std;
 using namespace XFILE;
@@ -345,9 +342,9 @@ void CFileItem::Reset()
   SetInvalid();
 }
 
-void CFileItem::Archive(CArchive& ar)
+void CFileItem::Serialize(CArchive& ar)
 {
-  CGUIListItem::Archive(ar);
+  CGUIListItem::Serialize(ar);
 
   if (ar.IsStoring())
   {
@@ -436,27 +433,6 @@ void CFileItem::Archive(CArchive& ar)
     SetInvalid();
   }
 }
-void CFileItem::Serialize(CVariant& value)
-{
-  //CGUIListItem::Serialize(value["CGUIListItem"]);
-
-  value["strPath"] = m_strPath;
-  value["dateTime"] = (m_dateTime.IsValid()) ? m_dateTime.GetAsRFC1123DateTime() : "";
-  value["size"] = (int) m_dwSize / 1000;
-  value["DVDLabel"] = m_strDVDLabel;
-  value["title"] = m_strTitle;
-  value["mimetype"] = m_mimetype;
-  value["extrainfo"] = m_extrainfo;
-
-  if (m_musicInfoTag)
-    (*m_musicInfoTag).Serialize(value["musicInfoTag"]);
-
-  if (m_videoInfoTag)
-    (*m_videoInfoTag).Serialize(value["videoInfoTag"]);
-
-  if (m_pictureInfoTag)
-    (*m_pictureInfoTag).Serialize(value["pictureInfoTag"]);
-}
 bool CFileItem::Exists(bool bUseCache /* = true */) const
 {
   if (m_strPath.IsEmpty()
@@ -519,7 +495,7 @@ bool CFileItem::IsVideo() const
 
   extension.ToLower();
 
-  if (g_settings.m_videoExtensions.Find(extension) != -1)
+  if (g_stSettings.m_videoExtensions.Find(extension) != -1)
     return true;
 
   return false;
@@ -554,7 +530,7 @@ bool CFileItem::IsAudio() const
     return false;
 
   extension.ToLower();
-  if (g_settings.m_musicExtensions.Find(extension) != -1)
+  if (g_stSettings.m_musicExtensions.Find(extension) != -1)
     return true;
 
   return false;
@@ -1083,13 +1059,13 @@ const CStdString& CFileItem::GetMimeType(bool lookup /*= true*/) const
           || m_strPath.Left(7).Equals("http://")
           || m_strPath.Left(8).Equals("https://"))
     {
-      CCurlFile::GetMimeType(GetAsUrl(), m_ref);
+      CFileCurl::GetMimeType(GetAsUrl(), m_ref);
 
       // try to get mime-type again but with an NSPlayer User-Agent
       // in order for server to provide correct mime-type.  Allows us
       // to properly detect an MMS stream
       if (m_ref.Left(11).Equals("video/x-ms-"))
-        CCurlFile::GetMimeType(GetAsUrl(), m_ref, "NSPlayer/11.00.6001.7000");
+        CFileCurl::GetMimeType(GetAsUrl(), m_ref, "NSPlayer/11.00.6001.7000");
 
       // make sure there are no options set in mime-type
       // mime-type can look like "video/x-ms-asf ; charset=utf8"
@@ -1612,12 +1588,12 @@ void CFileItemList::Randomize()
   random_shuffle(m_items.begin(), m_items.end());
 }
 
-void CFileItemList::Archive(CArchive& ar)
+void CFileItemList::Serialize(CArchive& ar)
 {
   CSingleLock lock(m_lock);
   if (ar.IsStoring())
   {
-    CFileItem::Archive(ar);
+    CFileItem::Serialize(ar);
 
     int i = 0;
     if (m_items.size() > 0 && m_items[0]->IsParentFolder())
@@ -1665,7 +1641,7 @@ void CFileItemList::Archive(CArchive& ar)
     Clear();
 
 
-    CFileItem::Archive(ar);
+    CFileItem::Serialize(ar);
 
     int iSize = 0;
     ar >> iSize;
@@ -1847,7 +1823,7 @@ void CFileItemList::FilterCueItems()
                 else
                 { // try replacing the extension with one of our allowed ones.
                   CStdStringArray extensions;
-                  StringUtils::SplitString(g_settings.m_musicExtensions, "|", extensions);
+                  StringUtils::SplitString(g_stSettings.m_musicExtensions, "|", extensions);
                   for (unsigned int i = 0; i < extensions.size(); i++)
                   {
                     strMediaFile = URIUtils::ReplaceExtension(pItem->GetPath(), extensions[i]);
@@ -1984,7 +1960,7 @@ void CFileItemList::Stack()
         if (folderName.Left(2).Equals("CD") && StringUtils::IsNaturalNumber(folderName.Mid(2)))
         {
           CFileItemList items;
-          CDirectory::GetDirectory(item->GetPath(),items,g_settings.m_videoExtensions,true);
+          CDirectory::GetDirectory(item->GetPath(),items,g_stSettings.m_videoExtensions,true);
           // optimized to only traverse listing once by checking for filecount
           // and recording last file item for later use
           int nFiles = 0;
@@ -2758,7 +2734,7 @@ CStdString CFileItem::GetLocalFanart() const
     return "";
 
   CFileItemList items;
-  CDirectory::GetDirectory(strDir, items, g_settings.m_pictureExtensions, false, false, DIR_CACHE_ALWAYS, false);
+  CDirectory::GetDirectory(strDir, items, g_stSettings.m_pictureExtensions, false, false, DIR_CACHE_ALWAYS, false);
 
   CStdStringArray fanarts;
   StringUtils::SplitString(g_advancedSettings.m_fanartImages, "|", fanarts);
@@ -3210,7 +3186,7 @@ CStdString CFileItem::FindTrailer() const
   CStdString strDir;
   URIUtils::GetDirectory(strFile, strDir);
   CFileItemList items;
-  CDirectory::GetDirectory(strDir, items, g_settings.m_videoExtensions, true, false, DIR_CACHE_ALWAYS, false);
+  CDirectory::GetDirectory(strDir, items, g_stSettings.m_videoExtensions, true, false, DIR_CACHE_ALWAYS, false);
   URIUtils::RemoveExtension(strFile);
   strFile += "-trailer";
   CStdString strFile3 = URIUtils::AddFileToFolder(strDir, "movie-trailer");
@@ -3262,15 +3238,4 @@ CStdString CFileItem::FindTrailer() const
   return strTrailer;
 }
 
-VIDEODB_CONTENT_TYPE CFileItem::GetVideoContentType() const
-{
-  VIDEODB_CONTENT_TYPE type = VIDEODB_CONTENT_MOVIES;
-  if (HasVideoInfoTag() && !GetVideoInfoTag()->m_strShowTitle.IsEmpty()) // tvshow
-    type = VIDEODB_CONTENT_TVSHOWS;
-  if (HasVideoInfoTag() && GetVideoInfoTag()->m_iSeason > -1 && !m_bIsFolder) // episode
-    type = VIDEODB_CONTENT_EPISODES;
-  if (HasVideoInfoTag() && !GetVideoInfoTag()->m_strArtist.IsEmpty())
-    type = VIDEODB_CONTENT_MUSICVIDEOS;
-  return type;
-}
 

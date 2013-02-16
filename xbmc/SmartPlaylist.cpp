@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,19 +19,19 @@
  *
  */
 
+#include "stdafx.h"
 #include "SmartPlaylist.h"
 #include "utils/log.h"
-#include "utils/StringUtils.h"
+#include "StringUtils.h"
 #include "FileSystem/SmartPlaylistDirectory.h"
 #include "FileSystem/File.h"
 #include "utils/CharsetConverter.h"
 #include "XMLUtils.h"
-#include "video/VideoDatabase.h"
+#include "Database.h"
+#include "VideoDatabase.h"
 #include "Util.h"
 #include "utils/URIUtils.h"
-#include "XBDateTime.h"
-#include "LocalizeStrings.h"
-#include "utils/log.h"
+#include "DateTime.h"
 
 using namespace std;
 using namespace XFILE;
@@ -384,7 +384,7 @@ CStdString CSmartPlaylistRule::GetVideoResolutionQuery(void)
   return retVal;
 }
 
-CStdString CSmartPlaylistRule::GetWhereClause(CDatabase *db, const CStdString& strType)
+CStdString CSmartPlaylistRule::GetWhereClause(const CStdString& strType)
 {
   SEARCH_OPERATOR op = m_operator;
   if ((strType == "tvshows" || strType == "episodes") && m_field == FIELD_YEAR)
@@ -405,7 +405,7 @@ CStdString CSmartPlaylistRule::GetWhereClause(CDatabase *db, const CStdString& s
     {
       if (!parameter.IsEmpty())
         parameter += ",";
-      parameter += db->PrepareSQL("'%s'", (*it).Trim().c_str());
+      parameter += CDatabase::FormatSQL("'%s'", (*it).Trim().c_str());
     }
     parameter = " IN (" + parameter + ")";
     if (op == OPERATOR_DOES_NOT_EQUAL)
@@ -444,7 +444,7 @@ CStdString CSmartPlaylistRule::GetWhereClause(CDatabase *db, const CStdString& s
       break;
     }
 
-    parameter = db->PrepareSQL(operatorString.c_str(), m_parameter.c_str());
+    parameter = CDatabase::FormatSQL(operatorString.c_str(), m_parameter.c_str());
   }
   
   if (m_field == FIELD_LASTPLAYED || m_field == FIELD_AIRDATE)
@@ -455,13 +455,13 @@ CStdString CSmartPlaylistRule::GetWhereClause(CDatabase *db, const CStdString& s
       CDateTimeSpan span;
       span.SetFromPeriod(m_parameter);
       date-=span;
-      parameter = db->PrepareSQL(operatorString.c_str(), date.GetAsDBDate().c_str());
+      parameter = CDatabase::FormatSQL(operatorString.c_str(), date.GetAsDBDate().c_str());
     }
   }
   else if (m_field == FIELD_TIME)
   { // translate time to seconds
     CStdString seconds; seconds.Format("%i", StringUtils::TimeStringToSeconds(m_parameter));
-    parameter = db->PrepareSQL(operatorString.c_str(), seconds.c_str());
+    parameter = CDatabase::FormatSQL(operatorString.c_str(), seconds.c_str());
   }
 
   // now the query parameter
@@ -572,7 +572,7 @@ CStdString CSmartPlaylistRule::GetWhereClause(CDatabase *db, const CStdString& s
       if (playlist.GetType().Equals(strType) || (playlist.GetType().Equals("mixed") && (strType == "songs" || strType == "musicvideos")) || playlist.GetType().IsEmpty())
       {
         playlist.SetType(strType);
-        playlistQuery = playlist.GetWhereClause(false, db);
+        playlistQuery = playlist.GetWhereClause(false);
       }
       if (m_operator == OPERATOR_DOES_NOT_EQUAL && playlist.GetType().Equals(strType))
         query.Format("NOT (%s)", playlistQuery.c_str());
@@ -908,7 +908,7 @@ void CSmartPlaylist::AddRule(const CSmartPlaylistRule &rule)
   m_playlistRules.push_back(rule);
 }
 
-CStdString CSmartPlaylist::GetWhereClause(CDatabase *db, bool needWhere /* = true */)
+CStdString CSmartPlaylist::GetWhereClause(bool needWhere /* = true */)
 {
   CStdString rule, currentRule;
   for (vector<CSmartPlaylistRule>::iterator it = m_playlistRules.begin(); it != m_playlistRules.end(); ++it)
@@ -918,7 +918,7 @@ CStdString CSmartPlaylist::GetWhereClause(CDatabase *db, bool needWhere /* = tru
     else if (needWhere)
       rule += "WHERE ";
     rule += "(";
-    currentRule = (*it).GetWhereClause(db, GetType());
+    currentRule = (*it).GetWhereClause(GetType());
     // if we don't get a rule, we add '1' or '0' so the query is still valid and doesn't fail
     if (currentRule.IsEmpty())
       currentRule = m_matchAllRules ? "'1'" : "'0'";
@@ -928,7 +928,7 @@ CStdString CSmartPlaylist::GetWhereClause(CDatabase *db, bool needWhere /* = tru
   return rule;
 }
 
-CStdString CSmartPlaylist::GetOrderClause(CDatabase *db)
+CStdString CSmartPlaylist::GetOrderClause()
 {
   CStdString order;
   if (m_orderField != CSmartPlaylistRule::FIELD_NONE)
@@ -936,7 +936,7 @@ CStdString CSmartPlaylist::GetOrderClause(CDatabase *db)
     if (CSmartPlaylistRule::GetFieldType(m_orderField) == CSmartPlaylistRule::NUMERIC_FIELD)
       order.Format("ORDER BY 1*%s", CSmartPlaylistRule::GetDatabaseField(m_orderField,GetType()));
     else
-      order = db->PrepareSQL("ORDER BY %s", CSmartPlaylistRule::GetDatabaseField(m_orderField,GetType()).c_str());
+      order.Format("ORDER BY %s", CSmartPlaylistRule::GetDatabaseField(m_orderField,GetType()));
     if (!m_orderAscending)
       order += " DESC";
   }

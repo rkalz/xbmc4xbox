@@ -8,7 +8,7 @@
 #include "Log.h"
 //#include "XboxMemoryTrace.h"
 #include "SymbolLookupHelper.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "CallerTree.h"
 #include "..\FormSnapShot.h"
 

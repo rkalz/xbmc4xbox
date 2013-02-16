@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 
 #include "utils/SharedSection.h"
 #define DVD_TIME_BASE 1000000
-#define DVD_NOPTS_VALUE    (-1LL<<52) // should be possible to represent in both double and int64_t
+#define DVD_NOPTS_VALUE    (-1LL<<52) // should be possible to represent in both double and __int64
 
 #define DVD_TIME_TO_SEC(x)  ((int)((double)(x) / DVD_TIME_BASE))
 #define DVD_TIME_TO_MSEC(x) ((int)((double)(x) * 1000 / DVD_TIME_BASE))

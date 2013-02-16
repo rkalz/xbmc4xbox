@@ -26,7 +26,6 @@
 #include <zlib.h>
 
 #include "avcodec.h"
-#include "bytestream.h"
 
 #define PNG_COLOR_MASK_PALETTE    1
 #define PNG_COLOR_MASK_COLOR      2
@@ -74,7 +73,9 @@ int ff_png_pass_row_size(int pass, int bits_per_pixel, int width);
 void ff_add_png_paeth_prediction(uint8_t *dst, uint8_t *src, uint8_t *top, int w, int bpp);
 
 typedef struct PNGDecContext {
-    GetByteContext gb;
+    const uint8_t *bytestream;
+    const uint8_t *bytestream_start;
+    const uint8_t *bytestream_end;
     AVFrame picture1, picture2;
     AVFrame *current_picture, *last_picture;
 

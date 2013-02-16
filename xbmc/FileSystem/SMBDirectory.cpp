@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -30,19 +30,17 @@
 * debugging is set to a max of 10 for release builds (see local.h)
 */
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "SMBDirectory.h"
 #include "utils/URIUtils.h"
 #include "LocalizeStrings.h"
+#include "GUIPassword.h"
 #include "lib/libsmb/xbLibSmb.h"
 #include "GUIWindowManager.h"
-#include "dialogs/GUIDialogOK.h"
-#include "settings/GUISettings.h"
+#include "GUIDialogOK.h"
+#include "GUISettings.h"
 #include "FileItem.h"
-#include "settings/AdvancedSettings.h"
-#include "PasswordManager.h"
-#include "Application.h"
-#include "utils/SingleLock.h"
+#include "AdvancedSettings.h"
 
 struct CachedDirEntry
 {
@@ -115,9 +113,9 @@ bool CSMBDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items
       && !strFile.Equals("lost+found")
       && aDir.type != SMBC_PRINTER_SHARE && aDir.type != SMBC_IPC_SHARE)
     {
-     int64_t iSize = 0;
+     __int64 iSize = 0;
       bool bIsDir = true;
-      int64_t lTimeDate = 0;
+      __int64 lTimeDate = 0;
       bool hidden = false;
 
       if(strFile.Right(1).Equals("$") && aDir.type == SMBC_FILE_SHARE )
@@ -242,10 +240,26 @@ int CSMBDirectory::OpenDir(const CURL& url, CStdString& strAuth)
   /* make a writeable copy */
   CURL urlIn(url);
 
-  CStdString strPath;
-
-  CPasswordManager::GetInstance().AuthenticateURL(urlIn);
+  /* set original url */
   strAuth = smb.URLEncode(urlIn);
+
+  CStdString strPath;
+  CStdString strShare;
+  /* must url encode this as, auth code will look for the encoded value */
+  strShare  = smb.URLEncode(urlIn.GetHostName());
+  strShare += "/";
+  strShare += smb.URLEncode(urlIn.GetShareName());
+
+  IMAPPASSWORDS it = g_passwordManager.m_mapSMBPasswordCache.find(strShare);
+  if(it != g_passwordManager.m_mapSMBPasswordCache.end())
+  {
+    // if share found in cache use it to supply username and password
+    CURL url(it->second);    // map value contains the full url of the originally authenticated share. map key is just the share
+    CStdString strPassword = url.GetPassWord();
+    CStdString strUserName = url.GetUserName();
+    urlIn.SetPassword(strPassword);
+    urlIn.SetUserName(strUserName);
+  }
 
   // for a finite number of attempts use the following instead of the while loop:
   // for(int i = 0; i < 3, fd < 0; i++)
@@ -292,8 +306,16 @@ int CSMBDirectory::OpenDir(const CURL& url, CStdString& strAuth)
       {
         if (m_allowPrompting)
         {
-          if (!CPasswordManager::GetInstance().PromptToAuthenticateURL(urlIn))
+          g_passwordManager.SetSMBShare(strPath);
+          if (!g_passwordManager.GetSMBShareUserPassword())  // Do this bit via a threadmessage?
             break;
+
+          /* must do this as our urlencoding for spaces is invalid for samba */
+          /* and doing double url encoding will fail */
+          /* curl doesn't decode / encode filename yet */
+          CURL urlnew( g_passwordManager.GetSMBShare() );
+          urlIn.SetUserName(urlnew.GetUserName());
+          urlIn.SetPassword(urlnew.GetPassWord());
         }
         else
           break;
@@ -322,7 +344,7 @@ int CSMBDirectory::OpenDir(const CURL& url, CStdString& strAuth)
           pDialog->SetLine(2, "");
 
           ThreadMessage tMsg = {TMSG_DIALOG_DOMODAL, WINDOW_DIALOG_OK, g_windowManager.GetActiveWindow()};
-          g_application.getApplicationMessenger().SendMessage(tMsg, false);
+          g_applicationMessenger.SendMessage(tMsg, false);
         }
         break;
       }
@@ -338,8 +360,11 @@ int CSMBDirectory::OpenDir(const CURL& url, CStdString& strAuth)
     CLog::Log(LOGERROR, "SMBDirectory->GetDirectory: Unable to open directory : '%s'\nunix_err:'%x' error : '%s'", strPath.c_str(), errno, strerror(errno));
 #endif
   }
-  else if (strPath != strAuth) // we succeeded so, if path was changed, return the correct one and cache it
+  else if (strPath != strAuth && !strShare.IsEmpty()) // we succeeded so, if path was changed, return the correct one and cache it
+  {
+    g_passwordManager.m_mapSMBPasswordCache[strShare] = strPath;
     strAuth = strPath;
+  }
 
   return fd;
 }
@@ -350,8 +375,8 @@ bool CSMBDirectory::Create(const char* strPath)
   smb.Init();
 
   CURL url(strPath);
-  CPasswordManager::GetInstance().AuthenticateURL(url);
   CStdString strFileName = smb.URLEncode(url);
+  strFileName = g_passwordManager.GetSMBAuthFilename(strFileName);
 
   int result = smbc_mkdir(strFileName.c_str(), 0);
 
@@ -371,8 +396,8 @@ bool CSMBDirectory::Remove(const char* strPath)
   smb.Init();
 
   CURL url(strPath);
-  CPasswordManager::GetInstance().AuthenticateURL(url);
   CStdString strFileName = smb.URLEncode(url);
+  strFileName = g_passwordManager.GetSMBAuthFilename(strFileName);
 
   int result = smbc_rmdir(strFileName.c_str());
 
@@ -395,8 +420,8 @@ bool CSMBDirectory::Exists(const char* strPath)
   smb.Init();
 
   CURL url(strPath);
-  CPasswordManager::GetInstance().AuthenticateURL(url);
   CStdString strFileName = smb.URLEncode(url);
+  strFileName = g_passwordManager.GetSMBAuthFilename(strFileName);
 
 #ifndef _LINUX
   SMB_STRUCT_STAT info;

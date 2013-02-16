@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005-2012, Jon Gettler
+ *  Copyright (C) 2005-2006, Jon Gettler
  *  http://www.mvpmc.org/
  *
  *  This library is free software; you can redistribute it and/or
@@ -190,13 +190,14 @@ int cmyth_rcv_commbreaklist(cmyth_conn_t conn, int *err,
 	int consumed;
 	int total = 0;
 	long rows;
-	int64_t mark;
+	long long mark;
 	long long start = -1;
 	char *failed = NULL;
 	cmyth_commbreak_t commbreak;
 	unsigned short type;
 	unsigned short start_type;
 	int i;
+	int j;
 
 	if (count <= 0) {
 		*err = EINVAL;
@@ -229,7 +230,7 @@ int cmyth_rcv_commbreaklist(cmyth_conn_t conn, int *err,
 			goto fail;
 		}
 
-		consumed = cmyth_rcv_int64(conn, err, &mark, count);
+		consumed = cmyth_rcv_long_long(conn, err, &mark, count);
 		count -= consumed;
 		total += consumed;
 		if (*err) {
@@ -241,8 +242,8 @@ int cmyth_rcv_commbreaklist(cmyth_conn_t conn, int *err,
 			start_type = type;
 		} else if (type == CMYTH_COMMBREAK_END || type == CMYTH_CUTLIST_END) {
 			if (start >= 0 &&
-			    ((type == CMYTH_COMMBREAK_END && start_type == CMYTH_COMMBREAK_START)
-			     || (type == CMYTH_CUTLIST_END && start_type == CMYTH_CUTLIST_START)))
+			   (type == CMYTH_COMMBREAK_END && start_type == CMYTH_COMMBREAK_START
+			    || type == CMYTH_CUTLIST_END && start_type == CMYTH_CUTLIST_START))
 			{
 				commbreak = cmyth_commbreak_create();
 				commbreak->start_mark = start;
@@ -294,11 +295,7 @@ cmyth_mysql_get_commbreaklist(cmyth_database_t db, cmyth_conn_t conn, cmyth_prog
 	}
 
 	fprintf(stderr, "Found %li commercial breaks for current program.\n", breaklist->commbreak_count);
-	if (r != breaklist->commbreak_count) {
-		fprintf(stderr, "commbreak error.  Setting number of commercial breaks to zero\n");
-		cmyth_dbg(CMYTH_DBG_ERROR, "%s  - returned rows=%d commbreak_count=%li\n",__FUNCTION__, r,breaklist->commbreak_count);
-		breaklist->commbreak_count = 0;
-	}
+
 	out:
 	pthread_mutex_unlock(&mutex);
 	return breaklist;

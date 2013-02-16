@@ -39,12 +39,6 @@ static int encode_init(AVCodecContext * avctx){
         return AVERROR(EINVAL);
     }
 
-    if (avctx->sample_rate > 48000) {
-        av_log(avctx, AV_LOG_ERROR, "sample rate is too high: %d > 48kHz",
-               avctx->sample_rate);
-        return AVERROR(EINVAL);
-    }
-
     if(avctx->bit_rate < 24*1000) {
         av_log(avctx, AV_LOG_ERROR, "bitrate too low: got %i, need 24000 or higher\n",
                avctx->bit_rate);
@@ -70,8 +64,6 @@ static int encode_init(AVCodecContext * avctx){
     s->use_exp_vlc = flags2 & 0x0001;
     s->use_bit_reservoir = flags2 & 0x0002;
     s->use_variable_block_len = flags2 & 0x0004;
-    if (avctx->channels == 2)
-        s->ms_stereo = 1;
 
     ff_wma_init(avctx, flags2);
 
@@ -79,12 +71,8 @@ static int encode_init(AVCodecContext * avctx){
     for(i = 0; i < s->nb_block_sizes; i++)
         ff_mdct_init(&s->mdct_ctx[i], s->frame_len_bits - i + 1, 0, 1.0);
 
-    s->block_align     = avctx->bit_rate * (int64_t)s->frame_len /
-                         (avctx->sample_rate * 8);
-    s->block_align     = FFMIN(s->block_align, MAX_CODED_SUPERFRAME_SIZE);
-    avctx->block_align = s->block_align;
-    avctx->bit_rate    = avctx->block_align * 8LL * avctx->sample_rate /
-                         s->frame_len;
+    avctx->block_align=
+    s->block_align= avctx->bit_rate*(int64_t)s->frame_len / (avctx->sample_rate*8);
 //av_log(NULL, AV_LOG_ERROR, "%d %d %d %d\n", s->block_align, avctx->bit_rate, s->frame_len, avctx->sample_rate);
     avctx->frame_size= s->frame_len;
 
@@ -193,7 +181,7 @@ static int encode_block(WMACodecContext *s, float (*src_coefs)[BLOCK_MAX_SIZE], 
     }
 
     if (s->nb_channels == 2) {
-        put_bits(&s->pb, 1, !!s->ms_stereo);
+        put_bits(&s->pb, 1, s->ms_stereo= 1);
     }
 
     for(ch = 0; ch < s->nb_channels; ch++) {
@@ -365,11 +353,6 @@ static int encode_superframe(AVCodecContext *avctx,
             s->coefs[0][i] = a + b;
             s->coefs[1][i] = a - b;
         }
-    }
-
-    if (buf_size < 2 * MAX_CODED_SUPERFRAME_SIZE) {
-        av_log(avctx, AV_LOG_ERROR, "output buffer size is too small\n");
-        return AVERROR(EINVAL);
     }
 
 #if 1

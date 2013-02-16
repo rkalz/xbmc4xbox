@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,12 +19,12 @@
  *
  */
 
+#include "stdafx.h"
 #include "RssFeed.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "utils/URIUtils.h"
-#include "FileSystem/CurlFile.h"
+#include "FileSystem/FileCurl.h"
 #include "tinyXML/tinyxml.h"
-#include "utils/log.h"
 
 using namespace std;
 
@@ -65,7 +65,7 @@ bool CRssFeed::ReadFeed()
   LeaveCriticalSection(m_ItemVectorLock);
 
   CStdString strXML;
-  XFILE::CCurlFile http;
+  XFILE::CFileCurl http;
   if (!http.Get(m_strURL, strXML))
     return false;
 
@@ -301,13 +301,13 @@ bool CRssFeed::IsPathToMedia(const CStdString& strPath )
 
   extension.ToLower();
 
-  if (g_settings.m_videoExtensions.Find(extension) != -1)
+  if (g_stSettings.m_videoExtensions.Find(extension) != -1)
     return true;
 
-  if (g_settings.m_musicExtensions.Find(extension) != -1)
+  if (g_stSettings.m_musicExtensions.Find(extension) != -1)
     return true;
 
-  if (g_settings.m_pictureExtensions.Find(extension) != -1)
+  if (g_stSettings.m_pictureExtensions.Find(extension) != -1)
     return true;
 
   return false;
@@ -325,7 +325,7 @@ bool CRssFeed::IsPathToThumbnail(const CStdString& strPath )
 
   extension.ToLower();
 
-  if (g_settings.m_pictureExtensions.Find(extension) != -1)
+  if (g_stSettings.m_pictureExtensions.Find(extension) != -1)
     return true;
 
   return false;

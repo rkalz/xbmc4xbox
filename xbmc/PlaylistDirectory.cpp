@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,11 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "PlaylistDirectory.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "FileSystem/HDDirectory.h"
-#include "playlists/PlayListFactory.h"
+#include "PlayListFactory.h"
 #include "Util.h"
 
 #ifdef _DEBUG
@@ -48,7 +48,7 @@ bool CPlayListDirectory::GetDirectory(const CStdString& strPath, VECFILEITEMS &i
     CHDDirectory dirLoader;
     dirLoader.SetMask(".m3u|.b4s|.pls|.strm");
     VECFILEITEMS tmpitems;
-    CStdString strDir = g_settings.m_szAlbumDirectory;
+    CStdString strDir = g_stSettings.m_szAlbumDirectory;
     strDir += "\\playlists";
     dirLoader.GetDirectory(strDir, tmpitems);
 

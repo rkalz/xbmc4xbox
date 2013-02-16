@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -49,11 +49,11 @@ namespace XFILE
     virtual bool          Exists(const CURL& url);
     virtual int           Stat(const CURL& url, struct __stat64* buffer);
 
-    virtual unsigned int  Read(void* lpBuf, int64_t uiBufSize);
+    virtual unsigned int  Read(void* lpBuf, __int64 uiBufSize);
 
-    virtual int64_t       Seek(int64_t iFilePosition, int iWhence);
-    virtual int64_t       GetPosition();
-    virtual int64_t       GetLength();
+    virtual __int64       Seek(__int64 iFilePosition, int iWhence);
+    virtual __int64       GetPosition();
+    virtual __int64       GetLength();
 
     virtual int           IoControl(EIoControl request, void* param);
 
@@ -64,19 +64,16 @@ namespace XFILE
   private:
     CCacheStrategy *m_pCache;
     bool      m_bDeleteCache;
-    int        m_seekPossible;
+    int    m_seekPossible;
     CFile      m_source;
     CStdString    m_sourcePath;
     CEvent      m_seekEvent;
     CEvent      m_seekEnded;
-    int64_t      m_nSeekResult;
-    int64_t      m_seekPos;
-    int64_t      m_readPos;
-    int64_t      m_writePos;
-    unsigned     m_chunkSize;
-    unsigned     m_writeRate;
-    unsigned     m_writeRateActual;
-    bool         m_cacheFull;
+    int        m_nBytesToBuffer;
+    time_t      m_tmLastBuffering;
+    __int64      m_nSeekResult;
+    __int64      m_seekPos;
+    __int64      m_readPos;
     CCriticalSection m_sync;
   };
 

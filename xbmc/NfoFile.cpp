@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -22,19 +22,19 @@
 //
 //////////////////////////////////////////////////////////////////////
 
+#include "stdafx.h"
 #include "NfoFile.h"
-#include "video/VideoDatabase.h"
+#include "VideoDatabase.h"
 #include "utils/IMDB.h"
 #include "FileSystem/File.h"
 #include "FileSystem/Directory.h"
 #include "Util.h"
 #include "utils/URIUtils.h"
 #include "FileItem.h"
-#include "music/Album.h"
-#include "music/Artist.h"
-#include "settings/Settings.h"
+#include "Album.h"
+#include "Artist.h"
+#include "Settings.h"
 #include <vector>
-#include "utils/log.h"
 
 using namespace XFILE;
 using namespace std;
@@ -192,7 +192,7 @@ bool CNfoFile::DoScrape(CScraperParser& parser, const CScraperUrl* pURL, const C
     for (unsigned int i=0;i<pURL->m_url.size();++i)
     {
       CStdString strCurrHTML;
-      XFILE::CCurlFile http;
+      XFILE::CFileCurl http;
       if (!CScraperUrl::Get(pURL->m_url[i],strCurrHTML,http,parser.GetFilename()) || strCurrHTML.size() == 0)
         return false;
       strHTML.push_back(strCurrHTML);

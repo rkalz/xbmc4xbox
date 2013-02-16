@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  *
  */
  
+#include "stdafx.h"
 #include "DVDInputStreamFFmpeg.h"
 
 using namespace XFILE;
@@ -58,12 +59,12 @@ int CDVDInputStreamFFmpeg::Read(BYTE* buf, int buf_size)
   return -1;
 }
 
-int64_t CDVDInputStreamFFmpeg::GetLength()
+__int64 CDVDInputStreamFFmpeg::GetLength()
 {
   return 0;
 }
 
-int64_t CDVDInputStreamFFmpeg::Seek(int64_t offset, int whence)
+__int64 CDVDInputStreamFFmpeg::Seek(__int64 offset, int whence)
 {
   return -1;
 }

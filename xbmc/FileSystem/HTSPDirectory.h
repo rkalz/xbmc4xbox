@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2009 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -25,7 +25,6 @@
 #include "utils/Event.h"
 #include "URL.h"
 #include "HTSPSession.h"
-#include "GUIUserMessages.h"
 
 class CFileItem; typedef boost::shared_ptr<CFileItem> CFileItemPtr;
 

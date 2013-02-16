@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,12 +19,12 @@
  *
  */
 
+#include "stdafx.h"
 #include <ConIo.h>
 #include "FanController.h"
 #include "xbox/Undocumented.h"
 #include "xbox/XKExports.h"
-#include "settings/GUISettings.h"
-#include "utils/log.h"
+#include "GUISettings.h"
 
 #define PIC_ADDRESS      0x20
 #define XCALIBUR_ADDRESS 0xE0 // XCalibur/1.6 videochip

@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,15 +21,13 @@
  *
  */
 
-#include "system.h"
-#include <vector>
-
 // when modifying these structures, make sure you update all codecs accordingly
 #define FRAME_TYPE_UNDEF 0
 #define FRAME_TYPE_I 1
 #define FRAME_TYPE_P 2
 #define FRAME_TYPE_B 3
 #define FRAME_TYPE_D 4
+
 
 // should be entirely filled by all codecs
 struct DVDVideoPicture
@@ -88,7 +86,7 @@ struct DVDVideoUserData
 
 class CDVDStreamInfo;
 class CDVDCodecOption;
-class CDVDCodecOptions;
+typedef std::vector<CDVDCodecOption> CDVDCodecOptions;
 
 // VC_ messages, messages can be combined
 #define VC_ERROR    0x00000001  // an error occured, no other messages will be returned
@@ -154,20 +152,4 @@ public:
    * should return codecs name
    */
   virtual const char* GetName() = 0;
-
-  /*
-   * returns the number of demuxer bytes in any internal buffers
-   */
-  virtual int GetDataSize(void)
-  {
-    return 0;
-  }
-
-  /*
-   * returns the time in seconds for demuxer bytes in any internal buffers
-   */
-  virtual double GetTimeSize(void)
-  {
-    return 0;
-  }
 };

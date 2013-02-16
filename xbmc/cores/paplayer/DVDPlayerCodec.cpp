@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  *
  */
 
+#include "stdafx.h"
 #include "DVDPlayerCodec.h"
 #include "Util.h"
 
@@ -37,7 +38,6 @@ DVDPlayerCodec::DVDPlayerCodec()
   m_pDemuxer = NULL;
   m_pInputStream = NULL;
   m_pAudioCodec = NULL;
-  m_nAudioStream = -1;
   m_audioPos = 0;
   m_pPacket = NULL;
   m_decoded = NULL;;

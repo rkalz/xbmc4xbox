@@ -30,16 +30,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include "libavformat/avformat.h"
-// FIXME those are internal headers, avserver _really_ shouldn't use them
 #include "libavformat/ffm.h"
 #include "libavformat/network.h"
 #include "libavformat/os_support.h"
 #include "libavformat/rtpdec.h"
 #include "libavformat/rtsp.h"
+// XXX for ffio_open_dyn_packet_buffer, to be removed
 #include "libavformat/avio_internal.h"
-#include "libavformat/internal.h"
-#include "libavformat/url.h"
-
 #include "libavutil/avstring.h"
 #include "libavutil/lfg.h"
 #include "libavutil/dict.h"
@@ -502,10 +499,7 @@ static void start_children(FFStream *feed)
                 }
 
                 /* This is needed to make relative pathnames work */
-                if (chdir(my_program_dir) < 0) {
-                    http_log("chdir failed\n");
-                    exit(1);
-                }
+                chdir(my_program_dir);
 
                 signal(SIGPIPE, SIG_DFL);
 
@@ -877,7 +871,7 @@ static void close_connection(HTTPContext *c)
         }
         h = c->rtp_handles[i];
         if (h)
-            ffurl_close(h);
+            url_close(h);
     }
 
     ctx = &c->fmt_ctx;
@@ -2122,6 +2116,22 @@ static void compute_status(HTTPContext *c)
     c->buffer_end = c->pb_buffer + len;
 }
 
+/* check if the parser needs to be opened for stream i */
+static void open_parser(AVFormatContext *s, int i)
+{
+    AVStream *st = s->streams[i];
+    AVCodec *codec;
+
+    if (!st->codec->codec) {
+        codec = avcodec_find_decoder(st->codec->codec_id);
+        if (codec && (codec->capabilities & CODEC_CAP_PARSE_ONLY)) {
+            st->codec->parse_only = 1;
+            if (avcodec_open2(st->codec, codec, NULL) < 0)
+                st->codec->parse_only = 0;
+        }
+    }
+}
+
 static int open_input_stream(HTTPContext *c, const char *info)
 {
     char buf[128];
@@ -2166,6 +2176,10 @@ static int open_input_stream(HTTPContext *c, const char *info)
         avformat_close_input(&s);
         return -1;
     }
+
+    /* open each parser */
+    for(i=0;i<s->nb_streams;i++)
+        open_parser(s, i);
 
     /* choose stream as clock source (we favorize video stream if
        present) for packet sending */
@@ -2258,6 +2272,7 @@ static int http_prepare_data(HTTPContext *c)
          * Default value from FFmpeg
          * Try to set it use configuration option
          */
+        c->fmt_ctx.preload   = (int)(0.5*AV_TIME_BASE);
         c->fmt_ctx.max_delay = (int)(0.7*AV_TIME_BASE);
 
         if (avformat_write_header(&c->fmt_ctx, NULL) < 0) {
@@ -2376,7 +2391,7 @@ static int http_prepare_data(HTTPContext *c)
                         if (c->rtp_protocol == RTSP_LOWER_TRANSPORT_TCP)
                             max_packet_size = RTSP_TCP_MAX_PACKET_SIZE;
                         else
-                            max_packet_size = c->rtp_handles[c->packet_stream_index]->max_packet_size;
+                            max_packet_size = url_get_max_packet_size(c->rtp_handles[c->packet_stream_index]);
                         ret = ffio_open_dyn_packet_buf(&ctx->pb, max_packet_size);
                     } else {
                         ret = avio_open_dyn_buf(&ctx->pb);
@@ -2529,8 +2544,8 @@ static int http_send_data(HTTPContext *c)
                 } else {
                     /* send RTP packet directly in UDP */
                     c->buffer_ptr += 4;
-                    ffurl_write(c->rtp_handles[c->packet_stream_index],
-                                c->buffer_ptr, len);
+                    url_write(c->rtp_handles[c->packet_stream_index],
+                              c->buffer_ptr, len);
                     c->buffer_ptr += len;
                     /* here we continue as we can send several packets per 10 ms slot */
                 }
@@ -3413,10 +3428,10 @@ static int rtp_new_av_stream(HTTPContext *c,
                      "rtp://%s:%d", ipaddr, ntohs(dest_addr->sin_port));
         }
 
-        if (ffurl_open(&h, ctx->filename, AVIO_FLAG_WRITE, NULL, NULL) < 0)
+        if (url_open(&h, ctx->filename, AVIO_FLAG_WRITE) < 0)
             goto fail;
         c->rtp_handles[stream_index] = h;
-        max_packet_size = h->max_packet_size;
+        max_packet_size = url_get_max_packet_size(h);
         break;
     case RTSP_LOWER_TRANSPORT_TCP:
         /* RTP/TCP case */
@@ -3439,7 +3454,7 @@ static int rtp_new_av_stream(HTTPContext *c,
     if (avformat_write_header(ctx, NULL) < 0) {
     fail:
         if (h)
-            ffurl_close(h);
+            url_close(h);
         av_free(ctx);
         return -1;
     }
@@ -3476,7 +3491,7 @@ static AVStream *add_av_stream1(FFStream *stream, AVCodecContext *codec, int cop
     }
     fst->priv_data = av_mallocz(sizeof(FeedData));
     fst->index = stream->nb_streams;
-    avpriv_set_pts_info(fst, 33, 1, 90000);
+    av_set_pts_info(fst, 33, 1, 90000);
     fst->sample_aspect_ratio = codec->sample_aspect_ratio;
     stream->streams[stream->nb_streams++] = fst;
     return fst;

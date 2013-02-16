@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,11 @@
  *
  */
 
+#include "stdafx.h"
 #include "DownloadQueue.h"
 #include "utils/URIUtils.h"
 #include "FileSystem/File.h"
-#include "FileSystem/CurlFile.h"
-#include "utils/log.h"
+#include "FileSystem/FileCurl.h"
 
 using namespace std;
 using namespace XFILE;
@@ -130,7 +130,7 @@ void CDownloadQueue::Process()
 {
   CLog::Log(LOGNOTICE, "DownloadQueue ready.");
 
-  CCurlFile http;
+  CFileCurl http;
   bool bSuccess;
 
   while ( !m_bStop )

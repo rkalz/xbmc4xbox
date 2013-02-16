@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,10 +19,10 @@
  *
  */
 
-#include "interfaces/Builtins.h"
+#include "stdafx.h"
 #include "Autorun.h"
 #include "Application.h"
-#include "storage/DetectDVDType.h"
+#include "DetectDVDType.h"
 #include "Util.h"
 #include "GUIPassword.h"
 #include "PlayListPlayer.h"
@@ -31,13 +31,12 @@
 #include "ProgramDatabase.h"
 #include "utils/Trainer.h"
 #include "GUIWindowManager.h"
-#include "GUIUserMessages.h"
-#include "dialogs/GUIDialogYesNo.h"
+#include "GUIDialogYesNo.h"
 #include "FileSystem/Directory.h"
 #include "FileSystem/File.h"
-#include "settings/Settings.h"
-#include "settings/AdvancedSettings.h"
-#include "playlists/PlayList.h"
+#include "Settings.h"
+#include "AdvancedSettings.h"
+#include "PlayList.h"
 
 using namespace std;
 using namespace XFILE;
@@ -70,7 +69,7 @@ void CAutorun::ExecuteAutorun( bool bypassSettings, bool ignoreplaying )
       return;
 
     if (!g_passwordManager.IsMasterLockUnlocked(false))
-      if (g_settings.GetCurrentProfile().musicLocked())
+      if (g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].musicLocked())
         return ;
 
     RunCdda();
@@ -129,7 +128,7 @@ void CAutorun::RunXboxCd(bool bypassSettings)
       return;
 
     if (!g_passwordManager.IsMasterLockUnlocked(false))
-      if (g_settings.GetCurrentProfile().programsLocked())
+      if (g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].programsLocked())
         return;
 
     ExecuteXBE("D:\\default.xbe");
@@ -203,9 +202,9 @@ bool CAutorun::RunDisc(IDirectory* pDir, const CStdString& strDrive, int& nAdded
   bool bAllowMusic = true;
   if (!g_passwordManager.IsMasterLockUnlocked(false))
   {
-    bAllowVideo = !g_settings.GetCurrentProfile().videoLocked();
-    bAllowPictures = !g_settings.GetCurrentProfile().picturesLocked();
-    bAllowMusic = !g_settings.GetCurrentProfile().musicLocked();
+    bAllowVideo = !g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].videoLocked();
+    bAllowPictures = !g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].picturesLocked();
+    bAllowMusic = !g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].musicLocked();
   }
 
   if( bRoot )
@@ -263,7 +262,7 @@ bool CAutorun::RunDisc(IDirectory* pDir, const CStdString& strDrive, int& nAdded
           bPlaying = true;
           CStdString strExec;
           strExec.Format("XBMC.RecursiveSlideShow(%s)", pItem->GetPath().c_str());
-          CBuiltins::Execute(strExec);
+          CUtil::ExecBuiltIn(strExec);
           return true;
         }
       }
@@ -276,7 +275,7 @@ bool CAutorun::RunDisc(IDirectory* pDir, const CStdString& strDrive, int& nAdded
     // stack video files
     CFileItemList tempItems;
     tempItems.Append(vecItems);
-    if (g_settings.m_iMyVideoStack != STACK_NONE)
+    if (g_stSettings.m_iMyVideoStack != STACK_NONE)
       tempItems.Stack();
     itemlist.Clear();
 
@@ -339,7 +338,7 @@ bool CAutorun::RunDisc(IDirectory* pDir, const CStdString& strDrive, int& nAdded
         bPlaying = true;
         CStdString strExec;
         strExec.Format("XBMC.RecursiveSlideShow(%s)", strDrive.c_str());
-        CBuiltins::Execute(strExec);
+        CUtil::ExecBuiltIn(strExec);
         break;
       }
     }

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,16 +19,17 @@
  *
  */
 
+#include "stdafx.h"
 #include "ThumbLoader.h"
 #include "Util.h"
 #include "URL.h"
-#include "pictures/Picture.h"
+#include "Picture.h"
 #include "FileSystem/File.h"
 #include "FileItem.h"
-#include "settings/GUISettings.h"
+#include "GUISettings.h"
 #include "TextureManager.h"
-#include "video/VideoInfoTag.h"
-#include "video/VideoDatabase.h"
+#include "VideoInfoTag.h"
+#include "VideoDatabase.h"
 #include "utils/URIUtils.h"
 
 #include "cores/dvdplayer/DVDFileInfo.h"

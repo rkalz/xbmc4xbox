@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2009 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -27,21 +27,19 @@
 #endif
 
 // python.h should always be included first before any other includes
-#include "system.h"
+#include "stdafx.h"
 #include "python/Include/Python.h"
 #include "cores/DllLoader/DllLoaderContainer.h"
 #include "GUIPassword.h"
 
 #include "XBPython.h"
 #include "XBPythonDll.h"
-#include "Application.h"
-#include "settings/Settings.h"
-#include "settings/Profile.h"
+#include "Settings.h"
+#include "Profile.h"
 #include "FileSystem/File.h"
 #include "FileSystem/SpecialProtocol.h"
 #include "xbox/network.h"
-#include "settings/Settings.h"
-#include "utils/log.h"
+#include "Settings.h"
 
 XBPython g_pythonParser;
 
@@ -336,7 +334,7 @@ void XBPython::Process()
     if (XFILE::CFile::Exists(strAutoExecPy))
     {
       // We need to make sure the network is up in case the start scripts require network
-      g_application.getNetwork().WaitForSetup(5000);
+      g_network.WaitForSetup(5000);
       
       evalFile(strAutoExecPy);
     }
@@ -390,8 +388,9 @@ int XBPython::evalFile(const char *src, const unsigned int argc, const char ** a
   }
 
   // check if locked
-  if (g_settings.GetCurrentProfile().programsLocked() && !g_passwordManager.IsMasterLockUnlocked(true))
-    return -1;
+  if (g_settings.m_vecProfiles[g_settings.m_iLastLoadedProfileIndex].programsLocked() && g_settings.m_vecProfiles[0].getLockMode() != LOCK_MODE_EVERYONE)
+    if (!g_passwordManager.IsMasterLockUnlocked(true))
+      return -1;
 
   Initialize();
 
@@ -542,36 +541,4 @@ void XBPython::WaitForEvent(HANDLE hEvent, DWORD timeout)
   HANDLE handles[2] = { hEvent, m_globalEvent };
   WaitForMultipleObjects(2, handles, FALSE, timeout);
   ResetEvent(m_globalEvent);
-}
-
-// execute script, returns -1 if script doesn't exist
-int XBPython::evalString(const char *src, const unsigned int argc, const char ** argv)
-{
-  CLog::Log(LOGDEBUG, "XBPython::evalString (python)");
-  CSingleLock lock(m_critSection);
-  
-  Initialize();
-
-  if (!m_bInitialized) 
-  {
-    CLog::Log(LOGERROR, "XBPython::evalString, python not initialized (python)");
-    return -1;
-  }
-
-  // Previous implementation would create a new thread for every script
-  nextid++;
-  XBPyThread *pyThread = new XBPyThread(this, mainThreadState, nextid);
-  if (argv != NULL)
-    pyThread->setArgv(argc, argv);
-  pyThread->evalString(src);
-  
-  PyElem inf;
-  inf.id = nextid;
-  inf.bDone = false;
-  inf.strFile = "<string>";
-  inf.pyThread = pyThread;
-
-  vecPyList.push_back(inf);
-
-  return nextid;
 }

@@ -76,14 +76,10 @@ cglobal v210_planar_unpack_%1_%2, 5, 5
 
 INIT_XMM
 v210_planar_unpack unaligned, ssse3
-%ifdef HAVE_AVX
 INIT_AVX
 v210_planar_unpack unaligned, avx
-%endif
 
 INIT_XMM
 v210_planar_unpack aligned, ssse3
-%ifdef HAVE_AVX
 INIT_AVX
 v210_planar_unpack aligned, avx
-%endif

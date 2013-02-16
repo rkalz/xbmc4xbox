@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2004-2010, Eric Lund
+ *  Copyright (C) 2004-2006, Eric Lund
  *  http://www.mvpmc.org/
  *
  *  This library is free software; you can redistribute it and/or
@@ -23,7 +23,11 @@
  *               and cmyth_proglist_t and between long long and
  *               cmyth_proglist_t.
  */
+#include <sys/types.h>
 #include <stdlib.h>
+#ifndef _MSC_VER
+#include <unistd.h>
+#endif
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -311,7 +315,6 @@ cmyth_proglist_get_list(cmyth_conn_t conn,
 cmyth_proglist_t
 cmyth_proglist_get_all_recorded(cmyth_conn_t control)
 {
-	char query[32];
 	cmyth_proglist_t proglist = cmyth_proglist_create();
 
 	if (proglist == NULL) {
@@ -321,14 +324,8 @@ cmyth_proglist_get_all_recorded(cmyth_conn_t control)
 		return NULL;
 	}
 
-	if (control->conn_version < 65) {
-		strcpy(query, "QUERY_RECORDINGS Play");
-	}
-	else {
-		strcpy(query, "QUERY_RECORDINGS Ascending");
-	}
 	if (cmyth_proglist_get_list(control, proglist,
-				    query,
+				    "QUERY_RECORDINGS Play",
 				    __FUNCTION__) < 0) {
 		cmyth_dbg(CMYTH_DBG_ERROR,
 			  "%s: cmyth_proglist_get_list() failed\n",

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,16 +19,16 @@
  *
  */
 
+#include "stdafx.h"
 #include "DVDSubtitleParserVplayer.h"
 #include "DVDCodecs/Overlay/DVDOverlayText.h"
 #include "DVDClock.h"
 #include "utils/RegExp.h"
-#include "utils/StdString.h"
 
 using namespace std;
 
 CDVDSubtitleParserVplayer::CDVDSubtitleParserVplayer(CDVDSubtitleStream* pStream, const string& strFile)
-    : CDVDSubtitleParserText(pStream, strFile), m_framerate(DVD_TIME_BASE)
+    : CDVDSubtitleParserText(pStream, strFile)
 {
 }
 

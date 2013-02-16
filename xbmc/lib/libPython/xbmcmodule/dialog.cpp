@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,20 +19,19 @@
  *
  */
 
-#include "system.h"
+#include "stdafx.h"
 #include "dialog.h"
 #include "lib/libPython/python/Include/Python.h"
 #include "../XBPythonDll.h"
 #include "pyutil.h"
-#include "dialogs/GUIDialogFileBrowser.h"
-#include "dialogs/GUIDialogNumeric.h"
-#include "dialogs/GUIDialogGamepad.h"
+#include "GUIDialogFileBrowser.h"
+#include "GUIDialogNumeric.h"
+#include "GUIDialogGamepad.h"
 #include "GUIWindowManager.h"
-#include "dialogs/GUIDialogOK.h"
-#include "dialogs/GUIDialogProgress.h"
-#include "dialogs/GUIDialogYesNo.h"
-#include "dialogs/GUIDialogSelect.h"
-#include "ApplicationMessenger.h"
+#include "GUIDialogOK.h"
+#include "GUIDialogProgress.h"
+#include "GUIDialogYesNo.h"
+#include "GUIDialogSelect.h"
 
 using namespace std;
 

@@ -183,11 +183,6 @@ static int dpcm_decode_frame(AVCodecContext *avctx, void *data,
     int stereo = s->channels - 1;
     int16_t *output_samples;
 
-    if (stereo && (buf_size & 1)) {
-        buf_size--;
-        buf_end--;
-    }
-
     /* calculate output size */
     switch(avctx->codec->id) {
     case CODEC_ID_ROQ_DPCM:
@@ -210,12 +205,9 @@ static int dpcm_decode_frame(AVCodecContext *avctx, void *data,
         av_log(avctx, AV_LOG_ERROR, "packet is too small\n");
         return AVERROR(EINVAL);
     }
-    if (out % s->channels) {
-        av_log(avctx, AV_LOG_WARNING, "channels have differing number of samples\n");
-    }
 
     /* get output buffer */
-    s->frame.nb_samples = (out + s->channels - 1) / s->channels;
+    s->frame.nb_samples = out / s->channels;
     if ((ret = avctx->get_buffer(avctx, &s->frame)) < 0) {
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         return ret;
@@ -296,7 +288,7 @@ static int dpcm_decode_frame(AVCodecContext *avctx, void *data,
     }
     case CODEC_ID_SOL_DPCM:
         if (avctx->codec_tag != 3) {
-            uint8_t *output_samples_u8 = s->frame.data[0];
+            uint8_t *output_samples_u8 = output_samples;
             while (buf < buf_end) {
                 uint8_t n = *buf++;
 
@@ -325,7 +317,7 @@ static int dpcm_decode_frame(AVCodecContext *avctx, void *data,
     *got_frame_ptr   = 1;
     *(AVFrame *)data = s->frame;
 
-    return avpkt->size;
+    return buf_size;
 }
 
 #define DPCM_DECODER(id_, name_, long_name_)                \

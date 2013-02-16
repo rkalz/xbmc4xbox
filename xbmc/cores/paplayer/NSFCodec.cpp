@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  *
  */
 
+#include "stdafx.h"
 #include "Util.h"
 #include "utils/RegExp.h"
 #include "utils/log.h"
@@ -27,14 +28,11 @@
 
 NSFCodec::NSFCodec()
 {
-  m_iTrack = 0;
   m_CodecName = "NSF";
-  m_nsf = NULL;
+  m_nsf = 0;
   m_bIsPlaying = false;
-  m_szBuffer = NULL;
-  m_szStartOfBuffer = NULL;
   m_iDataInBuffer = 0;
-  m_iDataPos = 0;
+  m_szBuffer = NULL;
 }
 
 NSFCodec::~NSFCodec()

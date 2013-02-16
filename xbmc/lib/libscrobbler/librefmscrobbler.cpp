@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,11 +19,11 @@
  *
  */
 
+#include "stdafx.h"
 #include "librefmscrobbler.h"
 #include "Application.h"
-#include "settings/Settings.h"
+#include "Settings.h"
 #include "utils/URIUtils.h"
-#include "LocalizeStrings.h"
 
 long CLibrefmScrobbler::m_instanceLock = 0;
 CLibrefmScrobbler *CLibrefmScrobbler::m_pInstance = NULL;
@@ -62,7 +62,7 @@ void CLibrefmScrobbler::RemoveInstance()
 void CLibrefmScrobbler::LoadCredentials()
 {
   SetUsername(g_guiSettings.GetString("scrobbler.librefmusername"));
-  SetPassword(g_guiSettings.GetString("scrobbler.librefmpass"));
+  SetPassword(g_guiSettings.GetString("scrobbler.librefmpassword"));
 }
 
 CStdString CLibrefmScrobbler::GetJournalFileName()
@@ -97,7 +97,7 @@ void CLibrefmScrobbler::NotifyUser(int error)
 bool CLibrefmScrobbler::CanScrobble()
 {
   return (!g_guiSettings.GetString("scrobbler.librefmusername").IsEmpty()  &&
-          !g_guiSettings.GetString("scrobbler.librefmpass").IsEmpty()  &&
+          !g_guiSettings.GetString("scrobbler.librefmpassword").IsEmpty()  &&
          g_guiSettings.GetBool("scrobbler.librefmsubmit"));
 }
 

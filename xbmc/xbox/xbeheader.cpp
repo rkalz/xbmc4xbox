@@ -1,8 +1,7 @@
-#include "system.h"
-#include "AutoPtrHandle.h"
+#include "stdafx.h"
 #include "xbeheader.h"
 #include "Util.h"
-#include "settings/GUISettings.h"
+#include "GUISettings.h"
 
 using namespace AUTOPTR;
 

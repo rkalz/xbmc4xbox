@@ -2,8 +2,6 @@
 #ifndef XENIUM_LCD_H
 #define XENIUM_LCD_H
 
-#include "system.h"
-
 #pragma once
 
 class Xenium 

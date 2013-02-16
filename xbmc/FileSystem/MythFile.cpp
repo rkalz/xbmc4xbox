@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2008 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,17 +19,16 @@
  *
  */
 
-#include "utils/log.h"
+#include "stdafx.h"
 #include "inttypes.h"
 #include "MythFile.h"
-#include "XBDateTime.h"
+#include "DateTime.h"
 #include "FileItem.h"
 #include "utils/URIUtils.h"
 #include "DllLibCMyth.h"
 #include "URL.h"
 #include "DirectoryCache.h"
 #include "utils/TimeUtils.h"
-#include "utils/SingleLock.h"
 
 extern "C" {
 #include "lib/cmyth/include/cmyth/cmyth.h"
@@ -43,6 +42,7 @@ static void prog_update_callback(cmyth_proginfo_t prog)
 {
   CLog::Log(LOGDEBUG, "%s - prog_update_callback", __FUNCTION__);
 }
+
 
 void CMythFile::OnEvent(int event, const string& data)
 {
@@ -59,20 +59,21 @@ bool CMythFile::HandleEvents()
 
   while(!m_events.empty())
   {
-    int event   = m_events.front().first;
-    string data = m_events.front().second;
+    int next        = m_events.front().first;
+    CStdString data = m_events.front().second;
     m_events.pop();
 
     lock.Leave();
 
-    switch (event) {
+    switch (next) {
     case CMYTH_EVENT_CLOSE:
       Close();
       break;
     case CMYTH_EVENT_LIVETV_CHAIN_UPDATE:
       {
+        string chainid = data.substr(strlen("LIVETV_CHAIN UPDATE "));
         if(m_recorder)
-          m_dll->livetv_chain_update(m_recorder, (char*)data.c_str(), 4096);
+          m_dll->livetv_chain_update(m_recorder, (char*)chainid.c_str(), 4096);
       }
       break;
     }
@@ -457,11 +458,6 @@ bool CMythFile::Delete(const CURL& url)
       g_directoryCache.ClearDirectory(tvshows.Get());
     }
 
-    /*
-     * Reset the recorded programs cache so the updated list is retrieved from mythbackend.
-     */
-    m_session->ResetAllRecordedPrograms();
-
     return true;
   }
   return false;
@@ -554,7 +550,7 @@ bool CMythFile::UpdateItem(CFileItem& item)
 
 int CMythFile::GetTotalTime()
 {
-  if(m_recorder && (CTimeUtils::GetTimeMS() - m_timestamp) > 5000 )
+  if(m_recorder && m_timestamp + 5000 < CTimeUtils::GetTimeMS())
   {
     m_timestamp = CTimeUtils::GetTimeMS();
     if(m_program)
