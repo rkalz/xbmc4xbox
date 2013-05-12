@@ -454,9 +454,9 @@ namespace INFO
 
 // NOTE: Version string MUST NOT contain spaces.  It is used in the HTTP request user agent.
 #ifdef SVN_REV
-#define VERSION_STRING "3.3-Beta1-r"SVN_REV
+#define VERSION_STRING "3.3-BETA1-r"SVN_REV
 #else
-#define VERSION_STRING "3.3-Beta1"
+#define VERSION_STRING "3.3-BETA1"
 #endif
 
 #define LISTITEM_START              35000
