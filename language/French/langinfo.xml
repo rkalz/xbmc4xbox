@@ -1,10 +1,10 @@
-﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 
 <!-- About Timezone and daylight saving time - (DST) / SUMMER TIME. -->
 <!-- Link:                                                -->
 <!-- http://www.worldtimezone.com/ -->
 
-<language>
+<language locale="French">
   <charsets>
     <gui>CP1252</gui>
     <subtitle>CP1252</subtitle>
@@ -17,43 +17,52 @@
   </dvd>
 
   <regions>
-    <region name="France">
+    <region name="France" locale="France">
       <dateshort>DD/MM/YYYY</dateshort>
       <datelong>DDDD, D MMMM YYYY</datelong>
       <time symbolAM="" symbolPM="">H:mm:ss</time>
       <tempunit>C</tempunit>
       <speedunit>kmh</speedunit>
-      <timezone>GMT+1</timezone>
+      <timezone>CEST</timezone>
     </region>
 
-    <region name="Belgique">
+    <region name="Belgique" locale="Belgium">
       <dateshort>DD/MM/YYYY</dateshort>
       <datelong>DDDD, D MMMM YYYY</datelong>
       <time symbolAM="" symbolPM="">H:mm:ss</time>
       <tempunit>C</tempunit>
       <speedunit>kmh</speedunit>
-      <timezone>GMT+1</timezone>
+      <timezone>CEST</timezone>
     </region>
 
-    <region name="Luxembourg">
+    <region name="Luxembourg" locale="ltz">
       <dateshort>DD/MM/YYYY</dateshort>
       <datelong>DDDD, D MMMM YYYY</datelong>
       <time symbolAM="" symbolPM="">H:mm:ss</time>
       <tempunit>C</tempunit>
       <speedunit>kmh</speedunit>
-      <timezone>GMT+1</timezone>
+      <timezone>CEST</timezone>
     </region>
 
-    <region name="Suisse">
+    <region name="Suisse" locale="che">
       <dateshort>DD/MM/YYYY</dateshort>
       <datelong>DDDD, D MMMM YYYY</datelong>
       <time symbolAM="" symbolPM="">H:mm:ss</time>
       <tempunit>C</tempunit>
       <speedunit>kmh</speedunit>
-      <timezone>GMT+1</timezone>
+      <timezone>CEST</timezone>
     </region>
 
-    <region name="Canada">
+    <region name="Principauté de Monaco">
+      <dateshort>DD/MM/YYYY</dateshort>
+      <datelong>DDDD, D MMMM YYYY</datelong>
+      <time symbolAM="" symbolPM="">H:mm:ss</time>
+      <tempunit>C</tempunit>
+      <speedunit>kmh</speedunit>
+      <timezone>CEST</timezone>
+    </region>
+
+    <region name="Canada" locale="Canada">
       <dateshort>DD/MM/YYYY</dateshort>
       <datelong>DDDD, D MMMM YYYY</datelong>
       <time symbolAM="" symbolPM="">H:mm:ss</time>
@@ -63,7 +72,7 @@
     </region>
       
     <!-- For USA timezone is set EST, french lang only: For peoples french  stay in Florida -->
-    <region name="USA">
+    <region name="USA" locale="USA">
       <dateshort>MM/DD/YYYY</dateshort>
       <datelong>DDDD, MMMM D, YYYY</datelong>
       <time symbolAM="AM" symbolPM="PM">h:mm:ss xx</time>
@@ -72,7 +81,7 @@
       <timezone>EST</timezone>
     </region>
 
-    <region name="UK">
+    <region name="UK" locale="UK">
       <dateshort>DD/MM/YYYY</dateshort>
       <datelong>DDDD, D MMMM YYYY</datelong>
       <time symbolAM="" symbolPM="">H:mm:ss</time>

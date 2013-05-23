@@ -158,7 +158,7 @@ int CSimpleFileCache::ReadFromCache(char *pBuffer, size_t iMaxSize)
 {
   int64_t iAvailable = GetAvailableRead();
   if ( iAvailable <= 0 ) {
-    return m_bEndOfInput?CACHE_RC_EOF : CACHE_RC_WOULD_BLOCK;
+    return m_bEndOfInput? 0 : CACHE_RC_WOULD_BLOCK;
   }
 
   if (iMaxSize > iAvailable)
@@ -216,7 +216,7 @@ int64_t CSimpleFileCache::Seek(int64_t iFilePosition)
   }
 
   int64_t nDiff = iTarget - m_nWritePosition;
-  if ( nDiff > 500000 || (nDiff > 0 && WaitForData((unsigned int)nDiff, 5000) == CACHE_RC_TIMEOUT)  ) {
+  if ( nDiff > 500000 || (nDiff > 0 && WaitForData((unsigned int)(iTarget - m_nReadPosition), 5000) == CACHE_RC_TIMEOUT)  ) {
     CLog::Log(LOGWARNING,"%s - attempt to seek pass read data (seek to %"PRId64". max: %"PRId64". reset read pointer. (%"PRId64")", __FUNCTION__, iTarget, m_nWritePosition, iFilePosition);
     return  CACHE_RC_ERROR;
   }
