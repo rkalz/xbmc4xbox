@@ -91,7 +91,7 @@ int MemBufferCache::ReadFromCache(char *pBuffer, size_t iMaxSize)
 {
   CSingleLock lock(m_sync);
   if ( m_buffer.getMaxReadSize() == 0 ) {
-    return m_bEndOfInput?CACHE_RC_EOF : CACHE_RC_WOULD_BLOCK;
+    return m_bEndOfInput ? 0 : CACHE_RC_WOULD_BLOCK;
   }
 
   int nRead = iMaxSize;
@@ -192,9 +192,6 @@ int64_t MemBufferCache::Seek(int64_t iFilePosition)
     nToCopy -= nSpace;
     if (nToCopy > 0)
       m_forwardBuffer.Copy(saveUnRead);
-
-    SEEK_CHECK_RET(m_HistoryBuffer.Copy(saveHist));
-    m_HistoryBuffer.Clear();
 
     m_nStartPosition = iFilePosition;
     m_space.PulseEvent();
