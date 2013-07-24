@@ -83,7 +83,6 @@ WIN32 is still required for the locale module.
 */
 #ifdef _XBMC
 #	define PYTHONPATH "Q:\\system\\python" // XBOX
-#	define Py_NO_ENABLE_SHARED
 #endif
 
 #define MS_WIN32 /* only support win32 and greater. */
@@ -203,6 +202,7 @@ WIN32 is still required for the locale module.
 #define _W64
 #endif
 
+#ifndef _XBMC
 /* Define like size_t, omitting the "unsigned" */
 #ifdef MS_WIN64
 typedef __int64 ssize_t;
@@ -210,6 +210,7 @@ typedef __int64 ssize_t;
 typedef _W64 int ssize_t;
 #endif
 #define HAVE_SSIZE_T 1
+#endif /* _XBMC */
 
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #ifdef _M_IX86
