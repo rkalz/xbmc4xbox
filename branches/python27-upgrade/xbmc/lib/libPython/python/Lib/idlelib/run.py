@@ -1,5 +1,4 @@
 import sys
-import os
 import linecache
 import time
 import socket
@@ -8,11 +7,13 @@ import thread
 import threading
 import Queue
 
-import CallTips
-import RemoteDebugger
-import RemoteObjectBrowser
-import StackViewer
-import rpc
+from idlelib import CallTips
+from idlelib import AutoComplete
+
+from idlelib import RemoteDebugger
+from idlelib import RemoteObjectBrowser
+from idlelib import StackViewer
+from idlelib import rpc
 
 import __main__
 
@@ -23,11 +24,14 @@ try:
 except ImportError:
     pass
 else:
-    def idle_formatwarning_subproc(message, category, filename, lineno):
+    def idle_formatwarning_subproc(message, category, filename, lineno,
+                                   line=None):
         """Format warnings the IDLE way"""
         s = "\nWarning (from warnings module):\n"
         s += '  File \"%s\", line %s\n' % (filename, lineno)
-        line = linecache.getline(filename, lineno).strip()
+        if line is None:
+            line = linecache.getline(filename, lineno)
+        line = line.strip()
         if line:
             s += "    %s\n" % line
         s += "%s: %s\n" % (category.__name__, message)
@@ -36,10 +40,11 @@ else:
 
 # Thread shared globals: Establish a queue between a subthread (which handles
 # the socket) and the main thread (which runs user code), plus global
-# completion and exit flags:
+# completion, exit and interruptable (the main thread) flags:
 
 exit_now = False
 quitting = False
+interruptable = False
 
 def main(del_exitfunc=False):
     """Start the Python execution server in a subprocess
@@ -63,10 +68,13 @@ def main(del_exitfunc=False):
     global quitting
     global no_exitfunc
     no_exitfunc = del_exitfunc
-    port = 8833
     #time.sleep(15) # test subprocess not responding
-    if sys.argv[1:]:
-        port = int(sys.argv[1])
+    try:
+        assert(len(sys.argv) > 1)
+        port = int(sys.argv[-1])
+    except:
+        print>>sys.stderr, "IDLE Subprocess: no IP port passed in sys.argv."
+        return
     sys.argv[:] = [""]
     sockthread = threading.Thread(target=manage_socket,
                                   name='SockThread',
@@ -82,9 +90,8 @@ def main(del_exitfunc=False):
                     # exiting but got an extra KBI? Try again!
                     continue
             try:
-                seq, request = rpc.request_queue.get(0)
+                seq, request = rpc.request_queue.get(block=True, timeout=0.05)
             except Queue.Empty:
-                time.sleep(0.05)
                 continue
             method, args, kwargs = request
             ret = method(*args, **kwargs)
@@ -115,7 +122,7 @@ def manage_socket(address):
             break
         except socket.error, err:
             print>>sys.__stderr__,"IDLE Subprocess: socket error: "\
-                                        + err[1] + ", retrying...."
+                                        + err.args[1] + ", retrying...."
     else:
         print>>sys.__stderr__, "IDLE Subprocess: Connection to "\
                                "IDLE GUI failed, exiting."
@@ -130,14 +137,15 @@ def show_socket_error(err, address):
     import tkMessageBox
     root = Tkinter.Tk()
     root.withdraw()
-    if err[0] == 61: # connection refused
+    if err.args[0] == 61: # connection refused
         msg = "IDLE's subprocess can't connect to %s:%d.  This may be due "\
               "to your personal firewall configuration.  It is safe to "\
               "allow this internal connection because no data is visible on "\
               "external ports." % address
         tkMessageBox.showerror("IDLE Subprocess Error", msg, parent=root)
     else:
-        tkMessageBox.showerror("IDLE Subprocess Error", "Socket Error: %s" % err[1])
+        tkMessageBox.showerror("IDLE Subprocess Error",
+                               "Socket Error: %s" % err.args[1])
     root.destroy()
 
 def print_exception():
@@ -204,7 +212,10 @@ def exit():
 
     """
     if no_exitfunc:
-        del sys.exitfunc
+        try:
+            del sys.exitfunc
+        except AttributeError:
+            pass
     sys.exit(0)
 
 class MyRPCServer(rpc.RPCServer):
@@ -247,7 +258,7 @@ class MyHandler(rpc.RPCHandler):
         sys.stdin = self.console = self.get_remote_proxy("stdin")
         sys.stdout = self.get_remote_proxy("stdout")
         sys.stderr = self.get_remote_proxy("stderr")
-        import IOBinding
+        from idlelib import IOBinding
         sys.stdin.encoding = sys.stdout.encoding = \
                              sys.stderr.encoding = IOBinding.encoding
         self.interp = self.get_remote_proxy("interp")
@@ -270,17 +281,23 @@ class MyHandler(rpc.RPCHandler):
         thread.interrupt_main()
 
 
-class Executive:
+class Executive(object):
 
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
         self.locals = __main__.__dict__
         self.calltip = CallTips.CallTips()
+        self.autocomplete = AutoComplete.AutoComplete()
 
     def runcode(self, code):
+        global interruptable
         try:
             self.usr_exc_info = None
-            exec code in self.locals
+            interruptable = True
+            try:
+                exec code in self.locals
+            finally:
+                interruptable = False
         except:
             self.usr_exc_info = sys.exc_info()
             if quitting:
@@ -294,7 +311,8 @@ class Executive:
             flush_stdout()
 
     def interrupt_the_server(self):
-        thread.interrupt_main()
+        if interruptable:
+            thread.interrupt_main()
 
     def start_the_debugger(self, gui_adap_oid):
         return RemoteDebugger.start_debugger(self.rpchandler, gui_adap_oid)
@@ -305,6 +323,9 @@ class Executive:
 
     def get_the_calltip(self, name):
         return self.calltip.fetch_tip(name)
+
+    def get_the_completion_list(self, what, mode):
+        return self.autocomplete.fetch_completions(what, mode)
 
     def stackviewer(self, flist_oid=None):
         if self.usr_exc_info:

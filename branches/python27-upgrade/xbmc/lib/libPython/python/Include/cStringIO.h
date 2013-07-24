@@ -18,9 +18,12 @@ extern "C" {
   This would typically be done in your init function.
 
 */
+
+#define PycStringIO_CAPSULE_NAME "cStringIO.cStringIO_CAPI"
+
 #define PycString_IMPORT \
-  PycStringIO = (struct PycStringIO_CAPI*)PyCObject_Import("cStringIO", \
-                                                           "cStringIO_CAPI")
+  PycStringIO = ((struct PycStringIO_CAPI*)PyCapsule_Import(\
+    PycStringIO_CAPSULE_NAME, 0))
 
 /* Basic functions to manipulate cStringIO objects from C */
 
@@ -29,7 +32,7 @@ static struct PycStringIO_CAPI {
  /* Read a string from an input object.  If the last argument
     is -1, the remainder will be read.
     */
-  int(*cread)(PyObject *, char **, int);
+  int(*cread)(PyObject *, char **, Py_ssize_t);
 
  /* Read a line from an input object.  Returns the length of the read
     line as an int and a pointer inside the object buffer as char** (so
@@ -38,7 +41,7 @@ static struct PycStringIO_CAPI {
   int(*creadline)(PyObject *, char **);
 
   /* Write a string to an output object*/
-  int(*cwrite)(PyObject *, char *, int);
+  int(*cwrite)(PyObject *, const char *, Py_ssize_t);
 
   /* Get the output object as a Python string (returns new reference). */
   PyObject *(*cgetvalue)(PyObject *);
@@ -60,9 +63,9 @@ static struct PycStringIO_CAPI {
 
 /* These can be used to test if you have one */
 #define PycStringIO_InputCheck(O) \
-  ((O)->ob_type==PycStringIO->InputType)
+  (Py_TYPE(O)==PycStringIO->InputType)
 #define PycStringIO_OutputCheck(O) \
-  ((O)->ob_type==PycStringIO->OutputType)
+  (Py_TYPE(O)==PycStringIO->OutputType)
 
 #ifdef __cplusplus
 }
