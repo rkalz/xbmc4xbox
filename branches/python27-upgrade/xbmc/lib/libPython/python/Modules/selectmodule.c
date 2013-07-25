@@ -6,6 +6,7 @@
    >= 0.
 */
 
+#include <winsock2.h>
 #include "Python.h"
 #include <structmember.h>
 
