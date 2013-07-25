@@ -21,6 +21,7 @@
 				Optimization="0"
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="FALSE"
+				AdditionalIncludeDirectories=";..\Include; ..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 				RuntimeLibrary="3"/>
 			<Tool
@@ -30,7 +31,7 @@
 				AdditionalDependencies="ws2_32.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_d.pyd"
 				LinkIncremental="1"
-				IgnoreDefaultLibraryNames="libc"
+				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName)_d.pdb"
 				BaseAddress="0x1D110000"
 				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
@@ -63,6 +64,7 @@
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories=";..\Include; ..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 				RuntimeLibrary="2"/>
 			<Tool
@@ -71,7 +73,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
-				IgnoreDefaultLibraryNames="libc"
+				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
 				BaseAddress="0x1D110000"
 				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
@@ -112,6 +114,7 @@
 				OmitFramePointers="TRUE"
 				EnableFiberSafeOptimizations="FALSE"
 				WholeProgramOptimization="TRUE"
+				AdditionalIncludeDirectories=";..\Include; ..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
@@ -123,7 +126,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
-				IgnoreDefaultLibraryNames="libc"
+				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -159,6 +162,7 @@
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories=";..\Include; ..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 				RuntimeLibrary="2"/>
 			<Tool
@@ -167,7 +171,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
-				IgnoreDefaultLibraryNames="libc"
+				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
 				LinkTimeCodeGeneration="TRUE"
 				BaseAddress="0x1D110000"

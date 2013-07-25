@@ -600,9 +600,6 @@
 				RelativePath="..\Modules\arraymodule.c">
 			</File>
 			<File
-				RelativePath="..\Modules\audioop.c">
-			</File>
-			<File
 				RelativePath="..\Modules\binascii.c">
 			</File>
 			<File
@@ -625,9 +622,6 @@
 			</File>
 			<File
 				RelativePath="..\Modules\gcmodule.c">
-			</File>
-			<File
-				RelativePath="..\Modules\imageop.c">
 			</File>
 			<File
 				RelativePath="..\Modules\itertoolsmodule.c">
@@ -1038,12 +1032,6 @@
 		<Filter
 			Name="PC">
 			<File
-				RelativePath="..\PC\_subprocess.c">
-			</File>
-			<File
-				RelativePath="..\PC\_winreg.c">
-			</File>
-			<File
 				RelativePath="..\PC\config.c">
 			</File>
 			<File
@@ -1057,9 +1045,6 @@
 			</File>
 			<File
 				RelativePath="..\PC\import_nt.c">
-			</File>
-			<File
-				RelativePath="..\PC\msvcrtmodule.c">
 			</File>
 			<File
 				RelativePath="..\PC\pyconfig.h">

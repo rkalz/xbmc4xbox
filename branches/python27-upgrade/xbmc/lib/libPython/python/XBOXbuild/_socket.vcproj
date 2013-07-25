@@ -21,6 +21,7 @@
 				Optimization="0"
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="FALSE"
+				AdditionalIncludeDirectories=";..\Include; ..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 				RuntimeLibrary="3"/>
 			<Tool
@@ -62,6 +63,7 @@
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories=";..\Include; ..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 				RuntimeLibrary="2"/>
 			<Tool
@@ -110,6 +112,7 @@
 				OmitFramePointers="TRUE"
 				EnableFiberSafeOptimizations="FALSE"
 				WholeProgramOptimization="TRUE"
+				AdditionalIncludeDirectories=";..\Include; ..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
@@ -156,6 +159,7 @@
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories=";..\Include; ..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 				RuntimeLibrary="2"/>
 			<Tool

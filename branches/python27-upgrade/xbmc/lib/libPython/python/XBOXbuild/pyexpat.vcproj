@@ -21,7 +21,7 @@
 				Optimization="0"
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="FALSE"
-				AdditionalIncludeDirectories=".\..\Modules\expat"
+				AdditionalIncludeDirectories=".\..\Modules\expat;..\Include; ..\PC"
 				PreprocessorDefinitions="PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 				RuntimeLibrary="3"/>
 			<Tool
@@ -61,7 +61,7 @@
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\..\Modules\expat"
+				AdditionalIncludeDirectories=".\..\Modules\expat;..\Include; ..\PC"
 				PreprocessorDefinitions="PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 				RuntimeLibrary="2"/>
 			<Tool
@@ -108,7 +108,7 @@
 				OmitFramePointers="TRUE"
 				EnableFiberSafeOptimizations="FALSE"
 				WholeProgramOptimization="TRUE"
-				AdditionalIncludeDirectories=".\..\Modules\expat"
+				AdditionalIncludeDirectories=".\..\Modules\expat;..\Include; ..\PC"
 				PreprocessorDefinitions="PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
@@ -153,7 +153,7 @@
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\..\Modules\expat"
+				AdditionalIncludeDirectories=".\..\Modules\expat;..\Include; ..\PC"
 				PreprocessorDefinitions="PYEXPAT_EXPORTS;HAVE_EXPAT_H;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
 				RuntimeLibrary="2"/>
 			<Tool

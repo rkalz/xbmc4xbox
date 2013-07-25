@@ -1,57 +1,83 @@
 <?xml version="1.0" encoding="windows-1250"?>
-<VisualStudioProject ProjectType="Visual C++" Version="7.10" Name="make_buildinfo" ProjectGUID="{C73F0EC1-358B-4177-940F-0846AC8B04CD}" RootNamespace="make_buildinfo" Keyword="Win32Proj" TargetFrameworkVersion="131072">
-  <Platforms>
-    <Platform Name="Win32" />
-  </Platforms>
-  <ToolFiles>
-  </ToolFiles>
-  <Configurations>
-    <Configuration Name="Release|Win32" ConfigurationType="1" CharacterSet="0" OutputDirectory="$(SolutionDir)" IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-$(ConfigurationName)\$(ProjectName)\">
-      <Tool Name="VCPreBuildEventTool" />
-      <Tool Name="VCCustomBuildTool" />
-      <Tool Name="VCXMLDataGeneratorTool" />
-      <Tool Name="VCWebServiceProxyGeneratorTool" />
-      <Tool Name="VCMIDLTool" />
-      <Tool Name="VCCLCompilerTool" Optimization="0" InlineFunctionExpansion="1" PreprocessorDefinitions="_CONSOLE" RuntimeLibrary="0" EnableIntrinsicFunctions="true" AdditionalIncludeDirectories="..\Include; ..\PC" StringPooling="true" ExceptionHandling="0" EnableFunctionLevelLinking="true" WarningLevel="3" DebugInformationFormat="3" CompileAs="0" />
-      <Tool Name="VCManagedResourceCompilerTool" />
-      <Tool Name="VCResourceCompilerTool" AdditionalIncludeDirectories="..\PC;..\Include" />
-      <Tool Name="VCPreLinkEventTool" />
-      <Tool Name="VCLinkerTool" OutputFile="$(OutDir)/make_buildinfo.exe" ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb" SubSystem="1" LinkIncremental="1" AdditionalLibraryDirectories="$(OutDir)" GenerateDebugInformation="true" RandomizedBaseAddress="1" DataExecutionPrevention="0" TargetMachine="1" />
-      <Tool Name="VCALinkTool" />
-      <Tool Name="VCManifestTool" />
-      <Tool Name="VCXDCMakeTool" />
-      <Tool Name="VCBscMakeTool" />
-      <Tool Name="VCFxCopTool" />
-      <Tool Name="VCAppVerifierTool" />
-      <Tool Name="VCPostBuildEventTool" />
-      <UserMacro Name="PythonExe" Value="$(SolutionDir)\python.exe" />
-      <UserMacro Name="externalsDir" Value="..\.." />
-      <UserMacro Name="bsddb47Dir" Value="$(externalsDir)\db-4.7.25.0\build_windows" />
-      <UserMacro Name="bsddb47DepLibs" Value="ws2_32.lib" />
-      <UserMacro Name="bsddbDir" Value="$(bsddb47Dir)" />
-      <UserMacro Name="bsddbDepLibs" Value="$(bsddb47DepLibs)" />
-      <UserMacro Name="bsddb44Dir" Value="$(externalsDir)\db-4.4.20\build_win32" />
-      <UserMacro Name="bsddb44DepLibs" Value="" />
-      <UserMacro Name="sqlite3Dir" Value="$(externalsDir)\sqlite-3.6.21" />
-      <UserMacro Name="bz2Dir" Value="$(externalsDir)\bzip2-1.0.5" />
-      <UserMacro Name="opensslDir" Value="$(externalsDir)\openssl-0.9.8l" />
-      <UserMacro Name="tcltkDir" Value="$(externalsDir)\tcltk" />
-      <UserMacro Name="tcltk64Dir" Value="$(externalsDir)\tcltk64" />
-      <UserMacro Name="tcltkLib" Value="$(tcltkDir)\lib\tcl85.lib $(tcltkDir)\lib\tk85.lib" />
-      <UserMacro Name="tcltkLibDebug" Value="$(tcltkDir)\lib\tcl85g.lib $(tcltkDir)\lib\tk85g.lib" />
-      <UserMacro Name="tcltk64Lib" Value="$(tcltk64Dir)\lib\tcl85.lib $(tcltk64Dir)\lib\tk85.lib" />
-      <UserMacro Name="tcltk64LibDebug" Value="$(tcltk64Dir)\lib\tcl85g.lib $(tcltk64Dir)\lib\tk85g.lib" />
-      <UserMacro Name="KillPythonExe" Value="$(OutDir)\kill_python.exe" />
-    </Configuration>
-  </Configurations>
-  <References>
-  </References>
-  <Files>
-    <Filter Name="Source Files" Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx" UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
-      <File RelativePath=".\make_buildinfo.c">
-      </File>
-    </Filter>
-  </Files>
-  <Globals>
-  </Globals>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="make_buildinfo"
+	ProjectGUID="{C73F0EC1-358B-4177-940F-0846AC8B04CD}"
+	RootNamespace="make_buildinfo"
+	Keyword="Win32Proj">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)"
+			IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-$(ConfigurationName)\$(ProjectName)\"
+			ConfigurationType="1"
+			CharacterSet="0">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="TRUE"
+				AdditionalIncludeDirectories="..\Include; ..\PC"
+				PreprocessorDefinitions="_CONSOLE"
+				StringPooling="TRUE"
+				ExceptionHandling="FALSE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)/make_buildinfo.exe"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="$(OutDir)"
+				IgnoreDefaultLibraryNames=""
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
+				SubSystem="1"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				AdditionalIncludeDirectories="..\PC;..\Include"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="Source Files"
+			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
+			<File
+				RelativePath=".\make_buildinfo.c">
+			</File>
+		</Filter>
+	</Files>
+	<Globals>
+	</Globals>
 </VisualStudioProject>
