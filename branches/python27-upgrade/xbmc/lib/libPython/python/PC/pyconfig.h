@@ -83,6 +83,7 @@ WIN32 is still required for the locale module.
 */
 #ifdef _XBMC
 #	define PYTHONPATH "Q:\\system\\python" // XBOX
+#	define Py_NO_ENABLE_SHARED
 #endif
 
 #define MS_WIN32 /* only support win32 and greater. */
