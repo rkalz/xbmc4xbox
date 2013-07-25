@@ -205,12 +205,12 @@ void XBPython::Initialize()
       // first we check if all necessary files are installed
       if (!FileExist("Q:\\system\\python\\python27.zlib") ||
         !FileExist("Q:\\system\\python\\DLLs\\_socket.pyd") ||
+        !FileExist("Q:\\system\\python\\DLLs\\_sqlite3.pyd") ||
         !FileExist("Q:\\system\\python\\DLLs\\_ssl.pyd") ||
         !FileExist("Q:\\system\\python\\DLLs\\bz2.pyd") ||
         !FileExist("Q:\\system\\python\\DLLs\\pyexpat.pyd") ||
         !FileExist("Q:\\system\\python\\DLLs\\select.pyd") ||
         !FileExist("Q:\\system\\python\\DLLs\\unicodedata.pyd") ||
-        !FileExist("Q:\\system\\python\\DLLs\\zlib.pyd"))
       {
         CLog::Log(LOGERROR, "Python: Missing files, unable to execute script");
         Finalize();
