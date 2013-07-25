@@ -647,7 +647,6 @@ class Thread(_Verbose):
             #if 'dummy_threading' not in _sys.modules:
             #    raise
             print("")
-            raise
 
     def join(self, timeout=None):
         if not self.__initialized:
