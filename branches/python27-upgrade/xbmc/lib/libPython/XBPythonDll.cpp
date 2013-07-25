@@ -122,7 +122,7 @@ class CVaPassNext{
 extern "C"
 {
   /*****************************************
-   * python24.dll
+   * python27.dll
    */
 
   FUNCTION(PyEval_ReleaseLock)

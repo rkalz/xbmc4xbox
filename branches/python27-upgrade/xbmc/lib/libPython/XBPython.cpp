@@ -45,7 +45,7 @@
 
 XBPython g_pythonParser;
 
-#define PYTHON_DLL "Q:\\system\\python\\python24.dll"
+#define PYTHON_DLL "Q:\\system\\python\\python27.dll"
 #define PYTHON_LIBDIR "Q:\\system\\python\\lib\\"
 #define PYTHON_EXT "Q:\\system\\python\\lib\\*.pyd"
 
@@ -197,13 +197,13 @@ void XBPython::Initialize()
       LibraryLoader* pDll = DllLoaderContainer::GetModule(m_hModule);
       if (!pDll || !python_load_dll(*pDll))
       {
-        CLog::Log(LOGFATAL, "Python: error loading python24.dll");
+        CLog::Log(LOGFATAL, "Python: error loading python27.dll");
         Finalize();
         return;
       }
 
       // first we check if all necessary files are installed
-      if (!FileExist("Q:\\system\\python\\python24.zlib") ||
+      if (!FileExist("Q:\\system\\python\\python27.zlib") ||
         !FileExist("Q:\\system\\python\\DLLs\\_socket.pyd") ||
         !FileExist("Q:\\system\\python\\DLLs\\_ssl.pyd") ||
         !FileExist("Q:\\system\\python\\DLLs\\bz2.pyd") ||
@@ -286,12 +286,12 @@ void XBPython::Finalize()
   if (m_iDllScriptCounter == 0 && m_bInitialized)
   {
     m_bInitialized = false;
-    CLog::Log(LOGINFO, "Python, unloading python24.dll because no scripts are running anymore");
+    CLog::Log(LOGINFO, "Python, unloading python27.dll because no scripts are running anymore");
     PyEval_AcquireLock();
     PyThreadState_Swap(mainThreadState);
     Py_Finalize();
     PyEval_ReleaseLock();
-    // first free all dlls loaded by python, after that python24.dll (this is done by UnloadPythonDlls
+    // first free all dlls loaded by python, after that python27.dll (this is done by UnloadPythonDlls
     DllLoaderContainer::UnloadPythonDlls();
     m_hModule = NULL;
     mainThreadState = NULL;
