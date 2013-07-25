@@ -89,16 +89,20 @@ BOOL    WINAPI  DllMain (HANDLE hInst,
             strcpy(dllVersionBuffer, "2.7.3"); // XBOX
 
             // and capture our activation context for use when loading extensions.
+            /*
             _LoadActCtxPointers();
             if (pfnGetCurrentActCtx && pfnAddRefActCtx)
                 if ((*pfnGetCurrentActCtx)(&PyWin_DLLhActivationContext))
                     if (!(*pfnAddRefActCtx)(PyWin_DLLhActivationContext))
                         OutputDebugString("Python failed to load the default activation context\n");
+            */
             break;
 
         case DLL_PROCESS_DETACH:
+            /*
             if (pfnReleaseActCtx)
                 (*pfnReleaseActCtx)(PyWin_DLLhActivationContext);
+            */
             break;
     }
     return TRUE;
