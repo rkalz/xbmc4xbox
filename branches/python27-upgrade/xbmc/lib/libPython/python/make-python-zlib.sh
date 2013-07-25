@@ -1,6 +1,6 @@
 #!/bin/sh
 cd Lib/
-zip ../python24.zlib \
+zip ../python27.zlib \
   -r . \
   -i \*.py \
   -x \
