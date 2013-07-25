@@ -833,8 +833,8 @@ win32_wchdir(LPCWSTR path)
 #undef FSTAT
 #undef STRUCT_STAT
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
-#       define STAT win32_stat
-#       define FSTAT win32_fstat
+#       define STAT _stati64
+#       define FSTAT _fstati64
 #       define STRUCT_STAT struct win32_stat
 #else
 #       define STAT stat
