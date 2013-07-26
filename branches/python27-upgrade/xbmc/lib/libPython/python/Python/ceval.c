@@ -460,11 +460,43 @@ Py_MakePendingCalls(void)
     }
 
     /* only service pending calls on main thread */
-    if (main_thread && PyThread_get_thread_ident() != main_thread)
-        return 0;
+    //if (main_thread && PyThread_get_thread_ident() != main_thread)
+    //    return 0;
     /* don't perform recursive pending calls */
-    if (pendingbusy)
-        return 0;
+    //if (pendingbusy)
+    //    return 0;
+
+    /* busy check disabled for xbmc,
+      code example :
+      -----------------------------
+      class MainWin(xbmcgui.Window):
+          def onAction(self, action):
+              if action == ACTION_PREVIOUS_MENU:
+                  self.close()
+              elif action == ACTION_SELECT_ITEM:
+                  ChildWin().doModal()
+       
+          class ChildWin(xbmcgui.Window):
+              def onAction(self, action):
+                  if action == ACTION_PREVIOUS_MENU:
+                      self.close()
+       
+          parent = MainWin()
+          parent.doModal()
+      -------------------------------
+       
+      For each xbmc onAction call, xbmc will call Pendingcalls, execute the
+      python onAction object and waits for it's return.
+       
+      But because ChildWin().doModal() is executed in an onAction method, the
+      call to a python onAction object will never return until Child().close
+      is called.
+       
+      With busy checking on this method will just return instead of executing the
+      close() command. So for now we just disabled it and hope it won't give any
+      trouble when executing code
+     */
+
     pendingbusy = 1;
     /* perform a bounded number of calls, in case of recursion */
     for (i=0; i<NPENDINGCALLS; i++) {
