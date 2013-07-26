@@ -210,7 +210,7 @@ void XBPython::Initialize()
         !FileExist("Q:\\system\\python\\DLLs\\bz2.pyd") ||
         !FileExist("Q:\\system\\python\\DLLs\\pyexpat.pyd") ||
         !FileExist("Q:\\system\\python\\DLLs\\select.pyd") ||
-        !FileExist("Q:\\system\\python\\DLLs\\unicodedata.pyd") ||
+        !FileExist("Q:\\system\\python\\DLLs\\unicodedata.pyd"))
       {
         CLog::Log(LOGERROR, "Python: Missing files, unable to execute script");
         Finalize();
