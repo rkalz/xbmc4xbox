@@ -50,6 +50,7 @@ def find_working_perl(perls):
         fh = os.popen('"%s" -e "use Win32;"' % perl)
         fh.read()
         rc = fh.close()
+        return perl
         if rc:
             continue
         return perl

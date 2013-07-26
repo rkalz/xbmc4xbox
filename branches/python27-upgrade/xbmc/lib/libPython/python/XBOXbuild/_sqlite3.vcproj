@@ -21,7 +21,7 @@
 				Optimization="0"
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="FALSE"
-				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				AdditionalIncludeDirectories="..\..\sqlite-3.6.21;..\Include; ..\PC"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
 				RuntimeLibrary="3"/>
 			<Tool
@@ -30,6 +30,7 @@
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName)_d.pyd"
 				LinkIncremental="1"
+				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName)_d.pdb"
 				BaseAddress="0x1e180000"
 				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
@@ -56,13 +57,14 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="0"
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				AdditionalIncludeDirectories="..\..\sqlite-3.6.21;..\Include; ..\PC"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
 				RuntimeLibrary="2"/>
 			<Tool
@@ -70,6 +72,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
+				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
 				BaseAddress="0x1e180000"
 				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
@@ -110,7 +113,7 @@
 				OmitFramePointers="TRUE"
 				EnableFiberSafeOptimizations="FALSE"
 				WholeProgramOptimization="TRUE"
-				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				AdditionalIncludeDirectories="..\..\sqlite-3.6.21;..\Include; ..\PC"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
@@ -121,6 +124,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
+				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -156,7 +160,7 @@
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(sqlite3Dir)"
+				AdditionalIncludeDirectories="..\..\sqlite-3.6.21;..\Include; ..\PC"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
 				RuntimeLibrary="2"/>
 			<Tool
@@ -164,6 +168,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
+				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
 				LinkTimeCodeGeneration="TRUE"
 				BaseAddress="0x1e180000"

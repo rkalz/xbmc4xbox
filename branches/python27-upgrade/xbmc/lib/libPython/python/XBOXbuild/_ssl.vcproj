@@ -21,14 +21,14 @@
 				Optimization="0"
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="FALSE"
-				AdditionalIncludeDirectories="$(opensslDir)\inc32"
+				AdditionalIncludeDirectories="&quot;..\..\openssl-0.9.8r\inc32&quot;;..\Include;..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 				RuntimeLibrary="3"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib &quot;..\..\openssl-0.9.8r\out32\libeay32.lib&quot; &quot;&quot;..\..\openssl-0.9.8r\out32\ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName)_d.pyd"
 				LinkIncremental="1"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName)_d.pdb"
@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				CommandLine="cd &quot;$(SolutionDir)&quot;
-&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a
+c:\python27\python.exe build_ssl.py Release $(PlatformName) -a
 "/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -59,20 +59,21 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="0"
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(opensslDir)\inc32"
+				AdditionalIncludeDirectories="&quot;..\..\openssl-0.9.8r\inc32&quot;;..\Include;..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 				RuntimeLibrary="2"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib &quot;..\..\openssl-0.9.8r\out32\libeay32.lib&quot; &quot;&quot;..\..\openssl-0.9.8r\out32\ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
 				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
@@ -83,7 +84,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				CommandLine="cd &quot;$(SolutionDir)&quot;
-&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a
+c:\python27\python.exe build_ssl.py Release $(PlatformName) -a
 "/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -116,7 +117,7 @@
 				OmitFramePointers="TRUE"
 				EnableFiberSafeOptimizations="FALSE"
 				WholeProgramOptimization="TRUE"
-				AdditionalIncludeDirectories="$(opensslDir)\inc32"
+				AdditionalIncludeDirectories="&quot;..\..\openssl-0.9.8r\inc32&quot;;..\Include;..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
@@ -126,7 +127,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib &quot;..\..\openssl-0.9.8r\out32\libeay32.lib&quot; &quot;&quot;..\..\openssl-0.9.8r\out32\ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
 				OptimizeReferences="2"
@@ -140,7 +141,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				CommandLine="cd &quot;$(SolutionDir)&quot;
-&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a
+c:\python27\python.exe build_ssl.py Release $(PlatformName) -a
 "/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -165,14 +166,14 @@
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(opensslDir)\inc32"
+				AdditionalIncludeDirectories="&quot;..\..\openssl-0.9.8r\inc32&quot;;..\Include;..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 				RuntimeLibrary="2"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib &quot;..\..\openssl-0.9.8r\out32\libeay32.lib&quot; &quot;&quot;..\..\openssl-0.9.8r\out32\ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
 				LinkTimeCodeGeneration="TRUE"
@@ -184,7 +185,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				CommandLine="cd &quot;$(SolutionDir)&quot;
-&quot;$(PythonExe)&quot; build_ssl.py Release $(PlatformName) -a
+c:\python27\python.exe build_ssl.py Release $(PlatformName) -a
 "/>
 			<Tool
 				Name="VCPreLinkEventTool"/>

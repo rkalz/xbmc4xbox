@@ -18,6 +18,7 @@
 			CharacterSet="0">
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="2"
 				AdditionalIncludeDirectories=";$(sqlite3Dir)"
 				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 				WarningLevel="1"/>
@@ -25,7 +26,8 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\$(ProjectName)_d.dll"/>
+				OutputFile="$(OutDir)\$(ProjectName)_d.dll"
+				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -49,20 +51,23 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="2"
+			ConfigurationType="4"
 			CharacterSet="0"
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=";$(sqlite3Dir)"
-				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="&quot;..\..\sqlite-3.6.21&quot;"
+				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport);_XBOX"
+				RuntimeLibrary="0"
 				WarningLevel="1"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
-				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\$(ProjectName).dll"/>
+				Name="VCLibrarianTool"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -77,8 +82,6 @@
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
 			<Tool
 				Name="VCManagedWrapperGeneratorTool"/>
 			<Tool
@@ -111,6 +114,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
+				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				LinkTimeCodeGeneration="TRUE"
@@ -139,11 +143,13 @@
 		<Configuration
 			Name="PGUpdate|Win32"
 			OutputDirectory="$(SolutionDir)$(PlatformName)-pgo\"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="0"
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="2"
 				AdditionalIncludeDirectories=";$(sqlite3Dir)"
 				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 				WarningLevel="1"/>
@@ -152,6 +158,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
+				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				LinkTimeCodeGeneration="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -181,16 +188,16 @@
 		<Filter
 			Name="Header Files">
 			<File
-				RelativePath="$(sqlite3Dir)\sqlite3.h">
+				RelativePath="..\..\sqlite-3.6.21\sqlite3.h">
 			</File>
 			<File
-				RelativePath="$(sqlite3Dir)\sqlite3ext.h">
+				RelativePath="..\..\sqlite-3.6.21\sqlite3ext.h">
 			</File>
 		</Filter>
 		<Filter
 			Name="Source Files">
 			<File
-				RelativePath="$(sqlite3Dir)\sqlite3.c">
+				RelativePath="..\..\sqlite-3.6.21\sqlite3.c">
 			</File>
 		</Filter>
 	</Files>

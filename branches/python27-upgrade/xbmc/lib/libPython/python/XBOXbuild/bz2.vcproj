@@ -21,7 +21,7 @@
 				Optimization="0"
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="FALSE"
-				AdditionalIncludeDirectories="$(bz2Dir)"
+				AdditionalIncludeDirectories="..\..\bzip2;..\Include; ..\PC"
 				PreprocessorDefinitions="WIN32;_FILE_OFFSET_BITS=64"
 				RuntimeLibrary="3"/>
 			<Tool
@@ -56,15 +56,19 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="0"
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bz2Dir)"
+				Optimization="1"
+				OptimizeForProcessor="2"
+				AdditionalIncludeDirectories="..\..\bzip2;..\Include; ..\PC"
 				PreprocessorDefinitions="WIN32;_FILE_OFFSET_BITS=64"
-				RuntimeLibrary="2"/>
+				RuntimeLibrary="2"
+				EnableEnhancedInstructionSet="1"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -110,7 +114,7 @@
 				OmitFramePointers="TRUE"
 				EnableFiberSafeOptimizations="FALSE"
 				WholeProgramOptimization="TRUE"
-				AdditionalIncludeDirectories="$(bz2Dir)"
+				AdditionalIncludeDirectories="..\..\bzip2;..\Include; ..\PC"
 				PreprocessorDefinitions="WIN32;_FILE_OFFSET_BITS=64"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
@@ -151,12 +155,13 @@
 		<Configuration
 			Name="PGUpdate|Win32"
 			OutputDirectory="$(SolutionDir)$(PlatformName)-pgo\"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="0"
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(bz2Dir)"
+				AdditionalIncludeDirectories="..\..\bzip2;..\Include; ..\PC"
 				PreprocessorDefinitions="WIN32;_FILE_OFFSET_BITS=64"
 				RuntimeLibrary="2"/>
 			<Tool
@@ -196,40 +201,42 @@
 		<Filter
 			Name="Source Files">
 			<File
+				RelativePath="..\..\bzip2\blocksort.c">
+			</File>
+			<File
 				RelativePath="..\Modules\bz2module.c">
 			</File>
+			<File
+				RelativePath="..\..\bzip2\bzip2.c">
+			</File>
+			<File
+				RelativePath="..\..\bzip2\bzlib.c">
+			</File>
+			<File
+				RelativePath="..\..\bzip2\compress.c">
+			</File>
+			<File
+				RelativePath="..\..\bzip2\crctable.c">
+			</File>
+			<File
+				RelativePath="..\..\bzip2\decompress.c">
+			</File>
+			<File
+				RelativePath="..\..\bzip2\huffman.c">
+			</File>
+			<File
+				RelativePath="..\..\bzip2\randtable.c">
+			</File>
 		</Filter>
 		<Filter
-			Name="bzip2 1.0.5 Header Files">
-			<File
-				RelativePath="$(bz2Dir)\bzlib.h">
-			</File>
-			<File
-				RelativePath="$(bz2Dir)\bzlib_private.h">
-			</File>
+			Name="bzip2 Source Files"
+			Filter="">
 		</Filter>
 		<Filter
-			Name="bzip2 1.0.5 Source Files">
+			Name="bzip2 Header Files"
+			Filter="">
 			<File
-				RelativePath="$(bz2Dir)\blocksort.c">
-			</File>
-			<File
-				RelativePath="$(bz2Dir)\bzlib.c">
-			</File>
-			<File
-				RelativePath="$(bz2Dir)\compress.c">
-			</File>
-			<File
-				RelativePath="$(bz2Dir)\crctable.c">
-			</File>
-			<File
-				RelativePath="$(bz2Dir)\decompress.c">
-			</File>
-			<File
-				RelativePath="$(bz2Dir)\huffman.c">
-			</File>
-			<File
-				RelativePath="$(bz2Dir)\randtable.c">
+				RelativePath="..\..\bzip2\bzlib.h">
 			</File>
 		</Filter>
 	</Files>

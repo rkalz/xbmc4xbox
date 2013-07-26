@@ -20,15 +20,17 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
-				Optimization="2"
+				Optimization="1"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
+				OptimizeForProcessor="2"
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib;..\Include; ..\PC"
 				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;WIN32"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
+				EnableEnhancedInstructionSet="1"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
