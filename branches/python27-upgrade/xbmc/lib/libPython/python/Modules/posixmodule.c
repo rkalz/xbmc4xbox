@@ -527,6 +527,7 @@ posix_error_with_filename(char* name)
     return PyErr_SetFromErrnoWithFilename(PyExc_OSError, name);
 }
 
+#ifndef _XBOX
 #ifdef MS_WINDOWS
 static PyObject *
 posix_error_with_unicode_filename(Py_UNICODE* name)
@@ -534,6 +535,7 @@ posix_error_with_unicode_filename(Py_UNICODE* name)
     return PyErr_SetFromErrnoWithUnicodeFilename(PyExc_OSError, name);
 }
 #endif /* MS_WINDOWS */
+#endif
 
 
 static PyObject *
@@ -560,6 +562,7 @@ win32_error(char* function, char* filename)
         return PyErr_SetFromWindowsErr(errno);
 }
 
+#ifndef _XBOX
 static PyObject *
 win32_error_unicode(char* function, Py_UNICODE* filename)
 {
@@ -588,6 +591,7 @@ convert_to_unicode(PyObject **param)
     return (*param) != NULL;
 }
 
+#endif /* XBOX */
 #endif /* MS_WINDOWS */
 
 #if defined(PYOS_OS2)
@@ -729,6 +733,7 @@ posix_2str(PyObject *args,
     return Py_None;
 }
 
+#ifndef _XBOX
 #ifdef MS_WINDOWS
 static PyObject*
 win32_1str(PyObject* args, char* func,
@@ -761,6 +766,7 @@ win32_1str(PyObject* args, char* func,
     return Py_None;
 
 }
+#endif
 
 /* This is a reimplementation of the C library's chdir function,
    but one that produces Win32 errors instead of DOS error codes.
@@ -832,7 +838,11 @@ win32_wchdir(LPCWSTR path)
 #undef STAT
 #undef FSTAT
 #undef STRUCT_STAT
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#ifdef _XBOX
+#       define STAT _stati64
+#       define FSTAT _fstati64
+#       define STRUCT_STAT struct _stati64
+#elif defined(MS_WIN64) || defined(MS_WINDOWS)
 #       define STAT win32_stat
 #       define FSTAT win32_fstat
 #       define STRUCT_STAT struct win32_stat
@@ -849,7 +859,9 @@ win32_wchdir(LPCWSTR path)
      UTC and local time
    Therefore, we implement our own stat, based on the Win32 API directly.
 */
+#ifndef _XBOX
 #define HAVE_STAT_NSEC 1
+#endif
 
 struct win32_stat{
     int st_dev;
@@ -1460,6 +1472,7 @@ posix_do_stat(PyObject *self, PyObject *args,
     int res;
     PyObject *result;
 
+#ifndef _XBOX
 #ifdef MS_WINDOWS
     PyUnicodeObject *po;
     if (PyArg_ParseTuple(args, wformat, &po)) {
@@ -1478,6 +1491,7 @@ posix_do_stat(PyObject *self, PyObject *args,
     /* Drop the argument parsing error as narrow strings
        are also valid. */
     PyErr_Clear();
+#endif
 #endif
 
     if (!PyArg_ParseTuple(args, format,
@@ -1636,7 +1650,9 @@ Change the current working directory to the specified path.");
 static PyObject *
 posix_chdir(PyObject *self, PyObject *args)
 {
-#ifdef MS_WINDOWS
+#ifdef _XBOX
+    return posix_1str(args, "et:chdir", chdir);
+#elif MS_WINDOWS
     return win32_1str(args, "chdir", "s:chdir", win32_chdir, "U:chdir", win32_wchdir);
 #elif defined(PYOS_OS2) && defined(PYCC_GCC)
     return posix_1str(args, "et:chdir", _chdir2);
@@ -1671,7 +1687,7 @@ posix_chmod(PyObject *self, PyObject *args)
     char *path = NULL;
     int i;
     int res;
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(_XBOX)
     DWORD attr;
     PyUnicodeObject *po;
     if (PyArg_ParseTuple(args, "Ui|:chmod", &po, &i)) {
@@ -2025,7 +2041,7 @@ posix_getcwdu(PyObject *self, PyObject *noargs)
     char buf[1026];
     char *res;
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(_XBOX)
     DWORD len;
     wchar_t wbuf[1026];
     wchar_t *wbuf2 = wbuf;
@@ -2053,7 +2069,6 @@ posix_getcwdu(PyObject *self, PyObject *noargs)
     if (wbuf2 != wbuf) free(wbuf2);
     return resobj;
 #endif /* MS_WINDOWS */
-
     Py_BEGIN_ALLOW_THREADS
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
     res = _getcwd2(buf, sizeof buf);
@@ -2105,7 +2120,7 @@ posix_listdir(PyObject *self, PyObject *args)
     char namebuf[MAX_PATH+5]; /* Overallocate for \\*.*\0 */
     char *bufptr = namebuf;
     Py_ssize_t len = sizeof(namebuf)-5; /* only claim to have space for MAX_PATH */
-
+#ifndef _XBOX
     PyObject *po;
     if (PyArg_ParseTuple(args, "U:listdir", &po)) {
         WIN32_FIND_DATAW wFileData;
@@ -2186,7 +2201,7 @@ posix_listdir(PyObject *self, PyObject *args)
     /* Drop the argument parsing error as narrow strings
        are also valid. */
     PyErr_Clear();
-
+#endif
     if (!PyArg_ParseTuple(args, "et#:listdir",
                           Py_FileSystemDefaultEncoding, &bufptr, &len))
         return NULL;
@@ -2420,7 +2435,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
     Py_ssize_t insize = sizeof(inbuf);
     char outbuf[MAX_PATH*2];
     char *temp;
-
+#ifndef _XBOX
     PyUnicodeObject *po;
     if (PyArg_ParseTuple(args, "U|:_getfullpathname", &po)) {
         Py_UNICODE *wpath = PyUnicode_AS_UNICODE(po);
@@ -2448,7 +2463,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
     /* Drop the argument parsing error as narrow strings
        are also valid. */
     PyErr_Clear();
-
+#endif
     if (!PyArg_ParseTuple (args, "et#:_getfullpathname",
                            Py_FileSystemDefaultEncoding, &inbufp,
                            &insize))
@@ -2475,7 +2490,7 @@ posix_mkdir(PyObject *self, PyObject *args)
     char *path = NULL;
     int mode = 0777;
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(_XBOX)
     PyUnicodeObject *po;
     if (PyArg_ParseTuple(args, "U|i:mkdir", &po, &mode)) {
         Py_BEGIN_ALLOW_THREADS
@@ -2513,7 +2528,7 @@ posix_mkdir(PyObject *self, PyObject *args)
                           Py_FileSystemDefaultEncoding, &path, &mode))
         return NULL;
     Py_BEGIN_ALLOW_THREADS
-#if ( defined(__WATCOMC__) || defined(PYCC_VACPP) ) && !defined(__QNX__)
+#if ( defined(__WATCOMC__)  || defined(_MSC_VER) || defined(PYCC_VACPP) ) && !defined(__QNX__)
     res = mkdir(path);
 #else
     res = mkdir(path, mode);
@@ -2577,7 +2592,7 @@ Rename a file or directory.");
 static PyObject *
 posix_rename(PyObject *self, PyObject *args)
 {
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(_XBOX)
     PyObject *o1, *o2;
     char *p1, *p2;
     BOOL result;
@@ -2623,7 +2638,7 @@ Remove a directory.");
 static PyObject *
 posix_rmdir(PyObject *self, PyObject *args)
 {
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(_XBOX)
     return win32_1str(args, "rmdir", "s:rmdir", RemoveDirectoryA, "U:rmdir", RemoveDirectoryW);
 #else
     return posix_1str(args, "et:rmdir", rmdir);
@@ -2638,7 +2653,7 @@ Perform a stat system call on the given path.");
 static PyObject *
 posix_stat(PyObject *self, PyObject *args)
 {
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(_XBOX)
     return posix_do_stat(self, args, "et:stat", STAT, "U:stat", win32_wstat);
 #else
     return posix_do_stat(self, args, "et:stat", STAT, NULL, NULL);
@@ -2694,7 +2709,7 @@ Remove a file (same as unlink(path)).");
 static PyObject *
 posix_unlink(PyObject *self, PyObject *args)
 {
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(_XBOX)
     return win32_1str(args, "remove", "s:remove", DeleteFileA, "U:remove", DeleteFileW);
 #else
     return posix_1str(args, "et:remove", unlink);
@@ -2773,9 +2788,8 @@ second form is used, set the access and modified times to the current time.");
 static PyObject *
 posix_utime(PyObject *self, PyObject *args)
 {
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(_XBOX)
     PyObject *arg;
-    PyUnicodeObject *obwpath;
     wchar_t *wpath = NULL;
     char *apath = NULL;
     HANDLE hFile;
@@ -2784,6 +2798,7 @@ posix_utime(PyObject *self, PyObject *args)
     FILETIME atime, mtime;
     PyObject *result = NULL;
 
+    PyUnicodeObject *obwpath;
     if (PyArg_ParseTuple(args, "UO|:utime", &obwpath, &arg)) {
         wpath = PyUnicode_AS_UNICODE(obwpath);
         Py_BEGIN_ALLOW_THREADS
@@ -4206,11 +4221,11 @@ PyDoc_STRVAR(posix__isdir__doc__,
 static PyObject *
 posix__isdir(PyObject *self, PyObject *args)
 {
-    PyObject *opath;
     char *path;
-    PyUnicodeObject *po;
     DWORD attributes;
-
+#ifndef _XBOX
+    PyObject *opath;
+    PyUnicodeObject *po;
     if (PyArg_ParseTuple(args, "U|:_isdir", &po)) {
         Py_UNICODE *wpath = PyUnicode_AS_UNICODE(po);
 
@@ -4222,7 +4237,7 @@ posix__isdir(PyObject *self, PyObject *args)
     /* Drop the argument parsing error as narrow strings
        are also valid. */
     PyErr_Clear();
-
+#endif
     if (!PyArg_ParseTuple(args, "et:_isdir",
                           Py_FileSystemDefaultEncoding, &path))
         return NULL;
@@ -4230,8 +4245,9 @@ posix__isdir(PyObject *self, PyObject *args)
     attributes = GetFileAttributesA(path);
     if (attributes == INVALID_FILE_ATTRIBUTES)
         Py_RETURN_FALSE;
-
+#ifndef _XBOX
 check:
+#endif
     if (attributes & FILE_ATTRIBUTE_DIRECTORY)
         Py_RETURN_TRUE;
     else
@@ -6160,7 +6176,7 @@ posix_lstat(PyObject *self, PyObject *args)
 #ifdef HAVE_LSTAT
     return posix_do_stat(self, args, "et:lstat", lstat, NULL, NULL);
 #else /* !HAVE_LSTAT */
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(_XBOX)
     return posix_do_stat(self, args, "et:lstat", STAT, "U:lstat", win32_wstat);
 #else
     return posix_do_stat(self, args, "et:lstat", STAT, NULL, NULL);
@@ -6434,7 +6450,7 @@ posix_open(PyObject *self, PyObject *args)
     int mode = 0777;
     int fd;
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && !defined(_XBOX)
     PyUnicodeObject *po;
     if (PyArg_ParseTuple(args, "Ui|i:mkdir", &po, &flag, &mode)) {
         Py_BEGIN_ALLOW_THREADS
@@ -6998,7 +7014,8 @@ posix_putenv(PyObject *self, PyObject *args)
 
     /* XXX This can leak memory -- not easy to fix :-( */
     len = strlen(s1) + strlen(s2) + 2;
-#ifdef MS_WINDOWS
+
+#if defined(MS_WINDOWS) && !defined(_XBOX)
     if (_MAX_ENV < (len - 1)) {
         PyErr_Format(PyExc_ValueError,
                      "the environment variable is longer than %u bytes",
@@ -7006,6 +7023,7 @@ posix_putenv(PyObject *self, PyObject *args)
         return NULL;
     }
 #endif
+
     /* len includes space for a trailing \0; the size arg to
        PyString_FromStringAndSize does not count that */
     newstr = PyString_FromStringAndSize(NULL, (int)len - 1);
@@ -8469,6 +8487,7 @@ win32_startfile(PyObject *self, PyObject *args)
     char *operation = NULL;
     HINSTANCE rc;
 
+#ifndef _XBOX
     PyObject *unipath, *woperation = NULL;
     if (!PyArg_ParseTuple(args, "U|s:startfile",
                           &unipath, &operation)) {
@@ -8502,6 +8521,7 @@ win32_startfile(PyObject *self, PyObject *args)
     return Py_None;
 
 normal:
+#endif
     if (!PyArg_ParseTuple(args, "et|s:startfile",
                           Py_FileSystemDefaultEncoding, &filepath,
                           &operation))
