@@ -78,7 +78,7 @@
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
+				Optimization="1"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				AdditionalIncludeDirectories=";..\Include; ..\PC"
@@ -87,6 +87,7 @@
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
+				EnableEnhancedInstructionSet="1"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
