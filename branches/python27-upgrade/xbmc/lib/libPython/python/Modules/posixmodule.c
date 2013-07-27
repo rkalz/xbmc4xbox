@@ -833,8 +833,8 @@ win32_wchdir(LPCWSTR path)
 #undef FSTAT
 #undef STRUCT_STAT
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
-#       define STAT _stati64
-#       define FSTAT _fstati64
+#       define STAT win32_stat
+#       define FSTAT win32_fstat
 #       define STRUCT_STAT struct win32_stat
 #else
 #       define STAT stat
@@ -6998,7 +6998,6 @@ posix_putenv(PyObject *self, PyObject *args)
 
     /* XXX This can leak memory -- not easy to fix :-( */
     len = strlen(s1) + strlen(s2) + 2;
-/*
 #ifdef MS_WINDOWS
     if (_MAX_ENV < (len - 1)) {
         PyErr_Format(PyExc_ValueError,
@@ -7007,7 +7006,6 @@ posix_putenv(PyObject *self, PyObject *args)
         return NULL;
     }
 #endif
-*/
     /* len includes space for a trailing \0; the size arg to
        PyString_FromStringAndSize does not count that */
     newstr = PyString_FromStringAndSize(NULL, (int)len - 1);
