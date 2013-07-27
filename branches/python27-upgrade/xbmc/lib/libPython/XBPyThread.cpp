@@ -198,6 +198,9 @@ void XBPyThread::Process()
     {
       PyObject* module = PyImport_AddModule((char*)"__main__");
       PyObject* moduleDict = PyModule_GetDict(module);
+      PyObject *f = PyString_FromString(_P(source).c_str());
+      PyDict_SetItemString(moduleDict, "__file__", f);
+      Py_DECREF(f);
       PyRun_File(fp, _P(source).c_str(), m_Py_file_input, moduleDict, moduleDict);
       fclose(fp);
     }
