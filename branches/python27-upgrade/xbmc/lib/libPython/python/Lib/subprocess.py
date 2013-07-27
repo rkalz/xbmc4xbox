@@ -415,8 +415,8 @@ class CalledProcessError(Exception):
 
 if mswindows:
     import threading
-    import msvcrt
-    import _subprocess
+    #import msvcrt
+    #import _subprocess
     class STARTUPINFO:
         dwFlags = 0
         hStdInput = None
@@ -440,7 +440,8 @@ else:
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call",
            "check_output", "CalledProcessError"]
 
-if mswindows:
+if mswindows and False:
+
     from _subprocess import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
                              STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
                              STD_ERROR_HANDLE, SW_HIDE,
@@ -622,6 +623,7 @@ class Popen(object):
                  cwd=None, env=None, universal_newlines=False,
                  startupinfo=None, creationflags=0):
         """Create new Popen instance."""
+        return None
         _cleanup()
 
         self._child_created = False
@@ -763,6 +765,7 @@ class Popen(object):
         # Windows methods
         #
         def _get_handles(self, stdin, stdout, stderr):
+            return (None, None, None, None, None, None)
             """Construct and return tuple with IO objects:
             p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite
             """
@@ -921,9 +924,9 @@ class Popen(object):
             ht.Close()
 
         def _internal_poll(self, _deadstate=None,
-                _WaitForSingleObject=_subprocess.WaitForSingleObject,
-                _WAIT_OBJECT_0=_subprocess.WAIT_OBJECT_0,
-                _GetExitCodeProcess=_subprocess.GetExitCodeProcess):
+                _WaitForSingleObject=None,
+                _WAIT_OBJECT_0=None,
+                _GetExitCodeProcess=None):
             """Check if child process has terminated.  Returns returncode
             attribute.
 
