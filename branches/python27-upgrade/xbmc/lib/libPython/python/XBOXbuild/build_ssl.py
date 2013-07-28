@@ -67,6 +67,7 @@ def find_working_perl(perls):
 
 # Fetch SSL directory from VC properties
 def get_ssl_dir():
+    return "..\..\openssl"
     propfile = (os.path.join(os.path.dirname(__file__), 'pyproject.vsprops'))
     with open(propfile) as f:
         m = re.search('openssl-([^"]+)"', f.read())
@@ -115,7 +116,7 @@ def fix_makefile(makefile):
                 line = "MKDIR=mkdir\n"
             if line.startswith("CFLAG="):
                 line = line.strip()
-                for algo in ("RC5", "MDC2", "IDEA"):
+                for algo in ("RC5", "MDC2"):
                     noalgo = " -DOPENSSL_NO_%s" % algo
                     if noalgo not in line:
                         line = line + noalgo
