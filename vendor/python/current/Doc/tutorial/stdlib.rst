@@ -145,7 +145,7 @@ Internet Access
 ===============
 
 There are a number of modules for accessing the internet and processing internet
-protocols. Two of the simplest are :mod:`urllib2` for retrieving data from urls
+protocols. Two of the simplest are :mod:`urllib2` for retrieving data from URLs
 and :mod:`smtplib` for sending mail::
 
    >>> import urllib2
@@ -278,8 +278,10 @@ file::
        def test_average(self):
            self.assertEqual(average([20, 30, 70]), 40.0)
            self.assertEqual(round(average([1, 5, 7]), 1), 4.3)
-           self.assertRaises(ZeroDivisionError, average, [])
-           self.assertRaises(TypeError, average, 20, 30, 70)
+           with self.assertRaises(ZeroDivisionError):
+               average([])
+           with self.assertRaises(TypeError):
+               average(20, 30, 70)
 
    unittest.main() # Calling from the command line invokes all tests
 

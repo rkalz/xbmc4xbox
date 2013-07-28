@@ -375,6 +375,29 @@ Decimal objects
    compared, sorted, and coerced to another type (such as :class:`float` or
    :class:`long`).
 
+   There are some small differences between arithmetic on Decimal objects and
+   arithmetic on integers and floats.  When the remainder operator ``%`` is
+   applied to Decimal objects, the sign of the result is the sign of the
+   *dividend* rather than the sign of the divisor::
+
+      >>> (-7) % 4
+      1
+      >>> Decimal(-7) % Decimal(4)
+      Decimal('-3')
+
+   The integer division operator ``//`` behaves analogously, returning the
+   integer part of the true quotient (truncating towards zero) rather than its
+   floor, so as to preserve the usual identity ``x == (x // y) * y + x % y``::
+
+      >>> -7 // 4
+      -2
+      >>> Decimal(-7) // Decimal(4)
+      Decimal('-1')
+
+   The ``%`` and ``//`` operators implement the ``remainder`` and
+   ``divide-integer`` operations (respectively) as described in the
+   specification.
+
    Decimal objects cannot generally be combined with floats in
    arithmetic operations: an attempt to add a :class:`Decimal` to a
    :class:`float`, for example, will raise a :exc:`TypeError`.
@@ -802,12 +825,21 @@ Decimal objects
 
    .. method:: remainder_near(other[, context])
 
-      Compute the modulo as either a positive or negative value depending on
-      which is closest to zero.  For instance, ``Decimal(10).remainder_near(6)``
-      returns ``Decimal('-2')`` which is closer to zero than ``Decimal('4')``.
+      Return the remainder from dividing *self* by *other*.  This differs from
+      ``self % other`` in that the sign of the remainder is chosen so as to
+      minimize its absolute value.  More precisely, the return value is
+      ``self - n * other`` where ``n`` is the integer nearest to the exact
+      value of ``self / other``, and if two integers are equally near then the
+      even one is chosen.
 
-      If both are equally close, the one chosen will have the same sign as
-      *self*.
+      If the result is zero then its sign will be the sign of *self*.
+
+      >>> Decimal(18).remainder_near(Decimal(10))
+      Decimal('-2')
+      >>> Decimal(25).remainder_near(Decimal(10))
+      Decimal('5')
+      >>> Decimal(35).remainder_near(Decimal(10))
+      Decimal('-5')
 
    .. method:: rotate(other[, context])
 
@@ -943,6 +975,10 @@ the :func:`localcontext` function to temporarily change the active context.
           ctx.prec = 42   # Perform a high precision calculation
           s = calculate_something()
       s = +s  # Round the final result back to the default precision
+
+      with localcontext(BasicContext):      # temporarily use the BasicContext
+          print Decimal(1) / Decimal(7)
+          print Decimal(355) / Decimal(113)
 
 New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:

@@ -149,7 +149,7 @@ Programmatic Interface
        the current tracing parameters.  *cmd* must be a string or code object,
        suitable for passing into :func:`exec`.
 
-    .. method:: runctx(cmd[, globals=None[, locals=None]])
+    .. method:: runctx(cmd, globals=None, locals=None)
 
        Execute the command and gather statistics from the execution with the
        current tracing parameters, in the defined global and local
@@ -200,7 +200,7 @@ A simple example demonstrating the use of the programmatic interface::
    # run the new command using the given tracer
    tracer.run('main()')
 
-   # make a report, placing output in /tmp
+   # make a report, placing output in the current directory
    r = tracer.results()
-   r.write_results(show_missing=True, coverdir="/tmp")
+   r.write_results(show_missing=True, coverdir=".")
 

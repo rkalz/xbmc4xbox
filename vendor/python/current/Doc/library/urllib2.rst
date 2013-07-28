@@ -9,9 +9,9 @@
 
 .. note::
    The :mod:`urllib2` module has been split across several modules in
-   Python 3.0 named :mod:`urllib.request` and :mod:`urllib.error`.
+   Python 3 named :mod:`urllib.request` and :mod:`urllib.error`.
    The :term:`2to3` tool will automatically adapt imports when converting
-   your sources to 3.0.
+   your sources to Python 3.
 
 
 The :mod:`urllib2` module defines functions and classes which help in opening
@@ -52,14 +52,18 @@ The :mod:`urllib2` module defines the following functions:
      in the form of an :class:`mimetools.Message` instance
      (see `Quick Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_)
 
+   * :meth:`getcode` --- return the HTTP status code of the response.
+
    Raises :exc:`URLError` on errors.
 
    Note that ``None`` may be returned if no handler handles the request (though the
    default installed global :class:`OpenerDirector` uses :class:`UnknownHandler` to
    ensure this never happens).
 
-   In addition, default installed :class:`ProxyHandler` makes sure the requests
-   are handled through the proxy when they are set.
+   In addition, if proxy settings are detected (for example, when a ``*_proxy``
+   environment variable like :envvar:`http_proxy` is set),
+   :class:`ProxyHandler` is default installed and makes sure the requests are
+   handled through the proxy.
 
    .. versionchanged:: 2.6
       *timeout* was added.
@@ -81,7 +85,8 @@ The :mod:`urllib2` module defines the following functions:
    subclasses of :class:`BaseHandler` (in which case it must be possible to call
    the constructor without any parameters).  Instances of the following classes
    will be in front of the *handler*\s, unless the *handler*\s contain them,
-   instances of them or subclasses of them: :class:`ProxyHandler`,
+   instances of them or subclasses of them: :class:`ProxyHandler` (if proxy
+   settings are detected),
    :class:`UnknownHandler`, :class:`HTTPHandler`, :class:`HTTPDefaultErrorHandler`,
    :class:`HTTPRedirectHandler`, :class:`FTPHandler`, :class:`FileHandler`,
    :class:`HTTPErrorProcessor`.
@@ -121,7 +126,10 @@ The following exceptions are raised as appropriate:
       This numeric value corresponds to a value found in the dictionary of
       codes as found in :attr:`BaseHTTPServer.BaseHTTPRequestHandler.responses`.
 
+   .. attribute:: reason
 
+      The reason for this error.  It can be a message string or another exception
+      instance.
 
 The following classes are provided:
 
@@ -197,9 +205,9 @@ The following classes are provided:
    Cause requests to go through a proxy. If *proxies* is given, it must be a
    dictionary mapping protocol names to URLs of proxies. The default is to read
    the list of proxies from the environment variables
-   :envvar:`<protocol>_proxy`.  If no proxy environment variables are set, in a
-   Windows environment, proxy settings are obtained from the registry's
-   Internet Settings section and in a Mac OS X  environment, proxy information
+   :envvar:`<protocol>_proxy`.  If no proxy environment variables are set, then
+   in a Windows environment proxy settings are obtained from the registry's
+   Internet Settings section, and in a Mac OS X environment proxy information
    is retrieved from the OS X System Configuration Framework.
 
    To disable autodetected proxy pass an empty dictionary.
@@ -378,6 +386,17 @@ so all must be overridden in subclasses.
 .. method:: Request.get_selector()
 
    Return the selector --- the part of the URL that is sent to the server.
+
+
+.. method:: Request.get_header(header_name, default=None)
+
+   Return the value of the given header. If the header is not present, return
+   the default value.
+
+
+.. method:: Request.header_items()
+
+   Return a list of tuples (header_name, header_value) of the Request headers.
 
 
 .. method:: Request.set_proxy(host, type)

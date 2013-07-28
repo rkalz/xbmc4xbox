@@ -238,10 +238,7 @@ present, must be last; it matches any exception.  For an except clause with an
 expression, that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
 compatible with an exception if it is the class or a base class of the exception
-object, a tuple containing an item compatible with the exception, or, in the
-(deprecated) case of string exceptions, is the raised string itself (note that
-the object identities must match, i.e. it must be the same string object, not
-just a string with the same value).
+object, or a tuple containing an item compatible with the exception.
 
 If no except clause matches the exception, the search for an exception handler
 continues in the surrounding code and on the invocation stack.  [#]_
@@ -297,8 +294,19 @@ not handled, the exception is temporarily saved. The :keyword:`finally` clause
 is executed.  If there is a saved exception, it is re-raised at the end of the
 :keyword:`finally` clause. If the :keyword:`finally` clause raises another
 exception or executes a :keyword:`return` or :keyword:`break` statement, the
-saved exception is lost.  The exception information is not available to the
-program during execution of the :keyword:`finally` clause.
+saved exception is discarded::
+
+    def f():
+        try:
+            1/0
+        finally:
+            return 42
+
+    >>> f()
+    42
+
+The exception information is not available to the program during execution of
+the :keyword:`finally` clause.
 
 .. index::
    statement: return
@@ -399,6 +407,9 @@ is equivalent to ::
       statement.
 
 
+.. index::
+   single: parameter; function definition
+
 .. _function:
 .. _def:
 
@@ -423,7 +434,7 @@ A function definition defines a user-defined function object (see section
    funcdef: "def" `funcname` "(" [`parameter_list`] ")" ":" `suite`
    dotted_name: `identifier` ("." `identifier`)*
    parameter_list: (`defparameter` ",")*
-                 : (  "*" `identifier` [, "**" `identifier`]
+                 : (  "*" `identifier` ["," "**" `identifier`]
                  : | "**" `identifier`
                  : | `defparameter` [","] )
    defparameter: `parameter` ["=" `expression`]
@@ -459,12 +470,15 @@ is equivalent to::
    def func(): pass
    func = f1(arg)(f2(func))
 
-.. index:: triple: default; parameter; value
+.. index::
+   triple: default; parameter; value
+   single: argument; function definition
 
-When one or more top-level parameters have the form *parameter* ``=``
-*expression*, the function is said to have "default parameter values."  For a
-parameter with a default value, the corresponding argument may be omitted from a
-call, in which case the parameter's default value is substituted.  If a
+When one or more top-level :term:`parameters <parameter>` have the form
+*parameter* ``=`` *expression*, the function is said to have "default parameter
+values."  For a parameter with a default value, the corresponding
+:term:`argument` may be omitted from a call, in which
+case the parameter's default value is substituted.  If a
 parameter has a default value, all following parameters must also have a default
 value --- this is a syntactic restriction that is not expressed by the grammar.
 

@@ -31,10 +31,10 @@ The :mod:`dummy_threading` module is provided for situations where
 
 .. impl-detail::
 
-   Due to the :term:`Global Interpreter Lock`, in CPython only one thread
+   In CPython, due to the :term:`Global Interpreter Lock`, only one thread
    can execute Python code at once (even though certain performance-oriented
    libraries might overcome this limitation).
-   If you want your application to make better of use of the computational
+   If you want your application to make better use of the computational
    resources of multi-core machines, you are advised to use
    :mod:`multiprocessing`. However, threading is still an appropriate model
    if you want to run multiple I/O-bound tasks simultaneously.
@@ -247,6 +247,12 @@ that the entire Python program exits when only daemon threads are left.  The
 initial value is inherited from the creating thread.  The flag can be set
 through the :attr:`daemon` property.
 
+.. note::
+   Daemon threads are abruptly stopped at shutdown.  Their resources (such
+   as open files, database transactions, etc.) may not be released properly.
+   If you want your threads to stop gracefully, make them non-daemonic and
+   use a suitable signalling mechanism such as an :class:`Event`.
+
 There is a "main thread" object; this corresponds to the initial thread of
 control in the Python program.  It is not a daemon thread.
 
@@ -401,15 +407,12 @@ All methods are executed atomically.
 
    Acquire a lock, blocking or non-blocking.
 
-   When invoked without arguments, block until the lock is unlocked, then set it to
-   locked, and return true.
+   When invoked with the *blocking* argument set to ``True`` (the default),
+   block until the lock is unlocked, then set it to locked and return ``True``.
 
-   When invoked with the *blocking* argument set to true, do the same thing as when
-   called without arguments, and return true.
-
-   When invoked with the *blocking* argument set to false, do not block.  If a call
-   without an argument would block, return false immediately; otherwise, do the
-   same thing as when called without arguments, and return true.
+   When invoked with the *blocking* argument set to ``False``, do not block.
+   If a call with *blocking* set to ``True`` would block, return ``False``
+   immediately; otherwise, set the lock to locked and return ``True``.
 
 
 .. method:: Lock.release()
@@ -420,7 +423,7 @@ All methods are executed atomically.
    are blocked waiting for the lock to become unlocked, allow exactly one of them
    to proceed.
 
-   Do not call this method when the lock is unlocked.
+   When invoked on an unlocked lock, a :exc:`ThreadError` is raised.
 
    There is no return value.
 

@@ -51,7 +51,7 @@ For example::
 
     >>> # Find the ten most common words in Hamlet
     >>> import re
-    >>> words = re.findall('\w+', open('hamlet.txt').read().lower())
+    >>> words = re.findall(r'\w+', open('hamlet.txt').read().lower())
     >>> Counter(words).most_common(10)
     [('the', 1143), ('and', 966), ('to', 762), ('of', 669), ('i', 631),
      ('you', 554),  ('a', 546), ('my', 514), ('hamlet', 471), ('in', 451)]
@@ -120,6 +120,7 @@ For example::
             >>> c = Counter(a=4, b=2, c=0, d=-2)
             >>> d = Counter(a=1, b=2, c=3, d=4)
             >>> c.subtract(d)
+            >>> c
             Counter({'a': 3, 'b': 0, 'c': -3, 'd': -6})
 
    The usual dictionary methods are available for :class:`Counter` objects
@@ -601,47 +602,47 @@ Example:
 
    >>> Point = namedtuple('Point', ['x', 'y'], verbose=True)
    class Point(tuple):
-           'Point(x, y)'
+       'Point(x, y)'
    <BLANKLINE>
-           __slots__ = ()
+       __slots__ = ()
    <BLANKLINE>
-           _fields = ('x', 'y')
+       _fields = ('x', 'y')
    <BLANKLINE>
-           def __new__(_cls, x, y):
-               'Create a new instance of Point(x, y)'
-               return _tuple.__new__(_cls, (x, y))
+       def __new__(_cls, x, y):
+           'Create a new instance of Point(x, y)'
+           return _tuple.__new__(_cls, (x, y))
    <BLANKLINE>
-           @classmethod
-           def _make(cls, iterable, new=tuple.__new__, len=len):
-               'Make a new Point object from a sequence or iterable'
-               result = new(cls, iterable)
-               if len(result) != 2:
-                   raise TypeError('Expected 2 arguments, got %d' % len(result))
-               return result
+       @classmethod
+       def _make(cls, iterable, new=tuple.__new__, len=len):
+           'Make a new Point object from a sequence or iterable'
+           result = new(cls, iterable)
+           if len(result) != 2:
+               raise TypeError('Expected 2 arguments, got %d' % len(result))
+           return result
    <BLANKLINE>
-           def __repr__(self):
-               'Return a nicely formatted representation string'
-               return 'Point(x=%r, y=%r)' % self
+       def __repr__(self):
+           'Return a nicely formatted representation string'
+           return 'Point(x=%r, y=%r)' % self
    <BLANKLINE>
-           def _asdict(self):
-               'Return a new OrderedDict which maps field names to their values'
-               return OrderedDict(zip(self._fields, self))
+       def _asdict(self):
+           'Return a new OrderedDict which maps field names to their values'
+           return OrderedDict(zip(self._fields, self))
    <BLANKLINE>
-          __dict__ = property(_asdict)
+       def _replace(_self, **kwds):
+           'Return a new Point object replacing specified fields with new values'
+           result = _self._make(map(kwds.pop, ('x', 'y'), _self))
+           if kwds:
+               raise ValueError('Got unexpected field names: %r' % kwds.keys())
+           return result
    <BLANKLINE>
-          def _replace(_self, **kwds):
-               'Return a new Point object replacing specified fields with new values'
-               result = _self._make(map(kwds.pop, ('x', 'y'), _self))
-               if kwds:
-                   raise ValueError('Got unexpected field names: %r' % kwds.keys())
-               return result
+       def __getnewargs__(self):
+           'Return self as a plain tuple.   Used by copy and pickle.'
+           return tuple(self)
    <BLANKLINE>
-           def __getnewargs__(self):
-               'Return self as a plain tuple.   Used by copy and pickle.'
-               return tuple(self)
+       x = _property(_itemgetter(0), doc='Alias for field number 0')
    <BLANKLINE>
-           x = _property(_itemgetter(0), doc='Alias for field number 0')
-           y = _property(_itemgetter(1), doc='Alias for field number 1')
+       y = _property(_itemgetter(1), doc='Alias for field number 1')
+   <BLANKLINE>
 
    >>> p = Point(11, y=22)     # instantiate with positional or keyword arguments
    >>> p[0] + p[1]             # indexable like the plain tuple (11, 22)
@@ -850,7 +851,7 @@ are deleted.  But when new keys are added, the keys are appended
 to the end and the sort is not maintained.
 
 It is also straight-forward to create an ordered dictionary variant
-that the remembers the order the keys were *last* inserted.
+that remembers the order the keys were *last* inserted.
 If a new entry overwrites an existing entry, the
 original insertion position is changed and moved to the end::
 
@@ -892,29 +893,35 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 :class:`Sized`                                    ``__len__``
 :class:`Callable`                                 ``__call__``
 
-:class:`Sequence`          :class:`Sized`,        ``__getitem__``         ``__contains__``, ``__iter__``, ``__reversed__``,
-                           :class:`Iterable`,                             ``index``, and ``count``
+:class:`Sequence`          :class:`Sized`,        ``__getitem__``,        ``__contains__``, ``__iter__``, ``__reversed__``,
+                           :class:`Iterable`,     ``__len__``             ``index``, and ``count``
                            :class:`Container`
 
-:class:`MutableSequence`   :class:`Sequence`      ``__setitem__``,        Inherited :class:`Sequence` methods and
-                                                  ``__delitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
-                                                  ``insert``              ``remove``, and ``__iadd__``
+:class:`MutableSequence`   :class:`Sequence`      ``__getitem__``,        Inherited :class:`Sequence` methods and
+                                                  ``__setitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
+                                                  ``__delitem__``,        ``remove``, and ``__iadd__``
+                                                  ``__len__``,
+                                                  ``insert``
 
-:class:`Set`               :class:`Sized`,                                ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
-                           :class:`Iterable`,                             ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
-                           :class:`Container`                             ``__sub__``, ``__xor__``, and ``isdisjoint``
+:class:`Set`               :class:`Sized`,        ``__contains__``,       ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
+                           :class:`Iterable`,     ``__iter__``,           ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
+                           :class:`Container`     ``__len__``             ``__sub__``, ``__xor__``, and ``isdisjoint``
 
-:class:`MutableSet`        :class:`Set`           ``add``,                Inherited :class:`Set` methods and
-                                                  ``discard``             ``clear``, ``pop``, ``remove``, ``__ior__``,
-                                                                          ``__iand__``, ``__ixor__``, and ``__isub__``
+:class:`MutableSet`        :class:`Set`           ``__contains__``,       Inherited :class:`Set` methods and
+                                                  ``__iter__``,           ``clear``, ``pop``, ``remove``, ``__ior__``,
+                                                  ``__len__``,            ``__iand__``, ``__ixor__``, and ``__isub__``
+                                                  ``add``,
+                                                  ``discard``
 
-:class:`Mapping`           :class:`Sized`,        ``__getitem__``         ``__contains__``, ``keys``, ``items``, ``values``,
-                           :class:`Iterable`,                             ``get``, ``__eq__``, and ``__ne__``
-                           :class:`Container`
+:class:`Mapping`           :class:`Sized`,        ``__getitem__``,        ``__contains__``, ``keys``, ``items``, ``values``,
+                           :class:`Iterable`,     ``__iter__``,           ``get``, ``__eq__``, and ``__ne__``
+                           :class:`Container`     ``__len__``
 
-:class:`MutableMapping`    :class:`Mapping`       ``__setitem__``,        Inherited :class:`Mapping` methods and
-                                                  ``__delitem__``         ``pop``, ``popitem``, ``clear``, ``update``,
-                                                                          and ``setdefault``
+:class:`MutableMapping`    :class:`Mapping`       ``__getitem__``,        Inherited :class:`Mapping` methods and
+                                                  ``__setitem__``,        ``pop``, ``popitem``, ``clear``, ``update``,
+                                                  ``__delitem__``,        and ``setdefault``
+                                                  ``__iter__``,
+                                                  ``__len__``
 
 
 :class:`MappingView`       :class:`Sized`                                 ``__len__``

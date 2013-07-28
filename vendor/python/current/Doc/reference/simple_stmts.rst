@@ -511,6 +511,9 @@ reference count or by being garbage collected), the generator-iterator's
 :meth:`close` method will be called, allowing any pending :keyword:`finally`
 clauses to execute.
 
+For full details of :keyword:`yield` semantics, refer to the :ref:`yieldexpr`
+section.
+
 .. note::
 
    In Python 2.2, the :keyword:`yield` statement was only allowed when the
@@ -737,7 +740,7 @@ can be found but the path exists then a value of ``None`` is
 stored in :data:`sys.path_importer_cache` to signify that an implicit,
 file-based finder that handles modules stored as individual files should be
 used for that path. If the path does not exist then a finder which always
-returns `None`` is placed in the cache for the path.
+returns ``None`` is placed in the cache for the path.
 
 .. index::
     single: loader
@@ -978,21 +981,31 @@ The :keyword:`exec` statement
    exec_stmt: "exec" `or_expr` ["in" `expression` ["," `expression`]]
 
 This statement supports dynamic execution of Python code.  The first expression
-should evaluate to either a string, an open file object, or a code object.  If
-it is a string, the string is parsed as a suite of Python statements which is
-then executed (unless a syntax error occurs). [#]_  If it is an open file, the file
-is parsed until EOF and executed.  If it is a code object, it is simply
-executed.  In all cases, the code that's executed is expected to be valid as
-file input (see section :ref:`file-input`).  Be aware that the
-:keyword:`return` and :keyword:`yield` statements may not be used outside of
-function definitions even within the context of code passed to the
-:keyword:`exec` statement.
+should evaluate to either a string, an open file object, a code object, or a
+tuple.  If it is a string, the string is parsed as a suite of Python statements
+which is then executed (unless a syntax error occurs). [#]_ If it is an open
+file, the file is parsed until EOF and executed.  If it is a code object, it is
+simply executed.  For the interpretation of a tuple, see below.  In all cases,
+the code that's executed is expected to be valid as file input (see section
+:ref:`file-input`).  Be aware that the :keyword:`return` and :keyword:`yield`
+statements may not be used outside of function definitions even within the
+context of code passed to the :keyword:`exec` statement.
 
 In all cases, if the optional parts are omitted, the code is executed in the
-current scope.  If only the first expression after :keyword:`in` is specified,
+current scope.  If only the first expression after ``in`` is specified,
 it should be a dictionary, which will be used for both the global and the local
 variables.  If two expressions are given, they are used for the global and local
 variables, respectively. If provided, *locals* can be any mapping object.
+Remember that at module level, globals and locals are the same dictionary. If
+two separate objects are given as *globals* and *locals*, the code will be
+executed as if it were embedded in a class definition.
+
+The first expression may also be a tuple of length 2 or 3.  In this case, the
+optional parts must be omitted.  The form ``exec(expr, globals)`` is equivalent
+to ``exec expr in globals``, while the form ``exec(expr, globals, locals)`` is
+equivalent to ``exec expr in globals, locals``.  The tuple form of ``exec``
+provides compatibility with Python 3, where ``exec`` is a function rather than
+a statement.
 
 .. versionchanged:: 2.4
    Formerly, *locals* was required to be a dictionary.
@@ -1021,5 +1034,5 @@ which may be useful to pass around for use by :keyword:`exec`.
 .. rubric:: Footnotes
 
 .. [#] Note that the parser only accepts the Unix-style end of line convention.
-       If you are reading the code from a file, make sure to use universal
-       newline mode to convert Windows or Mac-style newlines.
+       If you are reading the code from a file, make sure to use
+       :term:`universal newlines` mode to convert Windows or Mac-style newlines.

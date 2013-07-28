@@ -12,6 +12,33 @@ AC_INIT(python, PYTHON_VERSION, http://bugs.python.org/)
 AC_CONFIG_SRCDIR([Include/object.h])
 AC_CONFIG_HEADER(pyconfig.h)
 
+AC_CANONICAL_HOST
+AC_SUBST(build)
+AC_SUBST(host)
+
+if test "$cross_compiling" = yes; then
+    AC_MSG_CHECKING([for python interpreter for cross build])
+    if test -z "$PYTHON_FOR_BUILD"; then
+        for interp in python$PACKAGE_VERSION python2 python; do
+	    which $interp >/dev/null 2>&1 || continue
+	    if $interp -c 'import sys;sys.exit(not (sys.version_info@<:@:2@:>@ >= (2,7) and sys.version_info@<:@0@:>@ < 3))'; then
+	        break
+	    fi
+            interp=
+	done
+        if test x$interp = x; then
+	    AC_MSG_ERROR([python$PACKAGE_VERSION interpreter not found])
+	fi
+        AC_MSG_RESULT($interp)
+	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib:$(srcdir)/Lib/plat-$(MACHDEP) '$interp
+    fi
+elif test "$cross_compiling" = maybe; then
+    AC_MSG_ERROR([Cross compiling required --host=HOST-TUPLE and --build=ARCH])
+else
+    PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+fi
+AC_SUBST(PYTHON_FOR_BUILD)
+
 dnl Ensure that if prefix is specified, it does not end in a slash. If
 dnl it does, we get path names containing '//' which is both ugly and
 dnl can cause trouble.
@@ -279,6 +306,25 @@ AC_SUBST(MACHDEP)
 AC_MSG_CHECKING(MACHDEP)
 if test -z "$MACHDEP"
 then
+    # avoid using uname for cross builds
+    if test "$cross_compiling" = yes; then
+       # ac_sys_system and ac_sys_release are only used for setting
+       # `define_xopen_source' in the case statement below. For the
+       # current supported cross builds, this macro is not adjusted.
+	case "$host" in
+	*-*-linux*)
+		ac_sys_system=Linux
+		;;
+	*-*-cygwin*)
+		ac_sys_system=Cygwin
+		;;
+	*)
+		# for now, limit cross builds to known configurations
+		MACHDEP="unknown"
+		AC_MSG_ERROR([cross build not supported for $host])
+	esac
+	ac_sys_release=
+    else
 	ac_sys_system=`uname -s`
 	if test "$ac_sys_system" = "AIX" \
 	-o "$ac_sys_system" = "UnixWare" -o "$ac_sys_system" = "OpenUNIX"; then
@@ -286,20 +332,44 @@ then
 	else
 		ac_sys_release=`uname -r`
 	fi
-	ac_md_system=`echo $ac_sys_system |
-			   tr -d '[/ ]' | tr '[[A-Z]]' '[[a-z]]'`
-	ac_md_release=`echo $ac_sys_release |
-			   tr -d '[/ ]' | sed 's/^[[A-Z]]\.//' | sed 's/\..*//'`
-	MACHDEP="$ac_md_system$ac_md_release"
+    fi
+    ac_md_system=`echo $ac_sys_system |
+			tr -d '[/ ]' | tr '[[A-Z]]' '[[a-z]]'`
+    ac_md_release=`echo $ac_sys_release |
+			tr -d '[/ ]' | sed 's/^[[A-Z]]\.//' | sed 's/\..*//'`
+    MACHDEP="$ac_md_system$ac_md_release"
 
-	case $MACHDEP in
+    case $MACHDEP in
 	linux*) MACHDEP="linux2";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
 	atheos*) MACHDEP="atheos";;
         irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
+    esac
+fi
+
+AC_SUBST(_PYTHON_HOST_PLATFORM)
+if test "$cross_compiling" = yes; then
+	case "$host" in
+	*-*-linux*)
+		case "$host_cpu" in
+		arm*)
+			_host_cpu=arm
+			;;
+		*)
+			_host_cpu=$host_cpu
+		esac
+		;;
+	*-*-cygwin*)
+		_host_cpu=
+		;;
+	*)
+		# for now, limit cross builds to known configurations
+		MACHDEP="unknown"
+		AC_MSG_ERROR([cross build not supported for $host])
 	esac
+	_PYTHON_HOST_PLATFORM="$MACHDEP${_host_cpu:+-$_host_cpu}"
 fi
 	
 # Some systems cannot stand _XOPEN_SOURCE being defined at all; they
@@ -446,10 +516,6 @@ AC_SUBST(EXPORT_MACOSX_DEPLOYMENT_TARGET)
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET=
 EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
 
-AC_MSG_CHECKING(machine type as reported by uname -m)
-ac_sys_machine=`uname -m`
-AC_MSG_RESULT($ac_sys_machine)
-
 # checks for alternative programs
 
 # compiler flags are generated in two sets, BASECFLAGS and OPT.  OPT is just
@@ -507,6 +573,39 @@ then
 (it is also a good idea to do 'make clean' before compiling)])
 fi
 
+if test "$MACHDEP" = "irix6" && test "$CC" != "gcc"; then
+    # Normally, MIPSpro CC treats #error directives as warnings, which means
+    # a successful exit code is returned (0).  This is a problem because IRIX
+    # has a bunch of system headers with this guard at the top:
+    #
+    #  #ifndef __c99
+    #  #error This header file is to be used only for c99 mode compilations
+    #  #else
+    #
+    # When autoconf tests for such a header, like stdint.h, this happens:
+    #
+    #  configure:4619: cc -c   conftest.c >&5
+    #  cc-1035 cc: WARNING File = /usr/include/stdint.h, Line = 5
+    #    #error directive:  This header file is to be used only for c99 mode
+    #            compilations
+    #
+    #    #error This header file is to be used only for c99 mode compilations
+    #     ^
+    #
+    #  configure:4619: $? = 0
+    #  configure:4619: result: yes
+    #
+    # Therefore, we use `-diag_error 1035` to have the compiler treat the
+    # warning as an error, which causes cc to return a non-zero result,
+    # which autoconf can interpret correctly.
+    CFLAGS="$CFLAGS -diag_error 1035"
+    # Whilst we're here, we might as well make sure CXX defaults to something
+    # sensible if we're not using gcc.
+    if test -z "$CXX"; then
+        CXX="CC"
+    fi
+fi
+
 # If the user set CFLAGS, use this instead of the automatically
 # determined setting
 preset_cflags="$CFLAGS"
@@ -545,8 +644,8 @@ preset_cxx="$CXX"
 if test -z "$CXX"
 then
         case "$CC" in
-        gcc)    AC_PATH_PROG(CXX, [g++], [g++], [notfound]) ;;
-        cc)     AC_PATH_PROG(CXX, [c++], [c++], [notfound]) ;;
+        gcc)    AC_PATH_TOOL(CXX, [g++], [g++], [notfound]) ;;
+        cc)     AC_PATH_TOOL(CXX, [c++], [c++], [notfound]) ;;
         esac
 	if test "$CXX" = "notfound"
 	then
@@ -555,7 +654,7 @@ then
 fi
 if test -z "$CXX"
 then
-	AC_CHECK_PROGS(CXX, $CCC c++ g++ gcc CC cxx cc++ cl, notfound)
+	AC_CHECK_TOOLS(CXX, $CCC c++ g++ gcc CC cxx cc++ cl, notfound)
 	if test "$CXX" = "notfound"
 	then
 		CXX=""
@@ -569,6 +668,9 @@ then
   If this is not intended, then set CXX on the configure command line.
   ])
 fi
+
+MULTIARCH=$($CC --print-multiarch 2>/dev/null)
+AC_SUBST(MULTIARCH)
 
 
 # checks for UNIX variants that set C preprocessor variables
@@ -728,22 +830,23 @@ AC_MSG_RESULT($enable_shared)
 
 AC_MSG_CHECKING(for --enable-profiling)
 AC_ARG_ENABLE(profiling,
-              AS_HELP_STRING([--enable-profiling], [enable C-level code profiling]),
-[ac_save_cc="$CC"
- CC="$CC -pg"
- AC_RUN_IFELSE([AC_LANG_SOURCE([[int main() { return 0; }]])],
-   [ac_enable_profiling="yes"],
-   [ac_enable_profiling="no"],
-   [ac_enable_profiling="no"])
- CC="$ac_save_cc"])
-AC_MSG_RESULT($ac_enable_profiling)
+              AS_HELP_STRING([--enable-profiling], [enable C-level code profiling]))
+if test "x$enable_profiling" = xyes; then
+  ac_save_cc="$CC"
+  CC="$CC -pg"
+  AC_LINK_IFELSE([AC_LANG_SOURCE([[int main() { return 0; }]])],
+    [],
+    [enable_profiling=no])
+  CC="$ac_save_cc"
+else
+  enable_profiling=no
+fi
+AC_MSG_RESULT($enable_profiling)
 
-case "$ac_enable_profiling" in
-    "yes")
-	BASECFLAGS="-pg $BASECFLAGS"
-	LDFLAGS="-pg $LDFLAGS"
-    ;;
-esac
+if test "x$enable_profiling" = xyes; then
+  BASECFLAGS="-pg $BASECFLAGS"
+  LDFLAGS="-pg $LDFLAGS"
+fi
 
 AC_MSG_CHECKING(LDLIBRARY)
 
@@ -832,11 +935,15 @@ else # shared is disabled
   esac
 fi
 
+if test "$cross_compiling" = yes; then
+	RUNSHARED=
+fi
+
 AC_MSG_RESULT($LDLIBRARY)
 
 AC_PROG_RANLIB
 AC_SUBST(AR)
-AC_CHECK_PROGS(AR, ar aal, ar)
+AC_CHECK_TOOLS(AR, ar aal, ar)
 
 # tweak ARFLAGS only if the user didn't set it on the command line
 AC_SUBST(ARFLAGS)
@@ -852,6 +959,20 @@ then
 	SVNVERSION="svnversion \$(srcdir)"
 else
 	SVNVERSION="echo Unversioned directory"
+fi
+
+AC_SUBST(BASECPPFLAGS)
+if test "$abs_srcdir" != "$abs_builddir"; then
+    # If we're building out-of-tree make sure Include (in the current dir)
+    # gets picked up before its $srcdir counterpart in order for Python-ast.h
+    # and graminit.h to get picked up from the correct directory.
+    # (A side effect of this is that these resources will automatically be
+    #  regenerated when building out-of-tree, regardless of whether or not
+    #  the $srcdir counterpart is up-to-date.  This is an acceptable trade
+    #  off.)
+    BASECPPFLAGS="-IInclude"
+else
+    BASECPPFLAGS=""
 fi
 
 AC_SUBST(HGVERSION)
@@ -878,6 +999,7 @@ bsdos*|hp*|HP*)
 	fi
 esac
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 
 # Not every filesystem supports hard links
 AC_SUBST(LN)
@@ -995,7 +1117,7 @@ yes)
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
     # the standard.
-    case $ac_sys_machine in
+    case $host in
          alpha*)
                 BASECFLAGS="$BASECFLAGS -mieee"
                 ;;
@@ -1166,6 +1288,11 @@ if test $ac_cv_opt_olimit_ok = yes; then
 	# environment?
         Darwin*)
 	    ;;
+        # XXX thankfully this useless troublemaker of a flag has been
+        # eradicated in the 3.x line.  For now, make sure it isn't picked
+        # up by any of our other platforms that use CC.
+        AIX*|SunOS*|HP-UX*|IRIX*)
+            ;;
         *)
 	    BASECFLAGS="$BASECFLAGS -OPT:Olimit=0"
 	    ;;
@@ -1183,7 +1310,14 @@ else
   CC="$ac_save_cc"])
   AC_MSG_RESULT($ac_cv_olimit_ok)
   if test $ac_cv_olimit_ok = yes; then
-    BASECFLAGS="$BASECFLAGS -Olimit 1500"
+    case $ac_sys_system in
+        # Issue #16534: On HP-UX ac_cv_olimit_ok=yes is a false positive.
+        HP-UX*)
+            ;;
+        *)
+            BASECFLAGS="$BASECFLAGS -Olimit 1500"
+            ;;
+    esac
   fi
 fi
 
@@ -1192,7 +1326,7 @@ if test "$GCC" = "yes"
 then
   AC_MSG_CHECKING(whether gcc supports ParseTuple __format__)
   save_CFLAGS=$CFLAGS
-  CFLAGS="$CFLAGS -Werror"
+  CFLAGS="$CFLAGS -Werror -Wformat"
   AC_COMPILE_IFELSE([
     AC_LANG_PROGRAM([[void f(char*,...)__attribute((format(PyArg_ParseTuple, 1, 2)));]], [[]])
   ],[
@@ -1213,6 +1347,7 @@ fi
 AC_MSG_CHECKING(whether pthreads are available without options)
 AC_CACHE_VAL(ac_cv_pthread_is_default,
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
 #include <pthread.h>
 
 void* routine(void* p){return NULL;}
@@ -1247,6 +1382,7 @@ AC_CACHE_VAL(ac_cv_kpthread,
 [ac_save_cc="$CC"
 CC="$CC -Kpthread"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
 #include <pthread.h>
 
 void* routine(void* p){return NULL;}
@@ -1275,6 +1411,7 @@ AC_CACHE_VAL(ac_cv_kthread,
 [ac_save_cc="$CC"
 CC="$CC -Kthread"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
 #include <pthread.h>
 
 void* routine(void* p){return NULL;}
@@ -1299,10 +1436,11 @@ then
 # so we need to run a program to see whether it really made the
 # function available.
 AC_MSG_CHECKING(whether $CC accepts -pthread)
-AC_CACHE_VAL(ac_cv_thread,
+AC_CACHE_VAL(ac_cv_pthread,
 [ac_save_cc="$CC"
 CC="$CC -pthread"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
 #include <pthread.h>
 
 void* routine(void* p){return NULL;}
@@ -1486,10 +1624,30 @@ AC_TYPE_PID_T
 AC_DEFINE_UNQUOTED([RETSIGTYPE],[void],[assume C89 semantics that RETSIGTYPE is always void])
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
+
+# There are two separate checks for each of the exact-width integer types we
+# need.  First we check whether the type is available using the usual
+# AC_CHECK_TYPE macro with the default includes (which includes <inttypes.h>
+# and <stdint.h> where available).  We then also use the special type checks of
+# the form AC_TYPE_UINT32_T, which in the case that uint32_t is not available
+# directly, #define's uint32_t to be a suitable type.
+
+AC_CHECK_TYPE(uint32_t,
+  AC_DEFINE(HAVE_UINT32_T, 1, [Define if your compiler provides uint32_t.]),,)
 AC_TYPE_UINT32_T
+
+AC_CHECK_TYPE(uint64_t,
+  AC_DEFINE(HAVE_UINT64_T, 1, [Define if your compiler provides uint64_t.]),,)
 AC_TYPE_UINT64_T
+
+AC_CHECK_TYPE(int32_t,
+  AC_DEFINE(HAVE_INT32_T, 1, [Define if your compiler provides int32_t.]),,)
 AC_TYPE_INT32_T
+
+AC_CHECK_TYPE(int64_t,
+  AC_DEFINE(HAVE_INT64_T, 1, [Define if your compiler provides int64_t.]),,)
 AC_TYPE_INT64_T
+
 AC_CHECK_TYPE(ssize_t,
   AC_DEFINE(HAVE_SSIZE_T, 1, [Define if your compiler provides ssize_t]),,)
 
@@ -2297,7 +2455,9 @@ yes
     _libs=$LIBS
     LIBS="$LIBS -lpthread"
     AC_MSG_CHECKING([for pthread_create in -lpthread])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <pthread.h>
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <stdio.h>
+#include <pthread.h>
 
 void * start_routine (void *arg) { exit (0); }]], [[
 pthread_create (NULL, NULL, start_routine, NULL)]])],[
@@ -2380,7 +2540,9 @@ if test "$posix_threads" = "yes"; then
 
       AC_MSG_CHECKING(if PTHREAD_SCOPE_SYSTEM is supported)
       AC_CACHE_VAL(ac_cv_pthread_system_supported,
-      [AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <pthread.h>
+      [AC_RUN_IFELSE([AC_LANG_SOURCE([[
+      #include <stdio.h>
+      #include <pthread.h>
       void *foo(void *parm) {
         return NULL;
       }
@@ -2429,22 +2591,12 @@ AC_ARG_ENABLE(ipv6,
 
 [
 dnl the check does not work on cross compilation case...
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[ /* AF_INET6 available check */
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ /* AF_INET6 available check */
 #include <sys/types.h>
-#include <sys/socket.h>
-main()
-{
- if (socket(AF_INET6, SOCK_STREAM, 0) < 0)
-   exit(1);
- else
-   exit(0);
-}
-]])],[
+#include <sys/socket.h>]],
+[[int domain = AF_INET6;]])],[
   AC_MSG_RESULT(yes)
   ipv6=yes
-],[
-  AC_MSG_RESULT(no)
-  ipv6=no
 ],[
   AC_MSG_RESULT(no)
   ipv6=no
@@ -3046,6 +3198,7 @@ then
   AC_MSG_CHECKING(getaddrinfo bug)
   AC_CACHE_VAL(ac_cv_buggy_getaddrinfo,
   AC_RUN_IFELSE([AC_LANG_SOURCE([[[
+#include <stdio.h>
 #include <sys/types.h>
 #include <netdb.h>
 #include <string.h>
@@ -3134,7 +3287,12 @@ int main()
 ]]])],
 [ac_cv_buggy_getaddrinfo=no],
 [ac_cv_buggy_getaddrinfo=yes],
-[ac_cv_buggy_getaddrinfo=yes]))
+[
+if test "${enable_ipv6+set}" = set; then
+  ac_cv_buggy_getaddrinfo="no -- configured with --(en|dis)able-ipv6"
+else
+  ac_cv_buggy_getaddrinfo=yes
+fi]))
 fi
 
 AC_MSG_RESULT($ac_cv_buggy_getaddrinfo)
@@ -3776,6 +3934,7 @@ ucs2) unicode_size="2"
 ucs4) unicode_size="4"
       AC_DEFINE(Py_UNICODE_SIZE,4)
       ;;
+no)   ;;      # To allow --disable-unicode
 *) AC_MSG_ERROR([invalid value for --enable-unicode. Use either ucs2 or ucs4 (lowercase).]) ;;
 esac
 
@@ -4163,26 +4322,31 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <curses.h>]], [[void *x=resizeterm
   [AC_MSG_RESULT(no)]
 )
 
-AC_MSG_CHECKING(for /dev/ptmx)
+AC_MSG_NOTICE([checking for device files])
 
-if test -r /dev/ptmx
-then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_DEV_PTMX, 1,
-  [Define if we have /dev/ptmx.])
-else
-  AC_MSG_RESULT(no)
+dnl NOTE: Inform user how to proceed with files when cross compiling.
+if test "x$cross_compiling" = xyes; then
+  if test "${ac_cv_file__dev_ptmx+set}" != set; then
+    AC_MSG_CHECKING([for /dev/ptmx])
+    AC_MSG_RESULT([not set])
+    AC_MSG_ERROR([set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE file when cross compiling])
+  fi
+  if test "${ac_cv_file__dev_ptc+set}" != set; then
+    AC_MSG_CHECKING([for /dev/ptc])
+    AC_MSG_RESULT([not set])
+    AC_MSG_ERROR([set ac_cv_file__dev_ptc to yes/no in your CONFIG_SITE file when cross compiling])
+  fi
 fi
 
-AC_MSG_CHECKING(for /dev/ptc)
-
-if test -r /dev/ptc
-then
-  AC_MSG_RESULT(yes)
+AC_CHECK_FILE(/dev/ptmx, [], [])
+if test "x$ac_cv_file__dev_ptmx" = xyes; then
+  AC_DEFINE(HAVE_DEV_PTMX, 1,
+  [Define to 1 if you have the /dev/ptmx device file.])
+fi
+AC_CHECK_FILE(/dev/ptc, [], [])
+if test "x$ac_cv_file__dev_ptc" = xyes; then
   AC_DEFINE(HAVE_DEV_PTC, 1,
-  [Define if we have /dev/ptc.])
-else
-  AC_MSG_RESULT(no)
+  [Define to 1 if you have the /dev/ptc device file.])
 fi
 
 if test "$have_long_long" = yes
@@ -4222,7 +4386,23 @@ then
   ]]])],
   [ac_cv_have_long_long_format=yes],
   [ac_cv_have_long_long_format=no],
-  [ac_cv_have_long_long_format=no])
+  [ac_cv_have_long_long_format="cross -- assuming no"
+   if test x$GCC = xyes; then
+    save_CFLAGS=$CFLAGS
+    CFLAGS="$CFLAGS -Werror -Wformat"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+        #include <stdio.h>
+        #include <stddef.h>
+      ]], [[
+      char *buffer;
+      sprintf(buffer, "%lld", (long long)123);
+      sprintf(buffer, "%lld", (long long)-123);
+      sprintf(buffer, "%llu", (unsigned long long)123);
+      ]])],
+      ac_cv_have_long_long_format=yes
+    )
+    CFLAGS=$save_CFLAGS
+   fi])
   )
   AC_MSG_RESULT($ac_cv_have_long_long_format)
 fi

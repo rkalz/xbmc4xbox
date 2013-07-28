@@ -481,6 +481,8 @@ Callable types
 
       Special attributes:
 
+      .. tabularcolumns:: |l|L|l|
+
       +-----------------------+-------------------------------+-----------+
       | Attribute             | Meaning                       |           |
       +=======================+===============================+===========+
@@ -573,7 +575,7 @@ Callable types
          :attr:`im_self` used to refer to the class that defined the method.
 
       .. versionchanged:: 2.6
-         For 3.0 forward-compatibility, :attr:`im_func` is also available as
+         For Python 3 forward-compatibility, :attr:`im_func` is also available as
          :attr:`__func__`, and :attr:`im_self` as :attr:`__self__`.
 
       .. index::
@@ -621,9 +623,8 @@ Callable types
          single: im_self (method attribute)
 
       When a user-defined method object is created by retrieving a class method object
-      from a class or instance, its :attr:`im_self` attribute is the class itself (the
-      same as the :attr:`im_class` attribute), and its :attr:`im_func` attribute is
-      the function object underlying the class method.
+      from a class or instance, its :attr:`im_self` attribute is the class itself, and
+      its :attr:`im_func` attribute is the function object underlying the class method.
 
       When an unbound user-defined method object is called, the underlying function
       (:attr:`im_func`) is called, with the restriction that the first argument must
@@ -795,8 +796,8 @@ Classes
    associated class is either :class:`C` or one of its base classes, it is
    transformed into an unbound user-defined method object whose :attr:`im_class`
    attribute is :class:`C`. When it would yield a class method object, it is
-   transformed into a bound user-defined method object whose :attr:`im_class`
-   and :attr:`im_self` attributes are both :class:`C`.  When it would yield a
+   transformed into a bound user-defined method object whose
+   :attr:`im_self` attribute is :class:`C`.  When it would yield a
    static method object, it is transformed into the object wrapped by the static
    method object. See section :ref:`descriptors` for another way in which
    attributes retrieved from a class may differ from those actually contained in
@@ -1149,7 +1150,7 @@ sources of additional information.
    single: class; classic
    single: class; old-style
 
-Old-style classes are removed in Python 3.0, leaving only the semantics of
+Old-style classes are removed in Python 3, leaving only the semantics of
 new-style classes.
 
 
@@ -2235,7 +2236,7 @@ Coercion rules
 This section used to document the rules for coercion.  As the language has
 evolved, the coercion rules have become hard to document precisely; documenting
 what one version of one particular implementation does is undesirable.  Instead,
-here are some informal guidelines regarding coercion.  In Python 3.0, coercion
+here are some informal guidelines regarding coercion.  In Python 3, coercion
 will not be supported.
 
 *

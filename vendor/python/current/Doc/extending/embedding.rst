@@ -61,6 +61,7 @@ perform some operation on a file. ::
    int
    main(int argc, char *argv[])
    {
+     Py_SetProgramName(argv[0]);  /* optional but recommended */
      Py_Initialize();
      PyRun_SimpleString("from time import time,ctime\n"
                         "print 'Today is',ctime(time())\n");
@@ -68,9 +69,11 @@ perform some operation on a file. ::
      return 0;
    }
 
-The above code first initializes the Python interpreter with
+The :c:func:`Py_SetProgramName` function should be called before
+:c:func:`Py_Initialize` to inform the interpreter about paths to Python run-time
+libraries.  Next, the Python interpreter is initialized with
 :c:func:`Py_Initialize`, followed by the execution of a hard-coded Python script
-that print the date and time.  Afterwards, the :c:func:`Py_Finalize` call shuts
+that prints the date and time.  Afterwards, the :c:func:`Py_Finalize` call shuts
 the interpreter down, followed by the end of the program.  In a real program,
 you may want to get the Python script from another source, perhaps a text-editor
 routine, a file, or a database.  Getting the Python code from a file can better
@@ -137,7 +140,9 @@ The code to run a function defined in a Python script is:
 This code loads a Python script using ``argv[1]``, and calls the function named
 in ``argv[2]``.  Its integer arguments are the other values of the ``argv``
 array.  If you compile and link this program (let's call the finished executable
-:program:`call`), and use it to execute a Python script, such as::
+:program:`call`), and use it to execute a Python script, such as:
+
+.. code-block:: python
 
    def multiply(a,b):
        print "Will compute", a, "times", b
@@ -226,7 +231,9 @@ following two statements directly after :c:func:`Py_Initialize`::
 
 These two lines initialize the ``numargs`` variable, and make the
 :func:`emb.numargs` function accessible to the embedded Python interpreter.
-With these extensions, the Python script can do things like ::
+With these extensions, the Python script can do things like
+
+.. code-block:: python
 
    import emb
    print "Number of arguments", emb.numargs()
@@ -270,7 +277,9 @@ the linker not to remove these symbols.
 Determining the right options to use for any given platform can be quite
 difficult, but fortunately the Python configuration already has those values.
 To retrieve them from an installed Python interpreter, start an interactive
-interpreter and have a short session like this::
+interpreter and have a short session like this
+
+.. code-block:: python
 
    >>> import distutils.sysconfig
    >>> distutils.sysconfig.get_config_var('LINKFORSHARED')

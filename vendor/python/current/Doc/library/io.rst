@@ -92,7 +92,7 @@ Module Interface
    ``'b'``   binary mode
    ``'t'``   text mode (default)
    ``'+'``   open a disk file for updating (reading and writing)
-   ``'U'``   universal newline mode (for backwards compatibility; should
+   ``'U'``   universal newlines mode (for backwards compatibility; should
              not be used in new code)
    ========= ===============================================================
 
@@ -141,14 +141,17 @@ Module Interface
    used.  Any other error handling name that has been registered with
    :func:`codecs.register_error` is also valid.
 
-   *newline* controls how universal newlines works (it only applies to text
-   mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It
-   works as follows:
+   .. index::
+      single: universal newlines; open() (in module io)
+
+   *newline* controls how :term:`universal newlines` works (it only applies to
+   text mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.
+   It works as follows:
 
    * On input, if *newline* is ``None``, universal newlines mode is enabled.
      Lines in the input can end in ``'\n'``, ``'\r'``, or ``'\r\n'``, and these
      are translated into ``'\n'`` before being returned to the caller.  If it is
-     ``''``, universal newline mode is enabled, but line endings are returned to
+     ``''``, universal newlines mode is enabled, but line endings are returned to
      the caller untranslated.  If it has any of the other legal values, input
      lines are only terminated by the given string, and the line ending is
      returned to the caller untranslated.
@@ -292,6 +295,9 @@ I/O Base Classes
       Read and return a list of lines from the stream.  *hint* can be specified
       to control the number of lines read: no more lines will be read if the
       total size (in bytes/characters) of all lines so far exceeds *hint*.
+
+      Note that it's already possible to iterate on file objects using ``for
+      line in file: ...`` without calling ``file.readlines()``.
 
    .. method:: seek(offset, whence=SEEK_SET)
 
@@ -696,10 +702,12 @@ Text I/O
       Read and return at most *n* characters from the stream as a single
       :class:`unicode`.  If *n* is negative or ``None``, reads until EOF.
 
-   .. method:: readline()
+   .. method:: readline(limit=-1)
 
       Read until newline or EOF and return a single ``unicode``.  If the
       stream is already at EOF, an empty string is returned.
+
+      If *limit* is specified, at most *limit* characters will be read.
 
    .. method:: seek(offset, whence=SEEK_SET)
 
@@ -752,14 +760,25 @@ Text I/O
    sequences) can be used.  Any other error handling name that has been
    registered with :func:`codecs.register_error` is also valid.
 
-   *newline* can be ``None``, ``''``, ``'\n'``, ``'\r'``, or ``'\r\n'``.  It
-   controls the handling of line endings.  If it is ``None``, universal newlines
-   is enabled.  With this enabled, on input, the lines endings ``'\n'``,
-   ``'\r'``, or ``'\r\n'`` are translated to ``'\n'`` before being returned to
-   the caller.  Conversely, on output, ``'\n'`` is translated to the system
-   default line separator, :data:`os.linesep`.  If *newline* is any other of its
-   legal values, that newline becomes the newline when the file is read and it
-   is returned untranslated.  On output, ``'\n'`` is converted to the *newline*.
+   .. index::
+      single: universal newlines; io.TextIOWrapper class
+
+   *newline* controls how line endings are handled.  It can be ``None``,
+   ``''``, ``'\n'``, ``'\r'``, and ``'\r\n'``.  It works as follows:
+
+   * On input, if *newline* is ``None``, :term:`universal newlines` mode is
+     enabled.  Lines in the input can end in ``'\n'``, ``'\r'``, or ``'\r\n'``,
+     and these are translated into ``'\n'`` before being returned to the
+     caller.  If it is ``''``, universal newlines mode is enabled, but line
+     endings are returned to the caller untranslated.  If it has any of the
+     other legal values, input lines are only terminated by the given string,
+     and the line ending is returned to the caller untranslated.
+
+   * On output, if *newline* is ``None``, any ``'\n'`` characters written are
+     translated to the system default line separator, :data:`os.linesep`.  If
+     *newline* is ``''``, no translation takes place.  If *newline* is any of
+     the other legal values, any ``'\n'`` characters written are translated to
+     the given string.
 
    If *line_buffering* is ``True``, :meth:`flush` is implied when a call to
    write contains a newline character.
@@ -807,10 +826,13 @@ Text I/O
       output.close()
 
 
+.. index::
+   single: universal newlines; io.IncrementalNewlineDecoder class
+
 .. class:: IncrementalNewlineDecoder
 
-   A helper codec that decodes newlines for universal newlines mode.  It
-   inherits :class:`codecs.IncrementalDecoder`.
+   A helper codec that decodes newlines for :term:`universal newlines` mode.
+   It inherits :class:`codecs.IncrementalDecoder`.
 
 
 Advanced topics

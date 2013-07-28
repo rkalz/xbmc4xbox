@@ -7,8 +7,8 @@
 .. note::
 
    The :mod:`SocketServer` module has been renamed to :mod:`socketserver` in
-   Python 3.0.  The :term:`2to3` tool will automatically adapt imports when
-   converting your sources to 3.0.
+   Python 3.  The :term:`2to3` tool will automatically adapt imports when
+   converting your sources to Python 3.
 
 **Source code:** :source:`Lib/SocketServer.py`
 
@@ -306,8 +306,8 @@ request.
 .. method:: RequestHandler.finish()
 
    Called after the :meth:`handle` method to perform any clean-up actions
-   required.  The default implementation does nothing.  If :meth:`setup` or
-   :meth:`handle` raise an exception, this function will not be called.
+   required.  The default implementation does nothing.  If :meth:`setup`
+   raises an exception, this function will not be called.
 
 
 .. method:: RequestHandler.handle()

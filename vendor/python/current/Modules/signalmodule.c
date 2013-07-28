@@ -321,7 +321,10 @@ signal_signal(PyObject *self, PyObject *args)
     Handlers[sig_num].tripped = 0;
     Py_INCREF(obj);
     Handlers[sig_num].func = obj;
-    return old_handler;
+    if (old_handler != NULL)
+        return old_handler;
+    else
+        Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(signal_doc,
@@ -349,8 +352,13 @@ signal_getsignal(PyObject *self, PyObject *args)
         return NULL;
     }
     old_handler = Handlers[sig_num].func;
-    Py_INCREF(old_handler);
-    return old_handler;
+    if (old_handler != NULL) {
+        Py_INCREF(old_handler);
+        return old_handler;
+    }
+    else {
+        Py_RETURN_NONE;
+    }
 }
 
 PyDoc_STRVAR(getsignal_doc,
@@ -407,7 +415,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
         return NULL;
     }
 #endif
-    if (fd != -1 && fstat(fd, &buf) != 0) {
+    if (fd != -1 && (!_PyVerify_fd(fd) || fstat(fd, &buf) != 0)) {
         PyErr_SetString(PyExc_ValueError, "invalid fd");
         return NULL;
     }
@@ -972,9 +980,25 @@ PyOS_InterruptOccurred(void)
     return 0;
 }
 
+static void
+_clear_pending_signals(void)
+{
+    int i;
+    if (!is_tripped)
+        return;
+    is_tripped = 0;
+    for (i = 1; i < NSIG; ++i) {
+        Handlers[i].tripped = 0;
+    }
+}
+
 void
 PyOS_AfterFork(void)
 {
+    /* Clear the signal flags after forking so that they aren't handled
+     * in both processes if they came in just before the fork() but before
+     * the interpreter had an opportunity to call the handlers.  issue9535. */
+    _clear_pending_signals();
 #ifdef WITH_THREAD
     /* PyThread_ReInitTLS() must be called early, to make sure that the TLS API
      * can be called safely. */

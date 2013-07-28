@@ -11,8 +11,9 @@
 This module defines two classes, :class:`Mailbox` and :class:`Message`, for
 accessing and manipulating on-disk mailboxes and the messages they contain.
 :class:`Mailbox` offers a dictionary-like mapping from keys to messages.
-:class:`Message` extends the :mod:`email.Message` module's :class:`Message`
-class with format-specific state and behavior. Supported mailbox formats are
+:class:`Message` extends the :mod:`email.message` module's
+:class:`~email.message.Message` class with format-specific state and behavior.
+Supported mailbox formats are
 Maildir, mbox, MH, Babyl, and MMDF.
 
 
@@ -83,7 +84,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
       it.
 
       Parameter *message* may be a :class:`Message` instance, an
-      :class:`email.Message.Message` instance, a string, or a file-like object
+      :class:`email.message.Message` instance, a string, or a file-like object
       (which should be open in text mode). If *message* is an instance of the
       appropriate format-specific :class:`Message` subclass (e.g., if it's an
       :class:`mboxMessage` instance and this is an :class:`mbox` instance), its
@@ -110,7 +111,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
       :exc:`KeyError` exception if no message already corresponds to *key*.
 
       As with :meth:`add`, parameter *message* may be a :class:`Message`
-      instance, an :class:`email.Message.Message` instance, a string, or a
+      instance, an :class:`email.message.Message` instance, a string, or a
       file-like object (which should be open in text mode). If *message* is an
       instance of the appropriate format-specific :class:`Message` subclass
       (e.g., if it's an :class:`mboxMessage` instance and this is an
@@ -154,7 +155,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
       when the :class:`Mailbox` instance was initialized.
 
 
-   .. method:: get(key[, default=None])
+   .. method:: get(key, default=None)
                __getitem__(key)
 
       Return a representation of the message corresponding to *key*. If no such
@@ -278,7 +279,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^^^^
 
 
-.. class:: Maildir(dirname[, factory=rfc822.Message[, create=True]])
+.. class:: Maildir(dirname, factory=rfc822.Message, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in Maildir format. Parameter
    *factory* is a callable object that accepts a file-like message representation
@@ -423,7 +424,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^
 
 
-.. class:: mbox(path[, factory=None[, create=True]])
+.. class:: mbox(path, factory=None, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in mbox format. Parameter *factory*
    is a callable object that accepts a file-like message representation (which
@@ -483,7 +484,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^
 
 
-.. class:: MH(path[, factory=None[, create=True]])
+.. class:: MH(path, factory=None, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in MH format. Parameter *factory*
    is a callable object that accepts a file-like message representation (which
@@ -613,7 +614,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^^
 
 
-.. class:: Babyl(path[, factory=None[, create=True]])
+.. class:: Babyl(path, factory=None, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in Babyl format. Parameter
    *factory* is a callable object that accepts a file-like message representation
@@ -689,7 +690,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 ^^^^^^^^^^^^^
 
 
-.. class:: MMDF(path[, factory=None[, create=True]])
+.. class:: MMDF(path, factory=None, create=True)
 
    A subclass of :class:`Mailbox` for mailboxes in MMDF format. Parameter *factory*
    is a callable object that accepts a file-like message representation (which
@@ -743,11 +744,12 @@ Maildir, mbox, MH, Babyl, and MMDF.
 
 .. class:: Message([message])
 
-   A subclass of the :mod:`email.Message` module's :class:`Message`. Subclasses of
-   :class:`mailbox.Message` add mailbox-format-specific state and behavior.
+   A subclass of the :mod:`email.message` module's
+   :class:`~email.message.Message`. Subclasses of :class:`mailbox.Message` add
+   mailbox-format-specific state and behavior.
 
    If *message* is omitted, the new instance is created in a default, empty state.
-   If *message* is an :class:`email.Message.Message` instance, its contents are
+   If *message* is an :class:`email.message.Message` instance, its contents are
    copied; furthermore, any format-specific information is converted insofar as
    possible if *message* is a :class:`Message` instance. If *message* is a string
    or a file, it should contain an :rfc:`2822`\ -compliant message, which is read
@@ -987,7 +989,7 @@ When a :class:`MaildirMessage` instance is created based upon a
       are excluded.
 
 
-   .. method:: set_from(from_[, time_=None])
+   .. method:: set_from(from_, time_=None)
 
       Set the "From " line to *from_*, which should be specified without a
       leading "From " or trailing newline. For convenience, *time_* may be
@@ -1251,7 +1253,7 @@ When an :class:`MHMessage` instance is created based upon a
 
       Set the message's visible headers to be the same as the headers in
       *message*.  Parameter *visible* should be a :class:`Message` instance, an
-      :class:`email.Message.Message` instance, a string, or a file-like object
+      :class:`email.message.Message` instance, a string, or a file-like object
       (which should be open in text mode).
 
 
@@ -1358,7 +1360,7 @@ When a :class:`BabylMessage` instance is created based upon an
       are excluded.
 
 
-   .. method:: set_from(from_[, time_=None])
+   .. method:: set_from(from_, time_=None)
 
       Set the "From " line to *from_*, which should be specified without a
       leading "From " or trailing newline. For convenience, *time_* may be
@@ -1513,7 +1515,7 @@ Older versions of the :mod:`mailbox` module do not support modification of
 mailboxes, such as adding or removing message, and do not provide classes to
 represent format-specific message properties. For backward compatibility, the
 older mailbox classes are still available, but the newer classes should be used
-in preference to them.  The old classes will be removed in Python 3.0.
+in preference to them.  The old classes have been removed in Python 3.
 
 Older mailbox objects support only iteration and provide a single public method:
 

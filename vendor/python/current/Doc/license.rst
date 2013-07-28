@@ -132,7 +132,7 @@ Terms and conditions for accessing or otherwise using Python
    analyze, test, perform and/or display publicly, prepare derivative works,
    distribute, and otherwise use Python |release| alone or in any derivative
    version, provided, however, that PSF's License Agreement and PSF's notice of
-   copyright, i.e., "Copyright © 2001-2012 Python Software Foundation; All Rights
+   copyright, i.e., "Copyright © 2001-2013 Python Software Foundation; All Rights
    Reserved" are retained in Python |release| alone or in any derivative version
    prepared by Licensee.
 
@@ -309,7 +309,7 @@ Mersenne Twister
 ----------------
 
 The :mod:`_random` module includes code based on a download from
-http://www.math.keio.ac.jp/ matumoto/MT2002/emt19937ar.html. The following are
+http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html. The following are
 the verbatim comments from the original code::
 
    A C-program for MT19937, with initialization improved 2002/1/26.
@@ -350,8 +350,8 @@ the verbatim comments from the original code::
 
 
    Any feedback is very welcome.
-   http://www.math.keio.ac.jp/matumoto/emt.html
-   email: matumoto@math.keio.ac.jp
+   http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html
+   email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)
 
 
 Sockets

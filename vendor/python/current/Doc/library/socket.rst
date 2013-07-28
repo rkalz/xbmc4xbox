@@ -28,7 +28,7 @@ want to refer to :rfc:`3493` titled Basic Socket Interface Extensions for IPv6.
 
 The Python interface is a straightforward transliteration of the Unix system
 call and library interface for sockets to Python's object-oriented style: the
-:func:`socket` function returns a :dfn:`socket object` whose methods implement
+:func:`.socket` function returns a :dfn:`socket object` whose methods implement
 the various socket system calls.  Parameter types are somewhat higher-level than
 in the C interface: as with :meth:`read` and :meth:`write` operations on Python
 files, buffer allocation on receive operations is automatic, and buffer length
@@ -38,7 +38,7 @@ Socket addresses are represented as follows: A single string is used for the
 :const:`AF_UNIX` address family. A pair ``(host, port)`` is used for the
 :const:`AF_INET` address family, where *host* is a string representing either a
 hostname in Internet domain notation like ``'daring.cwi.nl'`` or an IPv4 address
-like ``'100.50.200.5'``, and *port* is an integral port number. For
+like ``'100.50.200.5'``, and *port* is an integer. For
 :const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
 scopeid)`` is used, where *flowinfo* and *scopeid* represents ``sin6_flowinfo``
 and ``sin6_scope_id`` member in :const:`struct sockaddr_in6` in C. For
@@ -72,17 +72,17 @@ numeric address in *host* portion.
    tuple, and the fields depend on the address type. The general tuple form is
    ``(addr_type, v1, v2, v3 [, scope])``, where:
 
-   - *addr_type* is one of TIPC_ADDR_NAMESEQ, TIPC_ADDR_NAME, or
-     TIPC_ADDR_ID.
-   - *scope* is one of TIPC_ZONE_SCOPE, TIPC_CLUSTER_SCOPE, and
-     TIPC_NODE_SCOPE.
-   - If *addr_type* is TIPC_ADDR_NAME, then *v1* is the server type, *v2* is
+   - *addr_type* is one of :const:`TIPC_ADDR_NAMESEQ`, :const:`TIPC_ADDR_NAME`,
+     or :const:`TIPC_ADDR_ID`.
+   - *scope* is one of :const:`TIPC_ZONE_SCOPE`, :const:`TIPC_CLUSTER_SCOPE`,
+     and :const:`TIPC_NODE_SCOPE`.
+   - If *addr_type* is :const:`TIPC_ADDR_NAME`, then *v1* is the server type, *v2* is
      the port identifier, and *v3* should be 0.
 
-     If *addr_type* is TIPC_ADDR_NAMESEQ, then *v1* is the server type, *v2*
+     If *addr_type* is :const:`TIPC_ADDR_NAMESEQ`, then *v1* is the server type, *v2*
      is the lower port number, and *v3* is the upper port number.
 
-     If *addr_type* is TIPC_ADDR_ID, then *v1* is the node, *v2* is the
+     If *addr_type* is :const:`TIPC_ADDR_ID`, then *v1* is the node, *v2* is the
      reference, and *v3* should be set to 0.
 
 
@@ -146,7 +146,7 @@ The module :mod:`socket` exports the following constants and functions:
           AF_INET6
 
    These constants represent the address (and protocol) families, used for the
-   first argument to :func:`socket`.  If the :const:`AF_UNIX` constant is not
+   first argument to :func:`.socket`.  If the :const:`AF_UNIX` constant is not
    defined then this protocol is unsupported.
 
 
@@ -230,7 +230,7 @@ The module :mod:`socket` exports the following constants and functions:
       *source_address* was added.
 
 
-.. function:: getaddrinfo(host, port, family=0, socktype=0, proto=0, flags=0)
+.. function:: getaddrinfo(host, port[, family[, socktype[, proto[, flags]]]])
 
    Translate the *host*/*port* argument into a sequence of 5-tuples that contain
    all the necessary arguments for creating a socket connected to that service.
@@ -240,19 +240,19 @@ The module :mod:`socket` exports the following constants and functions:
    and *port*, you can pass ``NULL`` to the underlying C API.
 
    The *family*, *socktype* and *proto* arguments can be optionally specified
-   in order to narrow the list of addresses returned.  Passing zero as a
-   value for each of these arguments selects the full range of results.
+   in order to narrow the list of addresses returned.  By default, their value
+   is ``0``, meaning that the full range of results is selected.
    The *flags* argument can be one or several of the ``AI_*`` constants,
-   and will influence how results are computed and returned.
-   For example, :const:`AI_NUMERICHOST` will disable domain name resolution
-   and will raise an error if *host* is a domain name.
+   and will influence how results are computed and returned.  Its default value
+   is ``0``.  For example, :const:`AI_NUMERICHOST` will disable domain name
+   resolution and will raise an error if *host* is a domain name.
 
    The function returns a list of 5-tuples with the following structure:
 
    ``(family, socktype, proto, canonname, sockaddr)``
 
    In these tuples, *family*, *socktype*, *proto* are all integers and are
-   meant to be passed to the :func:`socket` function.  *canonname* will be
+   meant to be passed to the :func:`.socket` function.  *canonname* will be
    a string representing the canonical name of the *host* if
    :const:`AI_CANONNAME` is part of the *flags* argument; else *canonname*
    will be empty.  *sockaddr* is a tuple describing a socket address, whose
@@ -343,7 +343,7 @@ The module :mod:`socket` exports the following constants and functions:
 .. function:: getprotobyname(protocolname)
 
    Translate an Internet protocol name (for example, ``'icmp'``) to a constant
-   suitable for passing as the (optional) third argument to the :func:`socket`
+   suitable for passing as the (optional) third argument to the :func:`.socket`
    function.  This is usually only needed for sockets opened in "raw" mode
    (:const:`SOCK_RAW`); for the normal socket modes, the correct protocol is chosen
    automatically if the protocol is omitted or zero.
@@ -377,7 +377,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    Build a pair of connected socket objects using the given address family, socket
    type, and protocol number.  Address family, socket type, and protocol number are
-   as for the :func:`socket` function above. The default family is :const:`AF_UNIX`
+   as for the :func:`.socket` function above. The default family is :const:`AF_UNIX`
    if defined on the platform; otherwise, the default is :const:`AF_INET`.
    Availability: Unix.
 
@@ -388,7 +388,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    Duplicate the file descriptor *fd* (an integer as returned by a file object's
    :meth:`fileno` method) and build a socket object from the result.  Address
-   family, socket type and protocol number are as for the :func:`socket` function
+   family, socket type and protocol number are as for the :func:`.socket` function
    above. The file descriptor should refer to a socket, but this is not checked ---
    subsequent operations on the object may fail if the file descriptor is invalid.
    This function is rarely needed, but can be used to get or set socket options on
@@ -739,7 +739,8 @@ correspond to Unix system calls applicable to sockets.
    much data, if any, was successfully sent.
 
 
-.. method:: socket.sendto(string[, flags], address)
+.. method:: socket.sendto(string, address)
+            socket.sendto(string, flags, address)
 
    Send data to the socket.  The socket should not be connected to a remote socket,
    since the destination socket is specified by *address*.  The optional *flags*
@@ -860,10 +861,10 @@ Example
 
 Here are four minimal example programs using the TCP/IP protocol: a server that
 echoes all data that it receives back (servicing only one client), and a client
-using it.  Note that a server must perform the sequence :func:`socket`,
+using it.  Note that a server must perform the sequence :func:`.socket`,
 :meth:`~socket.bind`, :meth:`~socket.listen`, :meth:`~socket.accept` (possibly
 repeating the :meth:`~socket.accept` to service more than one client), while a
-client only needs the sequence :func:`socket`, :meth:`~socket.connect`.  Also
+client only needs the sequence :func:`.socket`, :meth:`~socket.connect`.  Also
 note that the server does not :meth:`~socket.sendall`/:meth:`~socket.recv` on
 the socket it is listening on but on the new socket returned by
 :meth:`~socket.accept`.
@@ -919,13 +920,13 @@ sends traffic to the first one connected successfully. ::
        af, socktype, proto, canonname, sa = res
        try:
            s = socket.socket(af, socktype, proto)
-       except socket.error, msg:
+       except socket.error as msg:
            s = None
            continue
        try:
            s.bind(sa)
            s.listen(1)
-       except socket.error, msg:
+       except socket.error as msg:
            s.close()
            s = None
            continue
@@ -954,12 +955,12 @@ sends traffic to the first one connected successfully. ::
        af, socktype, proto, canonname, sa = res
        try:
            s = socket.socket(af, socktype, proto)
-       except socket.error, msg:
+       except socket.error as msg:
            s = None
            continue
        try:
            s.connect(sa)
-       except socket.error, msg:
+       except socket.error as msg:
            s.close()
            s = None
            continue

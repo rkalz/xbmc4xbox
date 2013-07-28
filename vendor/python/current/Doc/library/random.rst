@@ -90,7 +90,7 @@ Bookkeeping functions:
 
    *state* should have been obtained from a previous call to :func:`getstate`, and
    :func:`setstate` restores the internal state of the generator to what it was at
-   the time :func:`setstate` was called.
+   the time :func:`getstate` was called.
 
    .. versionadded:: 2.1
 
@@ -124,7 +124,8 @@ Bookkeeping functions:
 Functions for integers:
 
 
-.. function:: randrange([start,] stop[, step])
+.. function:: randrange(stop)
+              randrange(start, stop[, step])
 
    Return a randomly selected element from ``range(start, stop, step)``.  This is
    equivalent to ``choice(range(start, stop, step))``, but doesn't actually build a

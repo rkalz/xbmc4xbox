@@ -25,9 +25,6 @@ decryption of encrypted files in ZIP archives, but it currently cannot
 create an encrypted file.  Decryption is extremely slow as it is
 implemented in native Python rather than C.
 
-For other archive formats, see the :mod:`bz2`, :mod:`gzip`, and
-:mod:`tarfile` modules.
-
 The module defines the following items:
 
 .. exception:: BadZipfile
@@ -56,7 +53,7 @@ The module defines the following items:
 .. class:: ZipInfo([filename[, date_time]])
 
    Class used to represent information about a member of an archive. Instances
-   of this class are returned by the :meth:`getinfo` and :meth:`infolist`
+   of this class are returned by the :meth:`.getinfo` and :meth:`.infolist`
    methods of :class:`ZipFile` objects.  Most users of the :mod:`zipfile` module
    will not need to create these, but only use those created by this
    module. *filename* should be the full name of the archive member, and
@@ -81,7 +78,7 @@ The module defines the following items:
 .. data:: ZIP_DEFLATED
 
    The numeric constant for the usual ZIP compression method.  This requires the
-   zlib module.  No other compression methods are currently supported.
+   :mod:`zlib` module.  No other compression methods are currently supported.
 
 
 .. seealso::
@@ -128,7 +125,7 @@ ZipFile Objects
 
    .. versionchanged:: 2.7.1
       If the file is created with mode ``'a'`` or ``'w'`` and then
-      :meth:`close`\ d without adding any files to the archive, the appropriate
+      :meth:`closed <close>` without adding any files to the archive, the appropriate
       ZIP structures for an empty archive will be written to the file.
 
    ZipFile is also a context manager and therefore supports the
@@ -166,15 +163,19 @@ ZipFile Objects
 
    Return a list of archive members by name.
 
+   .. index::
+      single: universal newlines; zipfile.ZipFile.open method
+
 
 .. method:: ZipFile.open(name[, mode[, pwd]])
 
    Extract a member from the archive as a file-like object (ZipExtFile). *name* is
    the name of the file in the archive, or a :class:`ZipInfo` object. The *mode*
-   parameter, if included, must be one of the following: ``'r'`` (the  default),
-   ``'U'``, or ``'rU'``. Choosing ``'U'`` or  ``'rU'`` will enable universal newline
+   parameter, if included, must be one of the following: ``'r'`` (the default),
+   ``'U'``, or ``'rU'``. Choosing ``'U'`` or  ``'rU'`` will enable
+   :term:`universal newline <universal newlines>`
    support in the read-only object. *pwd* is the password used for encrypted files.
-   Calling  :meth:`open` on a closed ZipFile will raise a  :exc:`RuntimeError`.
+   Calling  :meth:`.open` on a closed ZipFile will raise a  :exc:`RuntimeError`.
 
    .. note::
 
@@ -195,7 +196,7 @@ ZipFile Objects
 
    .. note::
 
-      The :meth:`open`, :meth:`read` and :meth:`extract` methods can take a filename
+      The :meth:`.open`, :meth:`read` and :meth:`extract` methods can take a filename
       or a :class:`ZipInfo` object.  You will appreciate this when trying to read a
       ZIP file that contains members with duplicate names.
 
@@ -212,6 +213,16 @@ ZipFile Objects
 
    .. versionadded:: 2.6
 
+   .. note::
+
+      If a member filename is an absolute path, a drive/UNC sharepoint and
+      leading (back)slashes will be stripped, e.g.: ``///foo/bar`` becomes
+      ``foo/bar`` on Unix, and ``C:\foo\bar`` becomes ``foo\bar`` on Windows.
+      And all ``".."`` components in a member filename will be removed, e.g.:
+      ``../../foo../../ba..r`` becomes ``foo../ba..r``.  On Windows illegal
+      characters (``:``, ``<``, ``>``, ``|``, ``"``, ``?``, and ``*``)
+      replaced by underscore (``_``).
+
 
 .. method:: ZipFile.extractall([path[, members[, pwd]]])
 
@@ -226,6 +237,9 @@ ZipFile Objects
       It is possible that files are created outside of *path*, e.g. members
       that have absolute filenames starting with ``"/"`` or filenames with two
       dots ``".."``.
+
+   .. versionchanged:: 2.7.4
+      The zipfile module attempts to prevent that.  See :meth:`extract` note.
 
    .. versionadded:: 2.6
 
@@ -312,7 +326,7 @@ ZipFile Objects
       :class:`ZipInfo` constructor sets this member to :const:`ZIP_STORED`.
 
    .. versionchanged:: 2.7
-      The *compression_type* argument.
+      The *compress_type* argument.
 
 The following data attributes are also available:
 
@@ -328,7 +342,7 @@ The following data attributes are also available:
    The comment text associated with the ZIP file.  If assigning a comment to a
    :class:`ZipFile` instance created with mode 'a' or 'w', this should be a
    string no longer than 65535 bytes.  Comments longer than this will be
-   truncated in the written archive when :meth:`ZipFile.close` is called.
+   truncated in the written archive when :meth:`.close` is called.
 
 .. _pyzipfile-objects:
 
@@ -368,8 +382,8 @@ The :class:`PyZipFile` constructor takes the same parameters as the
 ZipInfo Objects
 ---------------
 
-Instances of the :class:`ZipInfo` class are returned by the :meth:`getinfo` and
-:meth:`infolist` methods of :class:`ZipFile` objects.  Each object stores
+Instances of the :class:`ZipInfo` class are returned by the :meth:`.getinfo` and
+:meth:`.infolist` methods of :class:`ZipFile` objects.  Each object stores
 information about a single member of the ZIP archive.
 
 Instances have the following attributes:
