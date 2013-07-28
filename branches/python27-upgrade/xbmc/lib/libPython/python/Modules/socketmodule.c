@@ -187,6 +187,11 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #define USE_GETADDRINFO_LOCK
 #endif
 
+#ifdef _XBOX
+#define USE_GETHOSTBYNAME_LOCK
+#define USE_GETADDRINFO_LOCK
+#endif
+
 #ifdef USE_GETADDRINFO_LOCK
 #define ACQUIRE_GETADDRINFO_LOCK PyThread_acquire_lock(netdb_lock, 1);
 #define RELEASE_GETADDRINFO_LOCK PyThread_release_lock(netdb_lock);
