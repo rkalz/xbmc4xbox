@@ -21,7 +21,7 @@
 				Optimization="0"
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="FALSE"
-				AdditionalIncludeDirectories="..\..\sqlite-3.6.21;..\Include; ..\PC"
+				AdditionalIncludeDirectories="..\..\sqlite;..\Include;..\PC"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
 				RuntimeLibrary="3"/>
 			<Tool
@@ -64,7 +64,7 @@
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\sqlite-3.6.21;..\Include; ..\PC"
+				AdditionalIncludeDirectories="..\..\sqlite;..\Include;..\PC"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
 				RuntimeLibrary="2"/>
 			<Tool
@@ -113,7 +113,7 @@
 				OmitFramePointers="TRUE"
 				EnableFiberSafeOptimizations="FALSE"
 				WholeProgramOptimization="TRUE"
-				AdditionalIncludeDirectories="..\..\sqlite-3.6.21;..\Include; ..\PC"
+				AdditionalIncludeDirectories="..\..\sqlite;..\Include;..\PC"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
@@ -160,7 +160,7 @@
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\sqlite-3.6.21;..\Include; ..\PC"
+				AdditionalIncludeDirectories="..\..\sqlite;..\Include;..\PC"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
 				RuntimeLibrary="2"/>
 			<Tool

@@ -19,7 +19,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories=";$(sqlite3Dir)"
+				AdditionalIncludeDirectories="&quot;..\..\sqlite&quot;"
 				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 				WarningLevel="1"/>
 			<Tool
@@ -60,7 +60,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;..\..\sqlite-3.6.21&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\sqlite&quot;"
 				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport);_XBOX"
 				RuntimeLibrary="0"
 				WarningLevel="1"/>
@@ -103,7 +103,7 @@
 				OmitFramePointers="TRUE"
 				EnableFiberSafeOptimizations="FALSE"
 				WholeProgramOptimization="TRUE"
-				AdditionalIncludeDirectories="&quot;$(sqlite3Dir)&quot;;$(sqlite3Dir)"
+				AdditionalIncludeDirectories="&quot;..\..\sqlite&quot;"
 				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
@@ -150,7 +150,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories=";$(sqlite3Dir)"
+				AdditionalIncludeDirectories="&quot;..\..\sqlite&quot;"
 				PreprocessorDefinitions="SQLITE_API=__declspec(dllexport)"
 				WarningLevel="1"/>
 			<Tool
@@ -188,16 +188,16 @@
 		<Filter
 			Name="Header Files">
 			<File
-				RelativePath="..\..\sqlite-3.6.21\sqlite3.h">
+				RelativePath="..\..\sqlite\sqlite3.h">
 			</File>
 			<File
-				RelativePath="..\..\sqlite-3.6.21\sqlite3ext.h">
+				RelativePath="..\..\sqlite\sqlite3ext.h">
 			</File>
 		</Filter>
 		<Filter
 			Name="Source Files">
 			<File
-				RelativePath="..\..\sqlite-3.6.21\sqlite3.c">
+				RelativePath="..\..\sqlite\sqlite3.c">
 			</File>
 		</Filter>
 	</Files>
