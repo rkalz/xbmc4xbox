@@ -9,6 +9,7 @@ zip ../python27.zlib \
     distutils/\* \
     curses/\* \
     lib-tk/\* \
+    lib2to3/\* \
     idlelib/\* \
     test/\* \
     unittest/\* \
