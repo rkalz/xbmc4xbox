@@ -6,11 +6,11 @@
 
 .. note::
     The :mod:`urllib` module has been split into parts and renamed in
-    Python 3.0 to :mod:`urllib.request`, :mod:`urllib.parse`,
+    Python 3 to :mod:`urllib.request`, :mod:`urllib.parse`,
     and :mod:`urllib.error`. The :term:`2to3` tool will automatically adapt
-    imports when converting your sources to 3.0.
+    imports when converting your sources to Python 3.
     Also note that the :func:`urllib.urlopen` function has been removed in
-    Python 3.0 in favor of :func:`urllib2.urlopen`.
+    Python 3 in favor of :func:`urllib2.urlopen`.
 
 .. index::
    single: WWW
@@ -32,16 +32,17 @@ High-level interface
 
 .. function:: urlopen(url[, data[, proxies]])
 
-   Open a network object denoted by a URL for reading.  If the URL does not have a
-   scheme identifier, or if it has :file:`file:` as its scheme identifier, this
-   opens a local file (without universal newlines); otherwise it opens a socket to
-   a server somewhere on the network.  If the connection cannot be made the
-   :exc:`IOError` exception is raised.  If all went well, a file-like object is
-   returned.  This supports the following methods: :meth:`read`, :meth:`readline`,
-   :meth:`readlines`, :meth:`fileno`, :meth:`close`, :meth:`info`, :meth:`getcode` and
-   :meth:`geturl`.  It also has proper support for the :term:`iterator` protocol. One
-   caveat: the :meth:`read` method, if the size argument is omitted or negative,
-   may not read until the end of the data stream; there is no good way to determine
+   Open a network object denoted by a URL for reading.  If the URL does not
+   have a scheme identifier, or if it has :file:`file:` as its scheme
+   identifier, this opens a local file (without :term:`universal newlines`);
+   otherwise it opens a socket to a server somewhere on the network.  If the
+   connection cannot be made the :exc:`IOError` exception is raised.  If all
+   went well, a file-like object is returned.  This supports the following
+   methods: :meth:`read`, :meth:`readline`, :meth:`readlines`, :meth:`fileno`,
+   :meth:`close`, :meth:`info`, :meth:`getcode` and :meth:`geturl`.  It also
+   has proper support for the :term:`iterator` protocol. One caveat: the
+   :meth:`read` method, if the size argument is omitted or negative, may not
+   read until the end of the data stream; there is no good way to determine
    that the entire stream from a socket has been read in the general case.
 
    Except for the :meth:`info`, :meth:`getcode` and :meth:`geturl` methods,
@@ -131,7 +132,7 @@ High-level interface
       :envvar:`no_proxy` environment variable.
 
    .. deprecated:: 2.6
-      The :func:`urlopen` function has been removed in Python 3.0 in favor
+      The :func:`urlopen` function has been removed in Python 3 in favor
       of :func:`urllib2.urlopen`.
 
 
@@ -278,6 +279,13 @@ Utility functions
    in case insensitive way, for all operating systems first, and when it cannot
    find it, looks for proxy information from Mac OSX System Configuration for
    Mac OS X and Windows Systems Registry for Windows.
+
+.. note::
+    urllib also exposes certain utility functions like splittype, splithost and
+    others parsing url into various components. But it is recommended to use
+    :mod:`urlparse` for parsing urls than using these functions directly.
+    Python 3 does not expose these helper functions from :mod:`urllib.parse`
+    module.
 
 
 URL Opener objects

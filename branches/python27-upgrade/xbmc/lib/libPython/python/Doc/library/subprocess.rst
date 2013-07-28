@@ -28,8 +28,8 @@ modules and functions can be found in the following sections.
    :pep:`324` -- PEP proposing the subprocess module
 
 
-Using the subprocess Module
----------------------------
+Using the :mod:`subprocess` Module
+----------------------------------
 
 The recommended approach to invoking subprocesses is to use the following
 convenience functions for all use cases they can handle. For more advanced
@@ -145,6 +145,8 @@ use cases, the underlying :class:`Popen` interface can be used directly.
 
    .. versionadded:: 2.7
 
+   ..
+
    .. warning::
 
       Invoking the system shell with ``shell=True`` can be a security hazard
@@ -170,6 +172,26 @@ use cases, the underlying :class:`Popen` interface can be used directly.
    Special value that can be used as the *stderr* argument to :class:`Popen` and
    indicates that standard error should go into the same handle as standard
    output.
+
+
+.. exception:: CalledProcessError
+
+    Exception raised when a process run by :func:`check_call` or
+    :func:`check_output` returns a non-zero exit status.
+
+    .. attribute:: returncode
+
+        Exit status of the child process.
+
+    .. attribute:: cmd
+
+        Command that was used to spawn the child process.
+
+    .. attribute:: output
+
+        Output of the child process if this exception is raised by
+        :func:`check_output`.  Otherwise, ``None``.
+
 
 
 .. _frequently-used-arguments:
@@ -200,15 +222,22 @@ default values. The arguments that are most commonly needed are:
    the stderr data from the child process should be captured into the same file
    handle as for stdout.
 
-   When *stdout* or *stderr* are pipes and *universal_newlines* is
-   :const:`True` then all line endings will be converted to ``'\n'`` as
-   described for the universal newlines `'U'`` mode argument to :func:`open`.
+   .. index::
+      single: universal newlines; subprocess module
 
-   If *shell* is :const:`True`, the specified command will be executed through
-   the shell. This can be useful if you are using Python primarily for the
+   When *stdout* or *stderr* are pipes and *universal_newlines* is
+   ``True`` then all line endings will be converted to ``'\n'`` as described
+   for the :term:`universal newlines` ``'U'`` mode argument to :func:`open`.
+
+   If *shell* is ``True``, the specified command will be executed through
+   the shell.  This can be useful if you are using Python primarily for the
    enhanced control flow it offers over most system shells and still want
-   access to other shell features such as filename wildcards, shell pipes and
-   environment variable expansion.
+   convenient access to other shell features such as shell pipes, filename
+   wildcards, environment variable expansion, and expansion of ``~`` to a
+   user's home directory.  However, note that Python itself offers
+   implementations of many shell-like features (in particular, :mod:`glob`,
+   :mod:`fnmatch`, :func:`os.walk`, :func:`os.path.expandvars`,
+   :func:`os.path.expanduser`, and :mod:`shutil`).
 
    .. warning::
 
@@ -216,8 +245,8 @@ default values. The arguments that are most commonly needed are:
       untrusted source makes a program vulnerable to `shell injection
       <http://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_,
       a serious security flaw which can result in arbitrary command execution.
-      For this reason, the use of *shell=True* is **strongly discouraged** in cases
-      where the command string is constructed from external input::
+      For this reason, the use of ``shell=True`` is **strongly discouraged**
+      in cases where the command string is constructed from external input::
 
          >>> from subprocess import call
          >>> filename = input("What file would you like to display?\n")
@@ -228,6 +257,10 @@ default values. The arguments that are most commonly needed are:
       ``shell=False`` disables all shell based features, but does not suffer
       from this vulnerability; see the Note in the :class:`Popen` constructor
       documentation for helpful hints in getting ``shell=False`` to work.
+
+      When using ``shell=True``, :func:`pipes.quote` can be used to properly
+      escape whitespace and shell metacharacters in strings that are going to
+      be used to construct shell commands.
 
 These options, along with all of the other options, are described in more
 detail in the :class:`Popen` constructor documentation.
@@ -242,23 +275,26 @@ are able to handle the less common cases not covered by the convenience
 functions.
 
 
-.. class:: Popen(args, bufsize=0, executable=None, stdin=None, stdout=None, stderr=None, preexec_fn=None, close_fds=False, shell=False, cwd=None, env=None, universal_newlines=False, startupinfo=None, creationflags=0)
+.. class:: Popen(args, bufsize=0, executable=None, stdin=None, stdout=None, \
+                 stderr=None, preexec_fn=None, close_fds=False, shell=False, \
+                 cwd=None, env=None, universal_newlines=False, \
+                 startupinfo=None, creationflags=0)
 
-   Arguments are:
+   Execute a child program in a new process.  On Unix, the class uses
+   :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
+   the class uses the Windows ``CreateProcess()`` function.  The arguments to
+   :class:`Popen` are as follows.
 
-   *args* should be a string, or a sequence of program arguments.  The program
-   to execute is normally the first item in the args sequence or the string if
-   a string is given, but can be explicitly set by using the *executable*
-   argument.  When *executable* is given, the first item in the args sequence
-   is still treated by most programs as the command name, which can then be
-   different from the actual executable name.  On Unix, it becomes the display
-   name for the executing program in utilities such as :program:`ps`.
+   *args* should be a sequence of program arguments or else a single string.
+   By default, the program to execute is the first item in *args* if *args* is
+   a sequence.  If *args* is a string, the interpretation is
+   platform-dependent and described below.  See the *shell* and *executable*
+   arguments for additional differences from the default behavior.  Unless
+   otherwise stated, it is recommended to pass *args* as a sequence.
 
-   On Unix, with *shell=False* (default): In this case, the Popen class uses
-   :meth:`os.execvp` to execute the child program. *args* should normally be a
-   sequence.  If a string is specified for *args*, it will be used as the name
-   or path of the program to execute; this will only work if the program is
-   being given no arguments.
+   On Unix, if *args* is a string, the string is interpreted as the name or
+   path of the program to execute.  However, this can only be done if not
+   passing arguments to the program.
 
    .. note::
 
@@ -279,20 +315,36 @@ functions.
       used in the shell (such as filenames containing spaces or the *echo* command
       shown above) are single list elements.
 
-   On Unix, with *shell=True*: If args is a string, it specifies the command
-   string to execute through the shell.  This means that the string must be
+   On Windows, if *args* is a sequence, it will be converted to a string in a
+   manner described in :ref:`converting-argument-sequence`.  This is because
+   the underlying ``CreateProcess()`` operates on strings.
+
+   The *shell* argument (which defaults to *False*) specifies whether to use
+   the shell as the program to execute.  If *shell* is *True*, it is
+   recommended to pass *args* as a string rather than as a sequence.
+
+   On Unix with ``shell=True``, the shell defaults to :file:`/bin/sh`.  If
+   *args* is a string, the string specifies the command
+   to execute through the shell.  This means that the string must be
    formatted exactly as it would be when typed at the shell prompt.  This
    includes, for example, quoting or backslash escaping filenames with spaces in
    them.  If *args* is a sequence, the first item specifies the command string, and
    any additional items will be treated as additional arguments to the shell
-   itself.  That is to say, *Popen* does the equivalent of::
+   itself.  That is to say, :class:`Popen` does the equivalent of::
 
       Popen(['/bin/sh', '-c', args[0], args[1], ...])
 
-   On Windows: the :class:`Popen` class uses CreateProcess() to execute the child
-   child program, which operates on strings.  If *args* is a sequence, it will
-   be converted to a string in a manner described in
-   :ref:`converting-argument-sequence`.
+   On Windows with ``shell=True``, the :envvar:`COMSPEC` environment variable
+   specifies the default shell.  The only time you need to specify
+   ``shell=True`` on Windows is when the command you wish to execute is built
+   into the shell (e.g. :command:`dir` or :command:`copy`).  You do not need
+   ``shell=True`` to run a batch file or console-based executable.
+
+   .. warning::
+
+      Passing ``shell=True`` can be a security hazard if combined with
+      untrusted input.  See the warning under :ref:`frequently-used-arguments`
+      for details.
 
    *bufsize*, if given, has the same meaning as the corresponding argument to the
    built-in open() function: :const:`0` means unbuffered, :const:`1` means line
@@ -306,15 +358,15 @@ functions.
       enable buffering by setting *bufsize* to either -1 or a large enough
       positive value (such as 4096).
 
-   The *executable* argument specifies the program to execute. It is very seldom
-   needed: Usually, the program to execute is defined by the *args* argument. If
-   ``shell=True``, the *executable* argument specifies which shell to use. On Unix,
-   the default shell is :file:`/bin/sh`.  On Windows, the default shell is
-   specified by the :envvar:`COMSPEC` environment variable. The only reason you
-   would need to specify ``shell=True`` on Windows is where the command you
-   wish to execute is actually built in to the shell, eg ``dir``, ``copy``.
-   You don't need ``shell=True`` to run a batch file, nor to run a console-based
-   executable.
+   The *executable* argument specifies a replacement program to execute.   It
+   is very seldom needed.  When ``shell=False``, *executable* replaces the
+   program to execute specified by *args*.  However, the original *args* is
+   still passed to the program.  Most programs treat the program specified
+   by *args* as the command name, which can then be different from the program
+   actually executed.  On Unix, the *args* name
+   becomes the display name for the executable in utilities such as
+   :program:`ps`.  If ``shell=True``, on Unix the *executable* argument
+   specifies a replacement shell for the default :file:`/bin/sh`.
 
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
@@ -335,15 +387,6 @@ functions.
    child process.  Note that on Windows, you cannot set *close_fds* to true and
    also redirect the standard handles by setting *stdin*, *stdout* or *stderr*.
 
-   If *shell* is :const:`True`, the specified command will be executed through the
-   shell.
-
-   .. warning::
-
-      Enabling this option can be a security hazard if combined with untrusted
-      input. See the warning under :ref:`frequently-used-arguments`
-      for details.
-
    If *cwd* is not ``None``, the child's current directory will be changed to *cwd*
    before it is executed.  Note that this directory is not considered when
    searching the executable, so you can't specify the program's path relative to
@@ -362,11 +405,11 @@ functions.
 
    .. _side-by-side assembly: http://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
-   If *universal_newlines* is :const:`True`, the file objects stdout and stderr are
-   opened as text files, but lines may be terminated by any of ``'\n'``, the Unix
-   end-of-line convention, ``'\r'``, the old Macintosh convention or ``'\r\n'``, the
-   Windows convention. All of these external representations are seen as ``'\n'``
-   by the Python program.
+   If *universal_newlines* is ``True``, the file objects *stdout* and *stderr*
+   are opened as text files in :term:`universal newlines` mode.  Lines may be
+   terminated by any of ``'\n'``, the Unix end-of-line convention, ``'\r'``,
+   the old Macintosh convention or ``'\r\n'``, the Windows convention. All of
+   these external representations are seen as ``'\n'`` by the Python program.
 
    .. note::
 
@@ -490,8 +533,8 @@ The following attributes are also available:
 
 .. warning::
 
-   Use :meth:`communicate` rather than :attr:`.stdin.write <stdin>`,
-   :attr:`.stdout.read <stdout>` or :attr:`.stderr.read <stderr>` to avoid
+   Use :meth:`~Popen.communicate` rather than :attr:`.stdin.write <Popen.stdin>`,
+   :attr:`.stdout.read <Popen.stdout>` or :attr:`.stderr.read <Popen.stderr>` to avoid
    deadlocks due to any of the other OS pipe buffers filling up and blocking the
    child process.
 
@@ -639,8 +682,8 @@ The :mod:`subprocess` module exposes the following constants.
 
 .. _subprocess-replacements:
 
-Replacing Older Functions with the subprocess Module
-----------------------------------------------------
+Replacing Older Functions with the :mod:`subprocess` Module
+-----------------------------------------------------------
 
 In this section, "a becomes b" means that b can be used as a replacement for a.
 
@@ -656,7 +699,7 @@ In this section, "a becomes b" means that b can be used as a replacement for a.
    the raised exception.
 
 In the following examples, we assume that the relevant functions have already
-been imported from the subprocess module.
+been imported from the :mod:`subprocess` module.
 
 
 Replacing /bin/sh shell backquote
@@ -685,7 +728,7 @@ The p1.stdout.close() call after starting the p2 is important in order for p1
 to receive a SIGPIPE if p2 exits before p1.
 
 Alternatively, for trusted input, the shell's own pipeline support may still
-be used directly:
+be used directly::
 
    output=`dmesg | grep hda`
    # becomes
@@ -713,7 +756,7 @@ A more realistic example would look like this::
            print >>sys.stderr, "Child was terminated by signal", -retcode
        else:
            print >>sys.stderr, "Child returned", retcode
-   except OSError, e:
+   except OSError as e:
        print >>sys.stderr, "Execution failed:", e
 
 

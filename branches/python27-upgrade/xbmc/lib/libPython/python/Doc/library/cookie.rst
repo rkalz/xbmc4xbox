@@ -8,8 +8,8 @@
 
 .. note::
    The :mod:`Cookie` module has been renamed to :mod:`http.cookies` in Python
-   3.0.  The :term:`2to3` tool will automatically adapt imports when converting
-   your sources to 3.0.
+   3.  The :term:`2to3` tool will automatically adapt imports when converting
+   your sources to Python 3.
 
 **Source code:** :source:`Lib/Cookie.py`
 
@@ -22,8 +22,14 @@ cookie value.
 
 The module formerly strictly applied the parsing rules described in the
 :rfc:`2109` and :rfc:`2068` specifications.  It has since been discovered that
-MSIE 3.0x doesn't follow the character rules outlined in those specs.  As a
-result, the parsing rules used are a bit less strict.
+MSIE 3.0x doesn't follow the character rules outlined in those specs and also
+many current day browsers and servers have relaxed parsing rules when comes to
+Cookie handling.  As a result, the parsing rules used are a bit less strict.
+
+The character set, :data:`string.ascii_letters`, :data:`string.digits` and
+``!#$%&'*+-.^_`|~`` denote the set of valid characters allowed by this module
+in Cookie name (as :attr:`~Morsel.key`).
+
 
 .. note::
 

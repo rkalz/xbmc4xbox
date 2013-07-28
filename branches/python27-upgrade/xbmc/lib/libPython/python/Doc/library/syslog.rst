@@ -17,7 +17,8 @@ library that can speak to a syslog server is available in the
 The module defines the following functions:
 
 
-.. function:: syslog([priority,] message)
+.. function:: syslog(message)
+              syslog(priority, message)
 
    Send the string *message* to the system logger.  A trailing newline is added
    if necessary.  Each message is tagged with a priority composed of a
@@ -73,7 +74,8 @@ Priority levels (high to low):
 Facilities:
    :const:`LOG_KERN`, :const:`LOG_USER`, :const:`LOG_MAIL`, :const:`LOG_DAEMON`,
    :const:`LOG_AUTH`, :const:`LOG_LPR`, :const:`LOG_NEWS`, :const:`LOG_UUCP`,
-   :const:`LOG_CRON` and :const:`LOG_LOCAL0` to :const:`LOG_LOCAL7`.
+   :const:`LOG_CRON`, :const:`LOG_SYSLOG` and :const:`LOG_LOCAL0` to
+   :const:`LOG_LOCAL7`.
 
 Log options:
    :const:`LOG_PID`, :const:`LOG_CONS`, :const:`LOG_NDELAY`, :const:`LOG_NOWAIT`

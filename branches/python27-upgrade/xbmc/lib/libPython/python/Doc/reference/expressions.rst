@@ -96,14 +96,13 @@ exception.
 definition begins with two or more underscore characters and does not end in two
 or more underscores, it is considered a :dfn:`private name` of that class.
 Private names are transformed to a longer form before code is generated for
-them.  The transformation inserts the class name in front of the name, with
-leading underscores removed, and a single underscore inserted in front of the
-class name.  For example, the identifier ``__spam`` occurring in a class named
-``Ham`` will be transformed to ``_Ham__spam``.  This transformation is
-independent of the syntactical context in which the identifier is used.  If the
-transformed name is extremely long (longer than 255 characters), implementation
-defined truncation may happen.  If the class name consists only of underscores,
-no transformation is done.
+them.  The transformation inserts the class name, with leading underscores
+removed and a single underscore inserted, in front of the name.  For example,
+the identifier ``__spam`` occurring in a class named ``Ham`` will be transformed
+to ``_Ham__spam``.  This transformation is independent of the syntactical
+context in which the identifier is used.  If the transformed name is extremely
+long (longer than 255 characters), implementation defined truncation may happen.
+If the class name consists only of underscores, no transformation is done.
 
 
 
@@ -421,8 +420,15 @@ transferred to the generator's caller.
 
 .. index:: object: generator
 
-The following generator's methods can be used to control the execution of a
-generator function:
+
+Generator-iterator methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This subsection describes the methods of a generator iterator.  They can
+be used to control the execution of a generator function.
+
+Note that calling any of the generator methods below when the generator
+is already executing raises a :exc:`ValueError` exception.
 
 .. index:: exception: StopIteration
 
@@ -660,17 +666,18 @@ upper bound and stride, respectively, substituting ``None`` for missing
 expressions.
 
 
+.. index::
+   object: callable
+   single: call
+   single: argument; call semantics
+
 .. _calls:
 
 Calls
 -----
 
-.. index:: single: call
-
-.. index:: object: callable
-
-A call calls a callable object (e.g., a function) with a possibly empty series
-of arguments:
+A call calls a callable object (e.g., a :term:`function`) with a possibly empty
+series of :term:`arguments <argument>`:
 
 .. productionlist::
    call: `primary` "(" [`argument_list` [","]
@@ -689,12 +696,15 @@ of arguments:
 A trailing comma may be present after the positional and keyword arguments but
 does not affect the semantics.
 
+.. index::
+   single: parameter; call semantics
+
 The primary must evaluate to a callable object (user-defined functions, built-in
 functions, methods of built-in objects, class objects, methods of class
 instances, and certain class instances themselves are callable; extensions may
 define additional callable object types).  All argument expressions are
 evaluated before the call is attempted.  Please refer to section :ref:`function`
-for the syntax of formal parameter lists.
+for the syntax of formal :term:`parameter` lists.
 
 If keyword arguments are present, they are first converted to positional
 arguments, as follows.  First, a list of unfilled slots is created for the
@@ -1332,8 +1342,8 @@ their suffixes::
 
 .. _operator-summary:
 
-Summary
-=======
+Operator precedence
+===================
 
 .. index:: pair: operator; precedence
 
@@ -1356,10 +1366,10 @@ groups from right to left).
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`and`                                | Boolean AND                         |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`not` *x*                            | Boolean NOT                         |
+| :keyword:`not` ``x``                          | Boolean NOT                         |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`in`, :keyword:`not` :keyword:`in`,  | Comparisons, including membership   |
-| :keyword:`is`, :keyword:`is not`, ``<``,      | tests and identity tests,           |
+| :keyword:`in`, :keyword:`not in`,             | Comparisons, including membership   |
+| :keyword:`is`, :keyword:`is not`, ``<``,      | tests and identity tests            |
 | ``<=``, ``>``, ``>=``, ``<>``, ``!=``, ``==`` |                                     |
 +-----------------------------------------------+-------------------------------------+
 | ``|``                                         | Bitwise OR                          |
@@ -1384,7 +1394,7 @@ groups from right to left).
 +-----------------------------------------------+-------------------------------------+
 | ``(expressions...)``,                         | Binding or tuple display,           |
 | ``[expressions...]``,                         | list display,                       |
-| ``{key:datum...}``,                           | dictionary display,                 |
+| ``{key: value...}``,                          | dictionary display,                 |
 | ```expressions...```                          | string conversion                   |
 +-----------------------------------------------+-------------------------------------+
 
@@ -1392,7 +1402,7 @@ groups from right to left).
 
 .. [#] In Python 2.3 and later releases, a list comprehension "leaks" the control
    variables of each ``for`` it contains into the containing scope.  However, this
-   behavior is deprecated, and relying on it will not work in Python 3.0
+   behavior is deprecated, and relying on it will not work in Python 3.
 
 .. [#] While ``abs(x%y) < abs(y)`` is true mathematically, for floats it may not be
    true numerically due to roundoff.  For example, and assuming a platform on which

@@ -177,6 +177,7 @@ GLHACK=-Dclear=__GLclear
 #_testcapi _testcapimodule.c    # Python C API test module
 #_random _randommodule.c	# Random number generator
 #_collections _collectionsmodule.c # Container types
+#_heapq _heapqmodule.c		# Heapq type
 #itertools itertoolsmodule.c	# Functions creating iterators for efficient looping 
 #strop stropmodule.c		# String manipulations
 #_functools _functoolsmodule.c	# Tools for working with functions and callable objects
@@ -189,6 +190,9 @@ GLHACK=-Dclear=__GLclear
 
 # access to ISO C locale support
 #_locale _localemodule.c  # -lintl
+
+# Standard I/O baseline
+#_io -I$(srcdir)/Modules/_io _io/bufferedio.c _io/bytesio.c _io/fileio.c _io/iobase.c _io/_iomodule.c _io/stringio.c _io/textio.c
 
 
 # Modules with some UNIX dependencies -- on by default:
@@ -207,7 +211,7 @@ GLHACK=-Dclear=__GLclear
 #_csv _csv.c
 
 # Socket module helper for socket(2)
-#_socket socketmodule.c
+#_socket socketmodule.c timemodule.c
 
 # Socket module helper for SSL support; you must comment out the other
 # socket line above, and possibly edit the SSL variable:

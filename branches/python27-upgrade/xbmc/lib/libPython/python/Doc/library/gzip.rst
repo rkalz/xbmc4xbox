@@ -22,9 +22,6 @@ Note that additional file formats which can be decompressed by the
 :program:`gzip` and :program:`gunzip` programs, such  as those produced by
 :program:`compress` and :program:`pack`, are not supported by this module.
 
-For other archive formats, see the :mod:`bz2`, :mod:`zipfile`, and
-:mod:`tarfile` modules.
-
 The module defines the following items:
 
 
@@ -52,9 +49,10 @@ The module defines the following items:
    not given, the 'b' flag will be added to the mode to ensure the file is opened
    in binary mode for cross-platform portability.
 
-   The *compresslevel* argument is an integer from ``1`` to ``9`` controlling the
-   level of compression; ``1`` is fastest and produces the least compression, and
-   ``9`` is slowest and produces the most compression.  The default is ``9``.
+   The *compresslevel* argument is an integer from ``0`` to ``9`` controlling
+   the level of compression; ``1`` is fastest and produces the least
+   compression, and ``9`` is slowest and produces the most compression. ``0``
+   is no compression. The default is ``9``.
 
    The *mtime* argument is an optional numeric timestamp to be written to
    the stream when compressing.  All :program:`gzip` compressed streams are
@@ -95,7 +93,7 @@ Examples of usage
 Example of how to read a compressed file::
 
    import gzip
-   f = gzip.open('/home/joe/file.txt.gz', 'rb')
+   f = gzip.open('file.txt.gz', 'rb')
    file_content = f.read()
    f.close()
 
@@ -103,15 +101,15 @@ Example of how to create a compressed GZIP file::
 
    import gzip
    content = "Lots of content here"
-   f = gzip.open('/home/joe/file.txt.gz', 'wb')
+   f = gzip.open('file.txt.gz', 'wb')
    f.write(content)
    f.close()
 
 Example of how to GZIP compress an existing file::
 
    import gzip
-   f_in = open('/home/joe/file.txt', 'rb')
-   f_out = gzip.open('/home/joe/file.txt.gz', 'wb')
+   f_in = open('file.txt', 'rb')
+   f_out = gzip.open('file.txt.gz', 'wb')
    f_out.writelines(f_in)
    f_out.close()
    f_in.close()

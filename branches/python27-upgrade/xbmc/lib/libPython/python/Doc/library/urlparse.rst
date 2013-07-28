@@ -13,9 +13,9 @@
    pair: relative; URL
 
 .. note::
-   The :mod:`urlparse` module is renamed to :mod:`urllib.parse` in Python 3.0.
+   The :mod:`urlparse` module is renamed to :mod:`urllib.parse` in Python 3.
    The :term:`2to3` tool will automatically adapt imports when converting
-   your sources to 3.0.
+   your sources to Python 3.
 
 **Source code:** :source:`Lib/urlparse.py`
 
@@ -27,11 +27,11 @@ combine the components back into a URL string, and to convert a "relative URL"
 to an absolute URL given a "base URL."
 
 The module has been designed to match the Internet RFC on Relative Uniform
-Resource Locators (and discovered a bug in an earlier draft!). It supports the
-following URL schemes: ``file``, ``ftp``, ``gopher``, ``hdl``, ``http``,
-``https``, ``imap``, ``mailto``, ``mms``, ``news``,  ``nntp``, ``prospero``,
-``rsync``, ``rtsp``, ``rtspu``,  ``sftp``, ``shttp``, ``sip``, ``sips``,
-``snews``, ``svn``,  ``svn+ssh``, ``telnet``, ``wais``.
+Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
+``gopher``, ``hdl``, ``http``, ``https``, ``imap``, ``mailto``, ``mms``,
+``news``,  ``nntp``, ``prospero``, ``rsync``, ``rtsp``, ``rtspu``,  ``sftp``,
+``shttp``, ``sip``, ``sips``, ``snews``, ``svn``,  ``svn+ssh``, ``telnet``,
+``wais``.
 
 .. versionadded:: 2.5
    Support for the ``sftp`` and ``sips`` schemes.
@@ -71,7 +71,7 @@ The :mod:`urlparse` module defines the following functions:
        >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
        ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
                   params='', query='', fragment='')
-       >>> urlparse('www.cwi.nl:80/%7Eguido/Python.html')
+       >>> urlparse('www.cwi.nl/%7Eguido/Python.html')
        ParseResult(scheme='', netloc='', path='www.cwi.nl:80/%7Eguido/Python.html',
                   params='', query='', fragment='')
        >>> urlparse('help/Python.html')

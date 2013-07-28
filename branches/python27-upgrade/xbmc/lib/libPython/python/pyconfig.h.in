@@ -1,4 +1,4 @@
-/* pyconfig.h.in.  Generated from configure.in by autoheader.  */
+/* pyconfig.h.in.  Generated from configure.ac by autoheader.  */
 
 
 #ifndef Py_PYCONFIG_H
@@ -161,10 +161,10 @@
 /* Define to 1 if you have the device macros. */
 #undef HAVE_DEVICE_MACROS
 
-/* Define if we have /dev/ptc. */
+/* Define to 1 if you have the /dev/ptc device file. */
 #undef HAVE_DEV_PTC
 
-/* Define if we have /dev/ptmx. */
+/* Define to 1 if you have the /dev/ptmx device file. */
 #undef HAVE_DEV_PTMX
 
 /* Define to 1 if you have the <direct.h> header file. */
@@ -369,6 +369,12 @@
 
 /* Define to 1 if you have the `initgroups' function. */
 #undef HAVE_INITGROUPS
+
+/* Define if your compiler provides int32_t. */
+#undef HAVE_INT32_T
+
+/* Define if your compiler provides int64_t. */
+#undef HAVE_INT64_T
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -846,6 +852,12 @@
 
 /* Define this if you have tcl and TCL_UTF_MAX==6 */
 #undef HAVE_UCS4_TCL
+
+/* Define if your compiler provides uint32_t. */
+#undef HAVE_UINT32_T
+
+/* Define if your compiler provides uint64_t. */
+#undef HAVE_UINT64_T
 
 /* Define to 1 if the system has the type `uintptr_t'. */
 #undef HAVE_UINTPTR_T

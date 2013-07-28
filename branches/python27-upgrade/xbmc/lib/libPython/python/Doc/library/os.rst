@@ -72,7 +72,7 @@ process and user.
 
 .. data:: environ
 
-   A mapping object representing the string environment. For example,
+   A :term:`mapping` object representing the string environment. For example,
    ``environ['HOME']`` is the pathname of your home directory (on some platforms),
    and is equivalent to ``getenv("HOME")`` in C.
 
@@ -156,6 +156,20 @@ process and user.
    Return list of supplemental group ids associated with the current process.
 
    Availability: Unix.
+
+   .. note:: On Mac OS X, :func:`getgroups` behavior differs somewhat from
+      other Unix platforms. If the Python interpreter was built with a
+      deployment target of :const:`10.5` or earlier, :func:`getgroups` returns
+      the list of effective group ids associated with the current user process;
+      this list is limited to a system-defined number of entries, typically 16,
+      and may be modified by calls to :func:`setgroups` if suitably privileged.
+      If built with a deployment target greater than :const:`10.5`,
+      :func:`getgroups` returns the current group access list for the user
+      associated with the effective user id of the process; the group access
+      list may change over the lifetime of the process, it is not affected by
+      calls to :func:`setgroups`, and its length is not limited to 16.  The
+      deployment target value, :const:`MACOSX_DEPLOYMENT_TARGET`, can be
+      obtained with :func:`sysconfig.get_config_var`.
 
 
 .. function:: initgroups(username, gid)
@@ -306,6 +320,10 @@ process and user.
 
    .. versionadded:: 2.2
 
+   .. note:: On Mac OS X, the length of *groups* may not exceed the
+      system-defined maximum number of effective group ids, typically 16.
+      See the documentation for :func:`getgroups` for cases where it may not
+      return the same group list set by calling setgroups().
 
 .. function:: setpgrp()
 
@@ -1163,7 +1181,7 @@ Files and Directories
    doesn't open the FIFO --- it just creates the rendezvous point.
 
 
-.. function:: mknod(filename[, mode=0600, device])
+.. function:: mknod(filename[, mode=0600[, device=0]])
 
    Create a filesystem node (file, device special file or named pipe) named
    *filename*. *mode* specifies both the permissions to use and the type of node to
@@ -1565,7 +1583,7 @@ Files and Directories
    Availability: Unix, Windows.
 
 
-.. function:: walk(top[, topdown=True [, onerror=None[, followlinks=False]]])
+.. function:: walk(top, topdown=True, onerror=None, followlinks=False)
 
    .. index::
       single: directory; walking
@@ -2208,7 +2226,7 @@ written in Python, such as a mail server's external command delivery program.
    with :const:`P_NOWAIT` return suitable process handles.
 
 
-.. function:: wait3([options])
+.. function:: wait3(options)
 
    Similar to :func:`waitpid`, except no process id argument is given and a
    3-element tuple containing the child's process id, exit status indication, and
@@ -2488,5 +2506,7 @@ Miscellaneous Functions
    system this will query /dev/urandom, and on Windows it will use CryptGenRandom.
    If a randomness source is not found, :exc:`NotImplementedError` will be raised.
 
-   .. versionadded:: 2.4
+   For an easy-to-use interface to the random number generator
+   provided by your platform, please see :class:`random.SystemRandom`.
 
+   .. versionadded:: 2.4

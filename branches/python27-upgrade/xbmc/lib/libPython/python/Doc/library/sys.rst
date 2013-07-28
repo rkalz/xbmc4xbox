@@ -1,4 +1,3 @@
-
 :mod:`sys` --- System-specific parameters and functions
 =======================================================
 
@@ -208,7 +207,7 @@ always available.
    be set at build time with the ``--exec-prefix`` argument to the
    :program:`configure` script.  Specifically, all configuration files (e.g. the
    :file:`pyconfig.h` header file) are installed in the directory
-   :file:`{exec_prefix}/lib/python{X.Y}/config', and shared library modules are
+   :file:`{exec_prefix}/lib/python{X.Y}/config`, and shared library modules are
    installed in :file:`{exec_prefix}/lib/python{X.Y}/lib-dynload`, where *X.Y*
    is the version number of Python, for example ``2.7``.
 
@@ -291,6 +290,8 @@ always available.
 
    .. versionadded:: 2.6
 
+   .. versionadded:: 2.7.3
+      The ``hash_randomization`` attribute.
 
 .. data:: float_info
 
@@ -300,6 +301,8 @@ always available.
    header file :file:`float.h` for the 'C' programming language; see section
    5.2.4.2.2 of the 1999 ISO/IEC C standard [C99]_, 'Characteristics of
    floating types', for details.
+
+   .. tabularcolumns:: |l|l|L|
 
    +---------------------+----------------+--------------------------------------------------+
    | attribute           | float.h macro  | explanation                                      |
@@ -598,6 +601,8 @@ always available.
    A struct sequence that holds information about Python's
    internal representation of integers.  The attributes are read only.
 
+   .. tabularcolumns:: |l|L|
+
    +-------------------------+----------------------------------------------+
    | Attribute               | Explanation                                  |
    +=========================+==============================================+
@@ -773,9 +778,9 @@ always available.
    independent Python files are installed; by default, this is the string
    ``'/usr/local'``.  This can be set at build time with the ``--prefix``
    argument to the :program:`configure` script.  The main collection of Python
-   library modules is installed in the directory :file:`{prefix}/lib/python{X.Y}``
+   library modules is installed in the directory :file:`{prefix}/lib/python{X.Y}`
    while the platform independent header files (all except :file:`pyconfig.h`) are
-   stored in :file:`{prefix}/include/python{X.Y}``, where *X.Y* is the version
+   stored in :file:`{prefix}/include/python{X.Y}`, where *X.Y* is the version
    number of Python, for example ``2.7``.
 
 
@@ -796,10 +801,10 @@ always available.
 
 .. data:: py3kwarning
 
-   Bool containing the status of the Python 3.0 warning flag. It's ``True``
+   Bool containing the status of the Python 3 warning flag. It's ``True``
    when Python is started with the -3 option.  (This should be considered
    read-only; setting it to a different value doesn't have an effect on
-   Python 3.0 warnings.)
+   Python 3 warnings.)
 
    .. versionadded:: 2.6
 
