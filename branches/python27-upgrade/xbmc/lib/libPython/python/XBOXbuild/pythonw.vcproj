@@ -11,8 +11,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)"
-			IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -40,7 +40,7 @@
 				AdditionalLibraryDirectories="$(OutDir)"
 				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
+				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
 				SubSystem="2"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
@@ -71,8 +71,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)"
-			IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-$(ConfigurationName)\$(ProjectName)\"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
@@ -100,7 +100,7 @@
 				AdditionalLibraryDirectories="$(OutDir)"
 				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
+				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
 				SubSystem="2"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
@@ -130,28 +130,24 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="PGInstrument|Win32"
-			OutputDirectory="$(SolutionDir)"
-			IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-$(ConfigurationName)\$(ProjectName)\"
+			Name="Release XBOX|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
+				Optimization="1"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
-				FavorSizeOrSpeed="2"
-				OmitFramePointers="TRUE"
-				EnableFiberSafeOptimizations="FALSE"
-				WholeProgramOptimization="TRUE"
 				AdditionalIncludeDirectories=";..\Include; ..\PC"
 				PreprocessorDefinitions="_WINDOWS"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				BufferSecurityCheck="FALSE"
 				EnableFunctionLevelLinking="TRUE"
+				EnableEnhancedInstructionSet="1"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
@@ -164,14 +160,10 @@
 				AdditionalLibraryDirectories="$(OutDir)"
 				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
+				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
 				SubSystem="2"
 				StackReserveSize="2000000"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				LinkTimeCodeGeneration="TRUE"
 				BaseAddress="0x1d000000"
-				ImportLibrary=""
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -198,15 +190,15 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="PGUpdate|Win32"
-			OutputDirectory="$(SolutionDir)"
-			IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-$(ConfigurationName)\$(ProjectName)\"
+			Name="Debug XBOX|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
+				Optimization="0"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				AdditionalIncludeDirectories=";..\Include; ..\PC"
@@ -214,7 +206,7 @@
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="TRUE"
+				EnableEnhancedInstructionSet="1"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
@@ -227,12 +219,10 @@
 				AdditionalLibraryDirectories="$(OutDir)"
 				IgnoreDefaultLibraryNames="libc;msvcr71;libcmt"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
+				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
 				SubSystem="2"
 				StackReserveSize="2000000"
-				LinkTimeCodeGeneration="TRUE"
 				BaseAddress="0x1d000000"
-				ImportLibrary=""
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>

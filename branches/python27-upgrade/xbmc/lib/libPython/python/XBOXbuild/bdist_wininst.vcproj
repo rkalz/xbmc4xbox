@@ -1,83 +1,202 @@
 <?xml version="1.0" encoding="Windows-1252"?>
-<VisualStudioProject ProjectType="Visual C++" Version="7.10" Name="bdist_wininst" ProjectGUID="{EB1C19C1-1F18-421E-9735-CAEE69DC6A3C}" RootNamespace="wininst" TargetFrameworkVersion="131072">
-  <Platforms>
-    <Platform Name="Win32" />
-  </Platforms>
-  <ToolFiles>
-  </ToolFiles>
-  <Configurations>
-    <Configuration Name="Release|Win32" OutputDirectory="..\lib\distutils\command" ConfigurationType="1" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="false" CharacterSet="0" IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-$(ConfigurationName)\$(ProjectName)\">
-      <Tool Name="VCPreBuildEventTool" />
-      <Tool Name="VCCustomBuildTool" />
-      <Tool Name="VCXMLDataGeneratorTool" />
-      <Tool Name="VCWebServiceProxyGeneratorTool" />
-      <Tool Name="VCMIDLTool" PreprocessorDefinitions="NDEBUG" MkTypLibCompatible="true" SuppressStartupBanner="true" TargetEnvironment="1" TypeLibraryName=".\..\lib\distutils\command\wininst.tlb" HeaderFileName="" />
-      <Tool Name="VCCLCompilerTool" Optimization="1" InlineFunctionExpansion="1" AdditionalIncludeDirectories="..\PC\bdist_wininst;..\Include;..\Modules\zlib;..\Include; ..\PC" PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE" StringPooling="true" RuntimeLibrary="0" EnableFunctionLevelLinking="true" WarningLevel="3" SuppressStartupBanner="true" EnableIntrinsicFunctions="true" ExceptionHandling="0" DebugInformationFormat="3" CompileAs="0" />
-      <Tool Name="VCManagedResourceCompilerTool" />
-      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="NDEBUG" Culture="0" AdditionalIncludeDirectories="..\PC;..\PC\bdist_wininst;..\Include;..\PC;..\Include" />
-      <Tool Name="VCPreLinkEventTool" />
-      <Tool Name="VCLinkerTool" AdditionalDependencies="comctl32.lib imagehlp.lib" OutputFile="..\lib\distutils\command\wininst-9.0.exe" LinkIncremental="1" SuppressStartupBanner="true" IgnoreDefaultLibraryNames="LIBC" ProgramDatabaseFile="..\lib\distutils\command\wininst-9.0.pdb" SubSystem="2" RandomizedBaseAddress="1" DataExecutionPrevention="0" TargetMachine="1" AdditionalLibraryDirectories="$(OutDir)" GenerateDebugInformation="true" />
-      <Tool Name="VCALinkTool" />
-      <Tool Name="VCManifestTool" />
-      <Tool Name="VCXDCMakeTool" />
-      <Tool Name="VCBscMakeTool" />
-      <Tool Name="VCFxCopTool" />
-      <Tool Name="VCAppVerifierTool" />
-      <Tool Name="VCPostBuildEventTool" />
-      <UserMacro Name="PythonExe" Value="$(SolutionDir)\python.exe" />
-      <UserMacro Name="externalsDir" Value="..\.." />
-      <UserMacro Name="bsddb47Dir" Value="$(externalsDir)\db-4.7.25.0\build_windows" />
-      <UserMacro Name="bsddb47DepLibs" Value="ws2_32.lib" />
-      <UserMacro Name="bsddbDir" Value="$(bsddb47Dir)" />
-      <UserMacro Name="bsddbDepLibs" Value="$(bsddb47DepLibs)" />
-      <UserMacro Name="bsddb44Dir" Value="$(externalsDir)\db-4.4.20\build_win32" />
-      <UserMacro Name="bsddb44DepLibs" Value="" />
-      <UserMacro Name="sqlite3Dir" Value="$(externalsDir)\sqlite-3.6.21" />
-      <UserMacro Name="bz2Dir" Value="$(externalsDir)\bzip2-1.0.5" />
-      <UserMacro Name="opensslDir" Value="$(externalsDir)\openssl-0.9.8l" />
-      <UserMacro Name="tcltkDir" Value="$(externalsDir)\tcltk" />
-      <UserMacro Name="tcltk64Dir" Value="$(externalsDir)\tcltk64" />
-      <UserMacro Name="tcltkLib" Value="$(tcltkDir)\lib\tcl85.lib $(tcltkDir)\lib\tk85.lib" />
-      <UserMacro Name="tcltkLibDebug" Value="$(tcltkDir)\lib\tcl85g.lib $(tcltkDir)\lib\tk85g.lib" />
-      <UserMacro Name="tcltk64Lib" Value="$(tcltk64Dir)\lib\tcl85.lib $(tcltk64Dir)\lib\tk85.lib" />
-      <UserMacro Name="tcltk64LibDebug" Value="$(tcltk64Dir)\lib\tcl85g.lib $(tcltk64Dir)\lib\tk85g.lib" />
-      <UserMacro Name="KillPythonExe" Value="$(OutDir)\kill_python.exe" />
-    </Configuration>
-  </Configurations>
-  <References>
-  </References>
-  <Files>
-    <Filter Name="Source Files" Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
-      <File RelativePath="..\PC\bdist_wininst\extract.c">
-      </File>
-      <File RelativePath="..\PC\bdist_wininst\install.c">
-      </File>
-      <Filter Name="zlib">
-        <File RelativePath="..\Modules\zlib\adler32.c">
-        </File>
-        <File RelativePath="..\Modules\zlib\crc32.c">
-        </File>
-        <File RelativePath="..\Modules\zlib\inffast.c">
-        </File>
-        <File RelativePath="..\Modules\zlib\inflate.c">
-        </File>
-        <File RelativePath="..\Modules\zlib\inftrees.c">
-        </File>
-        <File RelativePath="..\Modules\zlib\zutil.c">
-        </File>
-      </Filter>
-    </Filter>
-    <Filter Name="Header Files" Filter="h;hpp;hxx;hm;inl">
-      <File RelativePath="..\PC\bdist_wininst\archive.h">
-      </File>
-    </Filter>
-    <Filter Name="Resource Files" Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
-      <File RelativePath="..\PC\bdist_wininst\install.rc">
-      </File>
-      <File RelativePath="..\PC\bdist_wininst\PythonPowered.bmp">
-      </File>
-    </Filter>
-  </Files>
-  <Globals>
-  </Globals>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="bdist_wininst"
+	ProjectGUID="{EB1C19C1-1F18-421E-9735-CAEE69DC6A3C}"
+	RootNamespace="wininst">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="0">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="1"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="TRUE"
+				AdditionalIncludeDirectories="..\PC\bdist_wininst;..\Include;..\Modules\zlib;..\Include; ..\PC"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
+				StringPooling="TRUE"
+				ExceptionHandling="FALSE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="comctl32.lib imagehlp.lib"
+				OutputFile="..\lib\distutils\command\wininst-9.0.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="$(OutDir)"
+				IgnoreDefaultLibraryNames="LIBC"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\lib\distutils\command\wininst-9.0.pdb"
+				SubSystem="2"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\..\lib\distutils\command\wininst.tlb"
+				HeaderFileName=""/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="0"
+				AdditionalIncludeDirectories="..\PC;..\PC\bdist_wininst;..\Include;..\PC;..\Include"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release XBOX|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="0">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="1"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="TRUE"
+				AdditionalIncludeDirectories="..\PC\bdist_wininst;..\Include;..\Modules\zlib;..\Include; ..\PC"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
+				StringPooling="TRUE"
+				ExceptionHandling="FALSE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="comctl32.lib imagehlp.lib"
+				OutputFile="..\lib\distutils\command\wininst-9.0.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="$(OutDir)"
+				IgnoreDefaultLibraryNames="LIBC"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\lib\distutils\command\wininst-9.0.pdb"
+				SubSystem="2"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\..\lib\distutils\command\wininst.tlb"
+				HeaderFileName=""/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="0"
+				AdditionalIncludeDirectories="..\PC;..\PC\bdist_wininst;..\Include;..\PC;..\Include"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="Source Files"
+			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+			<File
+				RelativePath="..\PC\bdist_wininst\extract.c">
+			</File>
+			<File
+				RelativePath="..\PC\bdist_wininst\install.c">
+			</File>
+			<Filter
+				Name="zlib">
+				<File
+					RelativePath="..\Modules\zlib\adler32.c">
+				</File>
+				<File
+					RelativePath="..\Modules\zlib\crc32.c">
+				</File>
+				<File
+					RelativePath="..\Modules\zlib\inffast.c">
+				</File>
+				<File
+					RelativePath="..\Modules\zlib\inflate.c">
+				</File>
+				<File
+					RelativePath="..\Modules\zlib\inftrees.c">
+				</File>
+				<File
+					RelativePath="..\Modules\zlib\zutil.c">
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inl">
+			<File
+				RelativePath="..\PC\bdist_wininst\archive.h">
+			</File>
+		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
+			<File
+				RelativePath="..\PC\bdist_wininst\install.rc">
+			</File>
+			<File
+				RelativePath="..\PC\bdist_wininst\PythonPowered.bmp">
+			</File>
+		</Filter>
+	</Files>
+	<Globals>
+	</Globals>
 </VisualStudioProject>

@@ -13,7 +13,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="0">
 			<Tool
@@ -56,8 +57,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="0"
 			WholeProgramOptimization="TRUE">
@@ -99,36 +100,26 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="PGInstrument|Win32"
-			OutputDirectory="$(OutDirPGI)"
-			IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-pgi\$(ProjectName)\"
+			Name="Release XBOX|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="0"
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="FALSE"
-				FavorSizeOrSpeed="2"
-				OmitFramePointers="TRUE"
-				EnableFiberSafeOptimizations="FALSE"
-				WholeProgramOptimization="TRUE"
+				Optimization="1"
+				OptimizeForProcessor="2"
 				AdditionalIncludeDirectories="..\..\bzip2;..\Include; ..\PC"
 				PreprocessorDefinitions="WIN32;_FILE_OFFSET_BITS=64"
-				StringPooling="TRUE"
-				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				BufferSecurityCheck="FALSE"/>
+				EnableEnhancedInstructionSet="1"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				LinkTimeCodeGeneration="TRUE"
 				BaseAddress="0x1D170000"
 				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
 			<Tool
@@ -153,24 +144,26 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="PGUpdate|Win32"
-			OutputDirectory="$(SolutionDir)$(PlatformName)-pgo\"
+			Name="Debug XBOX|Win32"
+			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="0"
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="0"
+				OptimizeForProcessor="2"
 				AdditionalIncludeDirectories="..\..\bzip2;..\Include; ..\PC"
 				PreprocessorDefinitions="WIN32;_FILE_OFFSET_BITS=64"
-				RuntimeLibrary="2"/>
+				RuntimeLibrary="2"
+				EnableEnhancedInstructionSet="1"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
-				LinkTimeCodeGeneration="TRUE"
 				BaseAddress="0x1D170000"
 				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
 			<Tool

@@ -13,7 +13,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="0">
 			<Tool
@@ -81,8 +82,8 @@ exit 0
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="0"
 			WholeProgramOptimization="TRUE">
@@ -147,27 +148,18 @@ exit 0
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="PGInstrument|Win32"
-			OutputDirectory="$(OutDirPGI)"
-			IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-pgi\$(ProjectName)\"
+			Name="Release XBOX|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="0"
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="FALSE"
-				FavorSizeOrSpeed="2"
-				OmitFramePointers="TRUE"
-				EnableFiberSafeOptimizations="FALSE"
-				WholeProgramOptimization="TRUE"
+				Optimization="1"
 				AdditionalIncludeDirectories="..\..\openssl\inc32;..\Include;..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
-				StringPooling="TRUE"
-				ExceptionHandling="FALSE"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="FALSE"/>
+				RuntimeLibrary="2"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -175,9 +167,6 @@ exit 0
 				AdditionalDependencies="ws2_32.lib ..\..\openssl\out32\libeay32.lib ..\..\openssl\out32\ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				LinkTimeCodeGeneration="TRUE"
 				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -226,13 +215,15 @@ exit 0
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="PGUpdate|Win32"
-			OutputDirectory="$(SolutionDir)$(PlatformName)-pgo\"
+			Name="Debug XBOX|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="0"
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="0"
 				AdditionalIncludeDirectories="..\..\openssl\inc32;..\Include;..\PC"
 				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
 				RuntimeLibrary="2"/>
@@ -243,7 +234,6 @@ exit 0
 				AdditionalDependencies="ws2_32.lib ..\..\openssl\out32\libeay32.lib ..\..\openssl\out32\ssleay32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
-				LinkTimeCodeGeneration="TRUE"
 				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
 			<Tool
 				Name="VCMIDLTool"/>

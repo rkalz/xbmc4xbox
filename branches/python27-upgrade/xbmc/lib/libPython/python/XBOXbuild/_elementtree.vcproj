@@ -13,7 +13,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="0">
 			<Tool
@@ -56,12 +57,96 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
+			ConfigurationType="2"
+			CharacterSet="0"
+			WholeProgramOptimization="TRUE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\Modules\expat;..\Include;..\PC"
+				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
+				RuntimeLibrary="2"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\$(ProjectName).pyd"
+				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
+				BaseAddress="0x1D100000"
+				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release XBOX|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\obj\$(ProjectName)"
+			ConfigurationType="2"
+			CharacterSet="0"
+			WholeProgramOptimization="TRUE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\Modules\expat;..\Include;..\PC"
+				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
+				RuntimeLibrary="2"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\$(ProjectName).pyd"
+				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
+				BaseAddress="0x1D100000"
+				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Debug XBOX|Win32"
+			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="0"
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="0"
 				AdditionalIncludeDirectories="..\Modules\expat;..\Include;..\PC"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
 				RuntimeLibrary="2"/>
@@ -71,101 +156,6 @@
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
 				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
-				BaseAddress="0x1D100000"
-				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-		<Configuration
-			Name="PGInstrument|Win32"
-			OutputDirectory="$(OutDirPGI)"
-			IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-pgi\$(ProjectName)\"
-			ConfigurationType="2"
-			CharacterSet="0"
-			WholeProgramOptimization="TRUE">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="FALSE"
-				FavorSizeOrSpeed="2"
-				OmitFramePointers="TRUE"
-				EnableFiberSafeOptimizations="FALSE"
-				WholeProgramOptimization="TRUE"
-				AdditionalIncludeDirectories="..\Modules\expat;..\Include;..\PC"
-				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
-				StringPooling="TRUE"
-				ExceptionHandling="FALSE"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="FALSE"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\$(ProjectName).pyd"
-				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				LinkTimeCodeGeneration="TRUE"
-				BaseAddress="0x1D100000"
-				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-		<Configuration
-			Name="PGUpdate|Win32"
-			OutputDirectory="$(SolutionDir)$(PlatformName)-pgo\"
-			ConfigurationType="2"
-			CharacterSet="0"
-			WholeProgramOptimization="TRUE">
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\Modules\expat;..\Include;..\PC"
-				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
-				RuntimeLibrary="2"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\$(ProjectName).pyd"
-				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
-				LinkTimeCodeGeneration="TRUE"
 				BaseAddress="0x1D100000"
 				ImportLibrary="$(OutDir)\$(TargetName).lib"/>
 			<Tool
