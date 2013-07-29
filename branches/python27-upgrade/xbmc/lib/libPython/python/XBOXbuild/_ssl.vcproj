@@ -69,7 +69,7 @@ c:\python27\python.exe build_ssl.py Release $(PlatformName) -a
 				Optimization="1"
 				OptimizeForProcessor="2"
 				AdditionalIncludeDirectories="..\..\openssl\inc32;..\Include;..\PC"
-				PreprocessorDefinitions="Py_BUILD_CORE_MODULE"
+				PreprocessorDefinitions="Py_BUILD_CORE_MODULE;_XBOX"
 				RuntimeLibrary="2"
 				EnableEnhancedInstructionSet="1"/>
 			<Tool
@@ -113,7 +113,8 @@ exit 0
 
 :NO_VC
 ECHO &quot;NOTE: Microsoft Visual Studio installation was NOT found!&quot;
-PAUSE"/>
+PAUSE
+"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
