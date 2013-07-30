@@ -239,12 +239,12 @@ void XBPython::Initialize()
       if (PyRun_SimpleString(""
         "import xbmc\n"
         "class xbmcout:\n"
-        "	def write(self, data):\n"
-        "		xbmc.output(data)\n"
-        "	def close(self):\n"
-        "		xbmc.output('.')\n"
-        "	def flush(self):\n"
-        "		xbmc.output('.')\n"
+        "\tdef write(self, data):\n"
+        "\t\txbmc.output(data)\n"
+        "\tdef close(self):\n"
+        "\t\txbmc.output('.')\n"
+        "\tdef flush(self):\n"
+        "\t\txbmc.output('.')\n"
         "\n"
         "import sys\n"
         "sys.stdout = xbmcout()\n"
@@ -306,7 +306,7 @@ void XBPython::FreeResources()
     // cleanup threads that are still running
     PyList::iterator it = vecPyList.begin();
     while (it != vecPyList.end())
-    { 
+    {
       lock.Leave(); //unlock here because the python thread might lock when it exits
       delete it->pyThread;
       lock.Enter();
@@ -329,7 +329,7 @@ void XBPython::Process()
   if (bStartup)
   {
     bStartup = false;
-    
+
     // autoexec.py - system
     strAutoExecPy = "special://xbmc/scripts/autoexec.py";
 
@@ -337,7 +337,7 @@ void XBPython::Process()
     {
       // We need to make sure the network is up in case the start scripts require network
       g_application.getNetwork().WaitForSetup(5000);
-      
+
       evalFile(strAutoExecPy);
     }
     else
@@ -449,7 +449,7 @@ void XBPython::stopScript(int id)
 
 PyThreadState *XBPython::getMainThreadState()
 {
-  CSingleLock lock(m_critSection);  
+  CSingleLock lock(m_critSection);
   return mainThreadState;
 }
 
@@ -462,7 +462,7 @@ int XBPython::ScriptsSize()
 const char* XBPython::getFileName(int scriptId)
 {
   const char* cFileName = NULL;
-  
+
   CSingleLock lock(m_critSection);
   PyList::iterator it = vecPyList.begin();
   while (it != vecPyList.end())
@@ -478,7 +478,7 @@ const char* XBPython::getFileName(int scriptId)
 int XBPython::getScriptId(const char* strFile)
 {
   int iId = -1;
-  
+
   CSingleLock lock(m_critSection);
 
   PyList::iterator it = vecPyList.begin();
@@ -488,7 +488,7 @@ int XBPython::getScriptId(const char* strFile)
       iId = it->id;
     ++it;
   }
-  
+
   return iId;
 }
 
@@ -512,7 +512,7 @@ bool XBPython::isRunning(int scriptId)
 bool XBPython::isStopping(int scriptId)
 {
   bool bStopping = false;
-  
+
   CSingleLock lock(m_critSection);
   PyList::iterator it = vecPyList.begin();
   while (it != vecPyList.end())
@@ -521,7 +521,7 @@ bool XBPython::isStopping(int scriptId)
       bStopping = it->pyThread->isStopping();
     ++it;
   }
-  
+
   return bStopping;
 }
 
@@ -549,10 +549,10 @@ int XBPython::evalString(const char *src, const unsigned int argc, const char **
 {
   CLog::Log(LOGDEBUG, "XBPython::evalString (python)");
   CSingleLock lock(m_critSection);
-  
+
   Initialize();
 
-  if (!m_bInitialized) 
+  if (!m_bInitialized)
   {
     CLog::Log(LOGERROR, "XBPython::evalString, python not initialized (python)");
     return -1;
@@ -564,7 +564,7 @@ int XBPython::evalString(const char *src, const unsigned int argc, const char **
   if (argv != NULL)
     pyThread->setArgv(argc, argv);
   pyThread->evalString(src);
-  
+
   PyElem inf;
   inf.id = nextid;
   inf.bDone = false;
