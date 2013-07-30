@@ -231,7 +231,7 @@ void XBPyThread::Process()
     {
       if (exc_type != NULL && (pystring = PyObject_Str(exc_type)) != NULL && (PyString_Check(pystring)))
       {
-        if (strncmp(PyString_AsString(pystring), "exceptions.KeyboardInterrupt", 28) == 0)
+        if (strncmp(PyString_AsString(pystring), "<type 'exceptions.KeyboardInterrupt'>", 37) == 0)
           CLog::Log(LOGINFO, "Scriptresult: Interrupted by user");
         else
         {
@@ -267,7 +267,7 @@ void XBPyThread::Process()
         CLog::Log(LOGINFO, "<unknown exception type>");
       }
     }
-    if (pystring != NULL && strncmp(PyString_AsString(pystring), "exceptions.KeyboardInterrupt", 28) != 0)
+    if (pystring != NULL && strncmp(PyString_AsString(pystring), "<type 'exceptions.KeyboardInterrupt'>", 37) != 0)
     {
       CGUIDialogKaiToast *pDlgToast = (CGUIDialogKaiToast*)g_windowManager.GetWindow(WINDOW_DIALOG_KAI_TOAST);
       if (pDlgToast)
