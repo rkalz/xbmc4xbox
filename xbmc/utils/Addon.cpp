@@ -224,8 +224,8 @@ CAddon::CAddon(const AddonProps &props)
 {
   if (props.libname.empty()) BuildLibName();
   else m_strLibName = props.libname;
-  m_strProfile  = GetProfilePath();
-  m_userSettingsPath = GetUserSettingsPath();
+  BuildProfilePath();
+  m_userSettingsPath = m_profile + "settings.xml";
   m_disabled = true;
 }
 
@@ -235,8 +235,8 @@ CAddon::CAddon(const CAddon &rhs, const AddonPtr &parent)
 {
   m_props.uuid = StringUtils::CreateUUID();
   m_userXmlDoc  = rhs.m_userXmlDoc;
-  m_strProfile  = GetProfilePath();
-  m_userSettingsPath = GetUserSettingsPath();
+  BuildProfilePath();
+  m_userSettingsPath = m_profile + "settings.xml";
   m_strLibName  = rhs.LibName();
   m_disabled    = false;
 }
@@ -499,18 +499,9 @@ TiXmlElement* CAddon::GetSettingsXML()
   return m_addonXmlDoc.RootElement();
 }
 
-CStdString CAddon::GetProfilePath()
+void CAddon::BuildProfilePath()
 {
-  CStdString profile;
-  profile.Format("special://profile/addon_data/%s/", UUID().c_str());
-  return profile;
-}
-
-CStdString CAddon::GetUserSettingsPath()
-{
-  CStdString path;
-  URIUtils::AddFileToFolder(Profile(), "settings.xml", path);
-  return path;
+  m_profile.Format("special://profile/addon_data/%s/", UUID().c_str());
 }
 
 /**
