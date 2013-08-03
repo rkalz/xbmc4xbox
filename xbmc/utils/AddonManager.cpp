@@ -178,6 +178,7 @@ void CAddonStatusHandler::Process()
   /* A unknown event has occurred */
   else if (m_status == STATUS_UNKNOWN)
   {
+    CAddonMgr::Get()->DisableAddon(m_addon->UUID());
     CGUIDialogOK* pDialog = (CGUIDialogOK*)g_windowManager.GetWindow(WINDOW_DIALOG_OK);
     if (!pDialog) return;
 
