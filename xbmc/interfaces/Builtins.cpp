@@ -29,7 +29,7 @@
 #include "Builtins.h"
 #include "input/ButtonTranslator.h"
 #include "FileItem.h"
-#include "GUIDialogAddonSettings.h"
+#include "addons/GUIDialogAddonSettings.h"
 #include "dialogs/GUIDialogFileBrowser.h"
 #include "dialogs/GUIDialogKeyboard.h"
 #include "music/dialogs/GUIDialogMusicScan.h"
