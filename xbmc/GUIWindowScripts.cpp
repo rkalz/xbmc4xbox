@@ -68,7 +68,7 @@ bool CGUIWindowScripts::OnMessage(CGUIMessage& message)
   case GUI_MSG_WINDOW_INIT:
     {
       if (m_vecItems->GetPath() == "?")
-        m_vecItems->SetPath("special://scripts/");
+        m_vecItems->m_strPath = g_settings.GetScriptsFolder();
 
       return CGUIMediaWindow::OnMessage(message);
     }
