@@ -436,12 +436,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\settings\AdvancedSettings.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\dialogs\GUIDialogPluginSettings.cpp">
-				</File>
-				<File
-					RelativePath=".\xbmc\dialogs\GUIDialogPluginSettings.h">
-				</File>
-				<File
 					RelativePath=".\xbmc\settings\GUISettings.cpp">
 				</File>
 				<File
@@ -457,22 +451,10 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\settings\GUIWindowSettingsScreenCalibration.cpp">
 				</File>
 				<File
-					RelativePath=".\xbmc\PluginSettings.cpp">
+					RelativePath=".\xbmc\Scraper.cpp">
 				</File>
 				<File
-					RelativePath=".\xbmc\PluginSettings.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\ScraperSettings.cpp">
-				</File>
-				<File
-					RelativePath=".\xbmc\ScraperSettings.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\ScriptSettings.cpp">
-				</File>
-				<File
-					RelativePath=".\xbmc\ScriptSettings.h">
+					RelativePath=".\xbmc\Scraper.h">
 				</File>
 				<File
 					RelativePath=".\xbmc\settings\Settings.cpp">
@@ -490,6 +472,9 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 			<Filter
 				Name="GUI Music"
 				Filter="">
+				<File
+					RelativePath=".\xbmc\music\dialogs\GUIDialogMusicInfo.cpp">
+				</File>
 				<File
 					RelativePath=".\xbmc\music\dialogs\GUIDialogMusicScan.cpp">
 				</File>
@@ -533,9 +518,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\music\windows\GUIWindowMusicBase.cpp">
 				</File>
 				<File
-					RelativePath=".\xbmc\music\dialogs\GUIDialogMusicInfo.cpp">
-				</File>
-				<File
 					RelativePath=".\xbmc\music\windows\GUIWindowMusicNav.cpp">
 				</File>
 				<File
@@ -567,6 +549,12 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 				Name="GUI Video"
 				Filter="">
 				<File
+					RelativePath=".\xbmc\video\dialogs\GUIDialogVideoInfo.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\video\dialogs\GUIDialogVideoInfo.h">
+				</File>
+				<File
 					RelativePath=".\xbmc\video\dialogs\GUIDialogVideoScan.cpp">
 				</File>
 				<File
@@ -580,12 +568,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 				</File>
 				<File
 					RelativePath=".\xbmc\\video\windows\GUIWindowVideoFiles.cpp">
-				</File>
-				<File
-					RelativePath=".\xbmc\video\dialogs\GUIDialogVideoInfo.cpp">
-				</File>
-				<File
-					RelativePath=".\xbmc\video\dialogs\GUIDialogVideoInfo.h">
 				</File>
 				<File
 					RelativePath=".\xbmc\video\windows\GUIWindowVideoNav.cpp">
@@ -819,6 +801,21 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 			<Filter
 				Name="Utils"
 				Filter="">
+				<File
+					RelativePath=".\xbmc\utils\Addon.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\utils\Addon.h">
+				</File>
+				<File
+					RelativePath=".\xbmc\utils\AddonDll.h">
+				</File>
+				<File
+					RelativePath=".\xbmc\utils\AddonManager.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\utils\AddonManager.h">
+				</File>
 				<File
 					RelativePath=".\xbmc\utils\AlarmClock.cpp">
 				</File>
@@ -1434,12 +1431,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\music\dialogs\GUIDialogVisualisationPresetList.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\dialogs\GUIDialogVisualisationSettings.cpp">
-				</File>
-				<File
-					RelativePath=".\xbmc\dialogs\GUIDialogVisualisationSettings.h">
-				</File>
-				<File
 					RelativePath=".\xbmc\dialogs\GUIDialogVolumeBar.cpp">
 				</File>
 				<File
@@ -1484,6 +1475,12 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 				</File>
 				<File
 					RelativePath=".\xbmc\GUIViewStateScripts.h">
+				</File>
+				<File
+					RelativePath=".\xbmc\GUIWindowAddonBrowser.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\GUIWindowAddonBrowser.h">
 				</File>
 				<File
 					RelativePath=".\xbmc\windows\GUIWindowFileManager.cpp">
@@ -1577,6 +1574,12 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 			<Filter
 				Name="Filesystem"
 				Filter="">
+				<File
+					RelativePath=".\xbmc\FileSystem\AddonsDirectory.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\FileSystem\AddonsDirectory.h">
+				</File>
 				<File
 					RelativePath=".\xbmc\FileSystem\ASAPFileDirectory.cpp">
 				</File>
@@ -2574,12 +2577,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 				<File
 					RelativePath=".\xbmc\screensavers\Screensaver.h">
 				</File>
-				<File
-					RelativePath=".\xbmc\screensavers\ScreenSaverFactory.cpp">
-				</File>
-				<File
-					RelativePath=".\xbmc\screensavers\ScreenSaverFactory.h">
-				</File>
 			</Filter>
 			<Filter
 				Name="cdrip"
@@ -2755,6 +2752,26 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 				</File>
 				<File
 					RelativePath=".\xbmc\interfaces\info\InfoBool.h">
+				</File>
+			</Filter>
+			<Filter
+				Name="addons"
+				Filter="">
+				<File
+					RelativePath=".\xbmc\addons\GUIDialogAddonSettings.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\addons\GUIDialogAddonSettings.h">
+				</File>
+			</Filter>
+			<Filter
+				Name="xbox"
+				Filter="">
+				<File
+					RelativePath=".\xbmc\xbox\PlatformDefs.h">
+				</File>
+				<File
+					RelativePath=".\xbmc\xbox\strverscmp.cpp">
 				</File>
 			</Filter>
 		</Filter>
@@ -2940,6 +2957,9 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 				RelativePath=".\xbmc\dialogs\GUIDialogKeyboard.h">
 			</File>
 			<File
+				RelativePath=".\xbmc\music\dialogs\GUIDialogMusicInfo.h">
+			</File>
+			<File
 				RelativePath=".\xbmc\music\dialogs\GUIDialogMusicScan.h">
 			</File>
 			<File
@@ -2959,6 +2979,9 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 			</File>
 			<File
 				RelativePath=".\xbmc\dialogs\GUIDialogSubMenu.h">
+			</File>
+			<File
+				RelativePath=".\xbmc\video\dialogs\GUIDialogVideoInfo.h">
 			</File>
 			<File
 				RelativePath=".\xbmc\dialogs\GUIDialogVolumeBar.h">
@@ -2989,9 +3012,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 			</File>
 			<File
 				RelativePath=".\xbmc\music\windows\GUIWindowMusicBase.h">
-			</File>
-			<File
-				RelativePath=".\xbmc\music\dialogs\GUIDialogMusicInfo.h">
 			</File>
 			<File
 				RelativePath=".\xbmc\GuiWindowMusicOverlay.h">
@@ -3049,9 +3069,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 			</File>
 			<File
 				RelativePath=".\xbmc\\video\windows\GUIWindowVideoFiles.h">
-			</File>
-			<File
-				RelativePath=".\xbmc\video\dialogs\GUIDialogVideoInfo.h">
 			</File>
 			<File
 				RelativePath=".\xbmc\GuiWindowVideoOverlay.h">
@@ -4427,12 +4444,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 				</File>
 				<File
 					RelativePath=".\xbmc\visualizations\Visualisation.h">
-				</File>
-				<File
-					RelativePath=".\xbmc\visualizations\VisualisationFactory.cpp">
-				</File>
-				<File
-					RelativePath=".\xbmc\visualizations\VisualisationFactory.h">
 				</File>
 			</Filter>
 			<Filter

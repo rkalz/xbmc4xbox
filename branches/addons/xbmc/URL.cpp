@@ -26,12 +26,14 @@
 #include "FileSystem/File.h"
 #include "FileItem.h"
 #include "FileSystem/StackDirectory.h"
+#include "utils/Addon.h"
 #include "utils/URIUtils.h"
 #include "utils/log.h"
 
 #include <sys\stat.h>
 
 using namespace std;
+using namespace ADDON;
 
 CStdString URLEncodeInline(const CStdString& strData)
 {
@@ -160,7 +162,7 @@ void CURL::Parse(const CStdString& strURL1)
   else
   if(strProtocol2.Equals("http")
     || strProtocol2.Equals("https")
-    || strProtocol2.Equals("plugin")
+    || TranslateContent(m_strProtocol) != CONTENT_NONE // plugin paths
     || strProtocol2.Equals("hdhomerun")
     || strProtocol2.Equals("rtsp")
     || strProtocol2.Equals("zip"))

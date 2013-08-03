@@ -54,6 +54,7 @@ CProfile::CProfile(const CStdString &directory, const CStdString &name)
   m_bCanWrite = true;
   m_bSources = true;
   m_bCanWriteSources = true;
+  m_bAddons = true;
   m_bUseAvpackSettings = false;
 }
 
@@ -80,6 +81,7 @@ void CProfile::Load(const TiXmlNode *node)
   XMLUtils::GetBoolean(node, "hassources", m_bSources);
   XMLUtils::GetBoolean(node, "canwritesources", m_bCanWriteSources);
   XMLUtils::GetBoolean(node, "useavpacksettings", m_bUseAvpackSettings);
+  XMLUtils::GetBoolean(node, "lockaddonmanager", m_locks.addonManager);
   XMLUtils::GetBoolean(node, "locksettings", m_locks.settings);
   XMLUtils::GetBoolean(node, "lockfiles", m_locks.files);
   XMLUtils::GetBoolean(node, "lockmusic", m_locks.music);
@@ -110,6 +112,7 @@ void CProfile::Save(TiXmlNode *root) const
   XMLUtils::SetBoolean(node, "hassources", m_bSources);
   XMLUtils::SetBoolean(node, "canwritesources", m_bCanWriteSources);
   XMLUtils::SetBoolean(node, "useavpacksettings", m_bUseAvpackSettings);
+  XMLUtils::SetBoolean(node, "lockaddonmanager", m_locks.addonManager);
   XMLUtils::SetBoolean(node, "lockaddonmanager", m_locks.addonManager);
   XMLUtils::SetBoolean(node, "locksettings", m_locks.settings);
   XMLUtils::SetBoolean(node, "lockfiles", m_locks.files);

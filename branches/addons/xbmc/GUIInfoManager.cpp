@@ -91,6 +91,7 @@ using namespace std;
 using namespace XFILE;
 using namespace MEDIA_DETECT;
 using namespace MUSIC_INFO;
+using ADDON::CVisualisation;
 
 CGUIInfoManager g_infoManager;
 
@@ -152,8 +153,6 @@ int CGUIInfoManager::TranslateString(const CStdString &condition)
 {
   // translate $LOCALIZE as required
   CStdString strCondition(CGUIInfoLabel::ReplaceLocalize(condition));
-  strCondition = CGUIInfoLabel::ReplaceAddonStrings(strCondition);
-
   if (strCondition.find_first_of("|") != strCondition.npos ||
       strCondition.find_first_of("+") != strCondition.npos ||
       strCondition.find_first_of("[") != strCondition.npos ||
@@ -467,16 +466,6 @@ int CGUIInfoManager::TranslateSingleString(const CStdString &strCondition)
   {
     CStdString str = strTest.Mid(8, strTest.GetLength() - 9);
     return AddMultiInfo(GUIInfo(bNegate ? -STRING_IS_EMPTY : STRING_IS_EMPTY, TranslateSingleString(str)));
-  }
-  else if (strTest.Left(7).Equals("istrue("))
-  {
-    CStdString str = strTest.Mid(7, strTest.GetLength() - 8);
-    return AddMultiInfo(GUIInfo(bNegate ? -VALUE_IS_TRUE : VALUE_IS_TRUE, TranslateSingleString(str)));
-  }
-  else if (strTest.Left(14).Equals("addon.setting("))
-  {
-    CStdString str = strTest.Mid(14, strTest.GetLength() - 15);
-    return AddMultiInfo(GUIInfo(WINDOW_PROPERTY, WINDOW_DIALOG_PLUGIN_SETTINGS, ConditionalStringParameter(str)));
   }
   else if (strTest.Left(14).Equals("stringcompare("))
   {
@@ -1638,25 +1627,18 @@ CStdString CGUIInfoManager::GetLabel(int info, int contextWindow)
       g_windowManager.SendMessage(msg);
       if (msg.GetPointer())
       {
-        CVisualisation *pVis = (CVisualisation *)msg.GetPointer();
-        char *preset = pVis->GetPreset();
-        if (preset)
+        CVisualisation* viz = NULL;
+        viz = (CVisualisation*)msg.GetPointer();
+        if (viz)
         {
-          strLabel = preset;
+          strLabel = viz->GetPresetName();
           URIUtils::RemoveExtension(strLabel);
         }
       }
     }
     break;
   case VISUALISATION_NAME:
-    {
-      strLabel = g_guiSettings.GetString("musicplayer.visualisation");
-      if (strLabel != "None" && strLabel.size() > 4)
-      { // make it look pretty
-        strLabel = strLabel.Left(strLabel.size() - 4);
-        strLabel[0] = toupper(strLabel[0]);
-      }
-    }
+    strLabel = g_guiSettings.GetString("musicplayer.visualisation");
     break;
   case FANART_COLOR1:
     {

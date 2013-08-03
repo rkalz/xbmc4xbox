@@ -29,6 +29,7 @@
 #include "FileDirectoryFactory.h"
 #include "PlaylistDirectory.h"
 #include "MusicDatabaseDirectory.h"
+#include "AddonsDirectory.h"
 #include "MusicSearchDirectory.h"
 #include "VideoDatabaseDirectory.h"
 #include "LastFMDirectory.h"
@@ -36,6 +37,8 @@
 #include "HTTPDirectory.h"
 #include "DAVDirectory.h"
 #include "Application.h"
+#include "StringUtils.h"
+#include "utils/Addon.h"
 #include "utils/log.h"
 
 #ifdef HAS_FILESYSTEM_SMB
@@ -98,6 +101,7 @@ IDirectory* CFactoryDirectory::Create(const CStdString& strPath)
 
   if (strProtocol.size() == 0 || strProtocol == "file") return new CHDDirectory();
   if (strProtocol == "special") return new CSpecialProtocolDirectory();
+  if (strProtocol == "addons") return new CAddonsDirectory();
 #ifdef HAS_FILESYSTEM_CDDA
   if (strProtocol == "cdda") return new CCDDADirectory();
 #endif
@@ -106,7 +110,7 @@ IDirectory* CFactoryDirectory::Create(const CStdString& strPath)
   if (strProtocol == "cdda") return new CCDDADirectory();
   if (strProtocol == "soundtrack") return new CSndtrkDirectory();
 #endif
-  if (strProtocol == "plugin") return new CPluginDirectory();
+  if (StringUtils::ValidateUUID(url.GetHostName())) return new CPluginDirectory(ADDON::TranslateContent(strProtocol));
   if (strProtocol == "zip") return new CZipDirectory();
   if (strProtocol == "rar") return new CRarDirectory();
   if (strProtocol == "virtualpath") return new CVirtualPathDirectory();

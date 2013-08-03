@@ -43,13 +43,12 @@ protected:
   virtual void AddFileToDatabase(const CFileItem* pItem);
   virtual void OnPrepareFileItems(CFileItemList &items);
   virtual void UpdateButtons();
-  virtual bool OnClick(int iItem);
   virtual void GetContextButtons(int itemNumber, CContextButtons &buttons);
   virtual bool OnContextButton(int itemNumber, CONTEXT_BUTTON button);
   virtual CStdString GetStartFolder(const CStdString &dir);
 
   virtual void OnQueueItem(int iItem);
-  virtual void OnAssignContent(int iItem, int iFound, SScraperInfo& info, VIDEO::SScanSettings& settings);
+  virtual void OnAssignContent(int iItem, int iFound, ADDON::ScraperPtr& scraper, VIDEO::SScanSettings& settings);
   virtual bool OnUnAssignContent(int iItem, int label1, int label2, int label3);
   
   virtual void LoadPlayList(const CStdString& strFileName);

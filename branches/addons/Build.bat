@@ -214,21 +214,11 @@ IF %Silent%==1 GOTO COMPILE
   xcopy *.txt BUILD /EXCLUDE:exclude.txt
   rem xcopy *.xml BUILD\
 
-  cd "skin\Project Mayhem III"
-  CALL build.bat
-  cd ..\..
-  xcopy "skin\Project Mayhem III\BUILD\Project Mayhem III" "BUILD\skin\Project Mayhem III" /E /Q /I /Y /EXCLUDE:exclude.txt
-
   cd "skin\PM3.HD"
   CALL build.bat
   cd ..\..
   xcopy "skin\PM3.HD\BUILD\PM3.HD" "BUILD\skin\PM3.HD" /E /Q /I /Y /EXCLUDE:exclude.txt
 
-  cd "skin\Confluence"
-  CALL build.bat
-  cd ..\..
-  xcopy "skin\Confluence\BUILD\Confluence" "BUILD\skin\Confluence" /E /Q /I /Y /EXCLUDE:exclude.txt
-	
   cd "skin\Confluence Lite"
   CALL build.bat
   cd ..\..
@@ -294,11 +284,6 @@ IF %Silent%==1 GOTO COMPILE
   CALL build.bat
   cd ..\..
   xcopy "skin\PM3.HD\BUILD\PM3.HD" "BUILD_WIN32\Xbmc_pc\skin\PM3.HD" /E /Q /I /Y /EXCLUDE:exclude.txt
-
-  cd "skin\Confluence"
-  CALL build.bat
-  cd ..\..
-  xcopy "skin\Confluence\BUILD\Confluence" "BUILD_WIN32\Xbmc_pc\skin\Confluence" /E /Q /I /Y /EXCLUDE:exclude.txt
 
   cd "skin\Confluence Lite"
   CALL build.bat

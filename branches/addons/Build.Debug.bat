@@ -104,11 +104,6 @@ IF NOT EXIST debug\default.xbe GOTO COMPILE
   xcopy *.txt BUILD /EXCLUDE:exclude.txt
   rem xcopy *.xml BUILD\
 
-  cd "skin\Project Mayhem III"
-  CALL build.bat
-  cd ..\..
-  xcopy "skin\Project Mayhem III\BUILD\Project Mayhem III" "BUILD\skin\Project Mayhem III" /E /Q /I /Y /EXCLUDE:exclude.txt
-
   cd "skin\PM3.HD"
   CALL build.bat
   cd ..\..

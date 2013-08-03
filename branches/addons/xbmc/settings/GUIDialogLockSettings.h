@@ -51,6 +51,7 @@ protected:
   bool m_bGetUser;
   int m_iButtonLabel;
   bool *m_saveUserDetails;
+  bool m_bLockAddOnManager;
 };
 
 

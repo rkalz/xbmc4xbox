@@ -25,6 +25,7 @@
 #include "settings/SettingsControls.h"
 #include "settings/Settings.h"
 #include "utils/Stopwatch.h"
+#include "IAddon.h"
 
 class CGUIWindowSettingsCategory :
       public CGUIWindow
@@ -64,9 +65,9 @@ protected:
 
   void FillInSkinThemes(CSetting *pSetting);
   void FillInSkinColors(CSetting *pSetting);
-  void FillInScrapers(CGUISpinControlEx *pControl, const CStdString& strSelected, const CStdString& strContent);
+  void FillInScrapers(CGUISpinControlEx *pControl, const CStdString& strSelected, const CONTENT_TYPE& content);
 
-  void FillInWeatherPlugins(CGUISpinControlEx *pControl, const CStdString& strSelected);
+  void FillInWeatherScripts(CGUISpinControlEx *pControl, const CStdString& strSelected);
 
   virtual void SetupControls();
   void CreateSettings();
