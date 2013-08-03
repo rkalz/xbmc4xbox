@@ -29,6 +29,7 @@
 #include "Builtins.h"
 #include "input/ButtonTranslator.h"
 #include "FileItem.h"
+#include "GUIDialogAddonSettings.h"
 #include "dialogs/GUIDialogFileBrowser.h"
 #include "dialogs/GUIDialogKeyboard.h"
 #include "music/dialogs/GUIDialogMusicScan.h"
@@ -39,6 +40,7 @@
 #include "windows/GUIWindowLoginScreen.h"
 #include "video/windows/GUIWindowVideoBase.h"
 #include "Addon.h" // for TranslateType, TranslateContent
+#include "AddonManager.h"
 #include "music/LastFmManager.h"
 #include "LCD.h"
 #include "log.h"
@@ -81,6 +83,7 @@
 using namespace std;
 using namespace XFILE;
 using namespace MEDIA_DETECT;
+using namespace ADDON;
 
 typedef struct
 {
@@ -167,7 +170,8 @@ const BUILT_IN commands[] = {
   { "SetProperty",                true,   "Sets a window property for the current focused window/dialog (key,value)" },
   { "ClearProperty",              true,   "Clears a window property for the current focused window/dialog (key,value)" },
   { "PlayWith",                   true,   "Play the selected item with the specified core" },
-  { "WakeOnLan",                  true,   "Sends the wake-up packet to the broadcast address for the specified MAC address" }
+  { "WakeOnLan",                  true,   "Sends the wake-up packet to the broadcast address for the specified MAC address" },
+  { "Addon.Default.OpenSettings", true,   "Open a settings dialog for the default addon of the given type" }
 };
 
 bool CBuiltins::HasCommand(const CStdString& execString)
@@ -947,7 +951,7 @@ int CBuiltins::Execute(const CStdString& execString)
       CStdString strMask = (params.size() > 1) ? params[1] : "";
       strMask.ToLower();
       ADDON::TYPE type;
-      if ((type = ADDON::TranslateType(strMask)) != ADDON::ADDON_UNKNOWN)
+      if ((type = TranslateType(strMask)) != ADDON_UNKNOWN)
       {
         CURL url;
         url.SetProtocol("addons");
@@ -1090,7 +1094,7 @@ int CBuiltins::Execute(const CStdString& execString)
         if (scanner->IsScanning())
           scanner->StopScanning();
         else
-          CGUIWindowVideoBase::OnScan(params.size() > 1 ? params[1] : "",ADDON::ScraperPtr(),settings);
+          CGUIWindowVideoBase::OnScan(params.size() > 1 ? params[1] : "",ScraperPtr(),settings);
       }
     }
   }
@@ -1314,6 +1318,12 @@ int CBuiltins::Execute(const CStdString& execString)
   else if (execute.Equals("wakeonlan"))
   {
     g_application.getNetwork().WakeOnLan((char*)params[0].c_str());
+  }
+  else if (execute.Equals("addon.default.opensettings") && params.size() == 1)
+  {
+    AddonPtr addon;
+    if (CAddonMgr::Get()->GetDefault(TranslateType(params[0]), addon))
+      CGUIDialogAddonSettings::ShowAndGetInput(addon);
   }
   else
     return -1;
