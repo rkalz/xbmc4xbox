@@ -225,7 +225,7 @@ CAddon::CAddon(const AddonProps &props)
   if (props.libname.empty()) BuildLibName();
   else m_strLibName = props.libname;
   BuildProfilePath();
-  m_userSettingsPath = m_profile + "settings.xml";
+  URIUtils::AddFileToFolder(Profile(), "settings.xml", m_userSettingsPath);
   m_disabled = true;
 }
 
@@ -236,7 +236,7 @@ CAddon::CAddon(const CAddon &rhs, const AddonPtr &parent)
   m_props.uuid = StringUtils::CreateUUID();
   m_userXmlDoc  = rhs.m_userXmlDoc;
   BuildProfilePath();
-  m_userSettingsPath = m_profile + "settings.xml";
+  URIUtils::AddFileToFolder(Profile(), "settings.xml", m_userSettingsPath);
   m_strLibName  = rhs.LibName();
   m_disabled    = false;
 }
