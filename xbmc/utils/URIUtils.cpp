@@ -342,7 +342,7 @@ CStdString URIUtils::SubstitutePath(const CStdString& strFileName)
 
 bool URIUtils::IsRemote(const CStdString& strFile)
 {
-  if (IsMemCard(strFile) || IsCDDA(strFile) || IsISO9660(strFile) || IsPlugin(strFile))
+  if (IsMemCard(strFile) || IsCDDA(strFile) || IsISO9660(strFile))
     return false;
 
   if (IsSpecial(strFile))
@@ -571,7 +571,7 @@ bool URIUtils::IsSpecial(const CStdString& strFile)
 bool URIUtils::IsPlugin(const CStdString& strFile)
 {
   CURL url(strFile);
-  return url.GetProtocol().Equals("plugin") && !url.GetFileName().IsEmpty();
+  return !url.GetProtocol().IsEmpty() && StringUtils::ValidateUUID(url.GetHostName());
 }
 
 bool URIUtils::IsPluginRoot(const CStdString& strFile)

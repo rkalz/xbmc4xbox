@@ -31,7 +31,9 @@
 #include "storage/DetectDVDType.h"
 #include "GUIInfoManager.h"
 #include "music/tags/MusicInfoTag.h"
-#include "ScraperSettings.h"
+#include "AddonManager.h"
+#include "Scraper.h"
+#include "Addon.h"
 #include "Util.h"
 #include "utils/URIUtils.h"
 #include "music/Artist.h"
@@ -55,8 +57,9 @@
 using namespace std;
 using namespace AUTOPTR;
 using namespace XFILE;
-using namespace MUSICDATABASEDIRECTORY;
 using namespace MEDIA_DETECT;
+using namespace MUSICDATABASEDIRECTORY;
+using ADDON::AddonPtr;
 
 #define MUSIC_DATABASE_NAME "MyMusic7.db"
 #define RECENTLY_PLAYED_LIMIT 25
@@ -3966,7 +3969,7 @@ bool CMusicDatabase::CommitTransaction()
   return false;
 }
 
-bool CMusicDatabase::SetScraperForPath(const CStdString& strPath, const SScraperInfo& info)
+bool CMusicDatabase::SetScraperForPath(const CStdString& strPath, const ADDON::ScraperPtr& scraper)
 {
   try
   {
@@ -3978,7 +3981,9 @@ bool CMusicDatabase::SetScraperForPath(const CStdString& strPath, const SScraper
     m_pDS->exec(strSQL.c_str());
 
     // insert new settings
-    strSQL = PrepareSQL("insert into content (strPath, strScraperPath, strContent, strSettings) values ('%s','%s','%s','%s')",strPath.c_str(),info.strPath.c_str(),info.strContent.c_str(),info.settings.GetSettings().c_str());
+    strSQL = PrepareSQL("insert into content (strPath, strScraperPath, strContent, strSettings) values ('%s','%s','%s','%s')",
+      strPath.c_str(), scraper->Parent()->UUID().c_str(), ADDON::TranslateContent(scraper->Content()).c_str(), scraper->GetSettings().c_str());
+
     m_pDS->exec(strSQL.c_str());
 
     return true;
@@ -3990,7 +3995,7 @@ bool CMusicDatabase::SetScraperForPath(const CStdString& strPath, const SScraper
   return false;
 }
 
-bool CMusicDatabase::GetScraperForPath(const CStdString& strPath, SScraperInfo& info)
+bool CMusicDatabase::GetScraperForPath(const CStdString& strPath, ADDON::ScraperPtr& info)
 {
   try
   {
@@ -4031,41 +4036,51 @@ bool CMusicDatabase::GetScraperForPath(const CStdString& strPath, SScraperInfo& 
     }
 
     if (!m_pDS->eof())
-    {
-      info.strContent = m_pDS->fv("content.strContent").get_asString();
-      info.strPath = m_pDS->fv("content.strScraperPath").get_asString();
-      info.settings.LoadUserXML(m_pDS->fv("content.strSettings").get_asString());
+    { // try and ascertain scraper for this path
+      CONTENT_TYPE content = ADDON::TranslateContent(m_pDS->fv("content.strContent").get_asString());
+      CStdString scraperUUID = m_pDS->fv("content.strScraperPath").get_asString();
 
-      CScraperParser parser;
-      parser.Load("special://xbmc/system/scrapers/music/" + info.strPath);
-      info.strTitle = parser.GetName();
-      info.strDate = parser.GetDate();
-      info.strFramework = parser.GetFramework();
-      info.strLanguage = parser.GetLanguage();
-
-    }
-    if (info.strPath.IsEmpty())
-    { // no info available yet - check for a fallback
-      if (!strPath.Equals("musicdb://")) // default fallback
-        GetScraperForPath("musicdb://",info);
-      else
-      { // none available yet (user wisely left defaults as is and didn't touch 'em)
-        CScraperParser parser;
-        if (parser.Load("special://xbmc/system/scrapers/music/" + g_guiSettings.GetString("musiclibrary.scraper")))
+      if (content != CONTENT_NONE)
+      { // content set, use pre configured or default scraper
+        ADDON::AddonPtr addon;
+        if (!scraperUUID.empty() && ADDON::CAddonMgr::Get()->GetAddon(ADDON::ADDON_SCRAPER, scraperUUID, addon) && addon)
         {
-          info.strPath = g_guiSettings.GetString("musiclibrary.scraper");
-          info.strContent = "albums";
-          info.strTitle = parser.GetName();
-          info.strDate = parser.GetDate();
-          info.strFramework = parser.GetFramework();
-          info.strLanguage = parser.GetLanguage();
-          info.settings.LoadSettingsXML("special://xbmc/system/scrapers/music/" + info.strPath);
-          SetScraperForPath("musicdb://",info);
+          info = boost::dynamic_pointer_cast<ADDON::CScraper>(addon->Clone(addon));
+          if (!info)
+            return false;
+        }
+
+        // store this path's settings
+        info->m_pathContent = content;
+        info->LoadUserXML(m_pDS->fv("content.strSettings").get_asString());
+      }
+      else
+      { // use default scraper for this content type
+        ADDON::AddonPtr defaultScraper;
+        if (ADDON::CAddonMgr::Get()->GetDefault(ADDON::ADDON_SCRAPER, defaultScraper, content))
+        {
+          info = boost::dynamic_pointer_cast<ADDON::CScraper>(defaultScraper->Clone(defaultScraper));
+          if (info)
+          {
+            info->m_pathContent = content;
+          }
         }
       }
     }
-
     m_pDS->close();
+
+    if (!info)
+    { // use default music scraper instead
+      ADDON::AddonPtr addon;
+      if(ADDON::CAddonMgr::Get()->GetDefault(ADDON::ADDON_SCRAPER, addon, CONTENT_ALBUMS))
+      {
+        info = boost::dynamic_pointer_cast<ADDON::CScraper>(addon);
+        return (info);
+      }
+      else
+        return false;
+    }
+
     return true;
   }
   catch (...)

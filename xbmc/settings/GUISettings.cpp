@@ -231,8 +231,7 @@ void CGUISettings::Initialize()
   AddString(2, "weather.areacode2", 14020, "UKXX0085 - London, United Kingdom", BUTTON_CONTROL_STANDARD);
   AddString(3, "weather.areacode3", 14021, "JAXX0085 - Tokyo, Japan", BUTTON_CONTROL_STANDARD);
   AddSeparator(4, "weather.sep1");
-  AddString(5, "weather.plugin", 23000, "", SPIN_CONTROL_TEXT, true);
-  AddString(6, "weather.pluginsettings", 23001, "", BUTTON_CONTROL_STANDARD, true);
+  AddString(5, "weather.plugin", 24027, "", SPIN_CONTROL_TEXT, true);
 
   // My Music Settings
   AddGroup(3, 2);
@@ -242,7 +241,6 @@ void CGUISettings::Initialize()
   AddSeparator(3,"musiclibrary.sep1");
   AddBool(4,"musiclibrary.downloadinfo", 20192, false);
   AddString(6, "musiclibrary.scraper", 20194, "allmusic.xml", SPIN_CONTROL_TEXT);
-  AddString(7, "musiclibrary.scrapersettings", 21417, "", BUTTON_CONTROL_STANDARD);
   AddBool(8, "musiclibrary.updateonstartup", 22000, false);
   AddBool(0, "musiclibrary.backgroundupdate", 22001, false);
   AddSeparator(9,"musiclibrary.sep2");

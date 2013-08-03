@@ -19,7 +19,6 @@
  *
  */
 
-#include "utils/log.h"
 #include "music/GUIViewStateMusic.h"
 #include "PlayListPlayer.h"
 #include "GUIBaseContainer.h" // for VIEW_TYPE_*
@@ -29,10 +28,11 @@
 #include "FileItem.h"
 #include "Util.h"
 #include "LocalizeStrings.h"
+#include "utils/log.h"
 
+#include "FileSystem/Directory.h"
 #include "FileSystem/MusicDatabaseDirectory.h"
 #include "FileSystem/VideoDatabaseDirectory.h"
-#include "FileSystem/PluginDirectory.h"
 
 using namespace XFILE;
 using namespace MUSICDATABASEDIRECTORY;
@@ -604,16 +604,6 @@ VECSOURCES& CGUIViewStateWindowMusicNav::GetSources()
     m_sources.push_back(share);
   }
 
-  // plugins share
-  if (CPluginDirectory::HasPlugins("music") && g_advancedSettings.m_bVirtualShares)
-  {
-    share.strName = g_localizeStrings.Get(1038);
-    share.strPath = "plugin://music/";
-    share.m_strThumbnailImage = CUtil::GetDefaultFolderThumb("DefaultMusicPlugins.png");
-    share.m_ignore = true;
-    m_sources.push_back(share);
-  }
-
   return CGUIViewStateWindowMusic::GetSources();
 }
 
@@ -661,14 +651,7 @@ void CGUIViewStateWindowMusicSongs::SaveViewState()
 
 VECSOURCES& CGUIViewStateWindowMusicSongs::GetSources()
 {
-  // plugins share
-  if (CPluginDirectory::HasPlugins("music") && g_advancedSettings.m_bVirtualShares)
-  {
-    CMediaSource share;
-    share.strName = g_localizeStrings.Get(1038);
-    share.strPath = "plugin://music/";
-    AddOrReplace(g_settings.m_musicSources,share);
-  }
+  AddOrReplace(g_settings.m_musicSources, CGUIViewState::GetSources());
   return g_settings.m_musicSources; 
 }
 
@@ -720,7 +703,8 @@ VECSOURCES& CGUIViewStateWindowMusicPlaylist::GetSources()
   share.m_iDriveType = CMediaSource::SOURCE_TYPE_LOCAL;
   m_sources.push_back(share);
 
-  return CGUIViewStateWindowMusic::GetSources();
+  // CGUIViewState::GetSources would add music plugins
+  return m_sources;
 }
 
 CGUIViewStateMusicShoutcast::CGUIViewStateMusicShoutcast(const CFileItemList& items) : CGUIViewStateWindowMusic(items)

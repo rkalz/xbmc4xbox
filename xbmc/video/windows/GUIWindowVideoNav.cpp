@@ -35,6 +35,7 @@
 #include "playlists/PlayListFactory.h"
 #include "video/dialogs/GUIDialogVideoScan.h"
 #include "dialogs/GUIDialogOK.h"
+#include "AddonManager.h"
 #include "PartyModeManager.h"
 #include "music/MusicDatabase.h"
 #include "GUIWindowManager.h"
@@ -574,22 +575,19 @@ void CGUIWindowVideoNav::FrameMove()
   CGUIWindowVideoBase::FrameMove();
 }
 
-void CGUIWindowVideoNav::OnInfo(CFileItem* pItem, const SScraperInfo& info)
+void CGUIWindowVideoNav::OnInfo(CFileItem* pItem, ADDON::ScraperPtr& scraper)
 {
-  SScraperInfo info2(info);
   CStdString strPath,strFile;
   m_database.Open(); // since we can be called from the music library without being inited
   if (pItem->IsVideoDb())
-    m_database.GetScraperForPath(pItem->GetVideoInfoTag()->m_strPath,info2);
-  else if (m_vecItems->IsPlugin())
-    info2.strContent = "plugin";
+    m_database.GetScraperForPath(pItem->GetVideoInfoTag()->m_strPath,scraper);
   else
   {
     URIUtils::Split(pItem->GetPath(),strPath,strFile);
-    m_database.GetScraperForPath(strPath,info2);
+    m_database.GetScraperForPath(strPath,scraper);
   }
   m_database.Close();
-  CGUIWindowVideoBase::OnInfo(pItem,info2);
+  CGUIWindowVideoBase::OnInfo(pItem,scraper);
 }
 
 bool CGUIWindowVideoNav::CanDelete(const CStdString& strPath)
@@ -846,13 +844,13 @@ void CGUIWindowVideoNav::GetContextButtons(int itemNumber, CContextButtons &butt
   }
   else
   {
-    SScraperInfo info;
+    ADDON::ScraperPtr info;
     VIDEO::SScanSettings settings;
     GetScraperForItem(item.get(), info, settings);
 
-    if (info.strContent.Equals("tvshows"))
+    if (info && info->Content() == CONTENT_TVSHOWS)
       buttons.Add(CONTEXT_BUTTON_INFO, item->m_bIsFolder ? 20351 : 20352);
-    else if (info.strContent.Equals("musicvideos"))
+    else if (info && info->Content() == CONTENT_MUSICVIDEOS)
       buttons.Add(CONTEXT_BUTTON_INFO,20393);
     else if (!item->m_bIsFolder && !item->GetPath().Left(19).Equals("newsmartplaylist://"))
       buttons.Add(CONTEXT_BUTTON_INFO, 13346);
@@ -897,7 +895,7 @@ void CGUIWindowVideoNav::GetContextButtons(int itemNumber, CContextButtons &butt
           else
             buttons.Add(CONTEXT_BUTTON_UPDATE_TVSHOW, 13349);
         }
-        if ((info.strContent.Equals("tvshows") && item->m_bIsFolder) ||
+        if ((info && info->Content() == CONTENT_TVSHOWS && item->m_bIsFolder) ||
             (item->IsVideoDb() && item->HasVideoInfoTag() && !item->m_bIsFolder))
         {
           if (item->m_bIsFolder || item->GetVideoInfoTag()->m_playCount > 0)
@@ -939,7 +937,7 @@ void CGUIWindowVideoNav::GetContextButtons(int itemNumber, CContextButtons &butt
         if (item->IsVideoDb() && item->HasVideoInfoTag() &&
           (!item->m_bIsFolder || node == NODE_TYPE_TITLE_TVSHOWS))
         {
-          if (info.strContent.Equals("tvshows"))
+          if (info && info->Content() == CONTENT_TVSHOWS)
           {
             if(item->GetVideoInfoTag()->m_iBookmarkId != -1 &&
                item->GetVideoInfoTag()->m_iBookmarkId != 0)
@@ -1234,9 +1232,8 @@ bool CGUIWindowVideoNav::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
     }
   case CONTEXT_BUTTON_UPDATE_LIBRARY:
     {
-      SScraperInfo info;
       VIDEO::SScanSettings settings;
-      OnScan("",info,settings);
+      OnScan("",ADDON::ScraperPtr(),settings);
       return true;
     }
   case CONTEXT_BUTTON_UNLINK_MOVIE:

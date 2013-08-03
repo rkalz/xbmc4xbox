@@ -337,6 +337,9 @@
 				RelativePath=".\GUIRadioButtonControl.cpp">
 			</File>
 			<File
+				RelativePath=".\GUIRenderingControl.cpp">
+			</File>
+			<File
 				RelativePath=".\GUIResizeControl.cpp">
 			</File>
 			<File
@@ -562,6 +565,9 @@
 			</File>
 			<File
 				RelativePath=".\GUIRadioButtonControl.h">
+			</File>
+			<File
+				RelativePath=".\GUIRenderingControl.h">
 			</File>
 			<File
 				RelativePath=".\GUIResizeControl.h">

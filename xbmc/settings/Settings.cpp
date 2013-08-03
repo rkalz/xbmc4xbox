@@ -34,6 +34,8 @@
 #include "input/ButtonTranslator.h"
 #include "XMLUtils.h"
 #include "PasswordManager.h"
+#include "utils/RegExp.h"
+#include "GUIPassword.h"
 #include "GUIAudioManager.h"
 #include "AudioContext.h"
 #include "GUIInfoManager.h"
@@ -2210,7 +2212,8 @@ void CSettings::CreateProfileFolders()
     CDirectory::Create(URIUtils::AddFileToFolder(GetVideoThumbFolder(), strHex));
     CDirectory::Create(URIUtils::AddFileToFolder(GetProgramsThumbFolder(), strHex));
   }
-  CDirectory::Create("special://profile/visualisations");
+  CDirectory::Create("special://profile/addon_data");
+  CDirectory::Create("special://profile/keymaps");
 }
 
 static CProfile emptyProfile;

@@ -104,8 +104,6 @@ bool CGUIDialogMediaSource::OnMessage(CGUIMessage& message)
       m_confirmed = false;
       m_bRunScan = false;
       m_bNameChanged=false;
-      m_settings.parent_name = false;
-      m_settings.recurse = 0;
       UpdateButtons();
     }
     break;
@@ -162,7 +160,7 @@ bool CGUIDialogMediaSource::ShowAndAddMediaSource(const CStdString &type)
     if (type == "video")
     {
       if (dialog->m_bRunScan)
-        CGUIWindowVideoBase::OnScan(share.strPath,dialog->m_info,dialog->m_settings);
+        CGUIWindowVideoBase::OnScan(share.strPath,ADDON::ScraperPtr(),dialog->m_settings);
 
     }
   }
@@ -275,7 +273,7 @@ void CGUIDialogMediaSource::OnPathBrowse(int item)
       extraShares.push_back(share1);
     }
     // add the plugins dir as needed
-    if (CPluginDirectory::HasPlugins("music"))
+    if (ADDON::CAddonMgr::Get()->HasAddons(ADDON::ADDON_PLUGIN, CONTENT_ALBUMS))
     {
       share1.strPath = "plugin://music/";
       share1.strName = g_localizeStrings.Get(1038); // Music Plugins
@@ -311,7 +309,7 @@ void CGUIDialogMediaSource::OnPathBrowse(int item)
     extraShares.push_back(share1);
 
     // add the plugins dir as needed
-    if (CPluginDirectory::HasPlugins("video"))
+    if (ADDON::CAddonMgr::Get()->HasAddons(ADDON::ADDON_PLUGIN, CONTENT_MOVIES))
     {
       share1.strPath = "plugin://video/";
       share1.strName = g_localizeStrings.Get(1037); // Video Plugins
@@ -338,7 +336,7 @@ void CGUIDialogMediaSource::OnPathBrowse(int item)
     extraShares.push_back(share1);
 
     // add the plugins dir as needed
-    if (CPluginDirectory::HasPlugins("pictures"))
+    if (ADDON::CAddonMgr::Get()->HasAddons(ADDON::ADDON_PLUGIN, CONTENT_PICTURES))
     {
       share1.strPath = "plugin://pictures/";
       share1.strName = g_localizeStrings.Get(1039); // Picture Plugins
@@ -347,7 +345,7 @@ void CGUIDialogMediaSource::OnPathBrowse(int item)
   }
   else if (m_type == "programs")
   {
-    if (CPluginDirectory::HasPlugins("programs"))
+    if (ADDON::CAddonMgr::Get()->HasAddons(ADDON::ADDON_PLUGIN, CONTENT_PROGRAMS))
     {
       CMediaSource share2;
       share2.strPath = "plugin://programs/";
@@ -409,7 +407,7 @@ void CGUIDialogMediaSource::OnOK()
     if (share.strPath.Left(9).Equals("plugin://"))
     {
       CStdString strPath=share.strPath;
-      strPath.Replace("plugin://","special://home/plugins/");
+      strPath.Replace("plugin://","special://home/addons/plugins/");
       CFileItem item(strPath,true);
       item.SetCachedProgramThumb();
       if (!item.HasThumbnail())

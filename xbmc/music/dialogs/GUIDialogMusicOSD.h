@@ -22,7 +22,11 @@
  */
 
 #include "GUIDialog.h"
-#include "visualizations/Visualisation.h"
+
+namespace ADDON
+{
+  class CVisualisation;
+}
 
 class CGUIDialogMusicOSD :
       public CGUIDialog
@@ -35,5 +39,5 @@ public:
 protected:
   virtual bool OnMouseEvent(const CPoint &point, const CMouseEvent &event);
   virtual void OnInitWindow();
-  CVisualisation *m_pVisualisation;
+  ADDON::CVisualisation *m_pVisualisation;
 };

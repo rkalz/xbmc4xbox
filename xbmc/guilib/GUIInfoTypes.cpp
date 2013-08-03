@@ -23,11 +23,13 @@
 #include "GUIInfoTypes.h"
 #include "utils/CharsetConverter.h"
 #include "GUIInfoManager.h"
+#include "utils/AddonManager.h"
 #include "LocalizeStrings.h"
 #include "GUIColorManager.h"
 #include "GUIListItem.h"
 
 using namespace std;
+using ADDON::CAddonMgr;
 
 CGUIInfoBool::CGUIInfoBool(bool value)
 {
@@ -246,7 +248,7 @@ void CGUIInfoLabel::Parse(const CStdString &label)
   m_info.clear();
   // Step 1: Replace all $LOCALIZE[number] with the real string
   CStdString work = ReplaceLocalize(label);
-  // Step 2: Replace all $ADDON[id number] with the real string
+  // Step 2: Replace all $ADDON[uuid number] with the real string
   work = ReplaceAddonStrings(work);
   // Step 3: Find all $INFO[info,prefix,postfix] blocks
   int pos1 = work.Find("$INFO[");

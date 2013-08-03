@@ -145,6 +145,7 @@
 #include "windows/GUIWindowWeather.h"
 #include "GUIWindowGameSaves.h"
 #include "windows/GUIWindowLoginScreen.h"
+#include "GUIWindowAddonBrowser.h"
 #include "music/windows/GUIWindowVisualisation.h"
 #include "windows/GUIWindowSystemInfo.h"
 #include "windows/GUIWindowScreensaver.h"
@@ -157,7 +158,6 @@
 
 // Dialog includes
 #include "music/dialogs/GUIDialogMusicOSD.h"
-#include "dialogs/GUIDialogVisualisationSettings.h"
 #include "music/dialogs/GUIDialogVisualisationPresetList.h"
 #include "dialogs/GUIDialogTrainerSettings.h"
 #include "GUIWindowScriptsInfo.h"
@@ -191,7 +191,7 @@
 #include "dialogs/GUIDialogSmartPlaylistEditor.h"
 #include "dialogs/GUIDialogSmartPlaylistRule.h"
 #include "pictures/GUIDialogPictureInfo.h"
-#include "dialogs/GUIDialogPluginSettings.h"
+#include "addons/GUIDialogAddonSettings.h"
 #include "video/dialogs/GUIDialogFullScreenInfo.h"
 #include "dialogs/GUIDialogSlider.h"
 #include "cores/dlgcache.h"
@@ -1205,13 +1205,7 @@ HRESULT CApplication::Initialize()
   CUtil::WipeDir("Z:\\");
   CreateDirectory("Z:\\temp", NULL); // temp directory for python and dllGetTempPathA
   CreateDirectory("Q:\\scripts", NULL);
-  CreateDirectory("Q:\\plugins", NULL);
-  CreateDirectory("Q:\\plugins\\music", NULL);
-  CreateDirectory("Q:\\plugins\\video", NULL);
-  CreateDirectory("Q:\\plugins\\pictures", NULL);
-  CreateDirectory("Q:\\plugins\\programs", NULL);
   CreateDirectory("Q:\\language", NULL);
-  CreateDirectory("Q:\\visualisations", NULL);
   CreateDirectory("Q:\\sounds", NULL);
   CreateDirectory(g_settings.GetUserDataFolder()+"\\visualisations",NULL);
 
@@ -1252,6 +1246,7 @@ HRESULT CApplication::Initialize()
   g_windowManager.Add(new CGUIWindowVideoPlaylist);            // window id = 28
   g_windowManager.Add(new CGUIWindowLoginScreen);            // window id = 29
   g_windowManager.Add(new CGUIWindowSettingsProfile);          // window id = 34
+  g_windowManager.Add(new CGUIWindowAddonBrowser);          // window id = 40
   g_windowManager.Add(new CGUIWindowGameSaves);               // window id = 35
   g_windowManager.Add(new CGUIDialogYesNo);              // window id = 100
   g_windowManager.Add(new CGUIDialogProgress);           // window id = 101
@@ -1268,7 +1263,6 @@ HRESULT CApplication::Initialize()
   g_windowManager.Add(new CGUIDialogPlayerControls);     // window id = 113
   g_windowManager.Add(new CGUIDialogSlider);             // window id = 145
   g_windowManager.Add(new CGUIDialogMusicOSD);           // window id = 120
-  g_windowManager.Add(new CGUIDialogVisualisationSettings);     // window id = 121
   g_windowManager.Add(new CGUIDialogVisualisationPresetList);   // window id = 122
   g_windowManager.Add(new CGUIDialogVideoSettings);             // window id = 123
   g_windowManager.Add(new CGUIDialogAudioSubtitleSettings);     // window id = 124
@@ -1285,7 +1279,7 @@ HRESULT CApplication::Initialize()
   g_windowManager.Add(new CGUIDialogSmartPlaylistRule);       // window id = 137
   g_windowManager.Add(new CGUIDialogBusy);      // window id = 138
   g_windowManager.Add(new CGUIDialogPictureInfo);      // window id = 139
-  g_windowManager.Add(new CGUIDialogPluginSettings);      // window id = 140
+  g_windowManager.Add(new CGUIDialogAddonSettings);      // window id = 140
   g_windowManager.Add(new CGUIDialogTextViewer);              // window id = 147
 
   g_windowManager.Add(new CGUIDialogLockSettings); // window id = 131
@@ -3384,7 +3378,6 @@ HRESULT CApplication::Cleanup()
     g_windowManager.Delete(WINDOW_DIALOG_MUSIC_SCAN);
     g_windowManager.Delete(WINDOW_DIALOG_PLAYER_CONTROLS);
     g_windowManager.Delete(WINDOW_DIALOG_MUSIC_OSD);
-    g_windowManager.Delete(WINDOW_DIALOG_VIS_SETTINGS);
     g_windowManager.Delete(WINDOW_DIALOG_VIS_PRESET_LIST);
     g_windowManager.Delete(WINDOW_DIALOG_SELECT);
     g_windowManager.Delete(WINDOW_DIALOG_OK);
@@ -3407,7 +3400,7 @@ HRESULT CApplication::Cleanup()
     g_windowManager.Delete(WINDOW_DIALOG_SMART_PLAYLIST_RULE);
     g_windowManager.Delete(WINDOW_DIALOG_BUSY);
     g_windowManager.Delete(WINDOW_DIALOG_PICTURE_INFO);
-    g_windowManager.Delete(WINDOW_DIALOG_PLUGIN_SETTINGS);
+    g_windowManager.Delete(WINDOW_DIALOG_ADDON_SETTINGS);
     g_windowManager.Delete(WINDOW_DIALOG_SLIDER);
     g_windowManager.Delete(WINDOW_DIALOG_TEXT_VIEWER);
 
@@ -5592,10 +5585,9 @@ void CApplication::UpdateLibraries()
   {
     CLog::Log(LOGNOTICE, "%s - Starting video library startup scan", __FUNCTION__);
     CGUIDialogVideoScan *scanner = (CGUIDialogVideoScan *)g_windowManager.GetWindow(WINDOW_DIALOG_VIDEO_SCAN);
-    SScraperInfo info;
     VIDEO::SScanSettings settings;
     if (scanner && !scanner->IsScanning())
-      scanner->StartScanning("",info,settings,false);
+      scanner->StartScanning("",ADDON::ScraperPtr(),settings,false);
   }
  
   if (g_guiSettings.GetBool("musiclibrary.updateonstartup"))
