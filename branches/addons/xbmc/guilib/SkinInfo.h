@@ -62,7 +62,6 @@ public:
    */
   CStdString GetSkinPath(const CStdString& file, RESOLUTION *res = NULL, const CStdString& baseDir = "") const;
 
-  wchar_t* GetCreditsLine(int i);
   CStdString GetBaseDir() const;
   double GetVersion() const { return m_Version; };
 
