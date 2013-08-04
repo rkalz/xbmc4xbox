@@ -112,6 +112,7 @@ namespace VIDEO
     bool GetEpisodeAndSeasonFromRegExp(CRegExp &reg, SEpisode &episodeInfo);
 
     void FetchActorThumbs(const std::vector<SActorInfo>& actors, const CStdString& strPath);
+    void SetScraperInfo(const ADDON::ScraperPtr& info) { m_info = info; };
 
     /*! \brief Retrieve a "fast" hash of the given directory (if available)
      Performs a stat() on the directory, and uses modified time to create a "fast"
