@@ -5658,7 +5658,9 @@ bool CVideoDatabase::GetScraperForPath(const CStdString& strPath, ScraperPtr& sc
       // path is not excluded
       // try and ascertain scraper for this path
       CONTENT_TYPE content = TranslateContent(strcontent);
-      assert(content != CONTENT_NONE);
+
+      //FIXME paths stored should not have empty strContent
+      //assert(content != CONTENT_NONE);
       CStdString scraperID = m_pDS->fv("path.strScraper").get_asString();
 
       AddonPtr addon;
@@ -5711,8 +5713,8 @@ bool CVideoDatabase::GetScraperForPath(const CStdString& strPath, ScraperPtr& sc
             settings.exclude = true;
             break;
           }
-          strPath1 = strParent;
         }
+        strPath1 = strParent;
       }
     }
     m_pDS->close();
