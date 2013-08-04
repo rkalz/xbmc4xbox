@@ -247,19 +247,19 @@ void CGUIDialogContentSettings::FillContentTypes(const CONTENT_TYPE &content)
     return;
 
   AddonPtr addon;
-  CStdString defaultUUID;
+  CStdString defaultID;
   CAddonMgr::Get()->GetDefault(ADDON_SCRAPER, addon, content);
   if (addon)
-    defaultUUID = addon->UUID();
+    defaultID = addon->ID();
 
   for (IVECADDONS it = addons.begin(); it != addons.end(); it++)
   {
-    bool isDefault = ((*it)->UUID() == defaultUUID);
+    bool isDefault = ((*it)->ID() == defaultID);
     map<CONTENT_TYPE,VECADDONS>::iterator iter=m_scrapers.find(content);
 
     AddonPtr scraper = (*it)->Clone((*it));
 
-    if (m_scraper && m_scraper->Parent() && m_scraper->Parent()->UUID() == (*it)->UUID())
+    if (m_scraper && m_scraper->Parent() && m_scraper->Parent()->ID() == (*it)->ID())
     { // don't overwrite preconfigured scraper
       scraper = m_scraper;
     }
@@ -299,9 +299,9 @@ void CGUIDialogContentSettings::FillListControl()
   for (IVECADDONS iter=m_scrapers.find(m_content)->second.begin();iter!=m_scrapers.find(m_content)->second.end();++iter)
   {
     CFileItemPtr item(new CFileItem((*iter)->Name()));
-    item->SetPath((*iter)->UUID());
+    item->SetPath((*iter)->ID());
     item->SetThumbnailImage((*iter)->Icon());
-    if (m_scraper && (*iter)->UUID() == m_scraper->UUID())
+    if (m_scraper && (*iter)->ID() == m_scraper->ID())
     {
       item->Select(true);
       selectedIndex = iIndex;

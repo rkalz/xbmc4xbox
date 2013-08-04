@@ -111,7 +111,7 @@ bool CAddonDll<TheDll, TheStruct, TheProps>::LoadDll()
     CStdString extension = URIUtils::GetExtension(LibName());
     strFileName = "special://temp/" + LibName();
     URIUtils::RemoveExtension(strFileName);
-    strFileName += "-" + UUID() + extension;
+    strFileName += "-" + ID() + extension;
 
     if (!CFile::Exists(strFileName))
       CFile::Cache(Path() + LibName(), strFileName);
