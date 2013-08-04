@@ -3337,8 +3337,9 @@ void CVideoDatabase::SetScraperForPath(const CStdString& filePath, const Scraper
     }
     else
     {
+      assert(scraper->Parent());
       CStdString content = TranslateContent(scraper->Content());
-      strSQL=PrepareSQL("update path set strContent='%s', strScraper='%s', scanRecursive=%i, useFolderNames=%i, strSettings='%s', noUpdate=%i where idPath=%i", content.c_str(), scraper->ID().c_str(),settings.recurse,settings.parent_name,scraper->GetSettings().c_str(),settings.noupdate, idPath);
+      strSQL=PrepareSQL("update path set strContent='%s', strScraper='%s', scanRecursive=%i, useFolderNames=%i, strSettings='%s', noUpdate=%i where idPath=%i", content.c_str(), scraper->Parent()->ID().c_str(),settings.recurse,settings.parent_name,scraper->GetSettings().c_str(),settings.noupdate, idPath);
     }
     m_pDS->exec(strSQL.c_str());
   }
@@ -5655,13 +5656,13 @@ bool CVideoDatabase::GetScraperForPath(const CStdString& strPath, ScraperPtr& sc
       // path is not excluded, find out if content is set
       // then try and ascertain scraper for this path
       CONTENT_TYPE content = TranslateContent(strcontent);
-      CStdString scraperUUID = m_pDS->fv("path.strScraper").get_asString();
+      CStdString scraperID = m_pDS->fv("path.strScraper").get_asString();
 
       if (content != CONTENT_NONE)
       { // content set, use pre configured or default scraper
         AddonPtr addon;
-        if (!scraperUUID.empty() && 
-          CAddonMgr::Get()->GetAddon(scraperUUID, addon, ADDON::ADDON_SCRAPER))
+        if (!scraperID.empty() &&
+          CAddonMgr::Get()->GetAddon(scraperID, addon, ADDON::ADDON_SCRAPER))
         {
           scraper = boost::dynamic_pointer_cast<CScraper>(addon->Clone(addon));
           if (!scraper)
@@ -7846,7 +7847,7 @@ void CVideoDatabase::ImportFromXML(const CStdString &path)
             AddonPtr addon;
             CStdString uuid;
 
-            if (!XMLUtils::GetString(path,"scraperuuid",uuid))
+            if (!XMLUtils::GetString(path,"scraperID",uuid))
             { // support pre addons exports
               XMLUtils::GetString(path, "scraperpath", uuid);
               uuid = URIUtils::GetFileName(uuid);
