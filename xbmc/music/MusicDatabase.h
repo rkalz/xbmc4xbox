@@ -26,7 +26,7 @@
 #include "Database.h"
 #include "music/Album.h"
 #include "utils/StringUtils.h"
-#include "Scraper.h"
+#include "addons/Scraper.h"
 
 class CArtist;
 class CFileItem;

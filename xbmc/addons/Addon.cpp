@@ -26,7 +26,7 @@
 #include "StringUtils.h"
 #include "FileSystem/Directory.h"
 #include "URIUtils.h"
-#include "log.h"
+#include "utils/log.h"
 #include <string.h>
 
 using XFILE::CDirectory;

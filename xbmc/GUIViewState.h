@@ -24,7 +24,7 @@
 #include "utils/LabelFormatter.h"
 #include "SortFileItem.h"
 #include "MediaSource.h"
-#include "utils/IAddon.h"
+#include "addons/IAddon.h"
 
 class CViewState; // forward
 class CFileItemList;

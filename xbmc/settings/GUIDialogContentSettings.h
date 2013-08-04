@@ -22,8 +22,8 @@
  */
 
 #include "settings/GUIDialogSettings.h"
-#include "Scraper.h"
-#include "utils/AddonManager.h"
+#include "addons/Scraper.h"
+#include "addons/AddonManager.h"
 #include <vector>
 
 namespace VIDEO

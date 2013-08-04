@@ -22,7 +22,7 @@
 #include "system.h"
 #include "PythonSettings.h"
 #include "pyutil.h"
-#include "AddonManager.h"
+#include "addons/AddonManager.h"
 #include "addons/GUIDialogAddonSettings.h"
 #include "utils/URIUtils.h"
 

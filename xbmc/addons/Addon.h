@@ -20,7 +20,7 @@
  *
  */
 
-#include "IAddon.h"
+#include "addons/IAddon.h"
 #include "tinyXML/tinyxml.h"
 #include "Util.h"
 #include "URL.h"

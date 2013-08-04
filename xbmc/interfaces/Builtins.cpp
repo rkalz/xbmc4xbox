@@ -39,8 +39,8 @@
 #include "GUIUserMessages.h"
 #include "windows/GUIWindowLoginScreen.h"
 #include "video/windows/GUIWindowVideoBase.h"
-#include "Addon.h" // for TranslateType, TranslateContent
-#include "AddonManager.h"
+#include "addons/Addon.h" // for TranslateType, TranslateContent
+#include "addons/AddonManager.h"
 #include "music/LastFmManager.h"
 #include "LCD.h"
 #include "log.h"

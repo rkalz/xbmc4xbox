@@ -26,7 +26,7 @@
 #include "FileSystem/File.h"
 #include "FileItem.h"
 #include "FileSystem/StackDirectory.h"
-#include "utils/Addon.h"
+#include "addons/Addon.h"
 #include "utils/URIUtils.h"
 #include "utils/log.h"
 
