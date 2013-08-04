@@ -197,7 +197,7 @@ bool CGUIWindowVideoFiles::GetDirectory(const CStdString &strDirectory, CFileIte
   if (!CGUIWindowVideoBase::GetDirectory(strDirectory, items))
     return false;
 
-  ADDON::ScraperPtr info2;
+  ADDON::ScraperPtr info2 = m_database.GetScraperForPath(strDirectory);
 
   m_stackingAvailable = true;
   m_cleaningAvailable = true;
@@ -307,7 +307,7 @@ void CGUIWindowVideoFiles::OnAssignContent(int iItem, int iFound, ADDON::Scraper
   bool bScan=false;
   if (iFound == 0)
   {
-    m_database.GetScraperForPath(item->GetPath(),info,settings);
+    info = m_database.GetScraperForPath(item->GetPath(), settings);
   }
   if (CGUIDialogContentSettings::Show(info, settings, bScan))
   {
@@ -394,9 +394,9 @@ void CGUIWindowVideoFiles::GetContextButtons(int itemNumber, CContextButtons &bu
           buttons.Add(CONTEXT_BUTTON_SET_CONTENT, 20333);
         CVideoDatabase database;
         database.Open();
-        ADDON::ScraperPtr info;
+        ADDON::ScraperPtr info = database.GetScraperForPath(item->GetPath());
 
-        if (item && database.GetScraperForPath(item->GetPath(),info))
+        if (item && info)
         {
           if (info->Content() != CONTENT_NONE)
             if (!pScanDlg || (pScanDlg && !pScanDlg->IsScanning()))
@@ -540,9 +540,9 @@ bool CGUIWindowVideoFiles::OnContextButton(int itemNumber, CONTEXT_BUTTON button
       ADDON::ScraperPtr info;
       SScanSettings settings;
       if (item->HasVideoInfoTag())  // files view shouldn't need this check I think?
-        m_database.GetScraperForPath(item->GetVideoInfoTag()->m_strPath, info, settings);
+        info = m_database.GetScraperForPath(item->GetVideoInfoTag()->m_strPath, settings);
       else
-        m_database.GetScraperForPath(item->GetPath(), info, settings);
+        info = m_database.GetScraperForPath(item->GetPath(), settings);
       OnAssignContent(itemNumber,0, info, settings);
       return true;
     }

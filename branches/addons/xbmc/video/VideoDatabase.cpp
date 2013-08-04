@@ -5595,32 +5595,31 @@ int CVideoDatabase::GetMusicVideoCount(const CStdString& strWhere)
   return 0;
 }
 
-bool CVideoDatabase::GetScraperForPath( const CStdString& strPath, ScraperPtr& scraper )
+ScraperPtr CVideoDatabase::GetScraperForPath( const CStdString& strPath )
 {
   int iDummy;
-  return GetScraperForPath(strPath, scraper, iDummy);
+  return GetScraperForPath(strPath, iDummy);
 }
 
-bool CVideoDatabase::GetScraperForPath(const CStdString& strPath, ScraperPtr& scraper, int& iFound)
+ScraperPtr CVideoDatabase::GetScraperForPath(const CStdString& strPath, int& iFound)
 {
   SScanSettings settings;
-  return GetScraperForPath(strPath, scraper, settings, iFound);
+  return GetScraperForPath(strPath, settings, iFound);
 }
 
-bool CVideoDatabase::GetScraperForPath(const CStdString& strPath, ScraperPtr& scraper, SScanSettings& settings)
+ScraperPtr CVideoDatabase::GetScraperForPath(const CStdString& strPath, SScanSettings& settings)
 {
   int iDummy;
-  return GetScraperForPath(strPath, scraper, settings, iDummy);
+  return GetScraperForPath(strPath, settings, iDummy);
 }
 
-bool CVideoDatabase::GetScraperForPath(const CStdString& strPath, ScraperPtr& scraper, SScanSettings& settings, int& iFound)
+ScraperPtr CVideoDatabase::GetScraperForPath(const CStdString& strPath, SScanSettings& settings, int& iFound)
 {
   try
   {
-    if (strPath.IsEmpty()) return false;
-    if (NULL == m_pDB.get()) return false;
-    if (NULL == m_pDS.get()) return false;
+    if (strPath.IsEmpty() || !m_pDB.get() || !m_pDS.get()) return ScraperPtr();
 
+    ScraperPtr scraper;
     CStdString strPath1;
     CStdString strPath2(strPath);
 
@@ -5651,9 +5650,8 @@ bool CVideoDatabase::GetScraperForPath(const CStdString& strPath, ScraperPtr& sc
       if (strcontent.Equals("none"))
       {
         settings.exclude = true;
-        scraper.reset();
         m_pDS->close();
-        return false;
+        return ScraperPtr();
       }
 
       // path is not excluded
@@ -5670,7 +5668,7 @@ bool CVideoDatabase::GetScraperForPath(const CStdString& strPath, ScraperPtr& sc
       {
         scraper = boost::dynamic_pointer_cast<CScraper>(addon->Clone(addon));
         if (!scraper)
-          return false;
+          return ScraperPtr();
 
         // store this path's content & settings
         scraper->m_pathContent = content;
@@ -5729,7 +5727,7 @@ bool CVideoDatabase::GetScraperForPath(const CStdString& strPath, ScraperPtr& sc
     m_pDS->close();
 
     if (!scraper || scraper->Content() == CONTENT_NONE)
-      return false;
+      return ScraperPtr();
 
     if (scraper->Content() == CONTENT_TVSHOWS)
     {
@@ -5756,15 +5754,15 @@ bool CVideoDatabase::GetScraperForPath(const CStdString& strPath, ScraperPtr& sc
     else
     {
       iFound = 0;
-      return false;
+      return ScraperPtr();
     }
-    return true;
+    return scraper;
   }
   catch (...)
   {
     CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
   }
-  return false;
+  return ScraperPtr();
 }
 
 void CVideoDatabase::GetMovieGenresByName(const CStdString& strSearch, CFileItemList& items)
@@ -7637,9 +7635,9 @@ void CVideoDatabase::ExportToXML(const CStdString &path, bool singleFiles /* = f
       TiXmlNode *pPaths = pMain->InsertEndChild(xmlPathElement);
       for( map<CStdString,SScanSettings>::iterator iter=paths.begin();iter != paths.end();++iter)
       {
-        ScraperPtr info;
         int iFound=0;
-        if (GetScraperForPath(iter->first,info,iFound) && iFound == 1)
+        ScraperPtr info = GetScraperForPath(iter->first,iFound);
+        if (info && iFound == 1)
         {
           TiXmlElement xmlPathElement2("path");
           TiXmlNode *pPath = pPaths->InsertEndChild(xmlPathElement2);
@@ -7979,10 +7977,9 @@ void CVideoDatabase::SplitPath(const CStdString& strFileNameAndPath, CStdString&
 
 void CVideoDatabase::InvalidatePathHash(const CStdString& strPath)
 {
-  ScraperPtr info;
   SScanSettings settings;
   int iFound;
-  GetScraperForPath(strPath,info,settings,iFound);
+  ScraperPtr info = GetScraperForPath(strPath,settings,iFound);
   SetPathHash(strPath,"");
   if (!info)
     return;
