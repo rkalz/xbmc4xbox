@@ -201,17 +201,16 @@ namespace VIDEO
       CLog::Log(LOGWARNING, "%s Didn't find scraper for path: %s", __FUNCTION__, strDirectory.c_str());
       return false;
     }
+    CONTENT_TYPE content = info->Content();
 
-    SetScraperInfo(info);
-
-    if (m_info->Content() == CONTENT_NONE)
+    if (content == CONTENT_NONE)
       bSkip = true;
 
     CStdString hash, dbHash;
-    if ((m_info->Content() == CONTENT_MOVIES || m_info->Content() == CONTENT_MUSICVIDEOS) && !settings.noupdate)
+    if ((content == CONTENT_MOVIES || content == CONTENT_MUSICVIDEOS) && !settings.noupdate)
     {
       if (m_pObserver)
-        m_pObserver->OnStateChanged(m_info->Content() == CONTENT_MOVIES ? FETCHING_MOVIE_INFO : FETCHING_MUSICVIDEO_INFO);
+        m_pObserver->OnStateChanged(content == CONTENT_MOVIES ? FETCHING_MOVIE_INFO : FETCHING_MUSICVIDEO_INFO);
 
       CStdString fastHash = GetFastHash(strDirectory);
       if (m_database.GetPathHash(strDirectory, dbHash) && !fastHash.IsEmpty() && fastHash == dbHash)
@@ -223,7 +222,7 @@ namespace VIDEO
       if (!bSkip)
       { // need to fetch the folder
         CDirectory::GetDirectory(strDirectory, items, g_settings.m_videoExtensions);
-        if (m_info->Content() == CONTENT_MOVIES)
+        if (content == CONTENT_MOVIES)
           items.Stack();
         // compute hash
         GetPathHash(items, hash);
@@ -252,7 +251,7 @@ namespace VIDEO
           hash = fastHash;
       }
     }
-    else if (m_info->Content() == CONTENT_TVSHOWS && !settings.noupdate)
+    else if (content == CONTENT_TVSHOWS && !settings.noupdate)
     {
       if (m_pObserver)
         m_pObserver->OnStateChanged(FETCHING_TVSHOW_INFO);
@@ -283,9 +282,9 @@ namespace VIDEO
 
     if (!bSkip)
     {
-      if (RetrieveVideoInfo(items, settings.parent_name_root, m_info))
+      if (RetrieveVideoInfo(items,settings.parent_name_root,content))
       {
-        if (!m_bStop && (m_info->Content() == CONTENT_MOVIES || m_info->Content() == CONTENT_MUSICVIDEOS))
+        if (!m_bStop && (content == CONTENT_MOVIES || content == CONTENT_MUSICVIDEOS))
         {
           m_database.SetPathHash(strDirectory, hash);
           m_pathsToClean.push_back(m_database.GetPathId(strDirectory));
@@ -298,7 +297,7 @@ namespace VIDEO
         CLog::Log(LOGDEBUG, "VideoInfoScanner: No (new) information was found in dir %s", strDirectory.c_str());
       }
     }
-    else if (hash != dbHash && (m_info->Content() == CONTENT_MOVIES || m_info->Content() == CONTENT_MUSICVIDEOS))
+    else if (hash != dbHash && (content == CONTENT_MOVIES || content == CONTENT_MUSICVIDEOS))
     { // update the hash either way - we may have changed the hash to a fast version
       m_database.SetPathHash(strDirectory, hash);
     }
@@ -307,8 +306,8 @@ namespace VIDEO
       m_pObserver->OnDirectoryScanned(strDirectory);
 
     // exclude folders that match our exclude regexps
-    CStdStringArray regexps = m_info->Content() == CONTENT_TVSHOWS ? g_advancedSettings.m_tvshowExcludeFromScanRegExps
-                                                                  : g_advancedSettings.m_moviesExcludeFromScanRegExps;
+    CStdStringArray regexps = content == CONTENT_TVSHOWS ? g_advancedSettings.m_tvshowExcludeFromScanRegExps
+                                                         : g_advancedSettings.m_moviesExcludeFromScanRegExps;
 
     for (int i = 0; i < items.Size(); ++i)
     {
@@ -318,7 +317,7 @@ namespace VIDEO
         break;
 
       // if we have a directory item (non-playlist) we then recurse into that folder
-      if (pItem->m_bIsFolder && !pItem->GetLabel().Equals("sample") && !pItem->GetLabel().Equals("subs") && !pItem->IsParentFolder() && !pItem->IsPlayList() && settings.recurse > 0 && m_info->Content() != CONTENT_TVSHOWS) // do not recurse for tv shows - we have already looked recursively for episodes
+      if (pItem->m_bIsFolder && !pItem->GetLabel().Equals("sample") && !pItem->GetLabel().Equals("subs") && !pItem->IsParentFolder() && !pItem->IsPlayList() && settings.recurse > 0 && content != CONTENT_TVSHOWS) // do not recurse for tv shows - we have already looked recursively for episodes
       {
         CStdString strPath=pItem->GetPath();
 
@@ -343,10 +342,8 @@ namespace VIDEO
     return !m_bStop;
   }
 
-  bool CVideoInfoScanner::RetrieveVideoInfo(CFileItemList& items, bool bDirNames, const ScraperPtr& scraper, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
+  bool CVideoInfoScanner::RetrieveVideoInfo(CFileItemList& items, bool bDirNames, CONTENT_TYPE content, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
   {
-    m_IMDB.SetScraperInfo(scraper);
-
     if (pDlgProgress)
     {
       if (items.Size() > 1 || (items[0]->m_bIsFolder && !bRefresh))
@@ -383,8 +380,8 @@ namespace VIDEO
         continue;
 
       // Discard all exclude files defined by regExExclude
-      if (CUtil::ExcludeFileOrFolder(pItem->GetPath(), scraper->Content() == CONTENT_TVSHOWS ? g_advancedSettings.m_tvshowExcludeFromScanRegExps
-                                                                                         : g_advancedSettings.m_moviesExcludeFromScanRegExps))
+      if (CUtil::ExcludeFileOrFolder(pItem->GetPath(), (content == CONTENT_TVSHOWS) ? g_advancedSettings.m_tvshowExcludeFromScanRegExps
+                                                                                    : g_advancedSettings.m_moviesExcludeFromScanRegExps))
         continue;
 
       if (info2->Content() == CONTENT_MOVIES || info2->Content() == CONTENT_MUSICVIDEOS)
