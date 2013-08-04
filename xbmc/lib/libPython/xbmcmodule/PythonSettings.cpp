@@ -49,8 +49,8 @@ namespace PYXBMC
     self = (Settings*)type->tp_alloc(type, 0);
     if (!self) return NULL;
 
-    static const char *keywords[] = { "uuid", NULL };
-    char *cScriptUUID = NULL;
+    static const char *keywords[] = { "id", NULL };
+    char *cScriptID = NULL;
 
     // parse arguments
     if (!PyArg_ParseTupleAndKeywords(
@@ -58,7 +58,7 @@ namespace PYXBMC
       kwds,
       (char*)"s",
       (char**)keywords,
-      &cScriptUUID
+      &cScriptID
       ))
     {
       Py_DECREF(self);
@@ -66,7 +66,7 @@ namespace PYXBMC
     };
 
     AddonPtr addon;
-    if (CAddonMgr::Get()->GetAddon(CStdString(cScriptUUID), addon, ADDON::ADDON_SCRIPT))
+    if (CAddonMgr::Get()->GetAddon(CStdString(cScriptID), addon, ADDON::ADDON_SCRIPT))
     {
       PyErr_SetString(PyExc_Exception, "Could not get AddonPtr!");
       return NULL;
