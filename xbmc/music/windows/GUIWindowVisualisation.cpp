@@ -23,6 +23,7 @@
 #include "music/windows/GUIWindowVisualisation.h"
 #include "GUIVisualisationControl.h"
 #include "addons/Visualisation.h"
+#include "addons/AddonManager.h"
 #include "Application.h"
 #include "music/dialogs/GUIDialogMusicOSD.h"
 #include "GUIInfoManager.h"

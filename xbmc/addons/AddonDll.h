@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2009 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,7 +21,7 @@
  */
 #include "Addon.h"
 #include "DllAddon.h"
-#include "AddonManager.h"
+#include "AddonStatusHandler.h"
 #include "settings/GUIDialogSettings.h"
 #include "URIUtils.h"
 #include "FileSystem/File.h"
