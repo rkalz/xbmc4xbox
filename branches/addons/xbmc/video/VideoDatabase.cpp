@@ -5597,14 +5597,8 @@ int CVideoDatabase::GetMusicVideoCount(const CStdString& strWhere)
 
 ScraperPtr CVideoDatabase::GetScraperForPath( const CStdString& strPath )
 {
-  int iDummy;
-  return GetScraperForPath(strPath, iDummy);
-}
-
-ScraperPtr CVideoDatabase::GetScraperForPath(const CStdString& strPath, int& iFound)
-{
   SScanSettings settings;
-  return GetScraperForPath(strPath, settings, iFound);
+  return GetScraperForPath(strPath, settings);
 }
 
 ScraperPtr CVideoDatabase::GetScraperForPath(const CStdString& strPath, SScanSettings& settings)
@@ -7636,7 +7630,8 @@ void CVideoDatabase::ExportToXML(const CStdString &path, bool singleFiles /* = f
       for( map<CStdString,SScanSettings>::iterator iter=paths.begin();iter != paths.end();++iter)
       {
         int iFound=0;
-        ScraperPtr info = GetScraperForPath(iter->first,iFound);
+        SScanSettings settings;
+        ScraperPtr info = GetScraperForPath(iter->first, settings, iFound);
         if (info && iFound == 1)
         {
           TiXmlElement xmlPathElement2("path");
