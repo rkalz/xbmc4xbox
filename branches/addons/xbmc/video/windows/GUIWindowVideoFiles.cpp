@@ -407,7 +407,7 @@ void CGUIWindowVideoFiles::GetContextButtons(int itemNumber, CContextButtons &bu
     else
     {
       CGUIWindowVideoBase::GetContextButtons(itemNumber, buttons);
-      if (!item->GetPropertyBOOL("pluginreplacecontextitems"))
+      if (!item->GetPropertyBOOL("pluginreplacecontextitems") && !item->IsParentFolder())
       {
         // Movie Info button
         if (pScanDlg && pScanDlg->IsScanning())
@@ -425,8 +425,10 @@ void CGUIWindowVideoFiles::GetContextButtons(int itemNumber, CContextButtons &bu
             infoString = item->m_bIsFolder ? 20351 : 20352;
           if (info && info->Content() == CONTENT_MUSICVIDEOS)
             infoString = 20393;
+          if(item->IsLiveTV())
+            infoString = 20352;
 
-          if (item->m_bIsFolder && !item->IsParentFolder())
+          if (item->m_bIsFolder)
           {
             if (!pScanDlg || (pScanDlg && !pScanDlg->IsScanning()))
               if (!item->IsPlayList() && !item->IsLiveTV())
