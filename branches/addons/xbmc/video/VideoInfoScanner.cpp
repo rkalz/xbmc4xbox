@@ -575,14 +575,8 @@ namespace VIDEO
       {
         if (m_pObserver && !url.strTitle.IsEmpty())
           m_pObserver->OnSetTitle(url.strTitle);
-        long lResult=1;
-        // force thumb and fanart
 
-        if (pDlgProgress)
-          lResult=GetIMDBDetails(pItem.get(), url, info2, false, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
-        else
-          lResult=GetIMDBDetails(pItem.get(), url, info2, false, NULL, result == CNfoFile::COMBINED_NFO, ignoreNfo);
-
+        long lResult=GetIMDBDetails(pItem.get(), url, info2, false, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
         if (!bRefresh)
         {
           // fetch episode guide
@@ -687,14 +681,8 @@ namespace VIDEO
           {
             if (m_pObserver && !url.strTitle.IsEmpty())
               m_pObserver->OnSetTitle(url.strTitle);
-            long lResult=1;
-            // force thumb and fanart
 
-            if (pDlgProgress)
-              lResult=GetIMDBDetails(pItem.get(), url, info2, bDirNames, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
-            else
-              lResult=GetIMDBDetails(pItem.get(), url, info2, bDirNames, NULL, result == CNfoFile::COMBINED_NFO, ignoreNfo);
-
+            GetIMDBDetails(pItem.get(), url, info2, bDirNames, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
             return 1;
           }
         }
@@ -784,14 +772,8 @@ namespace VIDEO
           {
             if (m_pObserver && !url.strTitle.IsEmpty())
               m_pObserver->OnSetTitle(url.strTitle);
-            long lResult=1;
-            // force thumb and fanart
 
-            if (pDlgProgress)
-              lResult=GetIMDBDetails(pItem.get(), url, info2, false, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
-            else
-              lResult=GetIMDBDetails(pItem.get(), url, info2, false, NULL, result == CNfoFile::COMBINED_NFO, ignoreNfo);
-
+            GetIMDBDetails(pItem.get(), url, info2, false, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
             return 1;
           }
         }
