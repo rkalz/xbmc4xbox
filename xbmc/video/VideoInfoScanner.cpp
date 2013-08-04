@@ -191,10 +191,10 @@ namespace VIDEO
 
     // load subfolder
     CFileItemList items;
-    int iFound = 0;
+    bool foundDirectly = false;
     bool bSkip=false;
 
-    ScraperPtr info = m_database.GetScraperForPath(strDirectory, settings, iFound);
+    ScraperPtr info = m_database.GetScraperForPath(strDirectory, settings, foundDirectly);
     CONTENT_TYPE content = info ? info->Content() : CONTENT_NONE;
 
     if (content == CONTENT_NONE)
@@ -250,7 +250,7 @@ namespace VIDEO
       if (m_pObserver)
         m_pObserver->OnStateChanged(FETCHING_TVSHOW_INFO);
 
-      if (iFound == 1 && !settings.parent_name_root)
+      if (foundDirectly && !settings.parent_name_root)
       {
         CDirectory::GetDirectory(strDirectory,items,g_settings.m_videoExtensions);
         items.SetPath(strDirectory);

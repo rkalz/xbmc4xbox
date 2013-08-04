@@ -186,7 +186,6 @@ bool CGUIWindowVideoBase::OnMessage(CGUIMessage& message)
         }
         else if (iAction == ACTION_SHOW_INFO)
         {
-          SScanSettings settings;
           CStdString strDir;
           if (iItem < 0 || iItem >= m_vecItems->Size())
             return false;
@@ -209,8 +208,9 @@ bool CGUIWindowVideoBase::OnMessage(CGUIMessage& message)
             else
               URIUtils::GetDirectory(item->GetPath(),strDir);
 
-            int iFound;
-            scraper = m_database.GetScraperForPath(strDir, settings, iFound);
+            SScanSettings settings;
+            bool foundDirectly = false;
+            scraper = m_database.GetScraperForPath(strDir, settings, foundDirectly);
 
             if (!scraper &&
               !(m_database.HasMovieInfo(item->GetPath()) ||
@@ -229,7 +229,7 @@ bool CGUIWindowVideoBase::OnMessage(CGUIMessage& message)
               return true;
             }
 
-            if (scraper && scraper->Content() == CONTENT_TVSHOWS && iFound == 1 && !settings.parent_name_root) // dont lookup on root tvshow folder
+            if (scraper && scraper->Content() == CONTENT_TVSHOWS && foundDirectly && !settings.parent_name_root) // dont lookup on root tvshow folder
               return true;
           }
 
@@ -1871,9 +1871,9 @@ int CGUIWindowVideoBase::GetScraperForItem(CFileItem *item, ADDON::ScraperPtr &i
     return 0;
   }
 
-  int found = 0;
-  info = m_database.GetScraperForPath(item->HasVideoInfoTag() ? item->GetVideoInfoTag()->m_strPath : item->GetPath(), settings, found);
-  return found;
+  bool foundDirectly = false;
+  info = m_database.GetScraperForPath(item->HasVideoInfoTag() ? item->GetVideoInfoTag()->m_strPath : item->GetPath(), settings, foundDirectly);
+  return foundDirectly ? 1 : 0;
 }
 
 void CGUIWindowVideoBase::OnScan(const CStdString& strPath, const ScraperPtr& info, const SScanSettings& settings)
