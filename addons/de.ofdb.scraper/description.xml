@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addoninfo>
-  <id>com.imdb.scraper</id>
+  <id>de.ofdb.scraper</id>
   <type>scraper</type>
-  <title>IMDb</title>
-  <library>imdb.xml</library>
+  <title>OFDb.de</title>
+  <library>ofdb.xml</library>
   <version>1.0.0</version>
   <platforms>
     <platform>all</platform>
@@ -11,15 +11,12 @@
   <minversion>
     <xbmc>20000</xbmc>
   </minversion>
-  <summary>IMDB Movie Scraper</summary>
-  <description>Download Movie information from www.imdb.com</description>
+  <summary>OFDb.de Movie Scraper</summary>
+  <description>Download Movie information from www.ofdb.de</description>
   <author>TEAMXBMC</author>
   <dependencies>
-    <dependency minversion="1.0.0" maxversion="">com.imdb.scraper.common</dependency>
     <dependency minversion="1.0.0" maxversion="">org.themoviedb.scraper.common</dependency>
     <dependency minversion="1.0.0" maxversion="">com.movieposterdb.scraper.common</dependency>
-    <dependency minversion="1.0.0" maxversion="">com.impa.scraper.common</dependency>
-    <dependency minversion="1.0.0" maxversion="">com.dtrailer.scraper.common</dependency>
   </dependencies>
   <supportedcontent>
     <content>movies</content>
