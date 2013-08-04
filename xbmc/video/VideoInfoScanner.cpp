@@ -393,11 +393,11 @@ namespace VIDEO
       }
       int ret = 0;
       if (info2->Content() == CONTENT_TVSHOWS)
-        ret = RetreiveInfoForTvShow(pItem, bDirNames, scraper->Content(), info2, bRefresh, pURL, pDlgProgress, ignoreNfo);
+        ret = RetreiveInfoForTvShow(pItem, bDirNames, info2, bRefresh, pURL, pDlgProgress, ignoreNfo);
       else if (info2->Content() == CONTENT_MOVIES)
-        ret = RetreiveInfoForMovie(pItem, bDirNames, scraper->Content(), info2, bRefresh, pURL, pDlgProgress, ignoreNfo);
+        ret = RetreiveInfoForMovie(pItem, bDirNames, info2, bRefresh, pURL, pDlgProgress, ignoreNfo);
       else if (info2->Content() == CONTENT_MUSICVIDEOS)
-        ret = RetreiveInfoForMusicVideo(pItem, bDirNames, scraper->Content(), info2, bRefresh, pURL, pDlgProgress, ignoreNfo);
+        ret = RetreiveInfoForMusicVideo(pItem, bDirNames, info2, bRefresh, pURL, pDlgProgress, ignoreNfo);
       else
       {
         CLog::Log(LOGERROR, "%s - Unknown content type %d", __FUNCTION__, info2->Content());
@@ -424,14 +424,14 @@ namespace VIDEO
     return Return;
   }
 
-  int CVideoInfoScanner::RetreiveInfoForTvShow(CFileItemPtr pItem, bool bDirNames, CONTENT_TYPE parentContent, ScraperPtr &info2, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
+  int CVideoInfoScanner::RetreiveInfoForTvShow(CFileItemPtr pItem, bool bDirNames, ScraperPtr &info2, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
   {
     m_IMDB.SetScraperInfo(info2);
 
     IMDB_EPISODELIST episodes;
     EPISODES files;
 
-    if (info2->Content() == CONTENT_TVSHOWS)
+    if (1)
     {
       long idTvShow = -1;
       CVideoInfoTag showDetails;
@@ -496,23 +496,13 @@ namespace VIDEO
       }
     }
 
-    if (!pItem->m_bIsFolder || info2->Content() == CONTENT_TVSHOWS)
+    if (1)
     {
-      if ((pItem->IsVideo() && !pItem->IsNFO() && (!pItem->IsPlayList() || URIUtils::GetExtension(pItem->GetPath()).Equals(".strm")) ) || info2->Content() == CONTENT_TVSHOWS)
+      if (1)
       {
         if (pDlgProgress)
         {
-          int iString=198;
-          if (info2->Content() == CONTENT_TVSHOWS)
-          {
-            if (pItem->m_bIsFolder)
-              iString = 20353;
-            else
-              iString = 20361;
-          }
-          if (info2->Content() == CONTENT_MUSICVIDEOS)
-            iString = 20394;
-          pDlgProgress->SetHeading(iString);
+          pDlgProgress->SetHeading(pItem->m_bIsFolder ? 20353 : 20361);
           pDlgProgress->SetLine(0, pItem->GetLabel());
           pDlgProgress->SetLine(2,"");
           pDlgProgress->Progress();
@@ -530,9 +520,6 @@ namespace VIDEO
           m_database.Close();
           return -1;
         }
-        if ((info2->Content() == CONTENT_MOVIES && m_database.HasMovieInfo(pItem->GetPath())) ||
-            (info2->Content() == CONTENT_MUSICVIDEOS && m_database.HasMusicVideoInfo(pItem->GetPath())))
-          return 0;
 
         CNfoFile::NFOResult result=CNfoFile::NO_NFO;
         CScraperUrl scrUrl;
@@ -541,7 +528,7 @@ namespace VIDEO
           result = CheckForNFOFile(pItem.get(),bDirNames,info2,scrUrl);
         if (result == CNfoFile::ERROR_NFO)
           return 0;
-        if (info2->Content() == CONTENT_TVSHOWS && result != CNfoFile::NO_NFO)
+        if (result != CNfoFile::NO_NFO)
         { //FIXME this comment doesn't match second comment
           // check for preconfigured scraper; if found, overwrite with interpreted scraper but keep current scan settings
           ScraperPtr temp;
@@ -564,9 +551,9 @@ namespace VIDEO
             m_pObserver->OnSetTitle(pItem->GetVideoInfoTag()->m_strTitle);
 
           long lResult = AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress);
-          if (bRefresh && parentContent == CONTENT_TVSHOWS && g_guiSettings.GetBool("videolibrary.seasonthumbs"))
+          if (bRefresh && g_guiSettings.GetBool("videolibrary.seasonthumbs"))
             FetchSeasonThumbs(lResult);
-          if (!bRefresh && info2->Content() == CONTENT_TVSHOWS)
+          if (!bRefresh)
             return 2; // WTF?
           return 1;
         }
@@ -600,11 +587,11 @@ namespace VIDEO
             // force thumb and fanart
 
             if (pDlgProgress)
-              lResult=GetIMDBDetails(pItem.get(), url, info2, bDirNames && info2->Content() == CONTENT_MOVIES, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
+              lResult=GetIMDBDetails(pItem.get(), url, info2, false, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
             else
-              lResult=GetIMDBDetails(pItem.get(), url, info2, bDirNames && info2->Content() == CONTENT_MOVIES, NULL, result == CNfoFile::COMBINED_NFO, ignoreNfo);
+              lResult=GetIMDBDetails(pItem.get(), url, info2, false, NULL, result == CNfoFile::COMBINED_NFO, ignoreNfo);
 
-            if (info2->Content() == CONTENT_TVSHOWS)
+            if (1)
             {
               if (!bRefresh)
               {
@@ -641,95 +628,17 @@ namespace VIDEO
     return 0;
   }
 
-  int CVideoInfoScanner::RetreiveInfoForMovie(CFileItemPtr pItem, bool bDirNames, CONTENT_TYPE parentContent, ScraperPtr &info2, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
+  int CVideoInfoScanner::RetreiveInfoForMovie(CFileItemPtr pItem, bool bDirNames, ScraperPtr &info2, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
   {
     m_IMDB.SetScraperInfo(info2);
     
-    IMDB_EPISODELIST episodes;
-    EPISODES files;
-    
-    if (info2->Content() == CONTENT_TVSHOWS)
+    if (!pItem->m_bIsFolder)
     {
-      long idTvShow = -1;
-      CVideoInfoTag showDetails;
-      if (pItem->m_bIsFolder)
-        idTvShow = m_database.GetTvShowId(pItem->GetPath());
-      else
-      {
-        CStdString strPath;
-        URIUtils::GetDirectory(pItem->GetPath(),strPath);
-        idTvShow = m_database.GetTvShowId(strPath);
-      }
-      if (idTvShow > -1 && (!bRefresh || !pItem->m_bIsFolder))
-      {
-        // fetch episode guide
-        m_database.GetTvShowInfo(pItem->GetPath(),showDetails,idTvShow);
-        EnumerateSeriesFolder(pItem.get(), files);
-        if (files.size() == 0) // no update or no files
-          return 0;
-        
-        //convert m_strEpisodeGuide in url.m_scrURL
-        if (!showDetails.m_strEpisodeGuide.IsEmpty()) // assume local-only series if no episode guide url
-        {
-          CScraperUrl url;
-          url.ParseEpisodeGuide(showDetails.m_strEpisodeGuide);
-          if (pDlgProgress)
-          {
-            if (pItem->m_bIsFolder)
-              pDlgProgress->SetHeading(20353);
-            else
-              pDlgProgress->SetHeading(20361);
-            pDlgProgress->SetLine(0, pItem->GetLabel());
-            pDlgProgress->SetLine(1,showDetails.m_strTitle);
-            pDlgProgress->SetLine(2,20354);
-            pDlgProgress->Progress();
-          }
-          if (!m_IMDB.GetEpisodeList(url,episodes))
-          {
-            if (pDlgProgress)
-              pDlgProgress->Close();
-            //m_database.RollbackTransaction();
-            m_database.Close();
-            return -1;
-          }
-        }
-        if (m_bStop || (pDlgProgress && pDlgProgress->IsCanceled()))
-        {
-          if (pDlgProgress)
-            pDlgProgress->Close();
-          //m_database.RollbackTransaction();
-          m_database.Close();
-          return -1;
-        }
-        if (m_pObserver)
-          m_pObserver->OnDirectoryChanged(pItem->GetPath());
-        
-        if (OnProcessSeriesFolder(episodes,files,idTvShow,showDetails.m_strTitle,pDlgProgress))
-        {
-          m_database.SetPathHash(pItem->GetPath(),pItem->GetProperty("hash"));
-          return 1;
-        }
-        return 0;
-      }
-    }
-    
-    if (!pItem->m_bIsFolder || info2->Content() == CONTENT_TVSHOWS)
-    {
-      if ((pItem->IsVideo() && !pItem->IsNFO() && !pItem->IsPlayList()) || info2->Content() == CONTENT_TVSHOWS )
+      if (pItem->IsVideo() && !pItem->IsNFO() && !pItem->IsPlayList())
       {
         if (pDlgProgress)
         {
-          int iString=198;
-          if (info2->Content() == CONTENT_TVSHOWS)
-          {
-            if (pItem->m_bIsFolder)
-              iString = 20353;
-            else
-              iString = 20361;
-          }
-          if (info2->Content() == CONTENT_MUSICVIDEOS)
-            iString = 20394;
-          pDlgProgress->SetHeading(iString);
+          pDlgProgress->SetHeading(198);
           pDlgProgress->SetLine(0, pItem->GetLabel());
           pDlgProgress->SetLine(2,"");
           pDlgProgress->Progress();
@@ -747,8 +656,7 @@ namespace VIDEO
           m_database.Close();
           return -1;
         }
-        if ((info2->Content() == CONTENT_MOVIES && m_database.HasMovieInfo(pItem->GetPath())) ||
-            (info2->Content() == CONTENT_MUSICVIDEOS && m_database.HasMusicVideoInfo(pItem->GetPath())))
+        if (m_database.HasMovieInfo(pItem->GetPath()))
           return 0;
         
         CNfoFile::NFOResult result=CNfoFile::NO_NFO;
@@ -758,21 +666,6 @@ namespace VIDEO
           result = CheckForNFOFile(pItem.get(),bDirNames,info2,scrUrl);
         if (result == CNfoFile::ERROR_NFO)
           return 0;
-        if (info2->Content() == CONTENT_TVSHOWS && result != CNfoFile::NO_NFO)
-        { //FIXME this comment doesn't match second comment
-          // check for preconfigured scraper; if found, overwrite with interpreted scraper but keep current scan settings
-          ScraperPtr temp;
-          SScanSettings settings;
-          m_database.GetScraperForPath(pItem->GetPath(),temp,settings);
-          if (temp->Content() == CONTENT_NONE)
-          {
-            if (temp->Parent())
-            { // as we are working with a new clone, default scraper settings are saved
-              temp = boost::dynamic_pointer_cast<CScraper>(temp->Parent());
-              m_database.SetScraperForPath(pItem->GetPath(),temp,settings);
-            }
-          }
-        }
         if (result == CNfoFile::FULL_NFO)
         {
           pItem->GetVideoInfoTag()->Reset();
@@ -780,19 +673,15 @@ namespace VIDEO
           if (m_pObserver)
             m_pObserver->OnSetTitle(pItem->GetVideoInfoTag()->m_strTitle);
           
-          long lResult = AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress);
-          if (bRefresh && parentContent == CONTENT_TVSHOWS && g_guiSettings.GetBool("videolibrary.seasonthumbs"))
-            FetchSeasonThumbs(lResult);
-          if (!bRefresh && info2->Content() == CONTENT_TVSHOWS)
-            return 2; // WTF?
+          AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress);
           return 1;
         }
         if (result == CNfoFile::URL_NFO || result == CNfoFile::COMBINED_NFO)
           pURL = &scrUrl;
-        
+
         // Get the correct movie title
         CStdString strMovieName = pItem->GetMovieName(bDirNames);
-        
+
         IMDB_MOVIELIST movielist;
         int returncode=0;
         if (pURL || (returncode=m_IMDB.FindMovie(strMovieName, movielist, pDlgProgress)) > 0)
@@ -817,32 +706,9 @@ namespace VIDEO
             // force thumb and fanart
             
             if (pDlgProgress)
-              lResult=GetIMDBDetails(pItem.get(), url, info2, bDirNames && info2->Content() == CONTENT_MOVIES, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
+              lResult=GetIMDBDetails(pItem.get(), url, info2, bDirNames, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
             else
-              lResult=GetIMDBDetails(pItem.get(), url, info2, bDirNames && info2->Content() == CONTENT_MOVIES, NULL, result == CNfoFile::COMBINED_NFO, ignoreNfo);
-            
-            if (info2->Content() == CONTENT_TVSHOWS)
-            {
-              if (!bRefresh)
-              {
-                // fetch episode guide
-                CVideoInfoTag details;
-                m_database.GetTvShowInfo(pItem->GetPath(),details,lResult);
-                if (!details.m_strEpisodeGuide.IsEmpty()) // assume local-only series if no episode guide url
-                {
-                  CScraperUrl url;
-                  url.ParseEpisodeGuide(details.m_strEpisodeGuide);
-                  EnumerateSeriesFolder(pItem.get(),files);
-                  if (!m_IMDB.GetEpisodeList(url,episodes))
-                    return 0;
-                }
-                if (OnProcessSeriesFolder(episodes,files,lResult,details.m_strTitle,pDlgProgress))
-                  m_database.SetPathHash(pItem->GetPath(),pItem->GetProperty("hash"));
-              }
-              else
-                if (g_guiSettings.GetBool("videolibrary.seasonthumbs"))
-                  FetchSeasonThumbs(lResult);
-            }
+              lResult=GetIMDBDetails(pItem.get(), url, info2, bDirNames, NULL, result == CNfoFile::COMBINED_NFO, ignoreNfo);
             return 1;
           }
         }
@@ -858,95 +724,17 @@ namespace VIDEO
     return 0;
   }
   
-  int CVideoInfoScanner::RetreiveInfoForMusicVideo(CFileItemPtr pItem, bool bDirNames, CONTENT_TYPE parentContent, ScraperPtr &info2, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
+  int CVideoInfoScanner::RetreiveInfoForMusicVideo(CFileItemPtr pItem, bool bDirNames, ScraperPtr &info2, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
   {
     m_IMDB.SetScraperInfo(info2);
     
-    IMDB_EPISODELIST episodes;
-    EPISODES files;
-    
-    if (info2->Content() == CONTENT_TVSHOWS)
+    if (!pItem->m_bIsFolder)
     {
-      long idTvShow = -1;
-      CVideoInfoTag showDetails;
-      if (pItem->m_bIsFolder)
-        idTvShow = m_database.GetTvShowId(pItem->GetPath());
-      else
-      {
-        CStdString strPath;
-        URIUtils::GetDirectory(pItem->GetPath(),strPath);
-        idTvShow = m_database.GetTvShowId(strPath);
-      }
-      if (idTvShow > -1 && (!bRefresh || !pItem->m_bIsFolder))
-      {
-        // fetch episode guide
-        m_database.GetTvShowInfo(pItem->GetPath(),showDetails,idTvShow);
-        EnumerateSeriesFolder(pItem.get(), files);
-        if (files.size() == 0) // no update or no files
-          return 0;
-        
-        //convert m_strEpisodeGuide in url.m_scrURL
-        if (!showDetails.m_strEpisodeGuide.IsEmpty()) // assume local-only series if no episode guide url
-        {
-          CScraperUrl url;
-          url.ParseEpisodeGuide(showDetails.m_strEpisodeGuide);
-          if (pDlgProgress)
-          {
-            if (pItem->m_bIsFolder)
-              pDlgProgress->SetHeading(20353);
-            else
-              pDlgProgress->SetHeading(20361);
-            pDlgProgress->SetLine(0, pItem->GetLabel());
-            pDlgProgress->SetLine(1,showDetails.m_strTitle);
-            pDlgProgress->SetLine(2,20354);
-            pDlgProgress->Progress();
-          }
-          if (!m_IMDB.GetEpisodeList(url,episodes))
-          {
-            if (pDlgProgress)
-              pDlgProgress->Close();
-            //m_database.RollbackTransaction();
-            m_database.Close();
-            return -1;
-          }
-        }
-        if (m_bStop || (pDlgProgress && pDlgProgress->IsCanceled()))
-        {
-          if (pDlgProgress)
-            pDlgProgress->Close();
-          //m_database.RollbackTransaction();
-          m_database.Close();
-          return -1;
-        }
-        if (m_pObserver)
-          m_pObserver->OnDirectoryChanged(pItem->GetPath());
-        
-        if (OnProcessSeriesFolder(episodes,files,idTvShow,showDetails.m_strTitle,pDlgProgress))
-        {
-          m_database.SetPathHash(pItem->GetPath(),pItem->GetProperty("hash"));
-          return 1;
-        }
-        return 0;
-      }
-    }
-    
-    if (!pItem->m_bIsFolder || info2->Content() == CONTENT_TVSHOWS)
-    {
-      if ((pItem->IsVideo() && !pItem->IsNFO() && !pItem->IsPlayList()) || info2->Content() == CONTENT_TVSHOWS )
+      if (pItem->IsVideo() && !pItem->IsNFO() && !pItem->IsPlayList())
       {
         if (pDlgProgress)
         {
-          int iString=198;
-          if (info2->Content() == CONTENT_TVSHOWS)
-          {
-            if (pItem->m_bIsFolder)
-              iString = 20353;
-            else
-              iString = 20361;
-          }
-          if (info2->Content() == CONTENT_MUSICVIDEOS)
-            iString = 20394;
-          pDlgProgress->SetHeading(iString);
+          pDlgProgress->SetHeading(20394);
           pDlgProgress->SetLine(0, pItem->GetLabel());
           pDlgProgress->SetLine(2,"");
           pDlgProgress->Progress();
@@ -964,8 +752,7 @@ namespace VIDEO
           m_database.Close();
           return -1;
         }
-        if ((info2->Content() == CONTENT_MOVIES && m_database.HasMovieInfo(pItem->GetPath())) ||
-            (info2->Content() == CONTENT_MUSICVIDEOS && m_database.HasMusicVideoInfo(pItem->GetPath())))
+        if (m_database.HasMusicVideoInfo(pItem->GetPath()))
           return 0;
         
         CNfoFile::NFOResult result=CNfoFile::NO_NFO;
@@ -975,21 +762,6 @@ namespace VIDEO
           result = CheckForNFOFile(pItem.get(),bDirNames,info2,scrUrl);
         if (result == CNfoFile::ERROR_NFO)
           return 0;
-        if (info2->Content() == CONTENT_TVSHOWS && result != CNfoFile::NO_NFO)
-        { //FIXME this comment doesn't match second comment
-          // check for preconfigured scraper; if found, overwrite with interpreted scraper but keep current scan settings
-          ScraperPtr temp;
-          SScanSettings settings;
-          m_database.GetScraperForPath(pItem->GetPath(),temp,settings);
-          if (temp->Content() == CONTENT_NONE)
-          {
-            if (temp->Parent())
-            { // as we are working with a new clone, default scraper settings are saved
-              temp = boost::dynamic_pointer_cast<CScraper>(temp->Parent());
-              m_database.SetScraperForPath(pItem->GetPath(),temp,settings);
-            }
-          }
-        }
         if (result == CNfoFile::FULL_NFO)
         {
           pItem->GetVideoInfoTag()->Reset();
@@ -997,19 +769,15 @@ namespace VIDEO
           if (m_pObserver)
             m_pObserver->OnSetTitle(pItem->GetVideoInfoTag()->m_strTitle);
           
-          long lResult = AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress);
-          if (bRefresh && parentContent == CONTENT_TVSHOWS && g_guiSettings.GetBool("videolibrary.seasonthumbs"))
-            FetchSeasonThumbs(lResult);
-          if (!bRefresh && info2->Content() == CONTENT_TVSHOWS)
-            return 2; // WTF?
+          AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress);
           return 1;
         }
         if (result == CNfoFile::URL_NFO || result == CNfoFile::COMBINED_NFO)
           pURL = &scrUrl;
-        
+
         // Get the correct movie title
         CStdString strMovieName = pItem->GetMovieName(bDirNames);
-        
+
         IMDB_MOVIELIST movielist;
         int returncode=0;
         if (pURL || (returncode=m_IMDB.FindMovie(strMovieName, movielist, pDlgProgress)) > 0)
@@ -1034,32 +802,10 @@ namespace VIDEO
             // force thumb and fanart
             
             if (pDlgProgress)
-              lResult=GetIMDBDetails(pItem.get(), url, info2, bDirNames && info2->Content() == CONTENT_MOVIES, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
+              lResult=GetIMDBDetails(pItem.get(), url, info2, false, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
             else
-              lResult=GetIMDBDetails(pItem.get(), url, info2, bDirNames && info2->Content() == CONTENT_MOVIES, NULL, result == CNfoFile::COMBINED_NFO, ignoreNfo);
-            
-            if (info2->Content() == CONTENT_TVSHOWS)
-            {
-              if (!bRefresh)
-              {
-                // fetch episode guide
-                CVideoInfoTag details;
-                m_database.GetTvShowInfo(pItem->GetPath(),details,lResult);
-                if (!details.m_strEpisodeGuide.IsEmpty()) // assume local-only series if no episode guide url
-                {
-                  CScraperUrl url;
-                  url.ParseEpisodeGuide(details.m_strEpisodeGuide);
-                  EnumerateSeriesFolder(pItem.get(),files);
-                  if (!m_IMDB.GetEpisodeList(url,episodes))
-                    return 0;
-                }
-                if (OnProcessSeriesFolder(episodes,files,lResult,details.m_strTitle,pDlgProgress))
-                  m_database.SetPathHash(pItem->GetPath(),pItem->GetProperty("hash"));
-              }
-              else
-                if (g_guiSettings.GetBool("videolibrary.seasonthumbs"))
-                  FetchSeasonThumbs(lResult);
-            }
+              lResult=GetIMDBDetails(pItem.get(), url, info2, false, NULL, result == CNfoFile::COMBINED_NFO, ignoreNfo);
+
             return 1;
           }
         }
