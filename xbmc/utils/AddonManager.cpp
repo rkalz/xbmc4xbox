@@ -522,17 +522,16 @@ void CAddonMgr::FindAddons()
   {
     CFileItemPtr item = items[i];
 
+    if(!item->m_bIsFolder)
+      continue;
+
     // read description.xml and populate the addon
     AddonPtr addon;
     if (!AddonFromInfoXML(item->GetPath(), addon))
-    {
-      CLog::Log(LOGDEBUG, "ADDON: Error reading %sdescription.xml, bypassing package", item->GetPath().c_str());
       continue;
-    }
 
     // refuse to store addons with missing library
-    CStdString library(addon->Path());
-    URIUtils::AddFileToFolder(library, addon->LibName(), library);
+    CStdString library(CUtil::AddFileToFolder(addon->Path(), addon->LibName()));
     if (!CFile::Exists(library))
     {
       CLog::Log(LOGDEBUG, "ADDON: Missing library file %s, bypassing package", library.c_str());
@@ -541,9 +540,7 @@ void CAddonMgr::FindAddons()
 
     // check for/cache icon thumbnail
     //TODO cache one thumb per addon id instead
-    CFileItem item2(addon->Path());
-    item2.SetPath(URIUtils::AddFileToFolder(addon->Path(), addon->LibName()));
-    item2.m_bIsFolder = false;
+    CFileItem item2(CUtil::AddFileToFolder(addon->Path(), addon->LibName()), false);
     item2.SetCachedProgramThumb();
     if (!item2.HasThumbnail())
       item2.SetUserProgramThumb();
@@ -652,8 +649,9 @@ bool CAddonMgr::DependenciesMet(AddonPtr &addon)
 bool CAddonMgr::AddonFromInfoXML(const CStdString &path, AddonPtr &addon)
 {
   // First check that we can load description.xml
-  CStdString strPath(path);
-  URIUtils::AddFileToFolder(strPath, ADDON_METAFILE, strPath);
+  CStdString strPath(CUtil::AddFileToFolder(path, ADDON_METAFILE));
+  if(!CFile::Exists(strPath))
+    return false;
 
   TiXmlDocument xmlDoc;
   if (!xmlDoc.LoadFile(strPath))
