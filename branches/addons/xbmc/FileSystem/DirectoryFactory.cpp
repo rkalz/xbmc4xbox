@@ -110,7 +110,8 @@ IDirectory* CFactoryDirectory::Create(const CStdString& strPath)
   if (strProtocol == "cdda") return new CCDDADirectory();
   if (strProtocol == "soundtrack") return new CSndtrkDirectory();
 #endif
-  if (StringUtils::ValidateUUID(url.GetHostName())) return new CPluginDirectory(ADDON::TranslateContent(strProtocol));
+  if (StringUtils::ValidateUUID(url.GetHostName()) 
+  &&  ADDON::TranslateContent(strProtocol) != CONTENT_NONE) return new CPluginDirectory(ADDON::TranslateContent(strProtocol));
   if (strProtocol == "zip") return new CZipDirectory();
   if (strProtocol == "rar") return new CRarDirectory();
   if (strProtocol == "virtualpath") return new CVirtualPathDirectory();
