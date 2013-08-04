@@ -220,7 +220,7 @@ CAddon::CAddon(const CAddon &rhs, const AddonPtr &parent)
   BuildProfilePath();
   URIUtils::AddFileToFolder(Profile(), "settings.xml", m_userSettingsPath);
   m_strLibName  = rhs.LibName();
-  m_disabled    = false;
+  m_disabled    = rhs.Disabled();
 }
 
 AddonPtr CAddon::Clone(const AddonPtr &self) const
