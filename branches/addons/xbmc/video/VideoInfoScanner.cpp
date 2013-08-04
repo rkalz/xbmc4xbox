@@ -354,9 +354,6 @@ namespace VIDEO
       pDlgProgress->Progress();
     }
 
-    // for every file found
-    CVideoInfoTag showDetails;
-    int idTvShow = -1;
     m_database.Open();
     // needed to ensure the movie count etc is cached
     for (int i=LIBRARY_HAS_VIDEO;i<LIBRARY_HAS_MUSICVIDEOS+1;++i)
@@ -367,8 +364,6 @@ namespace VIDEO
     for (int i = 0; i < (int)items.Size(); ++i)
     {
       m_nfoReader.Close();
-      IMDB_EPISODELIST episodes;
-      EPISODES files;
       CFileItemPtr pItem = items[i];
 
       // we do this since we may have a override per dir
@@ -380,8 +375,6 @@ namespace VIDEO
 
       if (!info2 || info2->Content() == CONTENT_NONE) // skip
         continue;
-
-      m_IMDB.SetScraperInfo(info2);
 
       // Discard all exclude files defined by regExExclude
       if (CUtil::ExcludeFileOrFolder(pItem->GetPath(), scraper->Content() == CONTENT_TVSHOWS ? g_advancedSettings.m_tvshowExcludeFromScanRegExps
@@ -398,6 +391,37 @@ namespace VIDEO
         }
 
       }
+      int ret = RetreiveInfoForItem(pItem, bDirNames, scraper->Content(), info2, bRefresh, pURL, pDlgProgress, ignoreNfo);
+      if (ret > 0)
+      {
+        if (ret == 2)
+          i--; // WTF?
+        Return = true;
+      }
+      else if (ret < 0)
+        return false;
+      
+      pURL = NULL;
+    } 
+
+    if(pDlgProgress)
+      pDlgProgress->ShowProgressBar(false);
+
+    //m_database.CommitTransaction();
+    g_infoManager.ResetPersistentCache();
+    m_database.Close();
+    return Return;
+  }
+
+  int CVideoInfoScanner::RetreiveInfoForItem(CFileItemPtr pItem, bool bDirNames, CONTENT_TYPE parentContent, ScraperPtr &info2, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
+  {
+    m_IMDB.SetScraperInfo(info2);
+
+    long idTvShow = -1;
+    CVideoInfoTag showDetails;
+    IMDB_EPISODELIST episodes;
+    EPISODES files;
+
       if (info2->Content() == CONTENT_TVSHOWS)
       {
         if (pItem->m_bIsFolder)
@@ -412,10 +436,9 @@ namespace VIDEO
         {
           // fetch episode guide
           m_database.GetTvShowInfo(pItem->GetPath(),showDetails,idTvShow);
-          files.clear();
           EnumerateSeriesFolder(pItem.get(), files);
           if (files.size() == 0) // no update or no files
-            continue;
+            return 0;
 
           CScraperUrl url;
           //convert m_strEpisodeGuide in url.m_scrURL
@@ -439,7 +462,7 @@ namespace VIDEO
                 pDlgProgress->Close();
               //m_database.RollbackTransaction();
               m_database.Close();
-              return false;
+              return -1;
             }
           }
           if (m_bStop || (pDlgProgress && pDlgProgress->IsCanceled()))
@@ -448,17 +471,17 @@ namespace VIDEO
               pDlgProgress->Close();
             //m_database.RollbackTransaction();
             m_database.Close();
-            return false;
+            return -1;
           }
           if (m_pObserver)
             m_pObserver->OnDirectoryChanged(pItem->GetPath());
 
           if (OnProcessSeriesFolder(episodes, files, ignoreNfo, idTvShow, showDetails.m_strTitle, pDlgProgress))
           {
-            Return = true;
             m_database.SetPathHash(pItem->GetPath(),pItem->GetProperty("hash"));
+            return 1;
           }
-          continue;
+          return 0;
         }
       }
 
@@ -487,18 +510,18 @@ namespace VIDEO
               pDlgProgress->Close();
               //m_database.RollbackTransaction();
               m_database.Close();
-              return false;
+              return -1;
             }
           }
           if (m_bStop)
           {
             //m_database.RollbackTransaction();
             m_database.Close();
-            return false;
+            return -1;
           }
           if ((info2->Content() == CONTENT_MOVIES && m_database.HasMovieInfo(pItem->GetPath())) ||
               (info2->Content() == CONTENT_MUSICVIDEOS && m_database.HasMusicVideoInfo(pItem->GetPath())))
-             continue;
+             return 0;
 
           CNfoFile::NFOResult result=CNfoFile::NO_NFO;
           CScraperUrl scrUrl;
@@ -506,7 +529,7 @@ namespace VIDEO
           if (!ignoreNfo)
             result = CheckForNFOFile(pItem.get(),bDirNames,info2,scrUrl);
           if (result == CNfoFile::ERROR_NFO)
-            continue;
+            return 0;
           
           if (info2->Content() == CONTENT_TVSHOWS && result != CNfoFile::NO_NFO)
           { //FIXME this comment doesn't match second comment
@@ -531,12 +554,11 @@ namespace VIDEO
               m_pObserver->OnSetTitle(pItem->GetVideoInfoTag()->m_strTitle);
 
             long lResult = AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress);
-            if (bRefresh && scraper->Content() == CONTENT_TVSHOWS && g_guiSettings.GetBool("videolibrary.seasonthumbs"))
+            if (bRefresh && parentContent == CONTENT_TVSHOWS && g_guiSettings.GetBool("videolibrary.seasonthumbs"))
               FetchSeasonThumbs(lResult);
             if (!bRefresh && info2->Content() == CONTENT_TVSHOWS)
-              i--;
-            Return = true;
-            continue;
+              return 2; // WTF?
+            return 1;
           }
           if (result == CNfoFile::URL_NFO || result == CNfoFile::COMBINED_NFO)
             pURL = &scrUrl;
@@ -585,7 +607,7 @@ namespace VIDEO
                     url.ParseEpisodeGuide(details.m_strEpisodeGuide);
                     EnumerateSeriesFolder(pItem.get(),files);
                     if (!m_IMDB.GetEpisodeList(url,episodes))
-                      continue;
+                      return 0;
                   }
                   if (OnProcessSeriesFolder(episodes, files, ignoreNfo, lResult, details.m_strTitle, pDlgProgress))
                     m_database.SetPathHash(pItem->GetPath(),pItem->GetProperty("hash"));
@@ -594,27 +616,19 @@ namespace VIDEO
                   if (g_guiSettings.GetBool("videolibrary.seasonthumbs"))
                     FetchSeasonThumbs(lResult);
               }
-              Return = true;
+              return 1;
             }
           }
           else if (returncode == -1 || !DownloadFailed(pDlgProgress))
           {
             m_bStop = true;
-            return false;
+            return -1;
           }
           else
-            continue;
+            return 0;
         }
       }
-      pURL = NULL;
-    }
-    if(pDlgProgress)
-      pDlgProgress->ShowProgressBar(false);
-
-    //m_database.CommitTransaction();
-    g_infoManager.ResetPersistentCache();
-    m_database.Close();
-    return Return;
+    return 0;
   }
 
   void CVideoInfoScanner::EnumerateSeriesFolder(CFileItem* item, EPISODES& episodeList)
