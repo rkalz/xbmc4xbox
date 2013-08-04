@@ -59,8 +59,6 @@ public:
    */
   static void AppendAndClearSearchItems(CFileItemList &searchItems, const CStdString &prependLabel, CFileItemList &results);
 
-private:
-  bool IsCorrectDiskInDrive(const CStdString& strFileName, const CStdString& strDVDLabel);
 protected:
   virtual void UpdateButtons();
   virtual bool Update(const CStdString &strDirectory);
@@ -79,8 +77,6 @@ protected:
   virtual void DoSearch(const CStdString& strSearch, CFileItemList& items) {};
   virtual CStdString GetStartFolder(const CStdString &dir);
 
-  virtual CStdString GetQuickpathName(const CStdString& strPath) const {return strPath;};
-
   bool OnClick(int iItem);
   void OnRestartItem(int iItem);
   void OnResumeItem(int iItem);
@@ -89,9 +85,6 @@ protected:
   void LoadPlayList(const CStdString& strPlayList, int iPlayList = PLAYLIST_VIDEO);
 
   bool ShowIMDB(CFileItem *item, const ADDON::ScraperPtr& content);
-
-  void OnManualScrape();
-  bool CheckMovie(const CStdString& strFileName);
 
   void AddItemToPlayList(const CFileItemPtr &pItem, CFileItemList &queuedItems);
   void GetStackedFiles(const CStdString &strFileName, std::vector<CStdString> &movies);
