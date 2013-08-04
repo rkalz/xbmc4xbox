@@ -403,9 +403,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 				RelativePath=".\xbmc\ApplicationRenderer.h">
 			</File>
 			<File
-				RelativePath=".\xbmc\Credits.cpp">
-			</File>
-			<File
 				RelativePath=".\xbmc\CueDocument.cpp">
 			</File>
 			<File
@@ -2859,9 +2856,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 			</File>
 			<File
 				RelativePath=".\xbmc\utils\Crc32.h">
-			</File>
-			<File
-				RelativePath=".\xbmc\Credits.h">
 			</File>
 			<File
 				RelativePath=".\xbmc\utils\CriticalSection.h">
