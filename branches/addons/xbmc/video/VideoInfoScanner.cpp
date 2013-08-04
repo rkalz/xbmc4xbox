@@ -313,7 +313,7 @@ namespace VIDEO
       // if we have a directory item (non-playlist) we then recurse into that folder
       if (pItem->m_bIsFolder && !pItem->GetLabel().Equals("sample") && !pItem->GetLabel().Equals("subs") && !pItem->IsParentFolder() && !pItem->IsPlayList() && settings.recurse > 0 && content != CONTENT_TVSHOWS) // do not recurse for tv shows - we have already looked recursively for episodes
       {
-        CStdString strPath=pItem->GetPath();
+        CStdString strPath = pItem->GetPath();
 
         // do not process items which will be scanned by main loop
         std::map<CStdString,VIDEO::SScanSettings>::iterator it = m_pathsToScan.find(strPath);
@@ -353,7 +353,7 @@ namespace VIDEO
 
     m_database.Open();
     // needed to ensure the movie count etc is cached
-    for (int i=LIBRARY_HAS_VIDEO;i<LIBRARY_HAS_MUSICVIDEOS+1;++i)
+    for (int i=LIBRARY_HAS_VIDEO; i<LIBRARY_HAS_MUSICVIDEOS+1; ++i)
       g_infoManager.GetBool(i);
     //m_database.BeginTransaction();
 
@@ -630,8 +630,7 @@ namespace VIDEO
       if (m_pObserver)
         m_pObserver->OnSetTitle(pItem->GetVideoInfoTag()->m_strTitle);
 
-      AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress);
-      return 1;
+      return AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress);
     }
     if (result == CNfoFile::URL_NFO || result == CNfoFile::COMBINED_NFO)
       pURL = &scrUrl;
@@ -951,7 +950,7 @@ namespace VIDEO
       if (!strTrailer.IsEmpty())
         movieDetails.m_strTrailer = strTrailer;
 
-      int idMovie=m_database.SetDetailsForMovie(pItem->GetPath(), movieDetails);
+      lResult = m_database.SetDetailsForMovie(pItem->GetPath(), movieDetails);
 
       // setup links to shows if the linked shows are in the db
       if (!movieDetails.m_strShowLink.IsEmpty())
@@ -964,7 +963,7 @@ namespace VIDEO
           CFileItemList items;
           m_database.GetTvShowsByName(list[i], items);
           if (items.Size())
-            m_database.LinkMovieToTvshow(idMovie, items[0]->GetVideoInfoTag()->m_iDbId, false);
+            m_database.LinkMovieToTvshow(lResult, items[0]->GetVideoInfoTag()->m_iDbId, false);
           else
             CLog::Log(LOGDEBUG, "VideoInfoScanner: Failed to link movie %s to show %s", movieDetails.m_strTitle.c_str(), list[i].c_str());
         }
@@ -974,7 +973,7 @@ namespace VIDEO
     {
       if (pItem->m_bIsFolder)
       {
-        lResult=m_database.SetDetailsForTvShow(pItem->GetPath(), movieDetails);
+        lResult = m_database.SetDetailsForTvShow(pItem->GetPath(), movieDetails);
       }
       else
       {
@@ -995,7 +994,7 @@ namespace VIDEO
     }
     else if (content == CONTENT_MUSICVIDEOS)
     {
-      m_database.SetDetailsForMusicVideo(pItem->GetPath(), movieDetails);
+      lResult = m_database.SetDetailsForMusicVideo(pItem->GetPath(), movieDetails);
     }
 
     if (g_advancedSettings.m_bVideoLibraryImportWatchedState)
@@ -1068,7 +1067,7 @@ namespace VIDEO
       picture.CacheThumb(strUserThumb, strThumb);
     }
 
-    CStdString strCheck=pItem->GetPath();
+    CStdString strCheck = pItem->GetPath();
     CStdString strDirectory;
     if (pItem->IsStack())
       strCheck = CStackDirectory::GetFirstStackedFile(pItem->GetPath());
@@ -1076,7 +1075,7 @@ namespace VIDEO
     URIUtils::GetDirectory(strCheck, strDirectory);
     if (URIUtils::IsInRAR(strCheck))
     {
-      CStdString strPath=strDirectory;
+      CStdString strPath = strDirectory;
       URIUtils::GetParentPath(strPath, strDirectory);
     }
     if (pItem->IsStack())
@@ -1177,12 +1176,12 @@ namespace VIDEO
 
       for (; guide != episodes.end(); ++guide )
       {
-        if (file->cDate.IsValid() && guide->cDate.IsValid() && file->cDate==guide->cDate)
+        if (file->cDate.IsValid() && guide->cDate.IsValid() && file->cDate == guide->cDate)
         {
           bFound = true;
           break;
         }
-        if ((file->iEpisode!=-1) && (file->iSeason!=-1) && (key==guide->key))
+        if ((file->iEpisode != -1) && (file->iSeason != -1) && (key == guide->key))
         {
           bFound = true;
           break;
@@ -1431,7 +1430,7 @@ namespace VIDEO
     // used for checking for a season[ ._-](number).tbn
     CFileItemList tbnItems;
     CDirectory::GetDirectory(showDir, tbnItems, ".tbn");
-    for (int i=0;i<items.Size();++i)
+    for (int i=0; i<items.Size(); ++i)
     {
       if (overwrite || !items[i]->HasThumbnail())
       {
@@ -1447,7 +1446,7 @@ namespace VIDEO
         CRegExp reg;
         if (reg.RegComp(strExpression.c_str()))
         {
-          for (int j=0;j<tbnItems.Size();++j)
+          for (int j=0; j<tbnItems.Size(); ++j)
           {
             CStdString strCheck = URIUtils::GetFileName(tbnItems[j]->GetPath());
             strCheck.ToLower();
@@ -1455,7 +1454,7 @@ namespace VIDEO
             {
               CPicture picture;
               picture.CreateThumbnail(tbnItems[j]->GetPath(), items[i]->GetCachedSeasonThumb());
-              bDownload=false;
+              bDownload = false;
               break;
             }
           }
@@ -1468,7 +1467,7 @@ namespace VIDEO
 
   void CVideoInfoScanner::FetchActorThumbs(const vector<SActorInfo>& actors, const CStdString& strPath)
   {
-    for (unsigned int i=0;i<actors.size();++i)
+    for (unsigned int i=0; i<actors.size(); ++i)
     {
       CFileItem item;
       item.SetLabel(actors[i].strName);
