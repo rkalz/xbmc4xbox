@@ -34,6 +34,7 @@
 #include "settings/Settings.h"
 #include "URL.h"
 #include "utils/StringUtils.h"
+#include "utils/Addon.h"
 #include "utils/log.h"
 
 using namespace std;
@@ -571,7 +572,7 @@ bool URIUtils::IsSpecial(const CStdString& strFile)
 bool URIUtils::IsPlugin(const CStdString& strFile)
 {
   CURL url(strFile);
-  return !url.GetProtocol().IsEmpty() && StringUtils::ValidateUUID(url.GetHostName());
+  return ADDON::TranslateContent(url.GetProtocol()) != CONTENT_NONE;
 }
 
 bool URIUtils::IsPluginRoot(const CStdString& strFile)
