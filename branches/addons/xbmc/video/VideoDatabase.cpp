@@ -423,7 +423,7 @@ int CVideoDatabase::GetPathId(const CStdString& strPath)
   return -1;
 }
 
-bool CVideoDatabase::GetPaths(map<CStdString,VIDEO::SScanSettings> &paths)
+bool CVideoDatabase::GetPaths(set<CStdString> &paths)
 {
   try
   {
@@ -432,11 +432,8 @@ bool CVideoDatabase::GetPaths(map<CStdString,VIDEO::SScanSettings> &paths)
 
     paths.clear();
 
-    SScanSettings settings;
-    memset(&settings, 0, sizeof(settings));
-
     // grab all paths with movie content set
-    if (!m_pDS->query("select strPath,scanRecursive,useFolderNames,noUpdate from path"
+    if (!m_pDS->query("select strPath,noUpdate from path"
                       " where (strContent = 'movies' or strContent = 'musicvideos')"
                       " and strPath NOT like 'multipath://%%'"
                       " order by strPath"))
@@ -445,21 +442,13 @@ bool CVideoDatabase::GetPaths(map<CStdString,VIDEO::SScanSettings> &paths)
     while (!m_pDS->eof())
     {
       if (!m_pDS->fv("noUpdate").get_asBool())
-      {
-        CStdString strPath = m_pDS->fv("strPath").get_asString();
-
-        settings.parent_name = m_pDS->fv("useFolderNames").get_asBool();
-        settings.recurse     = m_pDS->fv("scanRecursive").get_asInt();
-        settings.parent_name_root = settings.parent_name && !settings.recurse;
-
-        paths.insert(pair<CStdString,SScanSettings>(strPath,settings));
-      }
+        paths.insert(m_pDS->fv("strPath").get_asString());
       m_pDS->next();
     }
     m_pDS->close();
 
     // then grab all tvshow paths
-    if (!m_pDS->query("select strPath,scanRecursive,useFolderNames,strContent,noUpdate from path"
+    if (!m_pDS->query("select strPath,noUpdate from path"
                       " where ( strContent = 'tvshows'"
                       "       or idPath in (select idpath from tvshowlinkpath))"
                       " and strPath NOT like 'multipath://%%'"
@@ -469,24 +458,7 @@ bool CVideoDatabase::GetPaths(map<CStdString,VIDEO::SScanSettings> &paths)
     while (!m_pDS->eof())
     {
       if (!m_pDS->fv("noUpdate").get_asBool())
-      {
-        CStdString strPath = m_pDS->fv("strPath").get_asString();
-        CStdString strContent = m_pDS->fv("strContent").get_asString();
-        if(strContent.Equals("tvshows"))
-        {
-          settings.parent_name = m_pDS->fv("useFolderNames").get_asBool();
-          settings.recurse     = m_pDS->fv("scanRecursive").get_asInt();
-          settings.parent_name_root = settings.parent_name && !settings.recurse;
-        }
-        else
-        {
-          settings.parent_name = true;
-          settings.recurse = 0;
-          settings.parent_name_root = true;
-        }
-
-        paths.insert(pair<CStdString,SScanSettings>(strPath,settings));
-      }
+        paths.insert(m_pDS->fv("strPath").get_asString());
       m_pDS->next();
     }
     m_pDS->close();
@@ -507,15 +479,7 @@ bool CVideoDatabase::GetPaths(map<CStdString,VIDEO::SScanSettings> &paths)
     while (!m_pDS->eof())
     {
       if (!m_pDS->fv("noUpdate").get_asBool())
-      {
-        CStdString strPath = m_pDS->fv("strPath").get_asString();
-
-        settings.parent_name = false;
-        settings.recurse = 0;
-        settings.parent_name_root = settings.parent_name && !settings.recurse;
-
-        paths.insert(pair<CStdString,SScanSettings>(strPath,settings));
-      }
+        paths.insert(m_pDS->fv("strPath").get_asString());
       m_pDS->next();
     }
     m_pDS->close();
@@ -7627,24 +7591,24 @@ void CVideoDatabase::ExportToXML(const CStdString &path, bool singleFiles /* = f
     if (!singleFiles)
     {
       // now dump path info
-      map<CStdString,SScanSettings> paths;
+      set<CStdString> paths;
       GetPaths(paths);
       TiXmlElement xmlPathElement("paths");
       TiXmlNode *pPaths = pMain->InsertEndChild(xmlPathElement);
-      for( map<CStdString,SScanSettings>::iterator iter=paths.begin();iter != paths.end();++iter)
+      for( set<CStdString>::iterator iter = paths.begin(); iter != paths.end(); ++iter)
       {
         bool foundDirectly = false;
         SScanSettings settings;
-        ScraperPtr info = GetScraperForPath(iter->first, settings, foundDirectly);
+        ScraperPtr info = GetScraperForPath(*iter, settings, foundDirectly);
         if (info && foundDirectly)
         {
           TiXmlElement xmlPathElement2("path");
           TiXmlNode *pPath = pPaths->InsertEndChild(xmlPathElement2);
-          XMLUtils::SetString(pPath,"url",iter->first);
-          XMLUtils::SetInt(pPath,"scanrecursive",iter->second.recurse);
-          XMLUtils::SetBoolean(pPath,"usefoldernames",iter->second.parent_name);
+          XMLUtils::SetString(pPath,"url", *iter);
+          XMLUtils::SetInt(pPath,"scanrecursive", settings.recurse);
+          XMLUtils::SetBoolean(pPath,"usefoldernames", settings.parent_name);
           XMLUtils::SetString(pPath,"content", TranslateContent(info->Content()));
-          XMLUtils::SetString(pPath,"scraperpath",info->ID());
+          XMLUtils::SetString(pPath,"scraperpath", info->ID());
         }
       }
       xmlDoc.SaveFile(xmlFile);

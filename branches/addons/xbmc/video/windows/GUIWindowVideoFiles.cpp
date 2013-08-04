@@ -327,8 +327,7 @@ void CGUIWindowVideoFiles::OnAssignContent(int iItem, int iFound, ADDON::Scraper
 
     if (!settings.exclude && bScan)
     {
-      GetScraperForItem(item.get(),info,settings);
-      OnScan(item->GetPath(),info,settings);
+      OnScan(item->GetPath());
     }
   }
 }
