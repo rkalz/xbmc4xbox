@@ -1082,12 +1082,12 @@ HRESULT CApplication::Create(HWND hWnd)
   CStdString strSkinBase = "special://xbmc/skin/";
   CStdString strSkinPath = strSkinBase + g_guiSettings.GetString("lookandfeel.skin");
   CLog::Log(LOGINFO, "Checking skin version of: %s", g_guiSettings.GetString("lookandfeel.skin").c_str());
-  if (!g_SkinInfo.Check(strSkinPath))
+  if (!CSkinInfo::Check(strSkinPath))
   {
     // reset to the default skin (DEFAULT_SKIN)
     CLog::Log(LOGINFO, "The above skin isn't suitable - checking the version of the default: %s", DEFAULT_SKIN);
     strSkinPath = strSkinBase + DEFAULT_SKIN;
-    if (!g_SkinInfo.Check(strSkinPath))
+    if (!CSkinInfo::Check(strSkinPath))
     {
       g_LoadErrorStr.Format("No suitable skin version found.\nWe require at least version %5.4f \n", g_SkinInfo.GetMinVersion());
       FatalErrorHandler(true, false, true);
@@ -1916,7 +1916,7 @@ void CApplication::LoadSkin(const CStdString& strSkin)
 
   CLog::Log(LOGINFO, "  load new skin...");
   CGUIWindowHome *pHome = (CGUIWindowHome *)g_windowManager.GetWindow(WINDOW_HOME);
-  if (!g_SkinInfo.Check(strSkinPath) || !pHome || !pHome->Load("Home.xml"))
+  if (!CSkinInfo::Check(strSkinPath) || !pHome || !pHome->Load("Home.xml"))
   {
     // failed to load home.xml
     // fallback to default skin
