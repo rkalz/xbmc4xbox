@@ -1695,7 +1695,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
     CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(pSettingControl->GetID());
     CStdString strSkin = pControl->GetCurrentLabel();
     CStdString strSkinPath = "Q:\\skin\\" + strSkin;
-    if (g_SkinInfo.Check(strSkinPath))
+    if (CSkinInfo::Check(strSkinPath))
     {
       m_strErrorMessage.Empty();
       pControl->SettingsCategorySetSpinTextColor(pControl->GetButtonLabelInfo().textColor);
@@ -2461,7 +2461,7 @@ void CGUIWindowSettingsCategory::FillInSkins(CSetting *pSetting)
       if (strcmpi(pItem->GetLabel().c_str(), ".svn") == 0) continue;
       if (strcmpi(pItem->GetLabel().c_str(), "fonts") == 0) continue;
       if (strcmpi(pItem->GetLabel().c_str(), "media") == 0) continue;
-      //   if (g_SkinInfo.Check(pItem->GetPath()))
+      //   if (CSkinInfo::Check(pItem->GetPath()))
       //   {
       vecSkins.push_back(pItem->GetLabel());
       //   }
