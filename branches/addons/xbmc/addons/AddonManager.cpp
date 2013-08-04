@@ -38,19 +38,19 @@
 #include "inttypes.h"
 
 #ifdef HAS_VISUALISATION
-#include "../visualizations/DllVisualisation.h"
-#include "../visualizations/Visualisation.h"
+#include "DllVisualisation.h"
+#include "Visualisation.h"
 #endif
 #ifdef HAS_PVRCLIENTS
 #include "../pvrclients/DllPVRClient.h"
 #include "../pvrclients/PVRClient.h"
 #endif
 #ifdef HAS_SCREENSAVER
-#include "../screensavers/DllScreenSaver.h"
-#include "../screensavers/ScreenSaver.h"
+#include "DllScreenSaver.h"
+#include "ScreenSaver.h"
 #endif
 //#ifdef HAS_SCRAPERS
-#include "../Scraper.h"
+#include "Scraper.h"
 //#endif
 
 

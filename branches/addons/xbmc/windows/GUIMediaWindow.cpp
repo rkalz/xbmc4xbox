@@ -26,7 +26,7 @@
 #include "utils/URIUtils.h"
 #include "storage/DetectDVDType.h"
 #include "PlayListPlayer.h"
-#include "utils/AddonManager.h"
+#include "addons/AddonManager.h"
 #include "FileSystem/ZipManager.h"
 #include "FileSystem/PluginDirectory.h"
 #include "GUIPassword.h"

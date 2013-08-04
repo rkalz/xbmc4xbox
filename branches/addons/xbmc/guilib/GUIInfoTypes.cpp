@@ -23,7 +23,7 @@
 #include "GUIInfoTypes.h"
 #include "utils/CharsetConverter.h"
 #include "GUIInfoManager.h"
-#include "utils/AddonManager.h"
+#include "addons/AddonManager.h"
 #include "LocalizeStrings.h"
 #include "GUIColorManager.h"
 #include "GUIListItem.h"

@@ -34,7 +34,7 @@
 #include "settings/Settings.h"
 #include "URL.h"
 #include "utils/StringUtils.h"
-#include "utils/Addon.h"
+#include "addons/Addon.h"
 #include "utils/log.h"
 
 using namespace std;

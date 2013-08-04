@@ -38,7 +38,7 @@
 #include "GUIWindowManager.h"
 #include "GUIUserMessages.h"
 #include "dialogs/GUIDialogYesNo.h"
-#include "utils/AddonManager.h"
+#include "addons/AddonManager.h"
 #include "FileItem.h"
 #include "FileSystem/File.h"
 #include "pictures/Picture.h"

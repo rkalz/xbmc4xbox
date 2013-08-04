@@ -21,7 +21,7 @@
 
 #include "system.h"
 #include "windows/GUIWindowScreensaver.h"
-#include "utils/AddonManager.h"
+#include "addons/AddonManager.h"
 #include "Application.h"
 #include "GUIPassword.h"
 #include "settings/GUISettings.h"

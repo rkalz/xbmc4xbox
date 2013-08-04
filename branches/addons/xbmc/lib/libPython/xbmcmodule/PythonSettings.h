@@ -23,7 +23,7 @@
 
 #include "lib/libPython/python/Include/Python.h"
 
-#include "utils/IAddon.h"
+#include "addons/IAddon.h"
 
 #ifdef __cplusplus
 extern "C" {

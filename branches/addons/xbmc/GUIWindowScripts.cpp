@@ -27,7 +27,7 @@
 #include "windows/GUIWindowFileManager.h"
 #include "FileSystem/File.h"
 #include "FileItem.h"
-#include "utils/AddonManager.h"
+#include "addons/AddonManager.h"
 #include "addons/GUIDialogAddonSettings.h"
 #include "LocalizeStrings.h"
 

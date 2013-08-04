@@ -25,7 +25,7 @@
 #include <vector>
 #include "tinyXML/tinyxml.h"
 #include "utils/StdString.h"
-#include "IAddon.h"
+#include "addons/IAddon.h"
 #include "XBDateTime.h"
 
 #define MAX_SCRAPER_BUFFERS 20

@@ -25,7 +25,7 @@
 #include "NfoFile.h"
 #include "video/VideoDatabase.h"
 #include "utils/IMDB.h"
-#include "utils/AddonManager.h"
+#include "addons/AddonManager.h"
 #include "FileSystem/File.h"
 #include "FileSystem/Directory.h"
 #include "settings/GUISettings.h"

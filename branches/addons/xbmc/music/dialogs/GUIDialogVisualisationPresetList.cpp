@@ -20,7 +20,7 @@
  */
 
 #include "music/dialogs/GUIDialogVisualisationPresetList.h"
-#include "visualizations/Visualisation.h"
+#include "addons/Visualisation.h"
 #include "GUIWindowManager.h"
 #include "GUIUserMessages.h"
 #include "GUIListContainer.h"

@@ -34,7 +34,7 @@
 #include "ViewDatabase.h"
 #include "AutoSwitch.h"
 #include "GUIWindowManager.h"
-#include "utils/AddonManager.h"
+#include "addons/AddonManager.h"
 #include "ViewState.h"
 #include "settings/Settings.h"
 #include "FileItem.h"

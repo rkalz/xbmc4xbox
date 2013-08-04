@@ -21,7 +21,7 @@
 
 #include "music/infoscanner/MusicAlbumInfo.h"
 #include "ScraperParser.h"
-#include "Scraper.h"
+#include "addons/Scraper.h"
 #include "XMLUtils.h"
 #include "HTMLTable.h"
 #include "HTMLUtil.h"

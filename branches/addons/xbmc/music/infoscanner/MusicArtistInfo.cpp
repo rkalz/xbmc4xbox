@@ -21,7 +21,7 @@
 
 #include "music/infoscanner/MusicArtistInfo.h"
 #include "ScraperParser.h"
-#include "Scraper.h"
+#include "addons/Scraper.h"
 #include "XMLUtils.h"
 #include "settings/Settings.h"
 #include "CharsetConverter.h"

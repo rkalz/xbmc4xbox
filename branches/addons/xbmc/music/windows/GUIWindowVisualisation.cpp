@@ -22,7 +22,7 @@
 #include "system.h"
 #include "music/windows/GUIWindowVisualisation.h"
 #include "GUIVisualisationControl.h"
-#include "visualizations/Visualisation.h"
+#include "addons/Visualisation.h"
 #include "Application.h"
 #include "music/dialogs/GUIDialogMusicOSD.h"
 #include "GUIInfoManager.h"

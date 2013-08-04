@@ -35,7 +35,7 @@
 #include "Weather.h"
 #include "PlayListPlayer.h"
 #include "PartyModeManager.h"
-#include "visualizations/Visualisation.h"
+#include "addons/Visualisation.h"
 #include "input/ButtonTranslator.h"
 #include "music/MusicDatabase.h"
 #include "utils/AlarmClock.h"
