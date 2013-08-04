@@ -81,6 +81,7 @@ void CAudioBuffer::Set(const unsigned char* psBuffer, int iSize, int iBitsPerSam
 bool CVisualisation::Create(int x, int y, int w, int h)
 {
   m_pInfo = new VIS_PROPS;
+  m_pInfo->device     = g_graphicsContext.Get3DDevice();
   m_pInfo->x = x;
   m_pInfo->y = y;
   m_pInfo->width = w;
