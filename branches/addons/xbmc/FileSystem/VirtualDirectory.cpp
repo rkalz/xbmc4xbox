@@ -114,7 +114,6 @@ bool CVirtualDirectory::GetDirectory(const CStdString& strPath, CFileItemList &i
           || pItem->IsVideoDb()
           || pItem->IsMusicDb()
           || pItem->IsPlugin()
-          || pItem->IsPluginRoot()
           || pItem->GetPath() == "special://musicplaylists/"
           || pItem->GetPath() == "special://videoplaylists/"
           || pItem->GetPath() == "musicsearch://")

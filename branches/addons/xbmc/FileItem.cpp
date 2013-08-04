@@ -726,11 +726,6 @@ bool CFileItem::IsPlugin() const
   return URIUtils::IsPlugin(m_strPath);
 }
 
-bool CFileItem::IsPluginRoot() const
-{
-  return URIUtils::IsPluginRoot(m_strPath);
-}
-
 bool CFileItem::IsMultiPath() const
 {
   return URIUtils::IsMultiPath(m_strPath);
