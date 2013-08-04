@@ -42,7 +42,6 @@ CSkinInfo::CSkinInfo()
   m_DefaultResolution = PAL_4x3;
   m_DefaultResolutionWide = INVALID;
   m_strBaseDir = "";
-  m_iNumCreditLines = 0;
   m_effectsSlowDown = 1.0f;
   m_onlyAnimateToHome = true;
   m_Version = 1.0;
@@ -82,27 +81,6 @@ void CSkinInfo::Load(const CStdString& strSkinDir, bool loadIncludes)
 
       // get the legacy parameter to tweak the control behaviour for old skins such as PM3
       XMLUtils::GetBoolean(root, "legacy", m_bLegacy);   
-
-      // now load the credits information
-      const TiXmlNode *pChild = root->FirstChild("credits");
-      if (pChild)
-      { // ok, run through the credits
-        const TiXmlNode *pGrandChild = pChild->FirstChild("skinname");
-        if (pGrandChild && pGrandChild->FirstChild())
-        {
-          CStdString strName = pGrandChild->FirstChild()->Value();
-          swprintf(credits[0], L"%S Skin", strName.Left(44).c_str());
-        }
-        pGrandChild = pChild->FirstChild("name");
-        m_iNumCreditLines = 1;
-        while (pGrandChild && pGrandChild->FirstChild() && m_iNumCreditLines < 6)
-        {
-          CStdString strName = pGrandChild->FirstChild()->Value();
-          swprintf(credits[m_iNumCreditLines], L"%S", strName.Left(49).c_str());
-          m_iNumCreditLines++;
-          pGrandChild = pGrandChild->NextSibling("name");
-        }
-      }
 
       // now load the startupwindow information
       LoadStartupWindows(root->FirstChildElement("startupwindows"));
@@ -236,14 +214,6 @@ RESOLUTION CSkinInfo::TranslateResolution(const CStdString &res, RESOLUTION def)
 CStdString CSkinInfo::GetBaseDir() const
 {
   return m_strBaseDir;
-}
-
-wchar_t* CSkinInfo::GetCreditsLine(int i)
-{
-  if (i < m_iNumCreditLines)
-    return credits[i];
-  else
-    return NULL;
 }
 
 double CSkinInfo::GetMinVersion()
