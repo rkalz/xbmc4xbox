@@ -248,7 +248,7 @@ void CGUIInfoLabel::Parse(const CStdString &label)
   m_info.clear();
   // Step 1: Replace all $LOCALIZE[number] with the real string
   CStdString work = ReplaceLocalize(label);
-  // Step 2: Replace all $ADDON[uuid number] with the real string
+  // Step 2: Replace all $ADDON[id number] with the real string
   work = ReplaceAddonStrings(work);
   // Step 3: Find all $INFO[info,prefix,postfix] blocks
   int pos1 = work.Find("$INFO[");
