@@ -243,7 +243,7 @@ void CAddonMgr::UnregisterAddonMgrCallback(TYPE type)
   m_managers.erase(type);
 }
 
-bool CAddonMgr::HasAddons(const TYPE &type, const CONTENT_TYPE &content/*= CONTENT_NONE*/)
+bool CAddonMgr::HasAddons(const TYPE &type, const CONTENT_TYPE &content/*= CONTENT_NONE*/, bool enabledOnly/*= true*/)
 {
   if (m_addons.empty())
   {
@@ -255,7 +255,7 @@ bool CAddonMgr::HasAddons(const TYPE &type, const CONTENT_TYPE &content/*= CONTE
     return (m_addons.find(type) != m_addons.end());
 
   VECADDONS addons;
-  return GetAddons(type, addons, content, true);
+  return GetAddons(type, addons, content, enabledOnly);
 }
 
 void CAddonMgr::UpdateRepos()
@@ -329,7 +329,7 @@ bool CAddonMgr::GetAddons(const TYPE &type, VECADDONS &addons, const CONTENT_TYP
   return !addons.empty();
 }
 
-bool CAddonMgr::GetAddon(const CStdString &str, AddonPtr &addon, const TYPE &type/*=ADDON_UNKNOWN*/)
+bool CAddonMgr::GetAddon(const CStdString &str, AddonPtr &addon, const TYPE &type/*=ADDON_UNKNOWN*/, bool enabledOnly/*= true*/)
 {
   CDateTimeSpan span;
   span.SetDateTimeSpan(0, 0, 0, ADDON_DIRSCAN_FREQ);
@@ -345,7 +345,10 @@ bool CAddonMgr::GetAddon(const CStdString &str, AddonPtr &addon, const TYPE &typ
   if (m_idMap[str])
   {
     addon = m_idMap[str];
-    return true;
+    if(enabledOnly)
+      return !addon->Disabled();
+    else
+      return true;
   }
 
   VECADDONS &addons = m_addons[type];
@@ -356,7 +359,10 @@ bool CAddonMgr::GetAddon(const CStdString &str, AddonPtr &addon, const TYPE &typ
     if ((*adnItr)->Name() == str || (type == ADDON_SCRAPER && (*adnItr)->LibName() == str))
     {
       addon = (*adnItr);
-      return true;
+      if(enabledOnly)
+        return !addon->Disabled();
+      else
+        return true;
     }
     adnItr++;
   }
