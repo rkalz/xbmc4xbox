@@ -307,7 +307,7 @@ void CGUIWindowVideoFiles::OnAssignContent(int iItem, int iFound, ADDON::Scraper
   bool bScan=false;
   if (iFound == 0)
   {
-    m_database.GetScraperForPath(item->GetPath(),info,settings,iFound);
+    m_database.GetScraperForPath(item->GetPath(),info,settings);
   }
   if (CGUIDialogContentSettings::Show(info, settings, bScan))
   {
