@@ -923,6 +923,7 @@ bool CAddonMgr::AddonFromInfoXML(const CStdString &path, AddonPtr &addon)
         deps.insert(std::make_pair(id, std::make_pair(AddonVersion(min), AddonVersion(max))));
         element = element->NextSiblingElement("dependency");
       } while (element != NULL);
+      addonProps.dependencies = deps;
     }
   }
 
@@ -968,7 +969,6 @@ bool CAddonMgr::AddonFromInfoXML(const CStdString &path, AddonPtr &addon)
       return false;
   }
 
-  addon->SetDeps(deps);
   return true;
 }
 
