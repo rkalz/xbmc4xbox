@@ -210,7 +210,7 @@ bool CGUIWindowVideoBase::OnMessage(CGUIMessage& message)
               URIUtils::GetDirectory(item->GetPath(),strDir);
 
             int iFound;
-            m_database.GetScraperForPath(strDir, scraper, settings, iFound);
+            scraper = m_database.GetScraperForPath(strDir, settings, iFound);
 
             if (!scraper &&
               !(m_database.HasMovieInfo(item->GetPath()) ||
@@ -511,7 +511,7 @@ bool CGUIWindowVideoBase::ShowIMDB(CFileItem *item, const ScraperPtr &info2)
   m_database.Open();
   // 2. Look for a nfo File to get the search URL
   SScanSettings settings;
-  m_database.GetScraperForPath(item->GetPath(),info,settings);
+  info = m_database.GetScraperForPath(item->GetPath(),settings);
 
   if (!info)
     return false;
@@ -1873,9 +1873,9 @@ int CGUIWindowVideoBase::GetScraperForItem(CFileItem *item, ADDON::ScraperPtr &i
 
   int found = 0;
   if (item->HasVideoInfoTag())  // files view shouldn't need this check I think?
-    m_database.GetScraperForPath(item->GetVideoInfoTag()->m_strPath,info,settings,found);
+    info = m_database.GetScraperForPath(item->GetVideoInfoTag()->m_strPath,settings,found);
   else
-    m_database.GetScraperForPath(item->GetPath(),info,settings,found);
+    info = m_database.GetScraperForPath(item->GetPath(),settings,found);
 
   return found;
 }
