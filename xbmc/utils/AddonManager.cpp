@@ -603,7 +603,7 @@ void CAddonMgr::FindAddons(const TYPE &type)
 
     // refuse to store addons with missing library
     CStdString library(addon->Path());
-    CUtil::AddFileToFolder(library, addon->LibName(), library);
+    URIUtils::AddFileToFolder(library, addon->LibName(), library);
     if (!CFile::Exists(library))
     {
       CLog::Log(LOGDEBUG, "ADDON: Missing library file %s, bypassing package", library.c_str());
