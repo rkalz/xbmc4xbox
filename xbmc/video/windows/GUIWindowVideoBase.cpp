@@ -1872,11 +1872,7 @@ int CGUIWindowVideoBase::GetScraperForItem(CFileItem *item, ADDON::ScraperPtr &i
   }
 
   int found = 0;
-  if (item->HasVideoInfoTag())  // files view shouldn't need this check I think?
-    info = m_database.GetScraperForPath(item->GetVideoInfoTag()->m_strPath,settings,found);
-  else
-    info = m_database.GetScraperForPath(item->GetPath(),settings,found);
-
+  info = m_database.GetScraperForPath(item->HasVideoInfoTag() ? item->GetVideoInfoTag()->m_strPath : item->GetPath(), settings, found);
   return found;
 }
 
