@@ -30,6 +30,7 @@
 #include "DownloadQueueManager.h"
 #include "inttypes.h"
 #include "utils/log.h"
+#include "utils/SingleLock.h"
 
 #ifdef HAS_VISUALISATION
 #include "DllVisualisation.h"
@@ -116,31 +117,6 @@ bool CAddonMgr::HasAddons(const TYPE &type, const CONTENT_TYPE &content/*= CONTE
   return GetAddons(type, addons, content, enabledOnly);
 }
 
-void CAddonMgr::UpdateRepos()
-{
-  m_downloads.push_back(g_DownloadManager.RequestFile(ADDON_XBMC_REPO_URL, this));
-}
-
-bool CAddonMgr::ParseRepoXML(const CStdString &path)
-{
-  //TODO
-  //check file exists, for each addoninfo, create an AddonProps struct, store in m_remoteAddons
-  return false;
-}
-
-void CAddonMgr::OnFileComplete(TICKET aTicket, CStdString& aFilePath, INT aByteRxCount, Result aResult)
-{
-  for (unsigned i=0; i < m_downloads.size(); i++)
-  {
-    if (m_downloads[i].wQueueId == aTicket.wQueueId
-        && m_downloads[i].dwItemId == aTicket.dwItemId)
-    {
-      CLog::Log(LOGINFO, "ADDONS: Downloaded addons.xml");
-      ParseRepoXML(aFilePath);
-    }
-  }
-}
-
 bool CAddonMgr::GetAllAddons(VECADDONS &addons, bool enabledOnly/*= true*/)
 {
   VECADDONS temp;
@@ -159,6 +135,7 @@ bool CAddonMgr::GetAllAddons(VECADDONS &addons, bool enabledOnly/*= true*/)
 
 bool CAddonMgr::GetAddons(const TYPE &type, VECADDONS &addons, const CONTENT_TYPE &content/*= CONTENT_NONE*/, bool enabledOnly/*= true*/)
 {
+  CSingleLock lock(m_critSection);
   addons.clear();
   if (m_addons.find(type) != m_addons.end())
   {
@@ -180,6 +157,7 @@ bool CAddonMgr::GetAddons(const TYPE &type, VECADDONS &addons, const CONTENT_TYP
 
 bool CAddonMgr::GetAddon(const CStdString &str, AddonPtr &addon, const TYPE &type/*=ADDON_UNKNOWN*/, bool enabledOnly/*= true*/)
 {
+  CSingleLock lock(m_critSection);
   if (type != ADDON_UNKNOWN && m_addons.find(type) == m_addons.end())
     return false;
 
@@ -263,6 +241,7 @@ CStdString CAddonMgr::GetString(const CStdString &id, const int number)
 
 void CAddonMgr::FindAddons()
 {
+  CSingleLock lock(m_critSection);
   // parse the user & system dirs for addons of the requested type
   CFileItemList items;
   if (!CSpecialProtocol::XBMCIsHome())
@@ -366,6 +345,7 @@ bool CAddonMgr::DependenciesMet(AddonPtr &addon)
   if (!addon)
     return false;
 
+  CSingleLock lock(m_critSection);
   ADDONDEPS deps = addon->GetDeps();
   ADDONDEPS::iterator itr = deps.begin();
   while (itr != deps.end())
@@ -384,17 +364,6 @@ bool CAddonMgr::DependenciesMet(AddonPtr &addon)
         return (dep->Version() >= min);
       else
         return (dep->Version() <= max);
-    }
-    for (unsigned i=0; i < m_remoteAddons.size(); i++)
-    {
-      if (m_remoteAddons[i].id == id)
-      {
-        if(m_remoteAddons[i].version >= min && m_remoteAddons[i].version <= max)
-        {
-          //TODO line up download
-          return false;
-        }
-      }
     }
     itr++;
   }
@@ -461,7 +430,7 @@ bool CAddonMgr::AddonFromInfoXML(const TiXmlElement *rootElement,
   element = rootElement->FirstChildElement("type");
   if (!element)
   {
-    CLog::Log(LOGERROR, "ADDON: %s missing <id> element, ignoring", strPath.c_str());
+    CLog::Log(LOGERROR, "ADDON: %s missing <type> element, ignoring", strPath.c_str());
     return false;
   }
   type = TranslateType(element->GetText());
