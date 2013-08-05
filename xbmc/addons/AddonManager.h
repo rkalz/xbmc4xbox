@@ -22,6 +22,7 @@
 #include "Addon.h"
 #include "include/xbmc_addon_dll.h"
 #include "tinyXML/tinyxml.h"
+#include "utils/CriticalSection.h"
 #include "StdString.h"
 #include "XBDateTime.h"
 #include "DownloadQueue.h"
@@ -63,7 +64,7 @@ namespace ADDON
   * otherwise. Services the generic callbacks available
   * to all addon variants.
   */
-  class CAddonMgr : public IDownloadQueueObserver
+  class CAddonMgr
   {
   public:
     static CAddonMgr* Get();
@@ -86,13 +87,6 @@ namespace ADDON
     static bool AddonFromInfoXML(const CStdString &path, AddonPtr &addon);
     static AddonPtr AddonFromProps(AddonProps& props);
   private:
-    /* Addon Repositories */
-    virtual void OnFileComplete(TICKET aTicket, CStdString& aFilePath, INT aByteRxCount, Result aResult);
-    std::vector<TICKET> m_downloads;
-    VECADDONPROPS m_remoteAddons;
-    void UpdateRepos();
-    bool ParseRepoXML(const CStdString &path);
-
     void FindAddons();
     bool LoadAddonsXML();
     bool SaveAddonsXML();
@@ -105,6 +99,7 @@ namespace ADDON
     MAPADDONS m_addons;
     CDateTime m_lastDirScan;
     std::map<CStdString, AddonPtr> m_idMap;
+    CCriticalSection m_critSection;
   };
 
 }; /* namespace ADDON */
