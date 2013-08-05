@@ -47,7 +47,9 @@
 //#ifdef HAS_SCRAPERS
 #include "Scraper.h"
 //#endif
+#include "Repository.h"
 
+using namespace std;
 
 namespace ADDON
 {
@@ -59,7 +61,7 @@ namespace ADDON
  */
 
 CAddonMgr* CAddonMgr::m_pInstance = NULL;
-std::map<TYPE, IAddonMgrCallback*> CAddonMgr::m_managers;
+map<TYPE, IAddonMgrCallback*> CAddonMgr::m_managers;
 
 CAddonMgr::CAddonMgr()
 {
@@ -297,7 +299,7 @@ void CAddonMgr::FindAddons()
       else
       {
         m_addons[addon->Type()].push_back(addon);
-        m_idMap.insert(std::make_pair(addon->ID(), addon));
+        m_idMap.insert(make_pair(addon->ID(), addon));
       }
     }
   }
@@ -310,7 +312,7 @@ void CAddonMgr::FindAddons()
       if (!UpdateIfKnown(addon))
       {
         m_addons[addon->Type()].push_back(addon);
-        m_idMap.insert(std::make_pair(addon->ID(), addon));
+        m_idMap.insert(make_pair(addon->ID(), addon));
       }
     }
   }
@@ -330,7 +332,7 @@ bool CAddonMgr::UpdateIfKnown(AddonPtr &addon)
         m_addons[addon->Type()][i] = addon;
         CStdString id = addon->ID();
         m_idMap.erase(id);
-        m_idMap.insert(std::make_pair(addon->ID(), addon));
+        m_idMap.insert(make_pair(addon->ID(), addon));
         return true;
       }
     }
@@ -493,7 +495,7 @@ bool CAddonMgr::AddonFromInfoXML(const TiXmlElement *rootElement,
   }
 
   bool all(false);
-  std::set<CStdString> platforms;
+  set<CStdString> platforms;
   do
   {
     CStdString platform = element->GetText();
@@ -559,7 +561,7 @@ bool CAddonMgr::AddonFromInfoXML(const TiXmlElement *rootElement,
       return false;
     }
 
-    std::set<CONTENT_TYPE> contents;
+    set<CONTENT_TYPE> contents;
     do
     {
       CONTENT_TYPE content = TranslateContent(element->GetText());
@@ -615,7 +617,6 @@ bool CAddonMgr::AddonFromInfoXML(const TiXmlElement *rootElement,
 #endif
 
   /* Retrieve dependencies that this addon requires */
-  std::map<CStdString, std::pair<const AddonVersion, const AddonVersion> > deps;
   element = rootElement->FirstChildElement("dependencies");
   if (element)
   {
@@ -626,18 +627,18 @@ bool CAddonMgr::AddonFromInfoXML(const TiXmlElement *rootElement,
     {
       do
       {
-        CStdString min = element->Attribute("minversion");
-        CStdString max = element->Attribute("maxversion");
-        CStdString id = element->GetText();
-        if (!id || (!min && ! max))
+        const char* min = element->Attribute("minversion");
+        const char* max = element->Attribute("maxversion");
+        const char* id = element->GetText();
+        if (!id || (!min && !max))
         {
           CLog::Log(LOGDEBUG, "ADDON: %s malformed <dependency> element, will ignore this dependency", strPath.c_str());
+          element = element->NextSiblingElement("dependency");
           continue;
         }
-        deps.insert(std::make_pair(id, std::make_pair(AddonVersion(min), AddonVersion(max))));
+        addonProps.dependencies.insert(make_pair(CStdString(id), make_pair(AddonVersion(min?min:""), AddonVersion(max?max:""))));
         element = element->NextSiblingElement("dependency");
       } while (element != NULL);
-      addonProps.dependencies = deps;
     }
   }
 
@@ -665,6 +666,8 @@ AddonPtr CAddonMgr::AddonFromProps(AddonProps& addonProps)
     case ADDON_SCRAPER_LIBRARY:
     case ADDON_VIZ_LIBRARY:
       return AddonPtr(new CAddonLibrary(addonProps));
+    case ADDON_REPOSITORY:
+      return AddonPtr(new CRepository(addonProps));
     default:
       break;
   }
