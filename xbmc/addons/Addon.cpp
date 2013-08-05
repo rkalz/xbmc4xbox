@@ -219,7 +219,6 @@ CAddon::CAddon(const CAddon &rhs, const AddonPtr &parent)
   : m_props(rhs.Props())
   , m_parent(parent)
 {
-  m_props.id = StringUtils::CreateUUID();
   m_userXmlDoc  = rhs.m_userXmlDoc;
   BuildProfilePath();
   URIUtils::AddFileToFolder(Profile(), "settings.xml", m_userSettingsPath);
