@@ -25,11 +25,13 @@
 #include "settings/GUISettings.h"
 #include "StringUtils.h"
 #include "FileSystem/Directory.h"
+#include "FileSystem/File.h"
 #include "URIUtils.h"
 #include "utils/log.h"
 #include <string.h>
 
 using XFILE::CDirectory;
+using XFILE::CFile;
 
 namespace ADDON
 {
@@ -208,7 +210,9 @@ CAddon::CAddon(const AddonProps &props)
   else m_strLibName = props.libname;
   BuildProfilePath();
   URIUtils::AddFileToFolder(Profile(), "settings.xml", m_userSettingsPath);
-  m_disabled = true;
+  m_disabled = false;
+  m_hasStrings = false;
+  m_checkedStrings = false;
 }
 
 CAddon::CAddon(const CAddon &rhs, const AddonPtr &parent)
@@ -221,6 +225,8 @@ CAddon::CAddon(const CAddon &rhs, const AddonPtr &parent)
   URIUtils::AddFileToFolder(Profile(), "settings.xml", m_userSettingsPath);
   m_strLibName  = rhs.LibName();
   m_disabled    = rhs.Disabled();
+  m_hasStrings  = false;
+  m_checkedStrings  = false;
 }
 
 AddonPtr CAddon::Clone(const AddonPtr &self) const
@@ -270,33 +276,35 @@ void CAddon::BuildLibName()
  */
 bool CAddon::LoadStrings()
 {
-  if (!HasSettings())
-    return false;
 
   // Path where the language strings reside
-  CStdString pathToLanguageFile = m_props.path;
-  CStdString pathToFallbackLanguageFile = m_props.path;
-  URIUtils::AddFileToFolder(pathToLanguageFile, "resources", pathToLanguageFile);
-  URIUtils::AddFileToFolder(pathToFallbackLanguageFile, "resources", pathToFallbackLanguageFile);
-  URIUtils::AddFileToFolder(pathToLanguageFile, "language", pathToLanguageFile);
-  URIUtils::AddFileToFolder(pathToFallbackLanguageFile, "language", pathToFallbackLanguageFile);
-  URIUtils::AddFileToFolder(pathToLanguageFile, g_guiSettings.GetString("locale.language"), pathToLanguageFile);
-  URIUtils::AddFileToFolder(pathToFallbackLanguageFile, "english", pathToFallbackLanguageFile);
-  URIUtils::AddFileToFolder(pathToLanguageFile, "strings.xml", pathToLanguageFile);
-  URIUtils::AddFileToFolder(pathToFallbackLanguageFile, "strings.xml", pathToFallbackLanguageFile);
+  CStdString chosen = m_props.path;
+  CStdString fallback = m_props.path;
+  URIUtils::AddFileToFolder(chosen, "resources", chosen);
+  URIUtils::AddFileToFolder(fallback, "resources", fallback);
+  URIUtils::AddFileToFolder(chosen, "language", chosen);
+  URIUtils::AddFileToFolder(fallback, "language", fallback);
+  URIUtils::AddFileToFolder(chosen, g_guiSettings.GetString("locale.language"), chosen);
+  URIUtils::AddFileToFolder(fallback, "English", fallback);
+  URIUtils::AddFileToFolder(chosen, "strings.xml", chosen);
+  URIUtils::AddFileToFolder(fallback, "strings.xml", fallback);
 
-  // Load language strings temporarily
-  return m_strings.Load(pathToLanguageFile, pathToFallbackLanguageFile);
+  m_hasStrings = m_strings.Load(chosen, fallback);
+  return m_checkedStrings = true;
 }
 
 void CAddon::ClearStrings()
 {
   // Unload temporary language strings
   m_strings.Clear();
+  m_hasStrings = false;
 }
 
-CStdString CAddon::GetString(uint32_t id) const
+CStdString CAddon::GetString(uint32_t id)
 {
+  if (!m_hasStrings && ! m_checkedStrings && !LoadStrings())
+     return "";
+
   return m_strings.Get(id);
 }
 
