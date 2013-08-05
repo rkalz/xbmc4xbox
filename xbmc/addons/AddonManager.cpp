@@ -165,7 +165,7 @@ bool CAddonMgr::GetAddons(const TYPE &type, VECADDONS &addons, const CONTENT_TYP
     IVECADDONS itr = m_addons[type].begin();
     while (itr != m_addons[type].end())
     { // filter out what we're not looking for
-      if ((enabledOnly && (*itr)->Disabled())
+      if ((enabledOnly && !(*itr)->Enabled())
         || (content != CONTENT_NONE && !(*itr)->Supports(content)))
       {
         ++itr;
@@ -187,7 +187,7 @@ bool CAddonMgr::GetAddon(const CStdString &str, AddonPtr &addon, const TYPE &typ
   {
     addon = m_idMap[str];
     if(enabledOnly)
-      return !addon->Disabled();
+      return addon->Enabled();
     else
       return true;
   }
@@ -201,7 +201,7 @@ bool CAddonMgr::GetAddon(const CStdString &str, AddonPtr &addon, const TYPE &typ
     {
       addon = (*adnItr);
       if(enabledOnly)
-        return !addon->Disabled();
+        return addon->Enabled();
       else
         return true;
     }
