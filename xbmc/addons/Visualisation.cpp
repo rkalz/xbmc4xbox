@@ -342,7 +342,7 @@ void CVisualisation::ClearBuffers()
 
 bool CVisualisation::UpdateTrack()
 {
-  bool handled;
+  bool handled = false;
   if (Initialized())
   {
     // get the current album art filename
