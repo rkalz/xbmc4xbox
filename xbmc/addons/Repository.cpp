@@ -25,10 +25,11 @@
 #include "XMLUtils.h"
 #include "AddonDatabase.h"
 #include "Application.h"
-#include "Settings.h"
+#include "settings/Settings.h"
 #include "FileItem.h"
 #include "utils/JobManager.h"
 #include "utils/FileOperationJob.h"
+#include "utils/URIUtils.h"
 #include "GUIWindowManager.h"
 #include "GUIWindowAddonBrowser.h"
 
@@ -111,9 +112,9 @@ VECADDONS CRepository::Parse()
       AddonPtr addon;
       if (CAddonMgr::AddonFromInfoXML(element,addon,m_info))
       {
-        CUtil::GetDirectory(m_info,addon->Props().path);
-        addon->Props().path = CUtil::AddFileToFolder(m_datadir,addon->ID()+"-"+addon->Version().str+".zip");
-        addon->Props().icon = CUtil::AddFileToFolder(m_datadir,addon->ID()+".tbn");
+        URIUtils::GetDirectory(m_info,addon->Props().path);
+        addon->Props().path = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"-"+addon->Version().str+".zip");
+        addon->Props().icon = URIUtils::AddFileToFolder(m_datadir,addon->ID()+".tbn");
         result.push_back(addon);
       }
       element = element->NextSiblingElement("addoninfo");

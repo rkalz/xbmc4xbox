@@ -96,6 +96,7 @@ void CSettings::Initialize()
   m_bMyVideoPlaylistShuffle = false;
   m_bMyVideoNavFlatten = false;
   m_bStartVideoWindowed = false;
+  m_bAddonAutoUpdate = true;
 
   m_nVolumeLevel = 0;
   m_dynamicRangeCompressionLevel = 0;
@@ -817,6 +818,7 @@ bool CSettings::LoadSettings(const CStdString& strSettingsFile)
     GetFloat(pElement, "gamma", m_defaultVideoSettings.m_Gamma, 20, 0, 100);
     GetFloat(pElement, "audiodelay", m_defaultVideoSettings.m_AudioDelay, 0.0f, -10.0f, 10.0f);
     GetFloat(pElement, "subtitledelay", m_defaultVideoSettings.m_SubtitleDelay, 0.0f, -10.0f, 10.0f);
+    XMLUtils::GetBoolean(pElement, "addonautoupdate", m_bAddonAutoUpdate);
 
     m_defaultVideoSettings.m_SubtitleCached = false;
   }
@@ -1167,7 +1169,7 @@ bool CSettings::SaveSettings(const CStdString& strSettingsFile, CGUISettings *lo
   XMLUtils::SetFloat(pNode, "gamma", m_defaultVideoSettings.m_Gamma);
   XMLUtils::SetFloat(pNode, "audiodelay", m_defaultVideoSettings.m_AudioDelay);
   XMLUtils::SetFloat(pNode, "subtitledelay", m_defaultVideoSettings.m_SubtitleDelay);
-
+  XMLUtils::SetBoolean(pNode, "addonautoupdate", m_bAddonAutoUpdate);
 
   // audio settings
   TiXmlElement volumeNode("audio");
