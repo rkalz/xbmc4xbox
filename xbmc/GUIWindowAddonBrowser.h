@@ -25,7 +25,7 @@
 #include "windows/GUIMediaWindow.h"
 #include "utils/CriticalSection.h"
 #include "utils/Job.h"
-#include "PictureThumbLoader.h"
+#include "pictures/PictureThumbLoader.h"
 
 class CFileItem;
 class CFileItemList;
