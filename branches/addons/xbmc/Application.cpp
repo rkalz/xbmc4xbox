@@ -1209,6 +1209,7 @@ HRESULT CApplication::Initialize()
   CreateDirectory("Q:\\sounds", NULL);
   CreateDirectory(g_settings.GetUserDataFolder()+"\\visualisations",NULL);
   CreateDirectory(g_settings.GetUserDataFolder()+"\\addons",NULL);
+  CreateDirectory(g_settings.GetUserDataFolder()+"\\addons\\packages",NULL);
 
   // initialize network
   if (!m_bXboxMediacenterLoaded)
@@ -4630,6 +4631,7 @@ void CApplication::CheckShutdown()
     m_applicationMessenger.Shutdown(); // Turn off the box
   }
 #endif
+  ADDON::CAddonMgr::Get()->UpdateRepos();
 }
 
 //Check if hd spindown must be blocked

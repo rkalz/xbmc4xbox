@@ -901,6 +901,12 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\FileItem.cpp">
 				</File>
 				<File
+					RelativePath=".\xbmc\utils\FileOperationJob.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\utils\FileOperationJob.h">
+				</File>
+				<File
 					RelativePath=".\xbmc\utils\FilterFlickerPatch.cpp">
 				</File>
 				<File
@@ -1433,6 +1439,12 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 				</File>
 				<File
 					RelativePath=".\xbmc\windows\GUIMediaWindow.h">
+				</File>
+				<File
+					RelativePath=".\xbmc\GUIViewStateAddonBrowser.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\GUIViewStateAddonBrowser.h">
 				</File>
 				<File
 					RelativePath=".\xbmc\GUIViewStateGameSaves.cpp">
@@ -2733,6 +2745,12 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\addons\Addon.h">
 				</File>
 				<File
+					RelativePath=".\xbmc\AddonDatabase.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\AddonDatabase.h">
+				</File>
+				<File
 					RelativePath=".\xbmc\addons\AddonDll.h">
 				</File>
 				<File
@@ -2772,6 +2790,12 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\addons\IAddon.h">
 				</File>
 				<File
+					RelativePath=".\xbmc\addons\Repository.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\addons\Repository.h">
+				</File>
+				<File
 					RelativePath=".\xbmc\addons\Screensaver.cpp">
 				</File>
 				<File
@@ -2781,10 +2805,10 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\addons\Visualisation.cpp">
 				</File>
 				<File
-					RelativePath=".\xbmc\addonssc\Visualisation.h">
+					RelativePath=".\xbmc\addons\Visualisation.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\addons\Visualisation.h">
+					RelativePath=".\xbmc\addonssc\Visualisation.h">
 				</File>
 			</Filter>
 			<Filter
