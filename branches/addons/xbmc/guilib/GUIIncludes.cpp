@@ -25,6 +25,7 @@
 #include "GUIInfoManager.h"
 
 using namespace std;
+using namespace ADDON;
 
 CGUIIncludes::CGUIIncludes()
 {
