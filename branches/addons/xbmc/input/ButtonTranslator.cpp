@@ -252,6 +252,7 @@ static const ActionMapping windows[] =
         {"pictureinfo"              , WINDOW_DIALOG_PICTURE_INFO},
         {"fullscreeninfo"           , WINDOW_DIALOG_FULLSCREEN_INFO},
         {"sliderdialog"             , WINDOW_DIALOG_SLIDER},
+        {"addoninformation"         , WINDOW_DIALOG_ADDON_INFO},
         {"musicplaylist"            , WINDOW_MUSIC_PLAYLIST},
         {"musicfiles"               , WINDOW_MUSIC_FILES},
         {"musiclibrary"             , WINDOW_MUSIC_NAV},
