@@ -181,7 +181,7 @@ void CRepository::SetUpdated(const CDateTime& time)
   database.SetRepoTimestamp(ID(),time.GetAsDBDateTime());
 }
 
-CRepositoryUpdateJob::CRepositoryUpdateJob(RepositoryPtr& repo)
+CRepositoryUpdateJob::CRepositoryUpdateJob(RepositoryPtr& repo, bool check)
 {
   m_repo = boost::dynamic_pointer_cast<CRepository>(repo->Clone(repo));
 }
