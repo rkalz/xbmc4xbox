@@ -2808,13 +2808,19 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\addons\Screensaver.h">
 				</File>
 				<File
+					RelativePath=".\xbmc\addons\Skin.cpp">
+				</File>
+				<File
+					RelativePath=".\xbmc\addons\Skin.h">
+				</File>
+				<File
 					RelativePath=".\xbmc\addons\Visualisation.cpp">
 				</File>
 				<File
-					RelativePath=".\xbmc\addons\Visualisation.h">
+					RelativePath=".\xbmc\addonssc\Visualisation.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\addonssc\Visualisation.h">
+					RelativePath=".\xbmc\addons\Visualisation.h">
 				</File>
 			</Filter>
 			<Filter

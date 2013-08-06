@@ -79,7 +79,7 @@
 #include "TextureManager.h"
 #include "video/dialogs/GUIDialogVideoInfo.h"
 #include "music/dialogs/GUIDialogMusicInfo.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 #include "TimeUtils.h"
 #include "utils/URIUtils.h"
 #include "LocalizeStrings.h"

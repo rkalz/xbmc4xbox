@@ -46,7 +46,7 @@
 #include "utils/LCDFactory.h"
 #endif
 #include "PlayListPlayer.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 #include "GUIAudioManager.h"
 #include "AudioContext.h"
 #include "lib/libscrobbler/lastfmscrobbler.h"
@@ -1695,7 +1695,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
     CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(pSettingControl->GetID());
     CStdString strSkin = pControl->GetCurrentLabel();
     CStdString strSkinPath = "Q:\\skin\\" + strSkin;
-    if (CSkinInfo::Check(strSkinPath))
+    if (ADDON::CSkinInfo::Check(strSkinPath))
     {
       m_strErrorMessage.Empty();
       pControl->SettingsCategorySetSpinTextColor(pControl->GetButtonLabelInfo().textColor);

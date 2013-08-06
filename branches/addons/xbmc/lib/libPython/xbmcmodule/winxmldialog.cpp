@@ -25,7 +25,7 @@
 #include "../XBPythonDll.h"
 #include "pyutil.h"
 #include "GUIPythonWindowXMLDialog.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 #include "Util.h"
 #include "utils/URIUtils.h"
 #include "FileSystem/File.h"
@@ -44,6 +44,7 @@ extern "C" {
 #endif
 
 using namespace std;
+using ADDON::CSkinInfo;
 
 namespace PYXBMC
 {

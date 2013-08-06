@@ -58,7 +58,7 @@
 #include "LocalizeStrings.h"
 #include "utils/log.h"
 
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 
 using namespace std;
 using namespace XFILE;

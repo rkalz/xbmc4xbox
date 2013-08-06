@@ -54,7 +54,7 @@
 #include "GUIFontManager.h"
 #include "GUIColorManager.h"
 #include "GUITextLayout.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 #include "lib/libPython/XBPython.h"
 #include "input/ButtonTranslator.h"
 #include "GUIAudioManager.h"
@@ -202,6 +202,7 @@
 #endif
 
 using namespace std;
+using namespace ADDON;
 using namespace XFILE;
 using namespace MEDIA_DETECT;
 using namespace PLAYLIST;

@@ -21,7 +21,7 @@
 
 #define NOMINMAX
 #include "GUILabel.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 #include "utils/CharsetConverter.h"
 #include <limits>
 

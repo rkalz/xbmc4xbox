@@ -25,12 +25,13 @@
 #include "../XBPythonDll.h"
 #include "pyutil.h"
 #include "GUIPythonWindowXML.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 #include "Util.h"
 #include "FileSystem/File.h"
 #include "utils/URIUtils.h"
 
 using namespace std;
+using ADDON::CSkinInfo;
 
 #define ACTIVE_WINDOW g_windowManager.GetActiveWindow()
 

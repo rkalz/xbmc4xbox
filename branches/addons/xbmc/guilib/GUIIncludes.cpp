@@ -21,7 +21,7 @@
 
 #include "include.h"
 #include "GUIIncludes.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 #include "GUIInfoManager.h"
 
 using namespace std;

@@ -30,7 +30,7 @@
 #include "utils/URIUtils.h"
 #include "settings/GUISettings.h"
 #include "settings/Settings.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 #include "utils/SingleLock.h"
 
 #ifndef _XBOX

@@ -26,7 +26,7 @@
 #include "GUIWindowManager.h"
 #include "utils/CharsetConverter.h"
 #include "GUIInfoManager.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 #include "GUIControlFactory.h"
 
 using namespace std;

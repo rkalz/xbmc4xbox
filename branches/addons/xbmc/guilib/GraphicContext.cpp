@@ -32,7 +32,7 @@
 #else
  #define D3D_CLEAR_STENCIL 0x0l
 #endif
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 #include "TextureManager.h"
 
 using namespace std;
