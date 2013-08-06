@@ -33,7 +33,7 @@
 #include "FileSystem/File.h"
 #include "URL.h"
 #include "FileItem.h"
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 #include "settings/AdvancedSettings.h"
 #include "LocalizeStrings.h"
 

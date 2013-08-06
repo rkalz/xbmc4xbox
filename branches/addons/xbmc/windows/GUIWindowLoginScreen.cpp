@@ -32,7 +32,7 @@
 #include "utils/Weather.h"
 #include "utils/FanController.h"
 #include "xbox/network.h"
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 #include "settings/Profile.h"
 #include "GUIWindowManager.h"
 #include "dialogs/GUIDialogOK.h"
@@ -292,7 +292,7 @@ void CGUIWindowLoginScreen::LoadProfile(unsigned int profile)
   g_weatherManager.Refresh();
   g_pythonParser.bLogin = true;
 
-  g_windowManager.ChangeActiveWindow(g_SkinInfo.GetFirstWindow());
+  g_windowManager.ChangeActiveWindow(ADDON::g_SkinInfo.GetFirstWindow());
 
   g_application.UpdateLibraries();
 }

@@ -22,7 +22,7 @@
 #include "include.h"
 #include "VisibleEffect.h"
 #include "GUIInfoManager.h"
-#include "addons/SkinInfo.h" // for the effect time adjustments
+#include "addons/Skin.h" // for the effect time adjustments
 #include "guiImage.h" // for FRECT
 #include "Tween.h"
 

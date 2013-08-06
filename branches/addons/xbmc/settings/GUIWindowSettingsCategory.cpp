@@ -46,7 +46,7 @@
 #include "utils/LCDFactory.h"
 #endif
 #include "PlayListPlayer.h"
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 #include "GUIAudioManager.h"
 #include "AudioContext.h"
 #include "lib/libscrobbler/lastfmscrobbler.h"

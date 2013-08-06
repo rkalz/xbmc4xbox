@@ -27,7 +27,7 @@
 #include "GUIInfoManager.h"
 #include "utils/TimeUtils.h"
 #include "XMLUtils.h"
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 #include "GUIStaticItem.h"
 
 using namespace std;
