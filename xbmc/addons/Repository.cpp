@@ -134,7 +134,7 @@ VECADDONS CRepository::Parse()
   doc.LoadFile(file);
   if (doc.RootElement())
   {
-    TiXmlElement* element = doc.FirstChildElement("addoninfo");
+    TiXmlElement* element = doc.RootElement()->FirstChildElement("addoninfo");
     while (element)
     {
       AddonPtr addon;
