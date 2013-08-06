@@ -368,7 +368,7 @@ void CGUIWindowManager::ActivateWindow_Internal(int iWindowID, const vector<CStd
   }
   if (iWindowID == WINDOW_START)
   { // virtual start window
-    iWindowID = g_SkinInfo.GetStartWindow();
+    iWindowID = ADDON::g_SkinInfo.GetStartWindow();
   }
 
   // first check existence of the window we wish to activate.
