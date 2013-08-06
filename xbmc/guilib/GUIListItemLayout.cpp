@@ -23,7 +23,7 @@
 #include "GUIListItemLayout.h"
 #include "FileItem.h"
 #include "GUIControlFactory.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 #include "GUIInfoManager.h"
 #include "GUIListLabel.h"
 #include "GUIImage.h"

@@ -23,7 +23,7 @@
 #include "GUIColorManager.h"
 #include "utils/URIUtils.h"
 #include "FileSystem/SpecialProtocol.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 
 CGUIColorManager g_colorManager;
 

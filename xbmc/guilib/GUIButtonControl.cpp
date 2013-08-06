@@ -25,7 +25,7 @@
 #include "GUIDialog.h"
 #include "utils/CharsetConverter.h"
 #include "GUIFontManager.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 
 using namespace std;
 

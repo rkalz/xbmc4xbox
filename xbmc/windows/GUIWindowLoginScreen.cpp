@@ -32,7 +32,7 @@
 #include "utils/Weather.h"
 #include "utils/FanController.h"
 #include "xbox/network.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 #include "settings/Profile.h"
 #include "GUIWindowManager.h"
 #include "dialogs/GUIDialogOK.h"

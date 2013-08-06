@@ -20,7 +20,7 @@
  */
 
 #include "include.h"
-#include "SkinInfo.h"
+#include "addons/SkinInfo.h"
 #include "GUIWindowManager.h"
 #include "settings/GUISettings.h"
 #include "FileSystem/File.h"
@@ -35,7 +35,10 @@ using namespace XFILE;
 
 #define SKIN_MIN_VERSION 2.1f
 
-CSkinInfo g_SkinInfo; // global
+ADDON::CSkinInfo g_SkinInfo; // global
+
+namespace ADDON
+{
 
 CSkinInfo::CSkinInfo()
 {
@@ -345,3 +348,5 @@ int CSkinInfo::GetFirstWindow() const
     startWindow = WINDOW_STARTUP_ANIM;
   return startWindow;
 }
+
+} /*namespace ADDON*/
