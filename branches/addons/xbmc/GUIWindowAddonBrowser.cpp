@@ -117,13 +117,10 @@ bool CGUIWindowAddonBrowser::OnMessage(CGUIMessage& message)
           CLog::Log(LOGWARNING, "Warning, destination parameter (%s) may not be valid", strDestination.c_str());
           destPath = strDestination;
         }
-        if (!returning || m_vecItems->GetPath().Left(destPath.GetLength()) != destPath)
-        { // we're not returning to the same path, so set our directory to the requested path
-          m_vecItems->SetPath(destPath);
-        }
-        SetHistoryForPath(m_vecItems->GetPath());
-        m_startDirectory = returning ? destPath : "";
       }
+      m_vecItems->SetPath(destPath);
+      SetHistoryForPath(destPath);
+      m_startDirectory = returning ? destPath : "";
     }
     break;
   case GUI_MSG_CLICKED:
