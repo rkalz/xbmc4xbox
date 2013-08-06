@@ -501,6 +501,13 @@ void CAddon::BuildProfilePath()
   m_profile.Format("special://profile/addon_data/%s/", ID().c_str());
 }
 
+const CStdString CAddon::Icon() const
+{
+  if (CURL::IsFullPath(m_props.icon))
+    return m_props.icon;
+  return URIUtils::AddFileToFolder(m_props.path, m_props.icon);
+}
+
 /**
  * CAddonLibrary
  *
