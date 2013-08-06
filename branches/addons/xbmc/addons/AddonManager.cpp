@@ -492,7 +492,6 @@ bool CAddonMgr::AddonFromInfoXML(const TiXmlElement *rootElement,
   AddonProps addonProps(id, type, version);
   addonProps.name = name;
   URIUtils::GetDirectory(strPath,addonProps.path);
-  addonProps.icon = URIUtils::AddFileToFolder(addonProps.path, "default.tbn");
 
   /* Retrieve license */
   element = rootElement->FirstChildElement("license");
@@ -608,6 +607,11 @@ bool CAddonMgr::AddonFromInfoXML(const TiXmlElement *rootElement,
   }
 
   /*** Beginning of optional fields ***/
+  /* Retrieve icon */
+  element = rootElement->FirstChildElement("icon");
+  if (element)
+    addonProps.icon = element->GetText();
+
   /* Retrieve description */
   element = rootElement->FirstChildElement("description");
   if (element)
