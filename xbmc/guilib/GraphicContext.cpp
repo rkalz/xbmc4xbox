@@ -32,7 +32,7 @@
 #else
  #define D3D_CLEAR_STENCIL 0x0l
 #endif
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 #include "TextureManager.h"
 
 using namespace std;
@@ -686,7 +686,7 @@ void CGraphicContext::SetScalingResolution(RESOLUTION res, bool needsScaling)
     }
 
     // add additional zoom to compensate for any overskan built in skin
-    float fZoom = g_SkinInfo.GetSkinZoom();
+    float fZoom = ADDON::g_SkinInfo.GetSkinZoom();
 
     if(!g_guiSkinzoom) // lookup gui setting if we didn't have it already
       g_guiSkinzoom = (CSettingInt*)g_guiSettings.GetSetting("lookandfeel.skinzoom");

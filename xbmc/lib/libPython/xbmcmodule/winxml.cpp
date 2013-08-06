@@ -25,7 +25,7 @@
 #include "../XBPythonDll.h"
 #include "pyutil.h"
 #include "GUIPythonWindowXML.h"
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 #include "Util.h"
 #include "FileSystem/File.h"
 #include "utils/URIUtils.h"

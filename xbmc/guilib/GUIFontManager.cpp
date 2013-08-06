@@ -23,7 +23,7 @@
 #include "GUIFontManager.h"
 #include "GraphicContext.h"
 #include "GUIWindowManager.h"
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 #include "GUIFontTTF.h"
 #include "GUIFont.h"
 #include "XMLUtils.h"

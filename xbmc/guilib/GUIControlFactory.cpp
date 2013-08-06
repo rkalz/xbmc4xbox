@@ -61,7 +61,7 @@
 #include "XMLUtils.h"
 #include "GUIFontManager.h"
 #include "GUIColorManager.h"
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 #include "settings/Settings.h"
 
 using namespace std;

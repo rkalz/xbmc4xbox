@@ -31,7 +31,7 @@
 #include "lib/mikxbox/mikxbox.h"
 #include "credits_res.h"
 #include "lib/liblzo/LZO1X.H"
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 #include "GUIFont.h"
 #include "FileSystem/SpecialProtocol.h"
 #include "SectionLoader.h"

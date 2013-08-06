@@ -25,7 +25,7 @@
 #include "GUIDialog.h"
 #include "utils/CharsetConverter.h"
 #include "GUIFontManager.h"
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 
 using namespace std;
 
@@ -102,7 +102,7 @@ void CGUIButtonControl::RenderText()
 {
   m_label.SetMaxRect(m_posX, m_posY, m_width, m_height);
   m_label.SetText(m_info.GetLabel(m_parentID));
-  if (!g_SkinInfo.GetLegacy())
+  if (!ADDON::g_SkinInfo.GetLegacy())
     m_label.SetScrolling(HasFocus());
 
   // render the second label if it exists

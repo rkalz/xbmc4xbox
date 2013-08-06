@@ -20,7 +20,7 @@
  */
 
 #include "include.h"
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 #include "GUIWindowManager.h"
 #include "settings/GUISettings.h"
 #include "FileSystem/File.h"

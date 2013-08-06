@@ -31,7 +31,7 @@
 #include "GUIEditControl.h"
 #endif
 
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 #include "GUIInfoManager.h"
 #include "utils/SingleLock.h"
 #include "utils/TimeUtils.h"

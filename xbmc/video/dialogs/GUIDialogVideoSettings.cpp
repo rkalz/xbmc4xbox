@@ -33,7 +33,7 @@
 #include "video/VideoDatabase.h"
 #include "dialogs/GUIDialogYesNo.h"
 #include "settings/Settings.h"
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 
 CGUIDialogVideoSettings::CGUIDialogVideoSettings(void)
     : CGUIDialogSettings(WINDOW_DIALOG_VIDEO_OSD_SETTINGS, "VideoOSDSettings.xml")

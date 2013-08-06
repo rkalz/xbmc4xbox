@@ -21,7 +21,7 @@
 
 #include "pyutil.h"
 #include <wchar.h>
-#include "addons/SkinInfo.h"
+#include "addons/Skin.h"
 #include "tinyXML/tinyxml.h"
 #include "Application.h"
 #include "ApplicationMessenger.h"
