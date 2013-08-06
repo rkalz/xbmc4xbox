@@ -365,7 +365,7 @@ VECSOURCES& CGUIViewState::GetSources()
     // eg. pictures://UUID
     CMediaSource plugin;
     CURL path;
-    path.SetProtocol(ADDON::TranslateContent(m_content));
+    path.SetProtocol("plugin");
     path.SetHostName(addons[i]->ID());
     plugin.strPath = path.Get();
     plugin.strName = addons[i]->Name();
