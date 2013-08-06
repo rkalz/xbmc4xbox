@@ -386,8 +386,6 @@ void CPluginDirectory::AddSortMethod(int handle, SORT_METHOD sortMethod, const C
 bool CPluginDirectory::GetDirectory(const CStdString& strPath, CFileItemList& items)
 {
   CURL url(strPath);
-  // should never be called without addon id
-  assert(!url.GetHostName().IsEmpty());
 
   bool success = this->StartScript(strPath);
 
