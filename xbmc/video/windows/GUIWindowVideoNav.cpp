@@ -916,9 +916,6 @@ void CGUIWindowVideoNav::GetContextButtons(int itemNumber, CContextButtons &butt
 
         if (node == NODE_TYPE_SEASONS && item->m_bIsFolder)
           buttons.Add(CONTEXT_BUTTON_SET_SEASON_THUMB, 20371);
-
-        if (m_vecItems->GetPath().Equals("plugin://video/"))
-          buttons.Add(CONTEXT_BUTTON_SET_PLUGIN_THUMB, 1044);
           
         if (item->GetPath().Left(14).Equals("videodb://1/7/") && item->GetPath().size() > 14 && item->m_bIsFolder) // sets
         {
@@ -1024,7 +1021,6 @@ bool CGUIWindowVideoNav::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
   case CONTEXT_BUTTON_SET_SEASON_THUMB:
   case CONTEXT_BUTTON_SET_ACTOR_THUMB:
   case CONTEXT_BUTTON_SET_ARTIST_THUMB:
-  case CONTEXT_BUTTON_SET_PLUGIN_THUMB:
   case CONTEXT_BUTTON_SET_MOVIESET_THUMB:
     {
       // Grab the thumbnails from the web
@@ -1042,13 +1038,6 @@ bool CGUIWindowVideoNav::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
         cachedThumb = m_vecItems->Get(itemNumber)->GetCachedArtistThumb();
       if (button == CONTEXT_BUTTON_SET_MOVIESET_THUMB)
         cachedThumb = m_vecItems->Get(itemNumber)->GetCachedVideoThumb();
-      if (button == CONTEXT_BUTTON_SET_PLUGIN_THUMB)
-      {
-        strPath = m_vecItems->Get(itemNumber)->GetPath();
-        strPath.Replace("plugin://video/","special://home/plugins/video/");
-        CFileItem item(strPath,true);
-        cachedThumb = item.GetCachedProgramThumb();
-      }
       if (CFile::Exists(cachedThumb))
       {
         CFileItemPtr item(new CFileItem("thumb://Current", false));
@@ -1060,8 +1049,7 @@ bool CGUIWindowVideoNav::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
       noneitem->SetLabel(g_localizeStrings.Get(20018));
 
       CVideoInfoTag tag;
-      if (button != CONTEXT_BUTTON_SET_ARTIST_THUMB &&
-          button != CONTEXT_BUTTON_SET_PLUGIN_THUMB)
+      if (button != CONTEXT_BUTTON_SET_ARTIST_THUMB)
       {
         if (button == CONTEXT_BUTTON_SET_SEASON_THUMB)
           m_database.GetTvShowInfo("",tag,m_vecItems->Get(itemNumber)->GetVideoInfoTag()->m_iDbId);
@@ -1092,41 +1080,6 @@ bool CGUIWindowVideoNav::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
       }
 
       bool local=false;
-      if (button == CONTEXT_BUTTON_SET_PLUGIN_THUMB)
-      {
-        if (items.Size() == 0)
-        {
-          CFileItem item2(strPath,false);
-          item2.SetPath(URIUtils::AddFileToFolder(strPath,"default.py"));
-          if (CFile::Exists(item2.GetCachedProgramThumb()))
-          {
-            CFileItemPtr item(new CFileItem("thumb://Current", false));
-            item->SetThumbnailImage(item2.GetCachedProgramThumb());
-            item->SetLabel(g_localizeStrings.Get(20016));
-            items.Add(item);
-            local = true;
-          }
-        }
-        CStdString strThumb;
-        URIUtils::AddFileToFolder(strPath,"folder.jpg",strThumb);
-        if (CFile::Exists(strThumb))
-        {
-          CFileItemPtr item(new CFileItem(strThumb,false));
-          item->SetThumbnailImage(strThumb);
-          item->SetLabel(g_localizeStrings.Get(20017));
-          items.Add(item);
-          local = true;
-        }
-        URIUtils::AddFileToFolder(strPath,"default.tbn",strThumb);
-        if (CFile::Exists(strThumb))
-        {
-          CFileItemPtr item(new CFileItem(strThumb,false));
-          item->SetThumbnailImage(strThumb);
-          item->SetLabel(g_localizeStrings.Get(20017));
-          items.Add(item);
-          local = true;
-        }
-      }
       if (button == CONTEXT_BUTTON_SET_ARTIST_THUMB)
       {
         CStdString picturePath;
@@ -1211,15 +1164,7 @@ bool CGUIWindowVideoNav::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
           result = "thumb://None";
       }
       if (result == "thumb://None")
-      {
         CFile::Delete(cachedThumb);
-        if (button == CONTEXT_BUTTON_SET_PLUGIN_THUMB)
-        {
-          CFileItem item2(strPath,false);
-          item2.SetPath(URIUtils::AddFileToFolder(strPath,"default.py"));
-          CFile::Delete(item2.GetCachedProgramThumb());
-        }
-      }
       else
         CFile::Cache(result,cachedThumb);
 
