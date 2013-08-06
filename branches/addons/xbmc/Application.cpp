@@ -192,6 +192,7 @@
 #include "dialogs/GUIDialogSmartPlaylistRule.h"
 #include "pictures/GUIDialogPictureInfo.h"
 #include "addons/GUIDialogAddonSettings.h"
+#include "GUIDialogAddonInfo.h"
 #include "video/dialogs/GUIDialogFullScreenInfo.h"
 #include "dialogs/GUIDialogSlider.h"
 #include "cores/dlgcache.h"
@@ -1281,6 +1282,7 @@ HRESULT CApplication::Initialize()
   g_windowManager.Add(new CGUIDialogSmartPlaylistRule);       // window id = 137
   g_windowManager.Add(new CGUIDialogBusy);      // window id = 138
   g_windowManager.Add(new CGUIDialogPictureInfo);      // window id = 139
+  g_windowManager.Add(new CGUIDialogAddonInfo);
   g_windowManager.Add(new CGUIDialogAddonSettings);      // window id = 140
   g_windowManager.Add(new CGUIDialogTextViewer);              // window id = 147
 
@@ -3402,6 +3404,7 @@ HRESULT CApplication::Cleanup()
     g_windowManager.Delete(WINDOW_DIALOG_SMART_PLAYLIST_RULE);
     g_windowManager.Delete(WINDOW_DIALOG_BUSY);
     g_windowManager.Delete(WINDOW_DIALOG_PICTURE_INFO);
+    g_windowManager.Delete(WINDOW_DIALOG_ADDON_INFO);
     g_windowManager.Delete(WINDOW_DIALOG_ADDON_SETTINGS);
     g_windowManager.Delete(WINDOW_DIALOG_SLIDER);
     g_windowManager.Delete(WINDOW_DIALOG_TEXT_VIEWER);
