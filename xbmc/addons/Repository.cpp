@@ -43,6 +43,8 @@ AddonPtr CRepository::Clone(const AddonPtr &self) const
   result->m_info = m_info;
   result->m_checksum = m_checksum;
   result->m_datadir = m_datadir;
+  result->m_compressed = m_compressed;
+  result->m_zipped = m_zipped;
   return AddonPtr(result);
 }
 
@@ -50,6 +52,7 @@ CRepository::CRepository(const AddonProps& props) :
   CAddon(props)
 {
   m_compressed = false;
+  m_zipped = false;
   LoadFromXML(Path()+LibName());
 }
 
@@ -81,6 +84,13 @@ bool CRepository::LoadFromXML(const CStdString& xml)
   XMLUtils::GetString(doc.RootElement(),"info", m_info);
   XMLUtils::GetString(doc.RootElement(),"checksum", m_checksum);
   XMLUtils::GetString(doc.RootElement(),"datadir", m_datadir);
+  info = doc.RootElement()->FirstChildElement("datadir");
+  if (info)
+  {
+    const char* attr = info->Attribute("zip");
+    if (attr && stricmp(attr,"true") == 0)
+      m_zipped = true;
+  }
 
   return true;
 }
@@ -131,8 +141,16 @@ VECADDONS CRepository::Parse()
       if (CAddonMgr::AddonFromInfoXML(element,addon,m_info))
       {
         URIUtils::GetDirectory(m_info,addon->Props().path);
-        addon->Props().path = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"-"+addon->Version().str+".zip");
-        addon->Props().icon = URIUtils::AddFileToFolder(m_datadir,addon->ID()+".tbn");
+        if (m_zipped)
+        {
+          addon->Props().path = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"-"+addon->Version().str+".zip");
+          addon->Props().icon = URIUtils::AddFileToFolder(m_datadir,addon->ID()+".tbn");
+        }
+        else
+        {
+          addon->Props().path = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"/");
+          addon->Props().icon = URIUtils::AddFileToFolder(addon->Props().path,"default.tbn");
+        }
         result.push_back(addon);
       }
       element = element->NextSiblingElement("addoninfo");

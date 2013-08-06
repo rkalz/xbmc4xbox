@@ -100,6 +100,19 @@ bool CAddonsDirectory::GetDirectory(const CStdString& strPath, CFileItemList &it
 
   items.SetPath(strPath);
   GenerateListing(path, addons, items);
+  // check for available updates
+  if (path.GetHostName().Equals("enabled"))
+  {
+    CAddonDatabase database;
+    database.Open();
+    for (int i=0;i<items.Size();++i)
+    {
+      AddonPtr addon2;
+      database.GetAddon(items[i]->GetProperty("Addon.ID"),addon2);
+      if (addon2 && addon2->Version() > AddonVersion(items[i]->GetProperty("Addon.Version")))
+        items[i]->SetProperty("Addon.Status",g_localizeStrings.Get(24068));
+    }
+  }
 
   return true;
 }
@@ -119,6 +132,8 @@ void CAddonsDirectory::GenerateListing(CURL &path, VECADDONS& addons, CFileItemL
     AddonPtr addon2;
     if (CAddonMgr::Get()->GetAddon(addon->ID(),addon2))
       pItem->SetProperty("Addon.Status",g_localizeStrings.Get(305));
+    if (addon2 && addon2->Version() < addon->Version())
+      pItem->SetProperty("Addon.Status",g_localizeStrings.Get(24068));
     items.Add(pItem);
   }
 }
