@@ -140,7 +140,6 @@ VECADDONS CRepository::Parse()
       AddonPtr addon;
       if (CAddonMgr::AddonFromInfoXML(element,addon,m_info))
       {
-        URIUtils::GetDirectory(m_info,addon->Props().path);
         if (m_zipped)
         {
           addon->Props().path = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"-"+addon->Version().str+".zip");
