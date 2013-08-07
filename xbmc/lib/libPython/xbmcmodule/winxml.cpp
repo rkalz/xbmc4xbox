@@ -31,7 +31,7 @@
 #include "utils/URIUtils.h"
 
 using namespace std;
-using namespace ADDON;
+using ADDON::CSkinInfo;
 
 #define ACTIVE_WINDOW g_windowManager.GetActiveWindow()
 

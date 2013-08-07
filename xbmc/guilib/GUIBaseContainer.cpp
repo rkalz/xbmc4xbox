@@ -31,7 +31,6 @@
 #include "GUIStaticItem.h"
 
 using namespace std;
-using namespace ADDON;
 
 #define HOLD_TIME_START 100
 #define HOLD_TIME_END   3000

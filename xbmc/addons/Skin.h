@@ -142,6 +142,5 @@ protected:
   bool m_bLegacy;
 };
 
-extern CSkinInfo g_SkinInfo;
-
 } /*namespace ADDON*/
+extern ADDON::CSkinInfo g_SkinInfo;
