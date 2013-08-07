@@ -195,6 +195,7 @@
 #include "GUIDialogAddonInfo.h"
 #include "video/dialogs/GUIDialogFullScreenInfo.h"
 #include "dialogs/GUIDialogSlider.h"
+#include "GUIControlFactory.h"
 #include "cores/dlgcache.h"
 #include "guilib/GUIControlFactory.h"
 
@@ -2242,14 +2243,27 @@ void CApplication::Render()
 void CApplication::RenderMemoryStatus()
 {
   g_infoManager.UpdateFPS();
+
+  // reset the window scaling and fade status
+  RESOLUTION res = g_graphicsContext.GetVideoResolution();
+  g_graphicsContext.SetRenderingResolution(res, false);
+
+  static int yShift = 20;
+  static int xShift = 40;
+  static unsigned int lastShift = time(NULL);
+  time_t now = time(NULL);
+  if (now - lastShift > 10)
+  {
+    yShift *= -1;
+    if (now % 5 == 0)
+      xShift *= -1;
+    lastShift = now;
+  }
+
 #if !defined(_DEBUG) && !defined(PROFILE)
   if (LOG_LEVEL_DEBUG_FREEMEM <= g_advancedSettings.m_logLevel)
 #endif
   {
-    // reset the window scaling and fade status
-    RESOLUTION res = g_graphicsContext.GetVideoResolution();
-    g_graphicsContext.SetRenderingResolution(res, false);
-
     CStdStringW wszText;
     MEMORYSTATUS stat;
     GlobalMemoryStatus(&stat);
@@ -2258,6 +2272,39 @@ void CApplication::RenderMemoryStatus()
     float x = 0.04f * g_graphicsContext.GetWidth() + g_settings.m_ResInfo[res].Overscan.left;
     float y = 0.04f * g_graphicsContext.GetHeight() + g_settings.m_ResInfo[res].Overscan.top;
     CGUITextLayout::DrawOutlineText(g_fontManager.GetFont("font13"), x, y, 0xffffffff, 0xff000000, 2, wszText);
+  }
+
+  // render the skin debug info
+  if (g_SkinInfo->IsDebugging())
+  {
+    CStdString info;
+    CGUIWindow *window = g_windowManager.GetWindow(g_windowManager.GetFocusedWindow());
+    CPoint point(m_guiPointer.GetXPosition(), m_guiPointer.GetYPosition());
+    if (window)
+    {
+      CStdString windowName = CButtonTranslator::TranslateWindow(window->GetID());
+      if (!windowName.IsEmpty())
+        windowName += " (" + window->GetProperty("xmlfile") + ")";
+      else
+        windowName = window->GetProperty("xmlfile");
+      info = "Window: " + windowName + "  ";
+      // transform the mouse coordinates to this window's coordinates
+      g_graphicsContext.SetScalingResolution(window->GetCoordsRes(), true);
+      point.x *= g_graphicsContext.GetGUIScaleX();
+      point.y *= g_graphicsContext.GetGUIScaleY();
+      g_graphicsContext.SetRenderingResolution(res, false);
+    }
+    info.AppendFormat("Mouse: (%d,%d)  ", (int)point.x, (int)point.y);
+    if (window)
+    {
+      CGUIControl *control = window->GetFocusedControl();
+      if (control)
+        info.AppendFormat("Focused: %i (%s)", control->GetID(), CGUIControlFactory::TranslateControlType(control->GetControlType()).c_str());
+    }
+
+    float x = xShift + 0.04f * g_graphicsContext.GetWidth() + g_settings.m_ResInfo[res].Overscan.left;
+    float y = yShift + 0.08f * g_graphicsContext.GetHeight() + g_settings.m_ResInfo[res].Overscan.top;
+    CGUITextLayout::DrawOutlineText(g_fontManager.GetFont("font13"), x, y, 0xffffffff, 0xff000000, 2, info);
   }
 }
 
