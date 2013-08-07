@@ -1667,11 +1667,11 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
     CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(pSettingControl->GetID());
     CStdString strSkin = pControl->GetCurrentLabel();
     CStdString strSkinPath = "Q:\\skin\\" + strSkin;
-    if (ADDON::CSkinInfo::Check(strSkinPath))
+    if (/*ADDON::CSkinInfo::Check(strSkinPath)*/true)
     {
       m_strErrorMessage.Empty();
       pControl->SettingsCategorySetSpinTextColor(pControl->GetButtonLabelInfo().textColor);
-      if (strSkin != ".svn" && strSkin != g_guiSettings.GetString("lookandfeel.skin"))
+      if (strSkin != g_guiSettings.GetString("lookandfeel.skin"))
       {
         m_strNewSkin = strSkin;
         g_application.DelayLoadSkin();
@@ -1684,7 +1684,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
     }
     else
     {
-      m_strErrorMessage.Format("Incompatible skin. We require skins of version %0.2f or higher", g_SkinInfo.GetMinVersion());
+      m_strErrorMessage.Format("Incompatible skin. We require skins of version %0.2f or higher", g_SkinInfo->GetMinVersion());
       m_strNewSkin.Empty();
       g_application.CancelDelayLoadSkin();
       pControl->SettingsCategorySetSpinTextColor(pControl->GetButtonLabelInfo().disabledColor);
@@ -2350,7 +2350,7 @@ void CGUIWindowSettingsCategory::FillInSkinFonts(CSetting *pSetting)
 
   m_strNewSkinFontSet.Empty();
 
-  CStdString strPath = g_SkinInfo.GetSkinPath("Font.xml");
+  CStdString strPath = g_SkinInfo->GetSkinPath("Font.xml");
 
   TiXmlDocument xmlDoc;
   if (!xmlDoc.LoadFile(strPath))
@@ -3023,7 +3023,7 @@ void CGUIWindowSettingsCategory::FillInSkinColors(CSetting *pSetting)
   vector<CStdString> vecColors;
 
   CStdString strPath;
-  URIUtils::AddFileToFolder(g_SkinInfo.GetBaseDir(),"colors",strPath);
+  URIUtils::AddFileToFolder(g_SkinInfo->GetBaseDir(),"colors",strPath);
 
   CFileItemList items;
   CDirectory::GetDirectory(strPath, items, ".xml");
@@ -3062,7 +3062,7 @@ void CGUIWindowSettingsCategory::FillInStartupWindow(CSetting *pSetting)
   CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(GetSetting(pSetting->GetSetting())->GetID());
   pControl->Clear();
 
-  const vector<CSkinInfo::CStartupWindow> &startupWindows = g_SkinInfo.GetStartupWindows();
+  const vector<CSkinInfo::CStartupWindow> &startupWindows = g_SkinInfo->GetStartupWindows();
 
   // TODO: How should we localize this?
   // In the long run there is no way to do it really without the skin having some

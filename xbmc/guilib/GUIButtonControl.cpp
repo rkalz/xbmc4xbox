@@ -102,7 +102,7 @@ void CGUIButtonControl::RenderText()
 {
   m_label.SetMaxRect(m_posX, m_posY, m_width, m_height);
   m_label.SetText(m_info.GetLabel(m_parentID));
-  if (!g_SkinInfo.GetLegacy())
+  if (!g_SkinInfo->GetLegacy())
     m_label.SetScrolling(HasFocus());
 
   // render the second label if it exists
