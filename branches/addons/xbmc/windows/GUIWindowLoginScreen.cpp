@@ -292,7 +292,7 @@ void CGUIWindowLoginScreen::LoadProfile(unsigned int profile)
   g_weatherManager.Refresh();
   g_pythonParser.bLogin = true;
 
-  g_windowManager.ChangeActiveWindow(g_SkinInfo.GetFirstWindow());
+  g_windowManager.ChangeActiveWindow(g_SkinInfo->GetFirstWindow());
 
   g_application.UpdateLibraries();
 }

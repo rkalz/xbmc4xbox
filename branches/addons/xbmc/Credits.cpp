@@ -1134,7 +1134,7 @@ void RunCredits()
 
   // Load the skin credits from <skindir>\skin.xml
   for (int i = 0; i < 6; i++)
-    Credits[SkinOffset + i].Text = g_SkinInfo.GetCreditsLine(i);
+    Credits[SkinOffset + i].Text = g_SkinInfo->GetCreditsLine(i);
 
   FixedCredits = true;
 

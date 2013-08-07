@@ -35,12 +35,13 @@ using namespace XFILE;
 
 #define SKIN_MIN_VERSION 2.1f
 
-ADDON::CSkinInfo g_SkinInfo; // global
+boost::shared_ptr<ADDON::CSkinInfo> g_SkinInfo;
 
 namespace ADDON
 {
 
-CSkinInfo::CSkinInfo()
+CSkinInfo::CSkinInfo(const ADDON::AddonProps &props)
+  : CAddon(props)
 {
   m_DefaultResolution = PAL_4x3;
   m_DefaultResolutionWide = INVALID;
@@ -94,23 +95,6 @@ void CSkinInfo::Load(const CStdString& strSkinDir, bool loadIncludes)
   // Load the skin includes
   if (loadIncludes)
     LoadIncludes();
-}
-
-bool CSkinInfo::Check(const CStdString& strSkinDir)
-{
-  CSkinInfo info;
-  info.Load(strSkinDir, false);
-  if (info.GetVersion() < GetMinVersion())
-  {
-    CLog::Log(LOGERROR, "%s(%s) version is to old (%f versus %f)", __FUNCTION__, strSkinDir.c_str(), info.GetVersion(), GetMinVersion());
-    return false;
-  }
-  if (!info.HasSkinFile("Home.xml") || !info.HasSkinFile("Font.xml"))
-  {
-    CLog::Log(LOGERROR, "%s(%s) does not contain Home.xml or Font.xml", __FUNCTION__, strSkinDir.c_str());
-    return false;
-  }
-  return true;
 }
 
 CStdString CSkinInfo::GetSkinPath(const CStdString& strFile, RESOLUTION *res, const CStdString& strBaseDir /* = "" */) const

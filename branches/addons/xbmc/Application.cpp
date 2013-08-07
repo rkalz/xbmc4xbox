@@ -1081,22 +1081,6 @@ HRESULT CApplication::Create(HWND hWnd)
   if (!CButtonTranslator::GetInstance().Load())
     FatalErrorHandler(true, false, true);
 
-  // check the skin file for testing purposes
-  CStdString strSkinBase = "special://xbmc/skin/";
-  CStdString strSkinPath = strSkinBase + g_guiSettings.GetString("lookandfeel.skin");
-  CLog::Log(LOGINFO, "Checking skin version of: %s", g_guiSettings.GetString("lookandfeel.skin").c_str());
-  if (!CSkinInfo::Check(strSkinPath))
-  {
-    // reset to the default skin (DEFAULT_SKIN)
-    CLog::Log(LOGINFO, "The above skin isn't suitable - checking the version of the default: %s", DEFAULT_SKIN);
-    strSkinPath = strSkinBase + DEFAULT_SKIN;
-    if (!CSkinInfo::Check(strSkinPath))
-    {
-      g_LoadErrorStr.Format("No suitable skin version found.\nWe require at least version %5.4f \n", g_SkinInfo.GetMinVersion());
-      FatalErrorHandler(true, false, true);
-    }
-  }
-
   if (!g_graphicsContext.IsValidResolution(g_guiSettings.m_LookAndFeelResolution))
   {
     // Oh uh - doesn't look good for starting in their wanted screenmode
@@ -1335,7 +1319,7 @@ HRESULT CApplication::Initialize()
   }
   else
   {
-    g_windowManager.ActivateWindow(g_SkinInfo.GetFirstWindow());
+    g_windowManager.ActivateWindow(g_SkinInfo->GetFirstWindow());
   }
 
   g_pythonParser.bStartup = true;
@@ -1882,7 +1866,7 @@ void CApplication::LoadSkin(const CStdString& strSkin)
   UnloadSkin();
 
   // Load in the skin.xml file if it exists
-  g_SkinInfo.Load(strSkinPath);
+  g_SkinInfo->Load(strSkinPath);
 
   CLog::Log(LOGINFO, "  load fonts for skin...");
   g_graphicsContext.SetMediaDir(strSkinPath);
@@ -1921,7 +1905,7 @@ void CApplication::LoadSkin(const CStdString& strSkin)
 
   CLog::Log(LOGINFO, "  load new skin...");
   CGUIWindowHome *pHome = (CGUIWindowHome *)g_windowManager.GetWindow(WINDOW_HOME);
-  if (!CSkinInfo::Check(strSkinPath) || !pHome || !pHome->Load("Home.xml"))
+  if (!pHome || !pHome->Load("Home.xml"))
   {
     // failed to load home.xml
     // fallback to default skin
@@ -1956,7 +1940,7 @@ void CApplication::LoadSkin(const CStdString& strSkin)
   g_audioManager.Initialize(CAudioContext::DEFAULT_DEVICE);
   g_audioManager.Load();
 
-  if (g_SkinInfo.HasSkinFile("DialogFullScreenInfo.xml"))
+  if (g_SkinInfo->HasSkinFile("DialogFullScreenInfo.xml"))
     g_windowManager.Add(new CGUIDialogFullScreenInfo);
 
   CLog::Log(LOGINFO, "  skin loaded...");
@@ -2020,7 +2004,7 @@ bool CApplication::LoadUserWindows()
   // Start from wherever home.xml is
 
   std::vector<CStdString> vecSkinPath;
-  g_SkinInfo.GetSkinPaths(vecSkinPath);
+  g_SkinInfo->GetSkinPaths(vecSkinPath);
   for (unsigned int i = 0;i < vecSkinPath.size();++i)
   {
     CStdString strPath = URIUtils::AddFileToFolder(vecSkinPath[i], "custom*.xml");

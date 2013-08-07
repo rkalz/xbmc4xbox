@@ -180,14 +180,14 @@ bool CGUIControlFactory::GetFloat(const TiXmlNode* pRootNode, const char* strTag
 {
   const TiXmlNode* pNode = pRootNode->FirstChild(strTag );
   if (!pNode || !pNode->FirstChild()) return false;
-  return g_SkinInfo.ResolveConstant(pNode->FirstChild()->Value(), value);
+  return g_SkinInfo->ResolveConstant(pNode->FirstChild()->Value(), value);
 }
 
 bool CGUIControlFactory::GetUnsigned(const TiXmlNode* pRootNode, const char* strTag, unsigned int &value)
 {
   const TiXmlNode* pNode = pRootNode->FirstChild(strTag );
   if (!pNode || !pNode->FirstChild()) return false;
-  return g_SkinInfo.ResolveConstant(pNode->FirstChild()->Value(), value);
+  return g_SkinInfo->ResolveConstant(pNode->FirstChild()->Value(), value);
 }
 
 bool CGUIControlFactory::GetDimension(const TiXmlNode *pRootNode, const char* strTag, float &value, float &min)
@@ -196,12 +196,12 @@ bool CGUIControlFactory::GetDimension(const TiXmlNode *pRootNode, const char* st
   if (!pNode || !pNode->FirstChild()) return false;
   if (0 == strnicmp("auto", pNode->FirstChild()->Value(), 4))
   { // auto-width - at least min must be set
-    g_SkinInfo.ResolveConstant(pNode->Attribute("max"), value);
-    g_SkinInfo.ResolveConstant(pNode->Attribute("min"), min);
+    g_SkinInfo->ResolveConstant(pNode->Attribute("max"), value);
+    g_SkinInfo->ResolveConstant(pNode->Attribute("min"), min);
     if (!min) min = 1;
     return true;
   }
-  return g_SkinInfo.ResolveConstant(pNode->FirstChild()->Value(), value);
+  return g_SkinInfo->ResolveConstant(pNode->FirstChild()->Value(), value);
 }
 
 bool CGUIControlFactory::GetPath(const TiXmlNode* pRootNode, const char* strTag, CStdString& strStringPath)
@@ -289,17 +289,17 @@ void CGUIControlFactory::GetRectFromString(const CStdString &string, FRECT &rect
   StringUtils::SplitString(string, ",", strRect);
   if (strRect.size() == 1)
   {
-    g_SkinInfo.ResolveConstant(strRect[0], rect.left);
+    g_SkinInfo->ResolveConstant(strRect[0], rect.left);
     rect.top = rect.left;
     rect.right = rect.left;
     rect.bottom = rect.left;
   }
   else if (strRect.size() == 4)
   {
-    g_SkinInfo.ResolveConstant(strRect[0], rect.left);
-    g_SkinInfo.ResolveConstant(strRect[1], rect.top);
-    g_SkinInfo.ResolveConstant(strRect[2], rect.right);
-    g_SkinInfo.ResolveConstant(strRect[3], rect.bottom);
+    g_SkinInfo->ResolveConstant(strRect[0], rect.left);
+    g_SkinInfo->ResolveConstant(strRect[1], rect.top);
+    g_SkinInfo->ResolveConstant(strRect[2], rect.right);
+    g_SkinInfo->ResolveConstant(strRect[3], rect.bottom);
   }
 }
 
@@ -445,16 +445,16 @@ bool CGUIControlFactory::GetHitRect(const TiXmlNode *control, CRect &rect)
   const TiXmlElement* node = control->FirstChildElement("hitrect");
   if (node)
   {
-    if (node->Attribute("x")) g_SkinInfo.ResolveConstant(node->Attribute("x"), rect.x1);
-    if (node->Attribute("y")) g_SkinInfo.ResolveConstant(node->Attribute("y"), rect.y1);
+    if (node->Attribute("x")) g_SkinInfo->ResolveConstant(node->Attribute("x"), rect.x1);
+    if (node->Attribute("y")) g_SkinInfo->ResolveConstant(node->Attribute("y"), rect.y1);
     if (node->Attribute("w"))
     {
-      g_SkinInfo.ResolveConstant(node->Attribute("w"), rect.x2);
+      g_SkinInfo->ResolveConstant(node->Attribute("w"), rect.x2);
       rect.x2 += rect.x1;
     }
     if (node->Attribute("h"))
     {
-      g_SkinInfo.ResolveConstant(node->Attribute("h"), rect.y2);
+      g_SkinInfo->ResolveConstant(node->Attribute("h"), rect.y2);
       rect.y2 += rect.y1;
     }
     return true;
@@ -595,14 +595,14 @@ CStdString CGUIControlFactory::GetType(const TiXmlElement *pControlNode)
 CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlElement* pControlNode, bool insideContainer)
 {
   // resolve any <include> tag's in this control
-  g_SkinInfo.ResolveIncludes(pControlNode);
+  g_SkinInfo->ResolveIncludes(pControlNode);
 
   // get the control type
   CStdString strType = GetType(pControlNode);
   CGUIControl::GUICONTROLTYPES type = TranslateControlType(strType);
 
   // resolve again with strType set so that <default> tags are added
-  g_SkinInfo.ResolveIncludes(pControlNode, strType);
+  g_SkinInfo->ResolveIncludes(pControlNode, strType);
 
   int id = 0;
   float posX = 0, posY = 0;
@@ -1061,8 +1061,8 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
   if (cam)
   {
     hasCamera = true;
-    g_SkinInfo.ResolveConstant(cam->Attribute("x"), camera.x);
-    g_SkinInfo.ResolveConstant(cam->Attribute("y"), camera.y);
+    g_SkinInfo->ResolveConstant(cam->Attribute("x"), camera.x);
+    g_SkinInfo->ResolveConstant(cam->Attribute("y"), camera.y);
   }
 
   XMLUtils::GetInt(pControlNode, "scrollspeed", labelInfo.scrollSpeed);
