@@ -102,7 +102,6 @@ public:
   DWORD GetThreadId() const { return m_threadID; };
   void Stop();
   void RestartApp();
-  bool LoadSkin(const CStdString& skinID);
   void UnloadSkin();
   bool LoadUserWindows();
   void DelayLoadSkin();
@@ -219,6 +218,7 @@ public:
   int GlobalIdleTime();
 
 protected:
+  bool LoadSkin(const CStdString& skinID);
   void LoadSkin(const boost::shared_ptr<ADDON::CSkinInfo>& skin);
   friend class CApplicationMessenger;
   // screensaver
