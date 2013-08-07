@@ -39,7 +39,7 @@ public:
   CGUIWindowAddonBrowser(void);
   virtual ~CGUIWindowAddonBrowser(void);
   virtual bool OnMessage(CGUIMessage& message);
-  virtual bool OnAction(const CAction &action);
+//  virtual bool OnAction(const CAction &action);
 
   void RegisterJob(const CStdString& id, CFileOperationJob* job,
                    unsigned int jobid);
