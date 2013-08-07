@@ -496,7 +496,7 @@ bool CAddonMgr::AddonFromInfoXML(const TiXmlElement *rootElement,
   /* Set Changelog */
   addonProps.changelog = URIUtils::AddFileToFolder(addonProps.path,"changelog.txt");
   /* Set Fanart */
-  addonProps.changelog = URIUtils::AddFileToFolder(addonProps.path,"fanart.jpg");
+  addonProps.fanart = URIUtils::AddFileToFolder(addonProps.path,"fanart.jpg");
 
   /* Retrieve license */
   element = rootElement->FirstChildElement("license");
