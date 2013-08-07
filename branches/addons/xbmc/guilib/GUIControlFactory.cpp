@@ -65,7 +65,6 @@
 #include "settings/Settings.h"
 
 using namespace std;
-using namespace ADDON;
 
 typedef struct
 {

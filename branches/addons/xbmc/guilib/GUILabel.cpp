@@ -78,7 +78,7 @@ void CGUILabel::Render()
 
   // compatibility for old skins like pm3 where text overflowed even if a width set,
   // and with no width set, the right alignment was based on calculated length.
-  if (ADDON::g_SkinInfo.GetLegacy() && overFlows && !m_renderRect.Width()) {
+  if (g_SkinInfo.GetLegacy() && overFlows && !m_renderRect.Width()) {
     overFlows = false;
     m_renderRect.x2 = m_renderRect.x1 + m_textLayout.GetTextWidth();
     if (m_label.align & XBFONT_RIGHT) {
