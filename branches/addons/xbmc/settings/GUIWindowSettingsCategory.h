@@ -48,7 +48,6 @@ protected:
   void FillInSubtitleFonts(CSetting *pSetting);
   void FillInCharSets(CSetting *pSetting);
   void FillInSkinFonts(CSetting *pSetting);
-  void FillInSkins(CSetting *pSetting);
   void FillInSoundSkins(CSetting *pSetting);
   void FillInLanguages(CSetting *pSetting);
   void FillInVoiceMasks(DWORD dwPort, CSetting *pSetting);   // Karaoke patch (114097)

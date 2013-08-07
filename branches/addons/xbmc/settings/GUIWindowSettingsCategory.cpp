@@ -648,10 +648,6 @@ void CGUIWindowSettingsCategory::CreateSettings()
     {
       FillInSkinFonts(pSetting);
     }
-    else if (strSetting.Equals("lookandfeel.skin"))
-    {
-      FillInSkins(pSetting);
-    }
     else if (strSetting.Equals("lookandfeel.soundskin"))
     {
       FillInSoundSkins(pSetting);
@@ -1286,6 +1282,10 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
     CSettingAddon *pSettingAddon = (CSettingAddon*)pSettingControl->GetSetting();
     CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(GetSetting(strSetting)->GetID());
     FillInAddons(pControl, pSettingAddon);
+    if (pSettingAddon->m_type == ADDON_SKIN)
+    {
+      g_application.ReloadSkin();
+    }
   }
   else if (strSetting.Equals("musicplayer.visualisation"))
   { // new visualisation choosen...
@@ -1660,34 +1660,6 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
     { // Do not reload the language we are already using
       m_strNewSkinFontSet.Empty();
       g_application.CancelDelayLoadSkin();
-    }
-  }
-  else if (strSetting.Equals("lookandfeel.skin"))
-  { // new skin choosen...
-    CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(pSettingControl->GetID());
-    CStdString strSkin = pControl->GetCurrentLabel();
-    CStdString strSkinPath = "Q:\\skin\\" + strSkin;
-    if (/*ADDON::CSkinInfo::Check(strSkinPath)*/true)
-    {
-      m_strErrorMessage.Empty();
-      pControl->SettingsCategorySetSpinTextColor(pControl->GetButtonLabelInfo().textColor);
-      if (strSkin != g_guiSettings.GetString("lookandfeel.skin"))
-      {
-        m_strNewSkin = strSkin;
-        g_application.DelayLoadSkin();
-      }
-      else
-      { // Do not reload the skin we are already using
-        m_strNewSkin.Empty();
-        g_application.CancelDelayLoadSkin();
-      }
-    }
-    else
-    {
-      m_strErrorMessage.Format("Incompatible skin. We require skins of version %0.2f or higher", g_SkinInfo->GetMinVersion());
-      m_strNewSkin.Empty();
-      g_application.CancelDelayLoadSkin();
-      pControl->SettingsCategorySetSpinTextColor(pControl->GetButtonLabelInfo().disabledColor);
     }
   }
   else if (strSetting.Equals("lookandfeel.soundskin"))
@@ -2405,53 +2377,6 @@ void CGUIWindowSettingsCategory::FillInSkinFonts(CSetting *pSetting)
     pControl->SetValue(1);
     pControl->SetEnabled(false);
   }
-}
-
-void CGUIWindowSettingsCategory::FillInSkins(CSetting *pSetting)
-{
-  CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(GetSetting(pSetting->GetSetting())->GetID());
-  pControl->SetType(SPIN_CONTROL_TYPE_TEXT);
-  pControl->Clear();
-  pControl->SetShowRange(true);
-
-  m_strNewSkin.Empty();
-
-  //find skins...
-  CFileItemList items;
-  CDirectory::GetDirectory("special://xbmc/skin/", items);
-  if (!CSpecialProtocol::XBMCIsHome())
-    CDirectory::GetDirectory("special://home/skin/", items);
-
-  int iCurrentSkin = 0;
-  int iSkin = 0;
-  vector<CStdString> vecSkins;
-  for (int i = 0; i < items.Size(); ++i)
-  {
-    CFileItemPtr pItem = items[i];
-    if (pItem->m_bIsFolder)
-    {
-      if (strcmpi(pItem->GetLabel().c_str(), ".svn") == 0) continue;
-      if (strcmpi(pItem->GetLabel().c_str(), "fonts") == 0) continue;
-      if (strcmpi(pItem->GetLabel().c_str(), "media") == 0) continue;
-      //   if (CSkinInfo::Check(pItem->GetPath()))
-      //   {
-      vecSkins.push_back(pItem->GetLabel());
-      //   }
-    }
-  }
-
-  sort(vecSkins.begin(), vecSkins.end(), sortstringbyname());
-  for (unsigned int i = 0; i < vecSkins.size(); ++i)
-  {
-    CStdString strSkin = vecSkins[i];
-    if (strcmpi(strSkin.c_str(), g_guiSettings.GetString("lookandfeel.skin").c_str()) == 0)
-    {
-      iCurrentSkin = iSkin;
-    }
-    pControl->AddLabel(strSkin, iSkin++);
-  }
-  pControl->SetValue(iCurrentSkin);
-  return ;
 }
 
 void CGUIWindowSettingsCategory::FillInSoundSkins(CSetting *pSetting)
