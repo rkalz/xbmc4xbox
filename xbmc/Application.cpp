@@ -1220,8 +1220,8 @@ HRESULT CApplication::Initialize()
 
   g_windowManager.Add(new CGUIWindowHome);                     // window id = 0
 
-  CLog::Log(LOGNOTICE, "load default skin:[%s]", g_guiSettings.GetString("lookandfeel.skin").c_str());
-  LoadSkin(g_guiSettings.GetString("lookandfeel.skin"));
+  if (!LoadSkin(g_guiSettings.GetString("lookandfeel.skin")))
+    LoadSkin(DEFAULT_SKIN);
 
   g_windowManager.Add(new CGUIWindowPrograms);                 // window id = 1
   g_windowManager.Add(new CGUIWindowPictures);                 // window id = 2
@@ -1826,8 +1826,27 @@ void CApplication::ReloadSkin()
   }
 }
 
-void CApplication::LoadSkin(const CStdString& strSkin)
+bool CApplication::LoadSkin(const CStdString& skinID)
 {
+  AddonPtr addon;
+  if (CAddonMgr::Get()->GetAddon(skinID, addon))
+  {
+    LoadSkin(boost::dynamic_pointer_cast<ADDON::CSkinInfo>(addon));
+    return true;
+  }
+  return false;
+}
+
+void CApplication::LoadSkin(const SkinPtr& skin)
+{
+  if (!skin)
+  {
+    CLog::Log(LOGERROR, "failed to load requested skin, fallback to \"%s\" skin", DEFAULT_SKIN);
+    g_guiSettings.SetString("lookandfeel.skin", DEFAULT_SKIN);
+    LoadSkin(DEFAULT_SKIN);
+    return ;
+  }
+
   bool bPreviousPlayingState=false;
   bool bPreviousRenderingState=false;
   if (g_application.m_pPlayer && g_application.IsPlayingVideo())
@@ -1852,12 +1871,6 @@ void CApplication::LoadSkin(const CStdString& strSkin)
   CSingleLock lock(g_graphicsContext);
 
   m_skinReloadTime = 0;
-
-  CStdString strHomePath;
-  CStdString strSkinPath = "Q:\\skin\\" + strSkin;
-
-  CLog::Log(LOGINFO, "  load skin from:%s", strSkinPath.c_str());
-
   // save the current window details
   int currentWindow = g_windowManager.GetActiveWindow();
   vector<int> currentModelessWindows;
@@ -1866,12 +1879,14 @@ void CApplication::LoadSkin(const CStdString& strSkin)
   CLog::Log(LOGINFO, "  delete old skin...");
   UnloadSkin();
 
-  // Load in the skin.xml file if it exists
-  g_SkinInfo->Load(strSkinPath);
+  CLog::Log(LOGINFO, "  load skin from:%s", skin->Path().c_str());
+
+  g_SkinInfo = skin;
+  g_SkinInfo->Start();
 
   CLog::Log(LOGINFO, "  load fonts for skin...");
-  g_graphicsContext.SetMediaDir(strSkinPath);
-  g_directoryCache.ClearSubPaths(strSkinPath);
+  g_graphicsContext.SetMediaDir(skin->Path());
+  g_directoryCache.ClearSubPaths(skin->Path());
   if (g_langInfo.ForceUnicodeFont() && !g_fontManager.IsFontSetUnicode(g_guiSettings.GetString("lookandfeel.font")))
   {
     CLog::Log(LOGINFO, "    language needs a ttf font, loading first ttf font available");
@@ -1890,16 +1905,16 @@ void CApplication::LoadSkin(const CStdString& strSkin)
   g_fontManager.LoadFonts(g_guiSettings.GetString("lookandfeel.font"));
 
   // load in the skin strings
-  CStdString skinPath, skinEnglishPath;
-  URIUtils::AddFileToFolder(strSkinPath, "language", skinPath);
-  URIUtils::AddFileToFolder(skinPath, g_guiSettings.GetString("locale.language"), skinPath);
-  URIUtils::AddFileToFolder(skinPath, "strings.xml", skinPath);
+  CStdString langPath, skinEnglishPath;
+  URIUtils::AddFileToFolder(skin->Path(), "language", langPath);
+  URIUtils::AddFileToFolder(langPath, g_guiSettings.GetString("locale.language"), langPath);
+  URIUtils::AddFileToFolder(langPath, "strings.xml", langPath);
 
-  URIUtils::AddFileToFolder(strSkinPath, "language", skinEnglishPath);
+  URIUtils::AddFileToFolder(skin->Path(), "language", skinEnglishPath);
   URIUtils::AddFileToFolder(skinEnglishPath, "English", skinEnglishPath);
   URIUtils::AddFileToFolder(skinEnglishPath, "strings.xml", skinEnglishPath);
 
-  g_localizeStrings.LoadSkinStrings(skinPath, skinEnglishPath);
+  g_localizeStrings.LoadSkinStrings(langPath, skinEnglishPath);
 
   LARGE_INTEGER start;
   QueryPerformanceCounter(&start);
@@ -1910,11 +1925,11 @@ void CApplication::LoadSkin(const CStdString& strSkin)
   {
     // failed to load home.xml
     // fallback to default skin
-    if ( strcmpi(strSkin.c_str(), DEFAULT_SKIN) != 0)
+    if ( strcmpi(skin->ID().c_str(), DEFAULT_SKIN) != 0)
     {
-      CLog::Log(LOGERROR, "failed to load home.xml for skin:%s, fallback to \"%s\" skin", strSkin.c_str(), DEFAULT_SKIN);
+      CLog::Log(LOGERROR, "failed to load home.xml for skin:%s, fallback to \"%s\" skin", skin->ID().c_str(), DEFAULT_SKIN);
       g_guiSettings.SetString("lookandfeel.skin", DEFAULT_SKIN);
-      LoadSkin(g_guiSettings.GetString("lookandfeel.skin"));
+      LoadSkin(DEFAULT_SKIN);
       return ;
     }
   }

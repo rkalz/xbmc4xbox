@@ -52,6 +52,7 @@
 #include "Scraper.h"
 //#endif
 #include "Repository.h"
+#include "Skin.h"
 
 using namespace std;
 
@@ -135,6 +136,8 @@ bool CAddonMgr::GetAllAddons(VECADDONS &addons, bool enabledOnly/*= true*/)
   if (CAddonMgr::Get()->GetAddons(ADDON_SCREENSAVER, temp, CONTENT_NONE, enabledOnly))
     addons.insert(addons.end(), temp.begin(), temp.end());
   if (CAddonMgr::Get()->GetAddons(ADDON_SCRIPT, temp, CONTENT_NONE, enabledOnly))
+    addons.insert(addons.end(), temp.begin(), temp.end());
+  if (CAddonMgr::Get()->GetAddons(ADDON_SKIN, temp, CONTENT_NONE, enabledOnly))
     addons.insert(addons.end(), temp.begin(), temp.end());
   if (CAddonMgr::Get()->GetAddons(ADDON_VIZ, temp, CONTENT_NONE, enabledOnly))
     addons.insert(addons.end(), temp.begin(), temp.end());
@@ -691,6 +694,8 @@ AddonPtr CAddonMgr::AddonFromProps(AddonProps& addonProps)
       return AddonPtr(new CAddon(addonProps));
     case ADDON_SCRAPER:
       return AddonPtr(new CScraper(addonProps));
+    case ADDON_SKIN:
+      return AddonPtr(new CSkinInfo(addonProps));
     case ADDON_VIZ:
       return AddonPtr(new CVisualisation(addonProps));
     case ADDON_SCREENSAVER:
