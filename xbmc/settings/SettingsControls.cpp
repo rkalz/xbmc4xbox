@@ -113,10 +113,15 @@ bool CSpinExSettingControl::OnClick()
     ((CSettingFloat *)m_pSetting)->SetData(m_pSpin->GetFloatValue());
   else
   {
-    if (m_pSetting->GetType() != SETTINGS_TYPE_STRING)
+    if (m_pSetting->GetType() == SETTINGS_TYPE_INT)
     {
       CSettingInt *pSettingInt = (CSettingInt *)m_pSetting;
       pSettingInt->SetData(m_pSpin->GetValue());
+    }
+    else if (m_pSetting->GetType() == SETTINGS_TYPE_ADDON)
+    {
+      CSettingAddon *pSettingAddon = (CSettingAddon *)m_pSetting;
+      pSettingAddon->SetData(m_pSpin->GetValue());
     }
   }
   return true;
@@ -133,6 +138,11 @@ void CSpinExSettingControl::Update()
   {
     CSettingInt *pSettingInt = (CSettingInt *)m_pSetting;
     m_pSpin->SetValue(pSettingInt->GetData());
+  }
+  else if (m_pSetting->GetType() == SETTINGS_TYPE_ADDON)
+  {
+    CSettingAddon *pSettingAddon = (CSettingAddon *)m_pSetting;
+    m_pSpin->SetValue(pSettingAddon->GetPos());
   }
 }
 
