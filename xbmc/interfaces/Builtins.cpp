@@ -971,7 +971,12 @@ int CBuiltins::Execute(const CStdString& execString)
           strMask = ".py";
         CStdString replace;
         if (CGUIDialogFileBrowser::ShowAndGetFile(url.Get(), strMask, TranslateType(type, true), replace, true, true, true))
-          g_settings.SetSkinString(string, URIUtils::GetFileName(replace));
+        {
+          if (replace.Mid(0,9).Equals("addons://"))
+            g_settings.SetSkinString(string, URIUtils::GetFileName(replace));
+          else
+            g_settings.SetSkinString(string, replace);
+        }
       }
       else
       {
