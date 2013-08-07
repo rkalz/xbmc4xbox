@@ -66,7 +66,6 @@ void CSkinInfo::Start(const CStdString& strSkinDir /* = "" */)
   CStdString dir2(strSkinDir);
   if (dir2.IsEmpty())
     dir2 = Path(); 
-  bool loadIncludes = true;
   SetDefaults();
 
   // Load from skin.xml
@@ -99,8 +98,7 @@ void CSkinInfo::Start(const CStdString& strSkinDir /* = "" */)
       CLog::Log(LOGERROR, "%s - %s doesnt contain <skin>", __FUNCTION__, strFile.c_str());
   }
   // Load the skin includes
-  if (loadIncludes)
-    LoadIncludes();
+  LoadIncludes();
 }
 
 /*bool CSkinInfo::Check(const CStdString& strSkinDir)
