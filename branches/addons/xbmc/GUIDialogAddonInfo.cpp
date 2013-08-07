@@ -32,7 +32,6 @@
 #include "URIUtils.h"
 #include "utils/JobManager.h"
 #include "utils/FileOperationJob.h"
-#include "utils/SingleLock.h"
 
 #define CONTROL_BTN_INSTALL          6
 #define CONTROL_BTN_DISABLE          7
@@ -46,6 +45,7 @@ using namespace XFILE;
 CGUIDialogAddonInfo::CGUIDialogAddonInfo(void)
     : CGUIDialog(WINDOW_DIALOG_ADDON_INFO, "DialogAddonInfo.xml")
 {
+  m_item = CFileItemPtr(new CFileItem);
 }
 
 CGUIDialogAddonInfo::~CGUIDialogAddonInfo(void)
@@ -60,7 +60,6 @@ bool CGUIDialogAddonInfo::OnMessage(CGUIMessage& message)
     {
       if (m_jobid)
         CJobManager::GetInstance().CancelJob(m_jobid);
-      CSingleLock lock(m_critSection); // to make sure we're not busy with a callback
     }
     break;
 
@@ -149,7 +148,7 @@ bool CGUIDialogAddonInfo::ShowForItem(const CFileItemPtr& item)
   CGUIDialogAddonInfo* dialog = (CGUIDialogAddonInfo*)g_windowManager.GetWindow(WINDOW_DIALOG_ADDON_INFO);
   if (!dialog)
     return false;
-  dialog->m_item = CFileItemPtr(new CFileItem(*item));
+  *dialog->m_item = *item;
   CURL url(item->GetPath());
   if (url.GetHostName().Equals("enabled"))
   {
@@ -206,8 +205,6 @@ void CGUIDialogAddonInfo::OnJobComplete(unsigned int jobID, bool success,
     m_item->SetProperty("Addon.Changelog",g_localizeStrings.Get(195));
     return;
   }
-
-  CSingleLock lock(m_critSection);
 
   CFile file;
   if (file.Open("special://temp/"+
