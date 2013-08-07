@@ -612,7 +612,7 @@ void CGUISettings::Initialize()
 
   AddCategory(7, "screensaver", 360);
   AddInt(1, "screensaver.time", 355, 3, 1, 1, 60, SPIN_CONTROL_INT_PLUS, MASK_MINS);
-  AddDefaultAddon(2, "screensaver.mode", 356, "Dim", ADDON_SCREENSAVER);
+  AddString(2, "screensaver.mode", 356, "Dim", SPIN_CONTROL_TEXT);
   AddBool(3, "screensaver.usemusicvisinstead", 13392, true);
   AddBool(4, "screensaver.usedimonpause", 22014, true);
   AddSeparator(5, "screensaver.sep1");
