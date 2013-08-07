@@ -146,9 +146,13 @@ VECADDONS CRepository::Parse()
         {
           addon->Props().path = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"/"+addon->ID()+"-"+addon->Version().str+".zip");
           addon->Props().icon = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"/icon.png");
+          addon->Props().changelog = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"/changelog-"+addon->Version().str+".txt");
         }
         else
+        {
           addon->Props().path = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"/");
+          addon->Props().changelog = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"/changelog.txt");
+        }
         result.push_back(addon);
       }
       element = element->NextSiblingElement("addoninfo");
