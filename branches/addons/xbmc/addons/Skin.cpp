@@ -51,7 +51,6 @@ CSkinInfo::~CSkinInfo()
 
 void CSkinInfo::SetDefaults()
 {
-  m_strBaseDir = "";
   m_DefaultResolution = PAL_4x3;
   m_DefaultResolutionWide = INVALID;
   m_effectsSlowDown = 1.0f;
@@ -62,14 +61,14 @@ void CSkinInfo::SetDefaults()
   m_bLegacy = false;
 }
 
-void CSkinInfo::Load(const CStdString& strSkinDir, bool loadIncludes)
+void CSkinInfo::Start(const CStdString& strSkinDir /* = "" */)
 {
+  bool loadIncludes = true;
   SetDefaults();
-  m_strBaseDir = strSkinDir;
 
   // Load from skin.xml
   TiXmlDocument xmlDoc;
-  CStdString strFile = m_strBaseDir + "\\skin.xml";
+  CStdString strFile = Path() + "\\skin.xml";
   if (xmlDoc.LoadFile(strFile))
   { // ok - get the default skin folder out of it...
     const TiXmlNode* root = xmlDoc.RootElement();
@@ -79,8 +78,8 @@ void CSkinInfo::Load(const CStdString& strSkinDir, bool loadIncludes)
       if (!GetResolution(root, "defaultwideresolution", m_DefaultResolutionWide))
         m_DefaultResolutionWide = m_DefaultResolution;
 
-      CLog::Log(LOGINFO, "Default 4:3 resolution directory is %s", URIUtils::AddFileToFolder(m_strBaseDir, GetDirFromRes(m_DefaultResolution)).c_str());
-      CLog::Log(LOGINFO, "Default 16:9 resolution directory is %s", URIUtils::AddFileToFolder(m_strBaseDir, GetDirFromRes(m_DefaultResolutionWide)).c_str());
+      CLog::Log(LOGINFO, "Default 4:3 resolution directory is %s", URIUtils::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolution)).c_str());
+      CLog::Log(LOGINFO, "Default 16:9 resolution directory is %s", URIUtils::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolutionWide)).c_str());
 
       XMLUtils::GetDouble(root, "version", m_Version);
       XMLUtils::GetFloat(root, "effectslowdown", m_effectsSlowDown);
@@ -103,7 +102,7 @@ void CSkinInfo::Load(const CStdString& strSkinDir, bool loadIncludes)
 
 CStdString CSkinInfo::GetSkinPath(const CStdString& strFile, RESOLUTION *res, const CStdString& strBaseDir /* = "" */) const
 {
-  CStdString strPathToUse = m_strBaseDir;
+  CStdString strPathToUse = Path();
   if (!strBaseDir.IsEmpty())
     strPathToUse = strBaseDir;
 
@@ -202,11 +201,6 @@ RESOLUTION CSkinInfo::TranslateResolution(const CStdString &res, RESOLUTION def)
   return def;
 }
 
-CStdString CSkinInfo::GetBaseDir() const
-{
-  return m_strBaseDir;
-}
-
 double CSkinInfo::GetMinVersion()
 {
   return SKIN_MIN_VERSION;
@@ -298,13 +292,13 @@ void CSkinInfo::GetSkinPaths(std::vector<CStdString> &paths) const
   RESOLUTION resToUse = INVALID;
   GetSkinPath("Home.xml", &resToUse);
   if (resToUse == HDTV_1080i)
-    paths.push_back(URIUtils::AddFileToFolder(m_strBaseDir, GetDirFromRes(HDTV_1080i)));
+    paths.push_back(URIUtils::AddFileToFolder(Path(), GetDirFromRes(HDTV_1080i)));
   if (resToUse == HDTV_720p)
-    paths.push_back(URIUtils::AddFileToFolder(m_strBaseDir, GetDirFromRes(HDTV_720p)));
+    paths.push_back(URIUtils::AddFileToFolder(Path(), GetDirFromRes(HDTV_720p)));
   if (resToUse != m_DefaultResolutionWide && IsWide(resToUse))
-    paths.push_back(URIUtils::AddFileToFolder(m_strBaseDir, GetDirFromRes(m_DefaultResolutionWide)));
+    paths.push_back(URIUtils::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolutionWide)));
   if (resToUse != m_DefaultResolution && (!IsWide(resToUse) || m_DefaultResolutionWide != m_DefaultResolution))
-    paths.push_back(URIUtils::AddFileToFolder(m_strBaseDir, GetDirFromRes(m_DefaultResolution)));
+    paths.push_back(URIUtils::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolution)));
 }
 
 bool CSkinInfo::GetResolution(const TiXmlNode *root, const char *tag, RESOLUTION &res) const

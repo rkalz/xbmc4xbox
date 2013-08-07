@@ -100,7 +100,7 @@ namespace PYXBMC
         CStdString basePath;
         URIUtils::AddFileToFolder(strFallbackPath, "resources", basePath);
         URIUtils::AddFileToFolder(basePath, "skins", basePath);
-        URIUtils::AddFileToFolder(basePath, URIUtils::GetFileName(g_SkinInfo->GetBaseDir()), basePath);
+        URIUtils::AddFileToFolder(basePath, URIUtils::GetFileName(g_SkinInfo->Path()), basePath);
         strSkinPath = g_SkinInfo->GetSkinPath(strXMLname, &res, basePath);
         if (!XFILE::CFile::Exists(strSkinPath))
         {
@@ -121,7 +121,7 @@ namespace PYXBMC
       URIUtils::AddFileToFolder(basePath, "skins", basePath);
       URIUtils::AddFileToFolder(basePath, strDefault, basePath);
 
-      skinInfo.Load(basePath);
+      skinInfo.Start(basePath);
       strSkinPath = skinInfo.GetSkinPath(strXMLname, &res, basePath);
 
       if (!XFILE::CFile::Exists(strSkinPath))
