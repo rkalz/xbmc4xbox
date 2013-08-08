@@ -201,7 +201,7 @@ void CGUIWindowScripts::GetContextButtons(int itemNumber, CContextButtons &butto
     CStdString path, filename;
     URIUtils::Split(item->GetPath(), path, filename);
     ADDON::AddonPtr script;
-    if (ADDON::CAddonMgr::Get().GetAddon(item->m_strPath, script, ADDON::ADDON_SCRIPT))
+    if (ADDON::CAddonMgr::Get().GetAddon(item->GetPath(), script, ADDON::ADDON_SCRIPT))
     {
       if (script->HasSettings())
       {

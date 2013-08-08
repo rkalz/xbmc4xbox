@@ -22,7 +22,7 @@
 
 #define PRE_SKIN_VERSION_9_10_COMPATIBILITY 1
 
-#define DEFAULT_SKIN        "org.xbmc.addons.confluence"
+#define DEFAULT_SKIN        "skin.confluence"
 #define DEFAULT_WEATHER_PLUGIN "Weather.com (standard)"
 
 #include "settings/VideoSettings.h"
