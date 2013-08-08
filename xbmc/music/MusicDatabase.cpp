@@ -61,7 +61,6 @@ using namespace MEDIA_DETECT;
 using namespace MUSICDATABASEDIRECTORY;
 using ADDON::AddonPtr;
 
-#define MUSIC_DATABASE_NAME "MyMusic7.db"
 #define RECENTLY_PLAYED_LIMIT 25
 #define MIN_FULL_SEARCH_LENGTH 3
 
@@ -69,12 +68,16 @@ using namespace CDDB;
 
 CMusicDatabase::CMusicDatabase(void)
 {
-  m_strDatabaseFile=MUSIC_DATABASE_NAME;
 }
 
 CMusicDatabase::~CMusicDatabase(void)
 {
   EmptyCache();
+}
+
+bool CMusicDatabase::Open()
+{
+  return CDatabase::Open();
 }
 
 bool CMusicDatabase::CreateTables()
