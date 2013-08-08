@@ -1157,9 +1157,9 @@ void CGUIWindowSettingsCategory::UpdateSettings()
     else if (strSetting.Equals("weather.scriptsettings"))
     {
       //// Create our base path
-      //CStdString basepath = "special://home/plugins/weather/" + g_guiSettings.GetString("weather.plugin");
+      //CStdString basepath = "special://home/plugins/weather/" + g_guiSettings.GetString("weather.script");
       //CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
-      //if (pControl) pControl->SetEnabled(!g_guiSettings.GetString("weather.plugin").IsEmpty() && CScriptSettings::SettingsExist(basepath));
+      //if (pControl) pControl->SetEnabled(!g_guiSettings.GetString("weather.script").IsEmpty() && CScriptSettings::SettingsExist(basepath));
     }
     else if (!strSetting.Equals("musiclibrary.enabled")
       && strSetting.Left(13).Equals("musiclibrary."))
