@@ -1836,7 +1836,7 @@ void CApplication::ReloadSkin()
 bool CApplication::LoadSkin(const CStdString& skinID)
 {
   AddonPtr addon;
-  if (CAddonMgr::Get()->GetAddon(skinID, addon))
+  if (CAddonMgr::Get().GetAddon(skinID, addon))
   {
     LoadSkin(boost::dynamic_pointer_cast<ADDON::CSkinInfo>(addon));
     return true;
@@ -4690,7 +4690,7 @@ void CApplication::CheckShutdown()
     m_applicationMessenger.Shutdown(); // Turn off the box
   }
 #endif
-  ADDON::CAddonMgr::Get()->UpdateRepos();
+  ADDON::CAddonMgr::Get().UpdateRepos();
 }
 
 //Check if hd spindown must be blocked
@@ -5840,6 +5840,12 @@ void CApplication::InitDirectoriesXbox()
 
   // First profile is always the Master Profile
   CSpecialProtocol::SetMasterProfilePath("Q:\\UserData");
+
+  if (!CAddonMgr::Get().Init())
+  {
+    CLog::Log(LOGFATAL, "CApplication::Create: Unable to start CAddonMgr");
+    FatalErrorHandler(true, true, true);
+  }
 
   g_settings.LoadProfiles(PROFILES_FILE);
 }

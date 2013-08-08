@@ -173,7 +173,7 @@ void CGUIWindowScripts::FrameMove()
 bool CGUIWindowScripts::GetDirectory(const CStdString& strDirectory, CFileItemList& items)
 {
   VECADDONS addons;
-  CAddonMgr::Get()->GetAddons(ADDON_SCRIPT,addons);
+  CAddonMgr::Get().GetAddons(ADDON_SCRIPT,addons);
   
   items.ClearItems();
   for (unsigned i=0; i < addons.size(); i++)
@@ -201,7 +201,7 @@ void CGUIWindowScripts::GetContextButtons(int itemNumber, CContextButtons &butto
     CStdString path, filename;
     URIUtils::Split(item->GetPath(), path, filename);
     ADDON::AddonPtr script;
-    if (ADDON::CAddonMgr::Get()->GetAddon(item->GetPath(), script, ADDON::ADDON_SCRIPT))
+    if (ADDON::CAddonMgr::Get().GetAddon(item->m_strPath, script, ADDON::ADDON_SCRIPT))
     {
       if (script->HasSettings())
       {
@@ -226,7 +226,7 @@ bool CGUIWindowScripts::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
     CStdString path, filename;
     URIUtils::Split(m_vecItems->Get(itemNumber)->GetPath(), path, filename);
     ADDON::AddonPtr script;
-    if (ADDON::CAddonMgr::Get()->GetAddon(m_vecItems->Get(itemNumber)->GetPath(), script, ADDON::ADDON_SCRIPT))
+    if (ADDON::CAddonMgr::Get().GetAddon(m_vecItems->Get(itemNumber)->GetPath(), script, ADDON::ADDON_SCRIPT))
     {
       if (CGUIDialogAddonSettings::ShowAndGetInput(script))
         Update(m_vecItems->GetPath());
