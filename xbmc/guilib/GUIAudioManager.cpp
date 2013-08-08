@@ -266,10 +266,7 @@ bool CGUIAudioManager::Load()
     return true;
 
   if (g_guiSettings.GetString("lookandfeel.soundskin")=="SKINDEFAULT")
-  {
     m_strMediaDir = URIUtils::AddFileToFolder(g_SkinInfo->Path(), "sounds");
-    }
-  }
   else
     m_strMediaDir = URIUtils::AddFileToFolder("special://xbmc/sounds", g_guiSettings.GetString("lookandfeel.soundskin"));
 
