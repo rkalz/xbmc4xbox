@@ -136,16 +136,16 @@ VECADDONS CRepository::Parse()
       AddonPtr addon = *i;
       if (m_zipped)
       {
-        addon->Props().path = CUtil::AddFileToFolder(m_datadir,addon->ID()+"/"+addon->ID()+"-"+addon->Version().str+".zip");
-        addon->Props().icon = CUtil::AddFileToFolder(m_datadir,addon->ID()+"/icon.png");
-        addon->Props().changelog = CUtil::AddFileToFolder(m_datadir,addon->ID()+"/changelog-"+addon->Version().str+".txt");
-        addon->Props().fanart = CUtil::AddFileToFolder(m_datadir,addon->ID()+"/fanart.jpg");
+        addon->Props().path = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"/"+addon->ID()+"-"+addon->Version().str+".zip");
+        addon->Props().icon = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"/icon.png");
+        addon->Props().changelog = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"/changelog-"+addon->Version().str+".txt");
+        addon->Props().fanart = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"/fanart.jpg");
       }
       else
       {
-        addon->Props().path = CUtil::AddFileToFolder(m_datadir,addon->ID()+"/");
-        addon->Props().changelog = CUtil::AddFileToFolder(m_datadir,addon->ID()+"/changelog.txt");
-        addon->Props().fanart = CUtil::AddFileToFolder(m_datadir,addon->ID()+"/fanart.jpg");
+        addon->Props().path = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"/");
+        addon->Props().changelog = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"/changelog.txt");
+        addon->Props().fanart = URIUtils::AddFileToFolder(m_datadir,addon->ID()+"/fanart.jpg");
       }
     }
   }
