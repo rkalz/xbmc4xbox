@@ -357,13 +357,9 @@ bool CGUIDialogContentSettings::Show(ADDON::ScraperPtr& scraper, VIDEO::SScanSet
   CGUIDialogContentSettings *dialog = (CGUIDialogContentSettings *)g_windowManager.GetWindow(WINDOW_DIALOG_CONTENT_SETTINGS);
   if (!dialog) return false;
 
-  if (musicContext != CONTENT_NONE)
-  {
-    dialog->m_content = musicContext;
-  }
   if (scraper)
   {
-    dialog->m_content = scraper->Content();
+    dialog->m_content = musicContext != CONTENT_NONE ? musicContext : scraper->Content();
     dialog->m_origContent = dialog->m_content;
     dialog->m_scraper = scraper;
     // toast selected but disabled scrapers
