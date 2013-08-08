@@ -23,7 +23,7 @@
 #include "DynamicDll.h"
 
 extern "C" {
-#include "lib/cpluff/libcpluff/cpluff.h"
+#include "lib/cpluff/libcpluff/cpluff_xbox.h"
 }
 
 class DllLibCPluffInterface
@@ -56,7 +56,7 @@ public:
 
 class DllLibCPluff : public DllDynamic, DllLibCPluffInterface
 {
-  DECLARE_DLL_WRAPPER(DllLibCPluff, DLL_PATH_CPLUFF)
+  DECLARE_DLL_WRAPPER(DllLibCPluff, Q:\\System\\cpluff.dll)
   DEFINE_METHOD0(const char*,         get_version)
   DEFINE_METHOD1(void,                set_fatal_error_handler,  (cp_fatal_error_func_t p1))
   DEFINE_METHOD0(cp_status_t,         init)
