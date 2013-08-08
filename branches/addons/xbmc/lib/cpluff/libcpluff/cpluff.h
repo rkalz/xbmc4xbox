@@ -37,8 +37,12 @@
  * @defgroup cDefines Defines
  * Preprocessor defines.
  */
- 
-#include <cpluffdef.h>
+
+#ifdef _WIN32
+#include "cpluffdef_win32.h"
+#else
+#include "cpluffdef.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
