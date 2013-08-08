@@ -229,7 +229,6 @@ void CGUIWindowScripts::GetContextButtons(int itemNumber, CContextButtons &butto
   }
 
   buttons.Add(CONTEXT_BUTTON_INFO, 654);
-  buttons.Add(CONTEXT_BUTTON_DELETE, 117);
 }
 
 bool CGUIWindowScripts::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
@@ -249,16 +248,6 @@ bool CGUIWindowScripts::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
       if (CGUIDialogAddonSettings::ShowAndGetInput(script))
         Update(m_vecItems->GetPath());
     }
-    return true;
-  }
-  else if (button == CONTEXT_BUTTON_DELETE)
-  {
-    CStdString path;
-    URIUtils::GetDirectory(m_vecItems->Get(itemNumber)->GetPath(),path);
-    CFileItem item2(path,true);
-    if (CGUIWindowFileManager::DeleteItem(&item2))
-      Update(m_vecItems->GetPath());
-
     return true;
   }
   return CGUIMediaWindow::OnContextButton(itemNumber, button);
