@@ -58,14 +58,14 @@ CGUIDialogAudioSubtitleSettings::~CGUIDialogAudioSubtitleSettings(void)
 #define AUDIO_SETTINGS_DELAY              3
 #define AUDIO_SETTINGS_STREAM             4
 #define AUDIO_SETTINGS_OUTPUT_TO_ALL_SPEAKERS 5
-#define AUDIO_SETTINGS_DIGITAL_ANALOG 6
+#define AUDIO_SETTINGS_DIGITAL_ANALOG     6
 
 // separator 7
 #define SUBTITLE_SETTINGS_ENABLE          8
 #define SUBTITLE_SETTINGS_DELAY           9
 #define SUBTITLE_SETTINGS_STREAM          10
-#define SUBTITLE_SETTINGS_BROWSER        11
-#define AUDIO_SETTINGS_MAKE_DEFAULT      12
+#define SUBTITLE_SETTINGS_BROWSER         11
+#define AUDIO_SETTINGS_MAKE_DEFAULT       12
 
 void CGUIDialogAudioSubtitleSettings::CreateSettings()
 {
