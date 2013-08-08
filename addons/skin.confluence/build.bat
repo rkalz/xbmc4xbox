@@ -12,11 +12,11 @@ Echo exclude.txt>>exclude.txt
 
 ECHO ----------------------------------------
 ECHO Creating XBT File...
-START /B /WAIT ..\..\Tools\XBMCTex\XBMCTex -input media -output media -noprotect
+START /B /WAIT ..\..\Tools\TexturePacker\TexturePacker -input media -output media\Textures.xbt
 
 ECHO ----------------------------------------
 ECHO Copying XBT File...
-xcopy "media\Textures.xpr" "BUILD\Confluence\media\" /Q /I /Y
+xcopy "media\Textures.xbt" "BUILD\Confluence\media\" /Q /I /Y
 
 ECHO ----------------------------------------
 ECHO Cleaning Up...
