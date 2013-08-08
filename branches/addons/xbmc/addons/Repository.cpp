@@ -103,7 +103,7 @@ CStdString CRepository::Checksum()
   CStdString checksum;
   try
   {
-    char* temp = new char[file.GetLength()+1];
+    char* temp = new char[(size_t)file.GetLength()+1];
     file.Read(temp,file.GetLength());
     temp[file.GetLength()] = 0;
     checksum = temp;
