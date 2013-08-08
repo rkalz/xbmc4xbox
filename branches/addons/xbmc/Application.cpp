@@ -160,7 +160,6 @@
 #include "music/dialogs/GUIDialogMusicOSD.h"
 #include "music/dialogs/GUIDialogVisualisationPresetList.h"
 #include "dialogs/GUIDialogTrainerSettings.h"
-#include "GUIWindowScriptsInfo.h"
 #include "network/GUIDialogNetworkSetup.h"
 #include "dialogs/GUIDialogMediaSource.h"
 #include "video/dialogs/GUIDialogVideoSettings.h"
@@ -1286,7 +1285,6 @@ HRESULT CApplication::Initialize()
   g_windowManager.Add(new CGUIDialogPictureInfo);      // window id = 139
   g_windowManager.Add(new CGUIDialogAddonInfo);
   g_windowManager.Add(new CGUIDialogAddonSettings);      // window id = 140
-  g_windowManager.Add(new CGUIDialogTextViewer);              // window id = 147
 
   g_windowManager.Add(new CGUIDialogLockSettings); // window id = 131
 
@@ -1301,7 +1299,7 @@ HRESULT CApplication::Initialize()
   g_windowManager.Add(new CGUIWindowMusicInfo);                // window id = 2001
   g_windowManager.Add(new CGUIDialogOK);                 // window id = 2002
   g_windowManager.Add(new CGUIWindowVideoInfo);                // window id = 2003
-  g_windowManager.Add(new CGUIWindowScriptsInfo);              // window id = 2004
+  g_windowManager.Add(new CGUIDialogTextViewer);
   g_windowManager.Add(new CGUIWindowFullScreen);         // window id = 2005
   g_windowManager.Add(new CGUIWindowVisualisation);      // window id = 2006
   g_windowManager.Add(new CGUIWindowSlideShow);          // window id = 2007
@@ -3485,7 +3483,6 @@ HRESULT CApplication::Cleanup()
     g_windowManager.Delete(WINDOW_OSD);
     g_windowManager.Delete(WINDOW_MUSIC_OVERLAY);
     g_windowManager.Delete(WINDOW_VIDEO_OVERLAY);
-    g_windowManager.Delete(WINDOW_SCRIPTS_INFO);
     g_windowManager.Delete(WINDOW_SLIDESHOW);
 
     g_windowManager.Delete(WINDOW_HOME);
@@ -5089,11 +5086,7 @@ bool CApplication::ExecuteXBMCAction(std::string actionStr)
         CFileItem item(actionStr, false);
         if (item.IsPythonScript())
         { // a python script
-          unsigned int argc = 1;
-          char ** argv = new char*[argc];
-          argv[0] = (char*)item.GetPath().c_str();
-          g_pythonParser.evalFile(argv[0], argc, (const char**)argv);
-          delete [] argv;
+           g_pythonParser.evalFile(item.GetPath().c_str());
         }
         else if (item.IsXBE())
         { // an XBE
