@@ -21,8 +21,10 @@
 
 #include "GUIWindowScripts.h"
 #include "utils/URIUtils.h"
+#ifdef HAS_PYTHON
 #include "lib/libPython/XBPython.h"
-#include "GUIWindowScriptsInfo.h"
+#endif
+#include "dialogs/GUIDialogTextViewer.h"
 #include "GUIWindowManager.h"
 #include "windows/GUIWindowFileManager.h"
 #include "FileSystem/File.h"
@@ -154,18 +156,13 @@ bool CGUIWindowScripts::OnPlayMedia(int iItem)
       return true;
     }
   }
-  unsigned int argc = 1;
-  char ** argv = new char*[argc];
-  argv[0] = (char*)strPath.c_str();
-  g_pythonParser.evalFile(argv[0], argc, (const char**)argv);
-  delete [] argv;
+  g_pythonParser.evalFile(strPath);
 
   return true;
 }
 
 void CGUIWindowScripts::OnInfo()
 {
-  CGUIWindowScriptsInfo* pDlgInfo = (CGUIWindowScriptsInfo*)g_windowManager.GetWindow(WINDOW_SCRIPTS_INFO);
   CGUIDialogTextViewer* pDlgInfo = (CGUIDialogTextViewer*)g_windowManager.GetWindow(WINDOW_DIALOG_TEXT_VIEWER);
   if (pDlgInfo)
   {
