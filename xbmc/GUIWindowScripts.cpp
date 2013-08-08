@@ -29,6 +29,7 @@
 #include "FileItem.h"
 #include "addons/AddonManager.h"
 #include "addons/GUIDialogAddonSettings.h"
+#include "GUIUserMessages.h"
 #include "LocalizeStrings.h"
 #include "AddonDatabase.h"
 
@@ -74,6 +75,18 @@ bool CGUIWindowScripts::OnMessage(CGUIMessage& message)
 
       return CGUIMediaWindow::OnMessage(message);
     }
+    break;
+  case GUI_MSG_USER:
+      m_debug += message.GetLabel();
+      if (m_bViewOutput)
+      {
+        CGUIDialogTextViewer* pDlgInfo = (CGUIDialogTextViewer*)g_windowManager.GetWindow(WINDOW_DIALOG_TEXT_VIEWER);
+        pDlgInfo->SetText(m_debug);
+        CGUIMessage msg(GUI_MSG_NOTIFY_ALL, WINDOW_DIALOG_TEXT_VIEWER, 0, GUI_MSG_UPDATE);
+        g_windowManager.SendThreadMessage(msg);
+      }
+    break;
+  default:
     break;
   }
   return CGUIMediaWindow::OnMessage(message);
@@ -153,7 +166,15 @@ bool CGUIWindowScripts::OnPlayMedia(int iItem)
 void CGUIWindowScripts::OnInfo()
 {
   CGUIWindowScriptsInfo* pDlgInfo = (CGUIWindowScriptsInfo*)g_windowManager.GetWindow(WINDOW_SCRIPTS_INFO);
-  if (pDlgInfo) pDlgInfo->DoModal();
+  CGUIDialogTextViewer* pDlgInfo = (CGUIDialogTextViewer*)g_windowManager.GetWindow(WINDOW_DIALOG_TEXT_VIEWER);
+  if (pDlgInfo)
+  {
+    pDlgInfo->SetHeading(g_localizeStrings.Get(262));
+    pDlgInfo->SetText(m_debug);
+    m_bViewOutput = true;
+    pDlgInfo->DoModal();
+    m_bViewOutput = false;
+  }
 }
 
 void CGUIWindowScripts::FrameMove()
