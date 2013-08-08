@@ -957,7 +957,7 @@ CP_C_API cp_context_t * cp_create_context(cp_status_t *status);
  * 
  * @param ctx the context to be destroyed
  */
-CP_C_API void cp_destroy_context(cp_context_t *ctx) CP_GCC_NONNULL(1);
+CP_C_API void cp_destroy_context(cp_context_t *ctx);
 
 /**
  * Registers a plug-in collection with a plug-in context. A plug-in collection
@@ -971,7 +971,7 @@ CP_C_API void cp_destroy_context(cp_context_t *ctx) CP_GCC_NONNULL(1);
  * @param dir the directory
  * @return @ref CP_OK (zero) on success or @ref CP_ERR_RESOURCE if insufficient memory
  */
-CP_C_API cp_status_t cp_register_pcollection(cp_context_t *ctx, const char *dir) CP_GCC_NONNULL(1, 2);
+CP_C_API cp_status_t cp_register_pcollection(cp_context_t *ctx, const char *dir);
 
 /**
  * Unregisters a previously registered plug-in collection from a
@@ -982,7 +982,7 @@ CP_C_API cp_status_t cp_register_pcollection(cp_context_t *ctx, const char *dir)
  * @param ctx the plug-in context
  * @param dir the previously registered directory
  */
-CP_C_API void cp_unregister_pcollection(cp_context_t *ctx, const char *dir) CP_GCC_NONNULL(1, 2);
+CP_C_API void cp_unregister_pcollection(cp_context_t *ctx, const char *dir);
 
 /**
  * Unregisters all plug-in collections from a plug-in context.
@@ -991,7 +991,7 @@ CP_C_API void cp_unregister_pcollection(cp_context_t *ctx, const char *dir) CP_G
  * 
  * @param ctx the plug-in context
  */
-CP_C_API void cp_unregister_pcollections(cp_context_t *ctx) CP_GCC_NONNULL(1);
+CP_C_API void cp_unregister_pcollections(cp_context_t *ctx);
 
 /*@}*/
 
@@ -1021,7 +1021,7 @@ CP_C_API void cp_unregister_pcollections(cp_context_t *ctx) CP_GCC_NONNULL(1);
  * @param min_severity the minimum severity of messages passed to logger
  * @return @ref CP_OK (zero) on success or @ref CP_ERR_RESOURCE if insufficient memory
  */
-CP_C_API cp_status_t cp_register_logger(cp_context_t *ctx, cp_logger_func_t logger, void *user_data, cp_log_severity_t min_severity) CP_GCC_NONNULL(1, 2);
+CP_C_API cp_status_t cp_register_logger(cp_context_t *ctx, cp_logger_func_t logger, void *user_data, cp_log_severity_t min_severity);
 
 /**
  * Removes a logger registration.
@@ -1029,7 +1029,7 @@ CP_C_API cp_status_t cp_register_logger(cp_context_t *ctx, cp_logger_func_t logg
  * @param ctx the plug-in context
  * @param logger the logger function to be unregistered
  */
-CP_C_API void cp_unregister_logger(cp_context_t *ctx, cp_logger_func_t logger) CP_GCC_NONNULL(1, 2);
+CP_C_API void cp_unregister_logger(cp_context_t *ctx, cp_logger_func_t logger);
 
 /**
  * Emits a new log message.
@@ -1038,7 +1038,7 @@ CP_C_API void cp_unregister_logger(cp_context_t *ctx, cp_logger_func_t logger) C
  * @param severity the severity of the event
  * @param msg the log message (possibly localized)
  */
-CP_C_API void cp_log(cp_context_t *ctx, cp_log_severity_t severity, const char *msg) CP_GCC_NONNULL(1, 3);
+CP_C_API void cp_log(cp_context_t *ctx, cp_log_severity_t severity, const char *msg);
 
 /**
  * Returns whether a message of the specified severity would get logged.
@@ -1047,7 +1047,7 @@ CP_C_API void cp_log(cp_context_t *ctx, cp_log_severity_t severity, const char *
  * @param severity the target logging severity
  * @return whether a message of the specified severity would get logged
  */
-CP_C_API int cp_is_logged(cp_context_t *ctx, cp_log_severity_t severity) CP_GCC_NONNULL(1);
+CP_C_API int cp_is_logged(cp_context_t *ctx, cp_log_severity_t severity);
 
 /*@}*/
 
@@ -1077,7 +1077,7 @@ CP_C_API int cp_is_logged(cp_context_t *ctx, cp_log_severity_t severity) CP_GCC_
  * @param status a pointer to the location where status code is to be stored, or NULL
  * @return pointer to the information structure or NULL if error occurs
  */
-CP_C_API cp_plugin_info_t * cp_load_plugin_descriptor(cp_context_t *ctx, const char *path, cp_status_t *status) CP_GCC_NONNULL(1, 2);
+CP_C_API cp_plugin_info_t * cp_load_plugin_descriptor(cp_context_t *ctx, const char *path, cp_status_t *status);
 
 /**
  * Installs the plug-in described by the specified plug-in information
@@ -1095,7 +1095,7 @@ CP_C_API cp_plugin_info_t * cp_load_plugin_descriptor(cp_context_t *ctx, const c
  * @param pi plug-in information structure
  * @return @ref CP_OK (zero) on success or an error code on failure
  */
-CP_C_API cp_status_t cp_install_plugin(cp_context_t *ctx, cp_plugin_info_t *pi) CP_GCC_NONNULL(1, 2);
+CP_C_API cp_status_t cp_install_plugin(cp_context_t *ctx, cp_plugin_info_t *pi);
 
 /**
  * Scans for plug-ins in the registered plug-in directories, installing
@@ -1120,7 +1120,7 @@ CP_C_API cp_status_t cp_install_plugin(cp_context_t *ctx, cp_plugin_info_t *pi) 
  * @param flags the bitmask of flags
  * @return @ref CP_OK (zero) on success or an error code on failure
  */
-CP_C_API cp_status_t cp_scan_plugins(cp_context_t *ctx, int flags) CP_GCC_NONNULL(1);
+CP_C_API cp_status_t cp_scan_plugins(cp_context_t *ctx, int flags);
 
 /**
  * Starts a plug-in. Also starts any imported plug-ins. If the plug-in is
@@ -1134,7 +1134,7 @@ CP_C_API cp_status_t cp_scan_plugins(cp_context_t *ctx, int flags) CP_GCC_NONNUL
  * @param id identifier of the plug-in to be started
  * @return @ref CP_OK (zero) on success or an error code on failure
  */
-CP_C_API cp_status_t cp_start_plugin(cp_context_t *ctx, const char *id) CP_GCC_NONNULL(1, 2);
+CP_C_API cp_status_t cp_start_plugin(cp_context_t *ctx, const char *id);
 
 /**
  * Stops a plug-in. First stops any dependent plug-ins that are currently
@@ -1148,14 +1148,14 @@ CP_C_API cp_status_t cp_start_plugin(cp_context_t *ctx, const char *id) CP_GCC_N
  * @param id identifier of the plug-in to be stopped
  * @return @ref CP_OK (zero) on success or @ref CP_ERR_UNKNOWN if unknown plug-in
  */
-CP_C_API cp_status_t cp_stop_plugin(cp_context_t *ctx, const char *id) CP_GCC_NONNULL(1, 2);
+CP_C_API cp_status_t cp_stop_plugin(cp_context_t *ctx, const char *id);
 
 /**
  * Stops all active plug-ins.
  * 
  * @param ctx the plug-in context
  */
-CP_C_API void cp_stop_plugins(cp_context_t *ctx) CP_GCC_NONNULL(1);
+CP_C_API void cp_stop_plugins(cp_context_t *ctx);
 
 /**
  * Uninstalls the specified plug-in. The plug-in is first stopped if it is active.
@@ -1165,7 +1165,7 @@ CP_C_API void cp_stop_plugins(cp_context_t *ctx) CP_GCC_NONNULL(1);
  * @param id identifier of the plug-in to be unloaded
  * @return @ref CP_OK (zero) on success or @ref CP_ERR_UNKNOWN if unknown plug-in
  */
-CP_C_API cp_status_t cp_uninstall_plugin(cp_context_t *ctx, const char *id) CP_GCC_NONNULL(1, 2);
+CP_C_API cp_status_t cp_uninstall_plugin(cp_context_t *ctx, const char *id);
 
 /**
  * Uninstalls all plug-ins. All plug-ins are first stopped and then
@@ -1173,7 +1173,7 @@ CP_C_API cp_status_t cp_uninstall_plugin(cp_context_t *ctx, const char *id) CP_G
  * 
  * @param ctx the plug-in context
  */
-CP_C_API void cp_uninstall_plugins(cp_context_t *ctx) CP_GCC_NONNULL(1);
+CP_C_API void cp_uninstall_plugins(cp_context_t *ctx);
 
 /*@}*/
 
@@ -1201,7 +1201,7 @@ CP_C_API void cp_uninstall_plugins(cp_context_t *ctx) CP_GCC_NONNULL(1);
  * @param status a pointer to the location where status code is to be stored, or NULL
  * @return pointer to the information structure or NULL on failure
  */
-CP_C_API cp_plugin_info_t * cp_get_plugin_info(cp_context_t *ctx, const char *id, cp_status_t *status) CP_GCC_NONNULL(1);
+CP_C_API cp_plugin_info_t * cp_get_plugin_info(cp_context_t *ctx, const char *id, cp_status_t *status);
 
 /**
  * Returns static information about the installed plug-ins. The returned
@@ -1215,7 +1215,7 @@ CP_C_API cp_plugin_info_t * cp_get_plugin_info(cp_context_t *ctx, const char *id
  * @return pointer to a NULL-terminated list of pointers to plug-in information
  * 			or NULL on failure
  */
-CP_C_API cp_plugin_info_t ** cp_get_plugins_info(cp_context_t *ctx, cp_status_t *status, int *num) CP_GCC_NONNULL(1);
+CP_C_API cp_plugin_info_t ** cp_get_plugins_info(cp_context_t *ctx, cp_status_t *status, int *num);
 
 /**
  * Returns static information about the currently installed extension points.
@@ -1229,7 +1229,7 @@ CP_C_API cp_plugin_info_t ** cp_get_plugins_info(cp_context_t *ctx, cp_status_t 
  * @return pointer to a NULL-terminated list of pointers to extension point
  *			information or NULL on failure
  */
-CP_C_API cp_ext_point_t ** cp_get_ext_points_info(cp_context_t *ctx, cp_status_t *status, int *num) CP_GCC_NONNULL(1);
+CP_C_API cp_ext_point_t ** cp_get_ext_points_info(cp_context_t *ctx, cp_status_t *status, int *num);
 
 /**
  * Returns static information about the currently installed extension points.
@@ -1244,7 +1244,7 @@ CP_C_API cp_ext_point_t ** cp_get_ext_points_info(cp_context_t *ctx, cp_status_t
  * @return pointer to a NULL-terminated list of pointers to extension
  *			information or NULL on failure
  */
-CP_C_API cp_extension_t ** cp_get_extensions_info(cp_context_t *ctx, const char *extpt_id, cp_status_t *status, int *num) CP_GCC_NONNULL(1);
+CP_C_API cp_extension_t ** cp_get_extensions_info(cp_context_t *ctx, const char *extpt_id, cp_status_t *status, int *num);
 
 /**
  * Releases a previously obtained reference counted information object. The
@@ -1256,7 +1256,7 @@ CP_C_API cp_extension_t ** cp_get_extensions_info(cp_context_t *ctx, const char 
  * @param ctx the plug-in context
  * @param info the information to be released
  */
-CP_C_API void cp_release_info(cp_context_t *ctx, void *info) CP_GCC_NONNULL(1, 2);
+CP_C_API void cp_release_info(cp_context_t *ctx, void *info);
 
 /**
  * Returns the current state of the specified plug-in. Returns
@@ -1266,7 +1266,7 @@ CP_C_API void cp_release_info(cp_context_t *ctx, void *info) CP_GCC_NONNULL(1, 2
  * @param id the plug-in identifier
  * @return the current state of the plug-in
  */
-CP_C_API cp_plugin_state_t cp_get_plugin_state(cp_context_t *ctx, const char *id) CP_GCC_NONNULL(1, 2);
+CP_C_API cp_plugin_state_t cp_get_plugin_state(cp_context_t *ctx, const char *id);
 
 /**
  * Registers a plug-in listener with a plug-in context. The listener is called
@@ -1281,7 +1281,7 @@ CP_C_API cp_plugin_state_t cp_get_plugin_state(cp_context_t *ctx, const char *id
  * @param user_data user data pointer supplied to the listener
  * @return @ref CP_OK (zero) on success or @ref CP_ERR_RESOURCE if out of resources
  */
-CP_C_API cp_status_t cp_register_plistener(cp_context_t *ctx, cp_plugin_listener_func_t listener, void *user_data) CP_GCC_NONNULL(1, 2);
+CP_C_API cp_status_t cp_register_plistener(cp_context_t *ctx, cp_plugin_listener_func_t listener, void *user_data);
 
 /**
  * Removes a plug-in listener from a plug-in context. Does nothing if the
@@ -1290,7 +1290,7 @@ CP_C_API cp_status_t cp_register_plistener(cp_context_t *ctx, cp_plugin_listener
  * @param ctx the plug-in context
  * @param listener the plug-in listener to be removed
  */
-CP_C_API void cp_unregister_plistener(cp_context_t *ctx, cp_plugin_listener_func_t listener) CP_GCC_NONNULL(1, 2);
+CP_C_API void cp_unregister_plistener(cp_context_t *ctx, cp_plugin_listener_func_t listener);
 
 /**
  * Traverses a configuration element tree and returns the specified element.
@@ -1305,7 +1305,7 @@ CP_C_API void cp_unregister_plistener(cp_context_t *ctx, cp_plugin_listener_func
  * @param path the path to the target element
  * @return the target element or NULL if nonexisting
  */
-CP_C_API cp_cfg_element_t * cp_lookup_cfg_element(cp_cfg_element_t *base, const char *path) CP_GCC_PURE CP_GCC_NONNULL(1, 2);
+CP_C_API cp_cfg_element_t * cp_lookup_cfg_element(cp_cfg_element_t *base, const char *path) CP_GCC_PURE;
 
 /**
  * Traverses a configuration element tree and returns the value of the
@@ -1323,7 +1323,7 @@ CP_C_API cp_cfg_element_t * cp_lookup_cfg_element(cp_cfg_element_t *base, const 
  * @param path the path to the target element
  * @return the value of the target element or attribute or NULL
  */
-CP_C_API char * cp_lookup_cfg_value(cp_cfg_element_t *base, const char *path) CP_GCC_PURE CP_GCC_NONNULL(1, 2);
+CP_C_API char * cp_lookup_cfg_value(cp_cfg_element_t *base, const char *path) CP_GCC_PURE;
 
 /*@}*/
 
@@ -1366,7 +1366,7 @@ CP_C_API char * cp_lookup_cfg_value(cp_cfg_element_t *base, const char *path) CP
  * @param runfunc the run function to be registered
  * @return @ref CP_OK (zero) on success or an error code on failure
  */
-CP_C_API cp_status_t cp_run_function(cp_context_t *ctx, cp_run_func_t runfunc) CP_GCC_NONNULL(1, 2);
+CP_C_API cp_status_t cp_run_function(cp_context_t *ctx, cp_run_func_t runfunc);
 
 /**
  * Runs the started plug-ins as long as there is something to run.
@@ -1377,7 +1377,7 @@ CP_C_API cp_status_t cp_run_function(cp_context_t *ctx, cp_run_func_t runfunc) C
  * 
  * @param ctx the plug-in context containing the plug-ins
  */
-CP_C_API void cp_run_plugins(cp_context_t *ctx) CP_GCC_NONNULL(1);
+CP_C_API void cp_run_plugins(cp_context_t *ctx);
 
 /**
  * Runs one registered run function. This function calls one
@@ -1390,7 +1390,7 @@ CP_C_API void cp_run_plugins(cp_context_t *ctx) CP_GCC_NONNULL(1);
  * @param ctx the plug-in context containing the plug-ins
  * @return whether there are active run functions waiting to be run
  */
-CP_C_API int cp_run_plugins_step(cp_context_t *ctx) CP_GCC_NONNULL(1);
+CP_C_API int cp_run_plugins_step(cp_context_t *ctx);
 
 /**
  * Sets startup arguments for the specified plug-in context. Like for usual
@@ -1406,7 +1406,7 @@ CP_C_API int cp_run_plugins_step(cp_context_t *ctx) CP_GCC_NONNULL(1);
  * @param ctx the plug-in context
  * @param argv a NULL-terminated array of arguments
  */
-CP_C_API void cp_set_context_args(cp_context_t *ctx, char **argv) CP_GCC_NONNULL(1, 2);
+CP_C_API void cp_set_context_args(cp_context_t *ctx, char **argv);
 
 /**
  * Returns the startup arguments associated with the specified
@@ -1419,7 +1419,7 @@ CP_C_API void cp_set_context_args(cp_context_t *ctx, char **argv) CP_GCC_NONNULL
  * @param argc a pointer to a location where the number of startup arguments is stored, or NULL for none
  * @return an argument array terminated by NULL or NULL if not set
  */
-CP_C_API char **cp_get_context_args(cp_context_t *ctx, int *argc) CP_GCC_NONNULL(1);
+CP_C_API char **cp_get_context_args(cp_context_t *ctx, int *argc);
 
 /*@}*/
 
@@ -1446,7 +1446,7 @@ CP_C_API char **cp_get_context_args(cp_context_t *ctx, int *argc) CP_GCC_NONNULL
  * @param ptr pointer value for the symbol
  * @return @ref CP_OK (zero) on success or a status code on failure
  */
-CP_C_API cp_status_t cp_define_symbol(cp_context_t *ctx, const char *name, void *ptr) CP_GCC_NONNULL(1, 2, 3);
+CP_C_API cp_status_t cp_define_symbol(cp_context_t *ctx, const char *name, void *ptr);
 
 /**
  * Resolves a symbol provided by the specified plug-in. The plug-in is started
@@ -1478,7 +1478,7 @@ CP_C_API cp_status_t cp_define_symbol(cp_context_t *ctx, const char *name, void 
  * @param status a pointer to the location where the status code is to be stored, or NULL
  * @return the pointer associated with the symbol or NULL on failure
  */
-CP_C_API void *cp_resolve_symbol(cp_context_t *ctx, const char *id, const char *name, cp_status_t *status) CP_GCC_NONNULL(1, 2, 3);
+CP_C_API void *cp_resolve_symbol(cp_context_t *ctx, const char *id, const char *name, cp_status_t *status);
 
 /**
  * Releases a previously obtained symbol. The pointer must not be used after
@@ -1489,7 +1489,7 @@ CP_C_API void *cp_resolve_symbol(cp_context_t *ctx, const char *id, const char *
  * @param ctx the plug-in context
  * @param ptr the pointer associated with the symbol
  */
-CP_C_API void cp_release_symbol(cp_context_t *ctx, const void *ptr) CP_GCC_NONNULL(1, 2);
+CP_C_API void cp_release_symbol(cp_context_t *ctx, const void *ptr);
 
 /*@}*/
 

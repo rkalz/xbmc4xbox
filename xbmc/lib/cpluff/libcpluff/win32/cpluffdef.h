@@ -190,11 +190,15 @@
 #endif
 #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)
 #define CP_GCC_NONNULL(...) __attribute__((nonnull (__VA_ARGS__)))
+#elif _MSC_VER >= 1400
+#define CP_GCC_NONNULL(...)
 #endif
 
 /*@}*/
 
 #ifdef _WIN32
+#define strdup _strdup
+#define vsnprintf _vsnprintf
 #ifndef __func__
 #  define __func__ __FUNCTION__
 #endif

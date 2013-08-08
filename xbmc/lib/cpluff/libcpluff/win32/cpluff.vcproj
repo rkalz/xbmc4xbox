@@ -1,178 +1,121 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="7.10"
 	Name="cpluff"
 	ProjectGUID="{88968763-3D6B-48A8-B495-CC8C187FAC02}"
 	RootNamespace="cpluff"
-	Keyword="Win32Proj"
-	TargetFrameworkVersion="196613"
-	>
+	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
-			Name="Win32"
-		/>
+			Name="Win32"/>
 	</Platforms>
-	<ToolFiles>
-	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			CharacterSet="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
+			CharacterSet="1">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".;..\..\..\lib\expat\lib"
+				AdditionalIncludeDirectories="."
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;CP_C_API=CP_EXPORT"
-				MinimalRebuild="true"
+				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
-				CompileAs="1"
-			/>
+				CompileAs="1"/>
 			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libexpat.lib"
 				OutputFile="..\..\..\..\system\cpluff.dll"
 				LinkIncremental="2"
-				GenerateDebugInformation="true"
+				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				ImportLibrary="$(OutDir)$(TargetName).lib"
-				TargetMachine="1"
-			/>
+				TargetMachine="1"/>
 			<Tool
-				Name="VCALinkTool"
-			/>
+				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCManifestTool"
-			/>
+				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCXDCMakeTool"
-			/>
+				Name="VCPreBuildEventTool"/>
 			<Tool
-				Name="VCBscMakeTool"
-			/>
+				Name="VCPreLinkEventTool"/>
 			<Tool
-				Name="VCFxCopTool"
-			/>
+				Name="VCResourceCompilerTool"/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
+				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"
-			/>
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			CharacterSet="1"
-			WholeProgramOptimization="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
+			CharacterSet="0"
+			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				EnableIntrinsicFunctions="true"
+				Optimization="1"
+				EnableIntrinsicFunctions="TRUE"
+				OptimizeForProcessor="2"
 				AdditionalIncludeDirectories=".;..\..\..\expat\lib"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;CP_C_API=CP_EXPORT;XML_STATIC"
 				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
+				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				DebugInformationFormat="3"
-			/>
+				DebugInformationFormat="3"/>
 			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libexpat.lib"
 				OutputFile="..\..\..\..\..\system\cpluff.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\expat\win32\bin\Release\"
-				IgnoreDefaultLibraryNames="LIBCMT"
-				GenerateDebugInformation="true"
+				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				ImportLibrary="$(OutDir)$(TargetName).lib"
-				TargetMachine="1"
-			/>
+				TargetMachine="1"/>
 			<Tool
-				Name="VCALinkTool"
-			/>
+				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCManifestTool"
-			/>
+				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCXDCMakeTool"
-			/>
+				Name="VCPreBuildEventTool"/>
 			<Tool
-				Name="VCBscMakeTool"
-			/>
+				Name="VCPreLinkEventTool"/>
 			<Tool
-				Name="VCFxCopTool"
-			/>
+				Name="VCResourceCompilerTool"/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
+				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"
-			/>
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
 	<References>
@@ -181,105 +124,80 @@
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
-			>
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath="..\context.c"
-				>
+				RelativePath="..\context.c">
 			</File>
 			<File
-				RelativePath="..\cpluff.c"
-				>
+				RelativePath="..\cpluff.c">
 			</File>
 			<File
-				RelativePath=".\dirent.c"
-				>
+				RelativePath=".\dirent.c">
 			</File>
 			<File
-				RelativePath="..\..\kazlib\hash.c"
-				>
+				RelativePath="..\..\kazlib\hash.c">
 			</File>
 			<File
-				RelativePath="..\..\kazlib\list.c"
-				>
+				RelativePath="..\..\kazlib\list.c">
 			</File>
 			<File
-				RelativePath="..\logging.c"
-				>
+				RelativePath="..\logging.c">
 			</File>
 			<File
-				RelativePath="..\pcontrol.c"
-				>
+				RelativePath="..\pcontrol.c">
 			</File>
 			<File
-				RelativePath="..\pinfo.c"
-				>
+				RelativePath="..\pinfo.c">
 			</File>
 			<File
-				RelativePath="..\ploader.c"
-				>
+				RelativePath="..\ploader.c">
 			</File>
 			<File
-				RelativePath="..\pscan.c"
-				>
+				RelativePath="..\pscan.c">
 			</File>
 			<File
-				RelativePath="..\psymbol.c"
-				>
+				RelativePath="..\psymbol.c">
 			</File>
 			<File
-				RelativePath="..\serial.c"
-				>
+				RelativePath="..\serial.c">
 			</File>
 			<File
-				RelativePath="..\thread_windows.c"
-				>
+				RelativePath="..\thread_windows.c">
 			</File>
 			<File
-				RelativePath="..\util.c"
-				>
+				RelativePath="..\util.c">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
-			>
+			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
 			<File
-				RelativePath="..\cpluff.h"
-				>
+				RelativePath="..\cpluff.h">
 			</File>
 			<File
-				RelativePath=".\cpluffdef.h"
-				>
+				RelativePath=".\cpluffdef.h">
 			</File>
 			<File
-				RelativePath="..\defines.h"
-				>
+				RelativePath="..\defines.h">
 			</File>
 			<File
-				RelativePath=".\dirent.h"
-				>
+				RelativePath=".\dirent.h">
 			</File>
 			<File
-				RelativePath="..\..\kazlib\hash.h"
-				>
+				RelativePath="..\..\kazlib\hash.h">
 			</File>
 			<File
-				RelativePath="..\internal.h"
-				>
+				RelativePath="..\internal.h">
 			</File>
 			<File
-				RelativePath="..\..\kazlib\list.h"
-				>
+				RelativePath="..\..\kazlib\list.h">
 			</File>
 			<File
-				RelativePath="..\thread.h"
-				>
+				RelativePath="..\thread.h">
 			</File>
 			<File
-				RelativePath="..\util.h"
-				>
+				RelativePath="..\util.h">
 			</File>
 		</Filter>
 	</Files>
