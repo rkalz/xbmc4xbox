@@ -31,7 +31,7 @@ class CDatabase
 public:
   CDatabase(void);
   virtual ~CDatabase(void);
-  bool Open();
+
   bool IsOpen();
   void Close();
   bool Compress(bool bForce=true);
@@ -110,10 +110,12 @@ protected:
   void Split(const CStdString& strFileNameAndPath, CStdString& strPath, CStdString& strFileName);
   DWORD ComputeCRC(const CStdString &text);
 
+  virtual bool Open();
   virtual bool CreateTables();
   virtual bool UpdateOldVersion(int version) { return true; };
 
   virtual int GetMinVersion() const=0;
+  virtual const char *GetDefaultDBName() const=0;
 
   bool m_bOpen;
   CStdString m_strDatabaseFile;

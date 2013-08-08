@@ -54,14 +54,19 @@ using namespace ADDON;
 //********************************************************************************************************************************
 CVideoDatabase::CVideoDatabase(void)
 {
-  m_strDatabaseFile=GetDefaultDBName(); 
 }
 
 //********************************************************************************************************************************
 CVideoDatabase::~CVideoDatabase(void)
-{}
+{
+}
 
 //********************************************************************************************************************************
+bool CVideoDatabase::Open()
+{
+  return CDatabase::Open();
+}
+
 bool CVideoDatabase::CreateTables()
 {
   /* indexes should be added on any columns that are used in in  */

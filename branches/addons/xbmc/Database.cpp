@@ -236,6 +236,9 @@ bool CDatabase::Open()
     m_iRefCount++;
     return true;
   }
+  
+  if (m_strDatabaseFile.IsEmpty())
+    m_strDatabaseFile = GetDefaultDBName();
 
   CStdString strDatabase;
   URIUtils::AddFileToFolder(g_settings.GetDatabaseFolder(), m_strDatabaseFile, strDatabase);
