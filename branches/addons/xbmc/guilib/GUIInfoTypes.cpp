@@ -230,7 +230,7 @@ CStdString CGUIInfoLabel::ReplaceAddonStrings(const CStdString &label)
       int length = work.Find(" ", pos1 + 7) - (pos1 + 7);
       CStdString id = work.substr(pos1+7, length);
       int stringid = atoi(work.substr(pos1+7+id.length()+1, 5).c_str());
-      CStdString replace = g_localizeStringsTemp.Get(stringid);
+      CStdString replace = CAddonMgr::Get().GetString(id, stringid);
       work = left + replace + right;
     }
     else

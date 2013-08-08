@@ -132,7 +132,7 @@ bool CGUIWindowScreensaver::OnMessage(CGUIMessage& message)
 
       // Setup new screensaver instance
       AddonPtr addon;
-      if (!CAddonMgr::Get()->GetAddon(g_guiSettings.GetString("screensaver.mode"), addon, ADDON_SCREENSAVER))
+      if (!CAddonMgr::Get().GetAddon(g_guiSettings.GetString("screensaver.mode"), addon, ADDON_SCREENSAVER))
         return false;
 
       m_addon = boost::dynamic_pointer_cast<CScreenSaver>(addon);

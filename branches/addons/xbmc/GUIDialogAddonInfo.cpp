@@ -151,13 +151,13 @@ bool CGUIDialogAddonInfo::ShowForItem(const CFileItemPtr& item)
   CURL url(item->GetPath());
   if (url.GetHostName().Equals("enabled"))
   {
-    CAddonMgr::Get()->GetAddon(item->GetProperty("Addon.ID"),dialog->m_addon);
+    CAddonMgr::Get().GetAddon(item->GetProperty("Addon.ID"),dialog->m_addon);
     dialog->m_item->SetProperty("Addon.Installed","true");
     dialog->m_localAddon = dialog->m_addon;
   }
   else
   {
-    if (CAddonMgr::Get()->GetAddon(item->GetProperty("Addon.ID"),
+    if (CAddonMgr::Get().GetAddon(item->GetProperty("Addon.ID"),
                                    dialog->m_addon))
       dialog->m_item->SetProperty("Addon.Installed","true");
     else
