@@ -24,7 +24,7 @@
 #include "Application.h"
 #include "GUIWindowManager.h"
 #include "GUIUserMessages.h"
-#include "Settings.h"
+#include "settings/Settings.h"
 
 #define CONTROL_VIS_BUTTON       500
 #define CONTROL_LOCK_BUTTON      501
