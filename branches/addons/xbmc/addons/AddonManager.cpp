@@ -120,6 +120,8 @@ AddonPtr CAddonMgr::Factory(const cp_extension_t *props)
     case ADDON_SCRAPER_LIBRARY:
     case ADDON_VIZ_LIBRARY:
       return AddonPtr(new CAddonLibrary(props->plugin));
+    case ADDON_REPOSITORY:
+      return AddonPtr(new CRepository(props->plugin));
     default:
       break;
   }
@@ -302,7 +304,7 @@ bool CAddonMgr::GetAddons(const TYPE &type, VECADDONS &addons, const CONTENT_TYP
 {
   CSingleLock lock(m_critSection);
   addons.clear();
-  if (type == ADDON_SCREENSAVER || type == ADDON_SKIN || type == ADDON_VIZ)
+  if (type == ADDON_SCREENSAVER || type == ADDON_SKIN || type == ADDON_VIZ || type == ADDON_REPOSITORY)
   {
     cp_status_t status;
     int num;
@@ -343,6 +345,7 @@ bool CAddonMgr::GetAddon(const CStdString &str, AddonPtr &addon, const TYPE &typ
       && type != ADDON_SCREENSAVER
       && type != ADDON_SKIN
       && type != ADDON_VIZ
+      && type != ADDON_REPOSITORY
       && m_addons.find(type) == m_addons.end())
     return false;
 
