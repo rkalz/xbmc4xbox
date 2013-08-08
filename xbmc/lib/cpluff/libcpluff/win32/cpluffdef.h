@@ -191,7 +191,7 @@
 #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)
 #define CP_GCC_NONNULL(...) __attribute__((nonnull (__VA_ARGS__)))
 #else
-#define CP_GCC_NONNULL(ARGS)
+#define CP_GCC_NONNULL(...)
 #endif
 
 /*@}*/

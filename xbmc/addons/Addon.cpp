@@ -239,7 +239,7 @@ CAddon::CAddon(cp_plugin_info_t *props)
 {
   BuildLibName(props);
   BuildProfilePath();
-  URIUtils::AddFileToFolder(Profile(), "settings.xml", m_userSettingsPath);
+  CUtil::AddFileToFolder(Profile(), "settings.xml", m_userSettingsPath);
   m_enabled = true;
   m_hasStrings = false;
   m_checkedStrings = false;
