@@ -44,10 +44,10 @@ namespace ADDON
 CSkinInfo::CSkinInfo(cp_plugin_info_t *props)
   : CAddon(props)
 {
-  GetDefaultResolution(props, "@defaultresolution", m_DefaultResolution, PAL_4x3);
-  GetDefaultResolution(props, "@defaultresolutionwide", m_DefaultResolutionWide, INVALID);
-  CLog::Log(LOGINFO, "Default 4:3 resolution directory is %s", URIUtils::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolution)).c_str());
-  CLog::Log(LOGINFO, "Default 16:9 resolution directory is %s", URIUtils::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolutionWide)).c_str());
+  GetDefaultResolution(props, "@defaultresolution", m_DefaultResolution, RES_PAL_4x3);
+  GetDefaultResolution(props, "@defaultresolutionwide", m_DefaultResolutionWide, RES_INVALID);
+  CLog::Log(LOGINFO, "Default 4:3 resolution directory is %s", CUtil::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolution)).c_str());
+  CLog::Log(LOGINFO, "Default 16:9 resolution directory is %s", CUtil::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolutionWide)).c_str());
 
   CStdString str = CAddonMgr::Get()->GetExtValue(props->extensions->configuration, "@effectslowdown");
   if (!str.IsEmpty())

@@ -115,7 +115,7 @@ bool CAddonDll<TheDll, TheStruct, TheProps>::LoadDll()
   CStdString strFileName;
   if (!Parent())
   {
-    strFileName = URIUtils::AddFileToFolder(Path(), LibName());
+    strFileName = CUtil::AddFileToFolder(Path(), LibName());
   }
   else
   { //FIXME hack to load same Dll twice
