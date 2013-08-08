@@ -3508,6 +3508,8 @@ HRESULT CApplication::Cleanup()
     g_windowManager.Remove(WINDOW_DIALOG_SEEK_BAR);
     g_windowManager.Remove(WINDOW_DIALOG_VOLUME_BAR);
 
+    CAddonMgr::Get().DeInit();
+
     CLog::Log(LOGNOTICE, "unload sections");
     CSectionLoader::UnloadAll();
     // reset our d3d params before we destroy
