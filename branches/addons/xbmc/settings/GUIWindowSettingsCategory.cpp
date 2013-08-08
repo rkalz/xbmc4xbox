@@ -441,15 +441,10 @@ void CGUIWindowSettingsCategory::CreateSettings()
       const TYPE type = pSettingAddon->m_type;
       if (type == ADDON_SKIN || type == ADDON_VIZ)
         control->SetDelayed();
-      CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(control->GetID());
-      FillInAddons(pControl, pSettingAddon);
+      FillInAddons(pSettingAddon, control->GetID());
       continue;
     }
-    if (strSetting.Equals("musicplayer.visualisation"))
-    {
-      FillInVisualisations(pSetting, GetSetting(pSetting->GetSetting())->GetID());
-    }
-    else if (strSetting.Equals("karaoke.port0voicemask"))
+    if (strSetting.Equals("karaoke.port0voicemask"))
     {
       FillInVoiceMasks(0, pSetting);
     }
@@ -1278,8 +1273,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
   if (pSettingControl->GetSetting()->GetType() == SETTINGS_TYPE_ADDON)
   {
     CSettingAddon *pSettingAddon = (CSettingAddon*)pSettingControl->GetSetting();
-    CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(GetSetting(strSetting)->GetID());
-    FillInAddons(pControl, pSettingAddon);
+    FillInAddons(pSettingAddon, GetSetting(strSetting)->GetID());
     if (pSettingAddon->m_type == ADDON_SKIN)
     {
       g_application.ReloadSkin();
@@ -2439,75 +2433,6 @@ void CGUIWindowSettingsCategory::FillInCharSets(CSetting *pSetting)
   pControl->SetValue(iCurrentCharset);
 }
 
-void CGUIWindowSettingsCategory::FillInVisualisations(CSetting *pSetting, int iControlID)
-{
-  CSettingString *pSettingString = (CSettingString*)pSetting;
-  if (!pSetting) return;
-  int iWinID = g_windowManager.GetActiveWindow();
-  {
-    CGUIMessage msg(GUI_MSG_LABEL_RESET, iWinID, iControlID);
-    g_windowManager.SendMessage(msg);
-  }
-
-  vector<CStdString> vecVis;
-  VECADDONS addons;
-
-  CAddonMgr::Get().GetAddons(ADDON_VIZ, addons);
-  if (!addons.empty())
-  {
-    for (unsigned int i = 0; i < addons.size(); i++)
-    {
-      const AddonPtr addon = addons.at(i);
-      boost::shared_ptr<CVisualisation> vis = boost::dynamic_pointer_cast<CVisualisation>(addon);
-      if (vis->HasSubModules())
-      {
-        vector<CStdString> modules;
-        if (!vis->GetSubModuleList(modules))
-           continue;
-        else
-        {
-          for (unsigned i=0; i<modules.size(); i++)
-            vecVis.push_back(CVisualisation::GetFriendlyName(addon->Name(), modules[i]));
-         }
-       }
-      else
-        vecVis.push_back(addon->Name());
-     }
-   }
-
-  CStdString strDefaultVis = pSettingString->GetData();
-  if (!strDefaultVis.Equals("None"))
-    strDefaultVis = strDefaultVis;
-
-  sort(vecVis.begin(), vecVis.end(), sortstringbyname());
-
-  // add the "disabled" setting first
-  int iVis = 0;
-  int iCurrentVis = 0;
-  {
-    CGUIMessage msg(GUI_MSG_LABEL_ADD, iWinID, iControlID, iVis++);
-    msg.SetLabel(231);
-    g_windowManager.SendMessage(msg);
-  }
-  for (int i = 0; i < (int) vecVis.size(); ++i)
-  {
-    CStdString strVis = vecVis[i];
-
-    if (strcmpi(strVis.c_str(), strDefaultVis.c_str()) == 0)
-      iCurrentVis = iVis;
-
-    {
-      CGUIMessage msg(GUI_MSG_LABEL_ADD, iWinID, iControlID, iVis++);
-      msg.SetLabel(strVis);
-      g_windowManager.SendMessage(msg);
-    }
-  }
-  {
-    CGUIMessage msg(GUI_MSG_ITEM_SELECT, iWinID, iControlID, iCurrentVis);
-    g_windowManager.SendMessage(msg);
-  }
-}
-
 void CGUIWindowSettingsCategory::FillInVoiceMasks(DWORD dwPort, CSetting *pSetting)
 {
   CSettingString *pSettingString = (CSettingString*)pSetting;
@@ -3008,8 +2933,12 @@ void CGUIWindowSettingsCategory::FillInSortMethods(CSetting *pSetting, int windo
   delete state;
 }
 
-void CGUIWindowSettingsCategory::FillInAddons(CGUISpinControlEx *pControl, CSettingAddon *pSetting)
+void CGUIWindowSettingsCategory::FillInAddons(CSettingAddon *pSetting, int controlID)
 {
+  // note: this function is static as it's called from elsewhere in the app, so we send messages
+  //       via the window manager
+  int windowID = g_windowManager.GetActiveWindow();
+
   bool allowNone = false;
   switch (pSetting->m_type)
   {
@@ -3023,7 +2952,7 @@ void CGUIWindowSettingsCategory::FillInAddons(CGUISpinControlEx *pControl, CSett
 
   //FIXME must be better way to handle virtual addontypes, as this is horrid
   VECADDONS addons;
-  pControl->Clear();
+  g_windowManager.SendMessage(GUI_MSG_LABEL_RESET, windowID, controlID);
   CStdString strSelected = pSetting->GetData();
 
   pSetting->m_entries.clear();
@@ -3050,8 +2979,11 @@ void CGUIWindowSettingsCategory::FillInAddons(CGUISpinControlEx *pControl, CSett
   for (map<CStdString,CStdString>::iterator it=pSetting->m_entries.begin();
        it != pSetting->m_entries.end();++it)
   {
-    pControl->AddLabel(it->second, i++);
+    CGUIMessage msg(GUI_MSG_LABEL_ADD, windowID, controlID, i++);
+    msg.SetLabel(it->second);
+    g_windowManager.SendMessage(msg);
   }
+  g_windowManager.SendMessage(GUI_MSG_ITEM_SELECT, windowID, controlID, pSetting->GetPos());
 }
 
 void CGUIWindowSettingsCategory::FillInWeatherScripts(CGUISpinControlEx *pControl, const CStdString& strSelected)
