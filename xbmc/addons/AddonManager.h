@@ -32,7 +32,7 @@
 class DllLibCPluff;
 extern "C"
 {
-#include "lib/cpluff/libcpluff/cpluff.h"
+#include "lib/cpluff/libcpluff/cpluff_xbox.h"
 }
 
 namespace ADDON
