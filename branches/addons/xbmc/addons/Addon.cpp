@@ -239,8 +239,8 @@ AddonProps::AddonProps(cp_plugin_info_t *props)
     //CStdString version = CAddonMgr::Get().GetExtValue(metadata->configuration, "minversion/xbmc");
   }
   icon = "icon.png";
-  fanart = CUtil::AddFileToFolder(path, "fanart.jpg");
-  changelog = CUtil::AddFileToFolder(path, "changelog.txt");
+  fanart = URIUtils::AddFileToFolder(path, "fanart.jpg");
+  changelog = URIUtils::AddFileToFolder(path, "changelog.txt");
 }
 
 /**
