@@ -955,6 +955,14 @@ HRESULT CApplication::Create(HWND hWnd)
 
   update_emu_environ();//apply the GUI settings
 
+  // start-up Addons Framework
+  // currently bails out if either cpluff Dll is unavailable or system dir can not be scanned
+  if (!CAddonMgr::Get().Init())
+  {
+    CLog::Log(LOGFATAL, "CApplication::Create: Unable to start CAddonMgr");
+    FatalErrorHandler(true, true, true);
+  }
+
   // Check for WHITE + Y for forced Error Handler (to recover if something screwy happens)
 #ifdef HAS_GAMEPAD
   if (m_DefaultGamepad.bAnalogButtons[XINPUT_GAMEPAD_Y] && m_DefaultGamepad.bAnalogButtons[XINPUT_GAMEPAD_WHITE])
@@ -5840,12 +5848,6 @@ void CApplication::InitDirectoriesXbox()
 
   // First profile is always the Master Profile
   CSpecialProtocol::SetMasterProfilePath("Q:\\UserData");
-
-  if (!CAddonMgr::Get().Init())
-  {
-    CLog::Log(LOGFATAL, "CApplication::Create: Unable to start CAddonMgr");
-    FatalErrorHandler(true, true, true);
-  }
 
   g_settings.LoadProfiles(PROFILES_FILE);
 }
