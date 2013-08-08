@@ -47,7 +47,6 @@ CScraperParser::CScraperParser()
 {
   m_pRootElement = NULL;
   m_document = NULL;
-  m_requiressettings = false;
   m_SearchStringEncoding = "UTF-8";
 }
 
@@ -85,7 +84,6 @@ void CScraperParser::Clear()
   delete m_document;
 
   m_document = NULL;
-  m_requiressettings = false;
   m_strFile.Empty();
 }
 
@@ -132,9 +130,6 @@ bool CScraperParser::LoadFromXML()
   {
     if (m_pRootElement->Attribute("cachePersistence"))
       m_persistence.SetFromTimeString(m_pRootElement->Attribute("cachePersistence"));
-
-    const char* requiressettings;
-    m_requiressettings = ((requiressettings = m_pRootElement->Attribute("requiressettings")) && strnicmp("true", requiressettings, 4) == 0);
 
     TiXmlElement* pChildElement = m_pRootElement->FirstChildElement("CreateSearchUrl");
     if (pChildElement)
