@@ -26,7 +26,7 @@
 #include "FileItem.h"
 #include "FileSystem/File.h"
 #include "addons/GUIDialogAddonSettings.h"
-#include "GUIDialogTextViewer.h"
+#include "dialogs/GUIDialogTextViewer.h"
 #include "GUIUserMessages.h"
 #include "GUIWindowAddonBrowser.h"
 #include "GUIWindowManager.h"
@@ -237,8 +237,8 @@ void CGUIDialogAddonInfo::OnJobComplete(unsigned int jobID, bool success,
   {
     CFile file;
     if (file.Open("special://temp/"+
-      CUtil::GetFileName(((CFileOperationJob*)job)->GetItems()[0]->m_strPath)))
-+    {
+      URIUtils::GetFileName(((CFileOperationJob*)job)->GetItems()[0]->GetPath())))
+    {
       char* temp = new char[file.GetLength()+1];
       file.Read(temp,file.GetLength());
       temp[file.GetLength()] = '\0';
@@ -249,6 +249,5 @@ void CGUIDialogAddonInfo::OnJobComplete(unsigned int jobID, bool success,
   }
   CGUIMessage msg(GUI_MSG_NOTIFY_ALL, WINDOW_DIALOG_TEXT_VIEWER, 0, GUI_MSG_UPDATE);
   g_windowManager.SendThreadMessage(msg);
-  }
 }
 
