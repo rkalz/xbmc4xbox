@@ -223,7 +223,7 @@ bool CGUIWindowSettingsCategory::OnMessage(CGUIMessage &message)
         g_localizeStrings.Load(strLanguagePath);
 
         // also tell our weather to reload, as this must be localized
-        g_weatherManager.ResetTimer();
+        g_weatherManager.Refresh();
       }
 
       // Do we need to reload the skin font set
@@ -1214,12 +1214,12 @@ void CGUIWindowSettingsCategory::OnClick(CBaseSettingControl *pSettingControl)
       CStdString strResult = ((CSettingString *)pSettingControl->GetSetting())->GetData();
       if (g_weatherManager.GetSearchResults(strSearch, strResult))
         ((CSettingString *)pSettingControl->GetSetting())->SetData(strResult);
-      g_weatherManager.ResetTimer();
+      g_weatherManager.Refresh();
     }
   }
   else if (strSetting.Equals("weather.script"))
   {
-    g_weatherManager.ResetTimer();
+    g_weatherManager.Refresh();
   }
   else if (strSetting.Equals("weather.scriptsettings"))
   {
@@ -1846,7 +1846,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
     const CStdString& strRegion=pControl->GetCurrentLabel();
     g_langInfo.SetCurrentRegion(strRegion);
     g_guiSettings.SetString("locale.country", strRegion);
-    g_weatherManager.ResetTimer(); // need to reset our weather, as temperatures need re-translating.
+    g_weatherManager.Refresh(); // need to reset our weather, as temperatures need re-translating.
   }
 #ifdef HAS_TIME_SERVER
   else if (strSetting.Equals("locale.timeserver") || strSetting.Equals("locale.timeserveraddress"))
