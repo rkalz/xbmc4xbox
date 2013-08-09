@@ -63,6 +63,10 @@ using namespace XFILE;
 #pragma const_seg("PY_RDATA")
 #endif
 
+#if defined(__GNUG__) && (__GNUC__>4) || (__GNUC__==4 && __GNUC_MINOR__>=2)
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -264,13 +268,14 @@ namespace PYXBMC
     return Py_None;
   }
 
+#ifdef HAS_HTTPAPI
   // executehttpapi() method
   PyDoc_STRVAR(executeHttpApi__doc__,
     "executehttpapi(httpcommand) -- Execute an HTTP API command.\n"
     "\n"
     "httpcommand    : string - http command to execute.\n"
     "\n"
-    "List of commands - http://xbmc.org/wiki/?title=WebServerHTTP-API#The_Commands \n"
+    "List of commands - http://wiki.xbmc.org/?title=WebServerHTTP-API#The_Commands \n"
     "\n"
     "example:\n"
     "  - response = xbmc.executehttpapi('TakeScreenShot(special://temp/test.jpg,0,false,200,-1,90)')\n");
@@ -278,22 +283,62 @@ namespace PYXBMC
   PyObject* XBMC_ExecuteHttpApi(PyObject *self, PyObject *args)
   {
     char *cLine = NULL;
-    CStdString ret;
     if (!PyArg_ParseTuple(args, (char*)"s", &cLine)) return NULL;
     if (!m_pXbmcHttp)
-    {
-      CSectionLoader::Load("LIBHTTP");
       m_pXbmcHttp = new CXbmcHttp();
-    }
-    if (!pXbmcHttpShim)
+    CStdString method = cLine;
+
+    int open, close;
+    CStdString parameter="", cmd=cLine, execute;
+    open = cmd.Find("(");
+    if (open>0)
     {
-      pXbmcHttpShim = new CXbmcHttpShim();
-      if (!pXbmcHttpShim)
-        return NULL;
+      close=cmd.length();
+      while (close>open && cmd.Mid(close,1)!=")")
+        close--;
+      if (close>open)
+      {
+        parameter = cmd.Mid(open + 1, close - open - 1);
+        parameter.Replace(",",";");
+        execute = cmd.Left(open);
+      }
+      else //open bracket but no close
+        return PyString_FromString("");
     }
-    ret=pXbmcHttpShim->xbmcExternalCall(cLine);
-    return PyString_FromString(ret.c_str());
-  }
+    else //no parameters
+      execute = cmd;
+
+    CUtil::URLDecode(parameter);
+    return PyString_FromString(CHttpApi::MethodCall(execute, parameter).c_str());
+	}
+#endif
+
+#ifdef HAS_JSONRPC
+  // executehttpapi() method
+  PyDoc_STRVAR(executeJSONRPC__doc__,
+    "executeJSONRPC(jsonrpccommand) -- Execute an JSONRPC command.\n"
+    "\n"
+    "jsonrpccommand    : string - jsonrpc command to execute.\n"
+    "\n"
+    "List of commands - \n"
+    "\n"
+    "example:\n"
+    "  - response = xbmc.executeJSONRPC('{ \"jsonrpc\": \"2.0\", \"method\": \"JSONRPC.Introspect\", \"id\": 1 }')\n");
+
+  PyObject* XBMC_ExecuteJSONRPC(PyObject *self, PyObject *args)
+  {
+    char *cLine = NULL;
+    if (!PyArg_ParseTuple(args, (char*)"s", &cLine))
+      return NULL;
+
+    CStdString method = cLine;
+
+    CPythonTransport transport;
+    CPythonTransport::CPythonClient client;
+
+    return PyString_FromString(JSONRPC::CJSONRPC::MethodCall(method, &transport, &client).c_str());
+	}
+#endif
 
   // sleep() method
   PyDoc_STRVAR(sleep__doc__,
@@ -320,11 +365,15 @@ namespace PYXBMC
     }
 
     long i = PyInt_AsLong(pObject);
+    //while(i != 0)
+    //{
       Py_BEGIN_ALLOW_THREADS
-      Sleep(i);
+      Sleep(i);//(500);
       Py_END_ALLOW_THREADS
 
-      Py_MakePendingCalls();
+      PyXBMC_MakePendingCalls();
+      //i = PyInt_AsLong(pObject);
+    //}
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -384,6 +433,7 @@ namespace PYXBMC
     return PyString_FromString(g_guiSettings.GetString("locale.language"));
   }
 
+  // getIPAddress() method
   // getIPAddress() method
   PyDoc_STRVAR(getIPAddress__doc__,
     "getIPAddress() -- Returns the current ip address as a string.\n"
@@ -656,8 +706,8 @@ namespace PYXBMC
     CStdString strText;
     if (!PyXBMCGetUnicodeString(strText, pObjectText, 1)) return NULL;
 
-    int iLegal = bIsFatX != 0 ? LEGAL_FATX : LEGAL_WIN32_COMPAT; 
-    CStdString strFilename = CUtil::MakeLegalPath(strText, iLegal);
+    CStdString strFilename;
+    strFilename = CUtil::MakeLegalPath(strText);
     return Py_BuildValue((char*)"s", strFilename.c_str());
   }
 
@@ -763,7 +813,7 @@ namespace PYXBMC
     "\n"
     "id             : string - id of setting to return\n"
     "\n"
-    "*Note, choices are (dateshort, datelong, locale, meridiem, speedunit, tempunit, time)\n"
+    "*Note, choices are (dateshort, datelong, time, meridiem, tempunit, speedunit)\n"
     "\n"
     "       You can use the above as keywords for arguments.\n"
     "\n"
@@ -788,40 +838,18 @@ namespace PYXBMC
 
     CStdString result;
 
-    if (strcmpi(id, "datelong") == 0 || strcmpi(id, "dateshort") == 0)
-    {
-      result = g_langInfo.GetDateFormat(strcmpi(id, "datelong") == 0 ? true : false);
-      // make python compatible
-      result.Replace("DDDD", "%A");
-      result.Replace("MMMM", "%B");
-      result.Replace("MM", "%m");
-      result.Replace("M", "%m");
-      result.Replace("DD", "%d");
-      result.Replace("D", "%d");
-      result.Replace("YYYY", "%Y");
-      result.Replace("YY", "%y");
-    }
+    if (strcmpi(id, "datelong") == 0)
+      result = g_langInfo.GetDateFormat(true);
+    else if (strcmpi(id, "dateshort") == 0)
+      result = g_langInfo.GetDateFormat(false);
     else if (strcmpi(id, "tempunit") == 0)
       result = g_langInfo.GetTempUnitString();
     else if (strcmpi(id, "speedunit") == 0)
       result = g_langInfo.GetSpeedUnitString();
     else if (strcmpi(id, "time") == 0)
-    {
       result = g_langInfo.GetTimeFormat();
-      // make python compatible
-      if (result.Find("HH") >=0)
-        result.Replace("HH", "%H");
-      else
-        result.Replace("H", "%H");
-      result.Replace("h", "%I");
-      result.Replace("mm", "%M");
-      result.Replace("ss", "%S");
-      result.Replace("xx", "%p");
-    }
     else if (strcmpi(id, "meridiem") == 0)
       result.Format("%s/%s", g_langInfo.GetMeridiemSymbol(CLangInfo::MERIDIEM_SYMBOL_AM), g_langInfo.GetMeridiemSymbol(CLangInfo::MERIDIEM_SYMBOL_PM));
-    else if (strcmpi(id, "locale") == 0)
-      result = g_langInfo.GetDVDAudioLanguage();
 
     return Py_BuildValue((char*)"s", result.c_str());
   }
@@ -927,7 +955,12 @@ namespace PYXBMC
     {(char*)"getFreeMem", (PyCFunction)XBMC_GetFreeMem, METH_VARARGS, getFreeMem__doc__},
     //{(char*)"getCpuTemp", (PyCFunction)XBMC_GetCpuTemp, METH_VARARGS, getCpuTemp__doc__},
 
+#ifdef HAS_HTTPAPI
     {(char*)"executehttpapi", (PyCFunction)XBMC_ExecuteHttpApi, METH_VARARGS, executeHttpApi__doc__},
+#endif
+#ifdef HAS_JSONRPC
+    {(char*)"executeJSONRPC", (PyCFunction)XBMC_ExecuteJSONRPC, METH_VARARGS, executeJSONRPC__doc__},
+#endif
     {(char*)"getInfoLabel", (PyCFunction)XBMC_GetInfoLabel, METH_VARARGS, getInfoLabel__doc__},
     {(char*)"getInfoImage", (PyCFunction)XBMC_GetInfoImage, METH_VARARGS, getInfoImage__doc__},
     {(char*)"getCondVisibility", (PyCFunction)XBMC_GetCondVisibility, METH_VARARGS, getCondVisibility__doc__},
@@ -956,11 +989,8 @@ namespace PYXBMC
  * initxbmc(void);
  *****************************************************************/
   PyMODINIT_FUNC
-  initxbmc(void)
+  InitXBMCTypes(bool bInitTypes)
   {
-    // init general xbmc modules
-    PyObject* pXbmcModule;
-
     initKeyboard_Type();
     initPlayer_Type();
     initPlayList_Type();
@@ -978,6 +1008,20 @@ namespace PYXBMC
         PyType_Ready(&InfoTagVideo_Type) < 0 ||
         PyType_Ready(&Language_Type) < 0 ||
         PyType_Ready(&Settings_Type) < 0) return;
+  }
+
+  PyMODINIT_FUNC
+  DeinitXBMCModule()
+  {
+    // no need to Py_DECREF our objects (see InitXBMCModule()) as they were created only
+    // so that they could be added to the module, which steals a reference.
+  }
+
+  PyMODINIT_FUNC
+  InitXBMCModule()
+  {
+    // init general xbmc modules
+    PyObject* pXbmcModule;
 
     Py_INCREF(&Keyboard_Type);
     Py_INCREF(&Player_Type);
@@ -1018,7 +1062,6 @@ namespace PYXBMC
     PyModule_AddIntConstant(pXbmcModule, (char*)"PLAYER_CORE_DVDPLAYER", EPC_DVDPLAYER);
     PyModule_AddIntConstant(pXbmcModule, (char*)"PLAYER_CORE_MPLAYER", EPC_MPLAYER);
     PyModule_AddIntConstant(pXbmcModule, (char*)"PLAYER_CORE_PAPLAYER", EPC_PAPLAYER);
-    PyModule_AddIntConstant(pXbmcModule, (char*)"PLAYER_CORE_MODPLAYER", EPC_MODPLAYER);
 
     // dvd state constants
     PyModule_AddIntConstant(pXbmcModule, (char*)"TRAY_OPEN", TRAY_OPEN);
@@ -1035,6 +1078,7 @@ namespace PYXBMC
     PyModule_AddIntConstant(pXbmcModule, (char*)"LOGSEVERE", LOGSEVERE);
     PyModule_AddIntConstant(pXbmcModule, (char*)"LOGFATAL", LOGFATAL);
     PyModule_AddIntConstant(pXbmcModule, (char*)"LOGNONE", LOGNONE);
+    PyModule_AddObject(pXbmcModule, "abortRequested", PyBool_FromLong(0));
   }
 }
 

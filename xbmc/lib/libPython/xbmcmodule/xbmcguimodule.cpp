@@ -39,6 +39,10 @@
 #pragma const_seg("PY_RDATA")
 #endif
 
+#if defined(__GNUG__) && (__GNUC__>4) || (__GNUC__==4 && __GNUC_MINOR__>=2)
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -121,11 +125,8 @@ namespace PYXBMC
       "");
 
   PyMODINIT_FUNC
-  initxbmcgui(void)
+  InitGUITypes(void)
   {
-    // init xbmc gui modules
-    PyObject* pXbmcGuiModule;
-
     initWindow_Type();
     initWindowDialog_Type();
     initWindowXML_Type();
@@ -146,9 +147,6 @@ namespace PYXBMC
     initDialogProgress_Type();
     initAction_Type();
     initControlRadioButton_Type();
-
-    DialogProgress_Type.tp_new = PyType_GenericNew;
-    Dialog_Type.tp_new = PyType_GenericNew;
 
     if (PyType_Ready(&Window_Type) < 0 ||
         PyType_Ready(&WindowDialog_Type) < 0 ||
@@ -172,6 +170,21 @@ namespace PYXBMC
         PyType_Ready(&Action_Type) < 0)
       return;
 
+  }
+
+  PyMODINIT_FUNC
+  DeinitGUIModule(void)
+  {
+    // no need to Py_DECREF our objects (see InitGUIModule()) as they were created only
+    // so that they could be added to the module, which steals a reference.
+  }
+
+  PyMODINIT_FUNC
+  InitGUIModule(void)
+  {
+    // init xbmc gui modules
+    PyObject* pXbmcGuiModule;
+
     Py_INCREF(&Window_Type);
     Py_INCREF(&WindowDialog_Type);
     Py_INCREF(&WindowXML_Type);
@@ -186,8 +199,7 @@ namespace PYXBMC
     Py_INCREF(&ControlCheckMark_Type);
     Py_INCREF(&ControlList_Type);
     Py_INCREF(&ControlImage_Type);
-    Py_INCREF(&ControlProgress_Type);
-    Py_INCREF(&ControlGroup_Type);
+    Py_INCREF(&ControlProgress_Type);  
     Py_INCREF(&Dialog_Type);
     Py_INCREF(&DialogProgress_Type);
     Py_INCREF(&Action_Type);
