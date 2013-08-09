@@ -47,7 +47,7 @@ public:
 
   //FIXME remove this, kept for current repo handling
   CSkinInfo(const ADDON::AddonProps &props) : CAddon(props) {}
-  CSkinInfo(cp_plugin_info_t *props);
+  CSkinInfo(const cp_extension_t *ext);
   virtual ~CSkinInfo();
 
   /*! \brief Load information regarding the skin from the given skin directory
@@ -119,7 +119,7 @@ protected:
    \param res resolution to return
    \return true if we find a valid resolution, false otherwise
    */
-  void GetDefaultResolution(cp_plugin_info_t *props, const char *tag, RESOLUTION &res, const RESOLUTION &def) const;
+  void GetDefaultResolution(const cp_extension_t *ext, const char *tag, RESOLUTION &res, const RESOLUTION &def) const;
 
   /*! \brief Given a resolution, retrieve the corresponding directory name
    \param res RESOLUTION to translate
@@ -128,7 +128,7 @@ protected:
   CStdString GetDirFromRes(RESOLUTION res) const;
 
   void LoadIncludes();
-  bool LoadStartupWindows(cp_plugin_info_t *startup);
+  bool LoadStartupWindows(const cp_extension_t *ext);
   bool IsWide(RESOLUTION res) const;
 
   RESOLUTION m_DefaultResolution; // default resolution for the skin in 4:3 modes
