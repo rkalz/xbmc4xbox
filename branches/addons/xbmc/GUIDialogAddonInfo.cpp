@@ -242,7 +242,7 @@ void CGUIDialogAddonInfo::OnJobComplete(unsigned int jobID, bool success,
     if (file.Open("special://temp/"+
       URIUtils::GetFileName(((CFileOperationJob*)job)->GetItems()[0]->GetPath())))
     {
-      char* temp = new char[file.GetLength()+1];
+      char* temp = new char[(size_t)file.GetLength()+1];
       file.Read(temp,file.GetLength());
       temp[file.GetLength()] = '\0';
       m_item->SetProperty("Addon.Changelog",temp);
