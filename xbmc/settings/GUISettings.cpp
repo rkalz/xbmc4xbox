@@ -55,7 +55,8 @@ using namespace ADDON;
 
 class CGUISettings g_guiSettings;
 
-#define DEFAULT_VISUALISATION "milkdrop.vis"
+#define DEFAULT_VISUALISATION "visualization.milkrop"
+
 struct sortsettings
 {
   bool operator()(const CSetting* pSetting1, const CSetting* pSetting2)
