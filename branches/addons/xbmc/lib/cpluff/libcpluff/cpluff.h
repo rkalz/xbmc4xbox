@@ -1096,7 +1096,7 @@ CP_C_API cp_plugin_info_t * cp_load_plugin_descriptor(cp_context_t *ctx, const c
  * @param status a pointer to the location where status code is to be stored, or NULL
  * @return pointer to the information structure or NULL if error occurs
  */
-CP_C_API cp_plugin_info_t * cp_load_plugin_descriptor_from_memory(cp_context_t *context, const char *buffer, unsigned int buffer_len, cp_status_t *error) CP_GCC_NONNULL(1, 2);
+CP_C_API cp_plugin_info_t * cp_load_plugin_descriptor_from_memory(cp_context_t *context, const char *buffer, unsigned int buffer_len, cp_status_t *error);
 
 /**
  * Installs the plug-in described by the specified plug-in information
