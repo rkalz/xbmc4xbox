@@ -62,11 +62,7 @@ static const ContentMapping content[] =
    {"audio",         CONTENT_AUDIO,           0 },
    {"image",         CONTENT_IMAGE,           0 },
    {"program",       CONTENT_PROGRAM,         0 },
-   {"video",         CONTENT_VIDEO,           0 },
-   {"weather",       CONTENT_WEATHER,         0 },
-   {"subtitles",     CONTENT_SUBTITLES,       0 },
-   {"lyrics",        CONTENT_LYRICS,          0 },
-   {"recentlyadded", CONTENT_RECENTLY_ADDED,  0 }};
+   {"video",         CONTENT_VIDEO,           0 }};
 
 typedef struct
 {
@@ -84,6 +80,10 @@ static const TypeMapping types[] =
    {"visualization-library",         ADDON_VIZ_LIBRARY,        0 },
    {"plugin",                        ADDON_PLUGIN,         24005 },
    {"xbmc.python.script",            ADDON_SCRIPT,         24009 },
+   {"xbmc.python.weather",           ADDON_SCRIPT_WEATHER,   24009 },
+   {"xbmc.python.subtitles",         ADDON_SCRIPT_SUBTITLES, 24009 },
+   {"xbmc.python.lyrics",            ADDON_SCRIPT_LYRICS,    24009 },
+   {"xbmc.python.library",           ADDON_SCRIPT_LIBRARY,   24009 },
    {"xbmc.gui.skin",                 ADDON_SKIN,             166 },
    {"xbmc.addon.repository",         ADDON_REPOSITORY,     24011 },
    {"pvrclient",                     ADDON_PVRDLL,             0 }};
@@ -282,6 +282,10 @@ void CAddon::BuildLibName(cp_plugin_info_t *props)
       ext = ADDON_VIS_EXT;
       break;
     case ADDON_SCRIPT:
+    case ADDON_SCRIPT_LIBRARY:
+    case ADDON_SCRIPT_LYRICS:
+    case ADDON_SCRIPT_WEATHER:
+    case ADDON_SCRIPT_SUBTITLES:
     case ADDON_PLUGIN:
       ext = ADDON_PYTHON_EXT;
       break;
@@ -300,6 +304,10 @@ void CAddon::BuildLibName(cp_plugin_info_t *props)
     {
       case ADDON_SCREENSAVER:
       case ADDON_SCRIPT:
+      case ADDON_SCRIPT_LIBRARY:
+      case ADDON_SCRIPT_LYRICS:
+      case ADDON_SCRIPT_WEATHER:
+      case ADDON_SCRIPT_SUBTITLES:
       case ADDON_SCRAPER:
       case ADDON_SCRAPER_LIBRARY:
         {
