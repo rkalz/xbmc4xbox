@@ -94,10 +94,12 @@ const CStdString TranslateContent(const CONTENT_TYPE &type, bool pretty/*=false*
   {
     const ContentMapping &map = content[index];
     if (type == map.type)
+    {
       if (pretty && map.pretty)
         return g_localizeStrings.Get(map.pretty);
       else
         return map.name;
+    }
   }
   return "";
 }
@@ -119,10 +121,12 @@ const CStdString TranslateType(const ADDON::TYPE &type, bool pretty/*=false*/)
   {
     const TypeMapping &map = types[index];
     if (type == map.type)
+    {
       if (pretty && map.pretty)
         return g_localizeStrings.Get(map.pretty);
       else
         return map.name;
+    }
   }
   return "";
 }
