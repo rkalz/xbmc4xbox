@@ -1336,7 +1336,7 @@ HRESULT CApplication::Initialize()
     g_windowManager.ActivateWindow(g_SkinInfo->GetFirstWindow());
   }
 
-  g_pythonParser.bStartup = true;
+  g_pythonParser.m_bStartup = true;
   //g_sysinfo.Refresh();
 
   CLog::Log(LOGINFO, "removing tempfiles");
