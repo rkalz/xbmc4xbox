@@ -57,6 +57,7 @@
 #include "dialogs/GUIDialogNumeric.h"
 #include "dialogs/GUIDialogFileBrowser.h"
 #include "addons/GUIDialogAddonSettings.h"
+#include "GUIWindowAddonBrowser.h"
 #include "GUIFontManager.h"
 #include "dialogs/GUIDialogContextMenu.h"
 #include "programs/GUIWindowPrograms.h"
@@ -433,16 +434,6 @@ void CGUIWindowSettingsCategory::CreateSettings()
         pControl->AddLabel(g_localizeStrings.Get(16106 + i), i);
       }
       pControl->SetValue(pSettingInt->GetData());
-    }
-    else if (pSetting->GetType() == SETTINGS_TYPE_ADDON)
-    {
-      CSettingAddon *pSettingAddon = (CSettingAddon*)pSetting;
-      CBaseSettingControl *control = GetSetting(strSetting);
-      const TYPE type = pSettingAddon->m_type;
-      if (type == ADDON_SKIN || type == ADDON_VIZ)
-        control->SetDelayed();
-      FillInAddons(pSettingAddon, control->GetID());
-      continue;
     }
     if (strSetting.Equals("karaoke.port0voicemask"))
     {
@@ -1225,6 +1216,15 @@ void CGUIWindowSettingsCategory::OnClick(CBaseSettingControl *pSettingControl)
   }
   else if (strSetting.Equals("lookandfeel.rssedit"))
     CBuiltins::Execute("RunScript("RSSEDITOR_PATH")");
+  else if (pSettingControl->GetSetting()->GetType() == SETTINGS_TYPE_ADDON)
+  { // prompt for the addon
+    CSettingAddon *setting = (CSettingAddon *)pSettingControl->GetSetting();
+    CStdString addonID;
+    if (CGUIWindowAddonBrowser::SelectAddonID(setting->m_type, addonID))
+      setting->SetData(addonID);
+    else
+      return;
+  }
 
   // if OnClick() returns false, the setting hasn't changed or doesn't
   // require immediate update
@@ -1265,7 +1265,6 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
   if (pSettingControl->GetSetting()->GetType() == SETTINGS_TYPE_ADDON)
   {
     CSettingAddon *pSettingAddon = (CSettingAddon*)pSettingControl->GetSetting();
-    FillInAddons(pSettingAddon, GetSetting(strSetting)->GetID());
     if (pSettingAddon->m_type == ADDON_SKIN)
     {
       g_application.ReloadSkin();
@@ -2927,57 +2926,4 @@ void CGUIWindowSettingsCategory::FillInSortMethods(CSetting *pSetting, int windo
   }
   pControl->SetValue(pSettingInt->GetData());
   delete state;
-}
-
-void CGUIWindowSettingsCategory::FillInAddons(CSettingAddon *pSetting, int controlID)
-{
-  // note: this function is static as it's called from elsewhere in the app, so we send messages
-  //       via the window manager
-  int windowID = g_windowManager.GetActiveWindow();
-
-  bool allowNone = false;
-  switch (pSetting->m_type)
-  {
-    case ADDON_SCREENSAVER:
-    case ADDON_VIZ:
-    allowNone = true;
-    break;
-    default:
-    break;
-  }
-
-  //FIXME must be better way to handle virtual addontypes, as this is horrid
-  VECADDONS addons;
-  g_windowManager.SendMessage(GUI_MSG_LABEL_RESET, windowID, controlID);
-  CStdString strSelected = pSetting->GetData();
-
-  pSetting->m_entries.clear();
-  
-  if (allowNone)
-    pSetting->m_entries.insert(std::make_pair("_virtual.none", g_localizeStrings.Get(231)));
-
-  if (pSetting->m_type == ADDON_SCREENSAVER)
-  {
-    pSetting->m_entries.insert(std::make_pair("_virtual.dim", g_localizeStrings.Get(352))); // Dim
-    pSetting->m_entries.insert(std::make_pair("_virtual.blk", g_localizeStrings.Get(353))); // Black
-    pSetting->m_entries.insert(std::make_pair("_virtual.pic", g_localizeStrings.Get(108))); // PictureSlideShow
-    pSetting->m_entries.insert(std::make_pair("_virtual.fan", g_localizeStrings.Get(20425))); // Fanart Slideshow
-  }
-
-  CAddonMgr::Get().GetAddons(pSetting->m_type, addons);
-  for (IVECADDONS it = addons.begin(); it != addons.end(); it++)
-  {
-    AddonPtr addon = *it;
-    pSetting->m_entries.insert(std::make_pair(addon->ID(),addon->Name()));
-  }
-
-  unsigned i=0;
-  for (map<CStdString,CStdString>::iterator it=pSetting->m_entries.begin();
-       it != pSetting->m_entries.end();++it)
-  {
-    CGUIMessage msg(GUI_MSG_LABEL_ADD, windowID, controlID, i++);
-    msg.SetLabel(it->second);
-    g_windowManager.SendMessage(msg);
-  }
-  g_windowManager.SendMessage(GUI_MSG_ITEM_SELECT, windowID, controlID, pSetting->GetPos());
 }
