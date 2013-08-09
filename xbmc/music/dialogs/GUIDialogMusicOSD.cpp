@@ -24,7 +24,7 @@
 #include "GUIWindowManager.h"
 #include "GUIUserMessages.h"
 #include "settings/Settings.h"
-#include "GUISettings.h"
+#include "settings/GUISettings.h"
 #include "GUIWindowAddonBrowser.h"
 
 #define CONTROL_VIS_BUTTON       500

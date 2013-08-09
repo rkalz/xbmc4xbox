@@ -804,7 +804,7 @@ void CGUISettings::AddPath(int iOrder, const char *strSetting, int iLabel, const
   settingsMap.insert(pair<CStdString, CSetting*>(CStdString(strSetting).ToLower(), pSetting));
 }
 
-void CGUISettings::AddDefaultAddon(int IOrder, const char *strSetting, int iLabel, const char *strData, const TYPE type)
+void CGUISettings::AddDefaultAddon(int iOrder, const char *strSetting, int iLabel, const char *strData, const TYPE type)
 {
   CSettingAddon* pSetting = new CSettingAddon(iOrder, CStdString(strSetting).ToLower(), iLabel, strData, type);
   if (!pSetting) return ;
