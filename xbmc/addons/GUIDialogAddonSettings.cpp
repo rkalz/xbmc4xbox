@@ -45,6 +45,7 @@
 #include "dialogs/GUIDialogKeyboard.h"
 #include "FileItem.h"
 #include "settings/Settings.h"
+#include "GUIInfoManager.h"
 
 using namespace std;
 using namespace ADDON;
@@ -495,6 +496,14 @@ void CGUIDialogAddonSettings::CreateControls()
 
         if (!lvalues.IsEmpty())
           CUtil::Tokenize(lvalues, valuesVec, "|");
+        else if (values.Equals("$HOURS"))
+        {
+          for (unsigned int i = 0; i < 24; i++)
+          {
+            CDateTime time(0, 0, 0, i, 0, 0);
+            valuesVec.push_back(g_infoManager.LocalizeTime(time, TIME_FORMAT_HH_MM_XX));
+          }
+        }
         else
           CUtil::Tokenize(values, valuesVec, "|");
         if (!entries.IsEmpty())
