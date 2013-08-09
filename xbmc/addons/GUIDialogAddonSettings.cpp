@@ -28,6 +28,7 @@
 #include "dialogs/GUIDialogOK.h"
 #include "GUIControlGroupList.h"
 #include "Util.h"
+#include "utils/StringUtils.h"
 #include "URIUtils.h"
 #include "URL.h"
 #include "storage/MediaManager.h"
@@ -262,8 +263,10 @@ bool CGUIDialogAddonSettings::ShowVirtualKeyboard(int iControl)
             bool bUseFileDirectories = false;
             if (option)
             {
-              bUseThumbs = (strcmpi(option, "usethumbs") == 0 || strcmpi(option, "usethumbs|treatasfolder") == 0);
-              bUseFileDirectories = (strcmpi(option, "treatasfolder") == 0 || strcmpi(option, "usethumbs|treatasfolder") == 0);
+              vector<CStdString> options;
+              StringUtils::SplitString(option, "|", options);
+              bUseThumbs = find(options.begin(), options.end(), "usethumbs") != options.end();
+              bUseFileDirectories = find(options.begin(), options.end(), "treatasfolder") != options.end();
             }
 
             if (CGUIDialogFileBrowser::ShowAndGetFile(*shares, strMask, ((CGUIButtonControl*) control)->GetLabel(), value))
