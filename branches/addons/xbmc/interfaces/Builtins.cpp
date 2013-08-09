@@ -35,11 +35,11 @@
 #include "music/dialogs/GUIDialogMusicScan.h"
 #include "dialogs/GUIDialogNumeric.h"
 #include "dialogs/GUIDialogYesNo.h"
-#include "dialogs/GUIDialogSelect.h"
 #include "video/dialogs/GUIDialogVideoScan.h"
 #include "GUIUserMessages.h"
 #include "windows/GUIWindowLoginScreen.h"
 #include "video/windows/GUIWindowVideoBase.h"
+#include "GUIWindowAddonBrowser.h"
 #include "addons/Addon.h" // for TranslateType, TranslateContent
 #include "addons/AddonManager.h"
 #include "music/LastFmManager.h"
@@ -57,7 +57,6 @@
 #include "FileSystem/RarManager.h"
 #include "FileSystem/VideoDatabaseDirectory.h"
 #include "FileSystem/ZipManager.h"
-#include "FileSystem/AddonsDirectory.h"
 
 #include "utils/URIUtils.h"
 #include "xbox/xbeheader.h"
@@ -1011,30 +1010,12 @@ int CBuiltins::Execute(const CStdString& execString)
   {
     int string = g_settings.TranslateSkinString(params[0]);
     ADDON::TYPE type = TranslateType(params[1]);
-    if (type != ADDON_UNKNOWN)
-    { // skin has asked for a specific addon
-      CStdString content = (params.size() > 2) ? params[2] : "";
-      ADDON::VECADDONS addons;
-      CAddonMgr::Get().GetAddons(type, addons, TranslateContent(content));
-      CGUIDialogSelect *dialog = (CGUIDialogSelect*)g_windowManager.GetWindow(WINDOW_DIALOG_SELECT);
-      if (dialog)
-      {
-        dialog->SetHeading(TranslateType(type, true));
-        dialog->Reset();
-        CFileItemList items;
-        CFileItemPtr none(new CFileItem("", false));
-        none->SetLabel(g_localizeStrings.Get(231)); // "None"
-        items.Add(none);
-        for (ADDON::IVECADDONS i = addons.begin(); i != addons.end(); ++i)
-          items.Add(CAddonsDirectory::FileItemFromAddon(*i, ""));
-        dialog->SetItems(&items);
-        dialog->DoModal();
-        if (dialog->GetSelectedLabel() >= 0)
-        {
-          g_settings.SetSkinString(string, dialog->GetSelectedItem().m_strPath);
-          g_settings.Save();
-        }
-      }
+    CONTENT_TYPE content = (params.size() > 2) ? TranslateContent(params[2]) : CONTENT_NONE;
+    CStdString result;
+    if (CGUIWindowAddonBrowser::SelectAddonID(type, content, result))
+    {
+      g_settings.SetSkinString(string, result);
+      g_settings.Save();
     }
   }
   else if (execute.Equals("dialog.close") && params.size())
