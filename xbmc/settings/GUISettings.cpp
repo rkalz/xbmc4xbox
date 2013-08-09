@@ -268,7 +268,8 @@ void CGUISettings::Initialize()
   AddString(2, "weather.areacode2", 14020, "UKXX0085 - London, United Kingdom", BUTTON_CONTROL_STANDARD);
   AddString(3, "weather.areacode3", 14021, "JAXX0085 - Tokyo, Japan", BUTTON_CONTROL_STANDARD);
   AddSeparator(4, "weather.sep1");
-  AddString(5, "weather.script", 24027, "", SPIN_CONTROL_TEXT, true);
+  AddDefaultAddon(5, "weather.script", 24027, DEFAULT_WEATHER_ADDON, ADDON_SCRIPT_WEATHER);
+  AddString(6, "weather.scriptsettings", 21417, "", BUTTON_CONTROL_STANDARD, true);
 
   // My Music Settings
   AddGroup(3, 2);
