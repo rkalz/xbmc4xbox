@@ -192,6 +192,9 @@ bool CAddonsDirectory::GetDirectory(const CStdString& strPath, CFileItemList &it
 void CAddonsDirectory::GenerateListing(CURL &path, VECADDONS& addons, CFileItemList &items)
 {
   items.ClearItems();
+  for (unsigned i=0; i < addons.size(); i++)
+  {
+    AddonPtr addon = addons[i];
     CFileItemPtr pItem = (addon->Type() == ADDON_REPOSITORY) ? FileItemFromAddon(addon, "addons://", true)
                                                              : FileItemFromAddon(addon, path.Get(), false);
     AddonPtr addon2;
@@ -216,7 +219,7 @@ CFileItemPtr CAddonsDirectory::FileItemFromAddon(AddonPtr &addon, const CStdStri
   url.SetFileName(addon->ID());
   CStdString path(url.Get());
   if (folder)
-    CUtil::AddSlashAtEnd(path);
+    URIUtils::AddSlashAtEnd(path);
 
   CFileItemPtr item(new CFileItem(path, folder));
   item->SetLabel(addon->Name());
