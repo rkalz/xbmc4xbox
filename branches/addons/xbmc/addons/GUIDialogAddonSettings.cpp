@@ -546,7 +546,7 @@ void CGUIDialogAddonSettings::CreateControls()
         if (values.Find("$PROFILE") >=0)
           values.Replace("$PROFILE", m_addon->Profile());
         else
-          values = CUtil::AddFileToFolder(m_addon->Path(), values);
+          values = URIUtils::AddFileToFolder(m_addon->Path(), values);
 
         // fetch directory
         CFileItemList items;
