@@ -113,7 +113,7 @@ bool CScraperParser::Load(const AddonPtr& scraper)
 
   m_scraper = scraper;
 
-  return Load(URIUtils::AddFileToFolder(m_scraper->Path(),m_scraper->LibName()));
+  return Load(m_scraper->LibPath());
 }
 
 bool CScraperParser::LoadFromXML()
@@ -151,9 +151,8 @@ bool CScraperParser::LoadFromXML()
       if (!CAddonMgr::Get().GetAddon((*itr).first, dep))
         break;
 
-      CStdString strFile = URIUtils::AddFileToFolder(dep->Path(), dep->LibName());
       TiXmlDocument doc;
-      if (doc.LoadFile(strFile))
+      if (doc.LoadFile(dep->LibPath()))
       {
         const TiXmlNode* node = doc.RootElement()->FirstChild();
         while (node)
