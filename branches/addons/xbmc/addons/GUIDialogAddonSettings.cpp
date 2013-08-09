@@ -193,7 +193,7 @@ bool CGUIDialogAddonSettings::ShowVirtualKeyboard(int iControl)
               CURL::Encode(value);
           }
         }
-        else if (strcmp(type, "integer") == 0 && CGUIDialogNumeric::ShowAndGetNumber(value, ((CGUIButtonControl*) control)->GetLabel()))
+        else if (strcmp(type, "number") == 0 && CGUIDialogNumeric::ShowAndGetNumber(value, ((CGUIButtonControl*) control)->GetLabel()))
         {
           ((CGUIButtonControl*) control)->SetLabel2(value);
         }
@@ -201,9 +201,9 @@ bool CGUIDialogAddonSettings::ShowVirtualKeyboard(int iControl)
         {
           ((CGUIButtonControl*) control)->SetLabel2(value);
         }
-        else if (strcmpi(type, "video") == 0 || strcmpi(type, "music") == 0 ||
-          strcmpi(type, "pictures") == 0 || strcmpi(type, "programs") == 0 ||
-          strcmpi(type, "folder") == 0 || strcmpi(type, "files") == 0)
+        else if (strcmpi(type, "audio") == 0 || strcmpi(type, "video") == 0 ||
+          strcmpi(type, "image") == 0 || strcmpi(type, "executable") == 0 ||
+          strcmpi(type, "file") == 0 || strcmpi(type, "folder") == 0)
         {
           // setup the shares
           VECSOURCES *shares = NULL;
@@ -233,7 +233,7 @@ bool CGUIDialogAddonSettings::ShowVirtualKeyboard(int iControl)
             if (CGUIDialogFileBrowser::ShowAndGetDirectory(*shares, ((CGUIButtonControl*) control)->GetLabel(), value, bWriteOnly))
               ((CGUIButtonControl*) control)->SetLabel2(value);
           }
-          else if (strcmpi(type, "pictures") == 0)
+          else if (strcmpi(type, "image") == 0)
           {
             if (CGUIDialogFileBrowser::ShowAndGetImage(*shares, ((CGUIButtonControl*) control)->GetLabel(), value))
               ((CGUIButtonControl*) control)->SetLabel2(value);
@@ -248,9 +248,9 @@ bool CGUIDialogAddonSettings::ShowVirtualKeyboard(int iControl)
             {
               if (strcmpi(type, "video") == 0)
                 strMask = g_settings.m_videoExtensions;
-              else if (strcmpi(type, "music") == 0)
+              else if (strcmpi(type, "audio") == 0)
                 strMask = g_settings.m_musicExtensions;
-              else if (strcmpi(type, "programs") == 0)
+              else if (strcmpi(type, "executable") == 0)
 #if defined(_WIN32_WINNT)
                 strMask = ".exe|.bat|.cmd|.py";
 #else
@@ -417,9 +417,9 @@ void CGUIDialogAddonSettings::CreateControls()
     if (type)
     {
       if (strcmpi(type, "text") == 0 || strcmpi(type, "ipaddress") == 0 ||
-        strcmpi(type, "integer") == 0 || strcmpi(type, "video") == 0 ||
-        strcmpi(type, "music") == 0 || strcmpi(type, "pictures") == 0 ||
-        strcmpi(type, "folder") == 0 || strcmpi(type, "programs") == 0 ||
+        strcmpi(type, "number") == 0 ||strcmpi(type, "video") == 0 ||
+        strcmpi(type, "audio") == 0 || strcmpi(type, "image") == 0 ||
+        strcmpi(type, "folder") == 0 || strcmpi(type, "executable") == 0 ||
         strcmpi(type, "files") == 0 || strcmpi(type, "action") == 0)
       {
         pControl = new CGUIButtonControl(*pOriginalButton);
