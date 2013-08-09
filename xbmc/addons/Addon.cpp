@@ -222,10 +222,6 @@ AddonProps::AddonProps(cp_plugin_info_t *props)
     description = CAddonMgr::Get().GetTranslatedString(metadata->configuration, "description");
     disclaimer = CAddonMgr::Get().GetTranslatedString(metadata->configuration, "disclaimer");
     license = CAddonMgr::Get().GetExtValue(metadata->configuration, "license");
-    vector<CStdString> content;
-    CAddonMgr::Get().GetExtList(metadata->configuration,"supportedcontent", content);
-    for (unsigned int i=0;i<content.size();++i)
-      contents.insert(TranslateContent(content[i]));
   }
   icon = "icon.png";
   fanart = URIUtils::AddFileToFolder(path, "fanart.jpg");
@@ -237,11 +233,11 @@ AddonProps::AddonProps(cp_plugin_info_t *props)
  *
  */
 
-CAddon::CAddon(cp_plugin_info_t *props)
-  : m_props(props)
+CAddon::CAddon(const cp_extension_t *ext)
+  : m_props(ext->plugin)
   , m_parent(AddonPtr())
 {
-  BuildLibName(props);
+  BuildLibName(ext);
   BuildProfilePath();
   URIUtils::AddFileToFolder(Profile(), "settings.xml", m_userSettingsPath);
   m_enabled = true;
@@ -287,9 +283,9 @@ const AddonVersion CAddon::Version()
 
 //TODO platform/path crap should be negotiated between the addon and
 // the handler for it's type
-void CAddon::BuildLibName(cp_plugin_info_t *props)
+void CAddon::BuildLibName(const cp_extension_t *extension)
 {
-  if (!props)
+  if (!extension)
   {
     m_strLibName = "default";
     CStdString ext;
@@ -347,7 +343,7 @@ void CAddon::BuildLibName(cp_plugin_info_t *props)
       case ADDON_SCRAPER_LIBRARY:
       case ADDON_PLUGIN:
         {
-          CStdString temp = CAddonMgr::Get().GetExtValue(props->extensions->configuration, "@library");
+          CStdString temp = CAddonMgr::Get().GetExtValue(extension->configuration, "@library");
           m_strLibName = temp;
         }
         break;
@@ -598,8 +594,8 @@ ADDONDEPS CAddon::GetDeps()
  *
  */
 
-CAddonLibrary::CAddonLibrary(cp_plugin_info_t *props)
-  : CAddon(props)
+CAddonLibrary::CAddonLibrary(const cp_extension_t *ext)
+  : CAddon(ext)
   , m_addonType(SetAddonType())
 {
 }
