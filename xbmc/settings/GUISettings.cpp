@@ -37,7 +37,6 @@
 #include "settings/AdvancedSettings.h"
 #include "LocalizeStrings.h"
 #include "GUIFont.h" // for FONT_STYLE_* definitions
-#include "addons/AddonManager.h"
 
 using namespace std;
 using namespace ADDON;
@@ -179,37 +178,9 @@ CSettingPath::CSettingPath(int iOrder, const char *strSetting, int iLabel, const
 }
 
 CSettingAddon::CSettingAddon(int iOrder, const char *strSetting, int iLabel, const char *strData, const TYPE type)
-  : CSettingString(iOrder, strSetting, iLabel, strData, SPIN_CONTROL_TEXT, false, -1)
+  : CSettingString(iOrder, strSetting, iLabel, strData, BUTTON_CONTROL_STANDARD, false, -1)
   , m_type(type)
 {
-  m_entries.insert(std::make_pair(strData, "Default"));
-}
-
-void CSettingAddon::SetData(int pos)
-{
-  if (pos < 0 || (unsigned)pos >= m_entries.size())
-    return;
-
-  unsigned i=0;
-  for (map<CStdString,CStdString>::iterator it=m_entries.begin(); it != m_entries.end(); ++it,i++)
-  {
-    if ((unsigned)pos == i)
-    {
-      CSettingString::SetData(it->first);
-      return;
-    }
-  }
-}
-
-int CSettingAddon::GetPos()
-{
-  unsigned i=0;
-  for (map<CStdString,CStdString>::iterator it=m_entries.begin(); it != m_entries.end(); ++it,i++)
-  {
-    if (it->first == GetData())
-      return i;
-  }
-  return 0;
 }
 
 void CSettingsGroup::GetCategories(vecSettingsCategory &vecCategories)
