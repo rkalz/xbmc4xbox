@@ -425,8 +425,6 @@ void CGUIWindowMusicNav::GetContextButtons(int itemNumber, CContextButtons &butt
                        m_vecItems->GetPath().Equals("special://musicplaylists/");
 
     CMusicDatabaseDirectory dir;
-    ADDON::ScraperPtr info;
-    m_musicdatabase.GetScraperForPath(item->GetPath(), info);
     // enable music info button on an album or on a song.
     if (item->IsAudio() && !item->IsPlayList() && !item->IsSmartPlayList() &&
        !item->IsLastFM() && !item->IsShoutCast() && !item->m_bIsFolder)
@@ -467,10 +465,13 @@ void CGUIWindowMusicNav::GetContextButtons(int itemNumber, CContextButtons &butt
     }
 
     // enable query all artist button only in album view
-    if (dir.IsArtistDir(item->GetPath())        && !dir.IsAllItem(item->GetPath()) &&
-      item->m_bIsFolder && !item->IsVideoDb() && info->Supports(CONTENT_ALBUMS))
+    if (dir.IsArtistDir(item->m_strPath) && !dir.IsAllItem(item->m_strPath) &&
+      item->m_bIsFolder && !item->IsVideoDb())
     {
-      buttons.Add(CONTEXT_BUTTON_INFO_ALL, 21884);
+      ADDON::ScraperPtr info;
+      m_musicdatabase.GetScraperForPath(item->m_strPath, info, ADDON::ADDON_SCRAPER_ARTISTS);
+      if (info && info->Supports(CONTENT_ARTISTS))
+        buttons.Add(CONTEXT_BUTTON_INFO_ALL, 21884);
     }
 
     //Set default or clear default
@@ -684,22 +685,22 @@ bool CGUIWindowMusicNav::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
       else if (params.GetArtistId() != -1)
         path.Format("musicdb://2/%i/",params.GetArtistId());
 
-      if (!m_musicdatabase.GetScraperForPath(path,scraper))
+      CONTENT_TYPE content = CONTENT_ALBUMS;
+      if (m_vecItems->m_strPath.Left(12).Equals("musicdb://1/") || item->m_strPath.Left(12).Equals("musicdb://2/"))
+      {
+        content = CONTENT_ARTISTS;
+      }
+
+      if (!m_musicdatabase.GetScraperForPath(path, scraper, ADDON::ScraperTypeFromContent(content)))
       {
         ADDON::AddonPtr defaultScraper;
-        if (ADDON::CAddonMgr::Get().GetDefault(ADDON::ADDON_SCRAPER_ALBUMS, defaultScraper))
+        if (ADDON::CAddonMgr::Get().GetDefault(ADDON::ScraperTypeFromContent(content), defaultScraper))
         {
           scraper = boost::dynamic_pointer_cast<ADDON::CScraper>(defaultScraper->Clone(defaultScraper));
         }
       }
 
-      CONTENT_TYPE context = CONTENT_ALBUMS;
-      if (m_vecItems->GetPath().Left(12).Equals("musicdb://1/") || item->GetPath().Left(12).Equals("musicdb://2/"))
-      {
-        context = CONTENT_ARTISTS;
-      }
-
-      if (CGUIDialogContentSettings::Show(scraper, bScan, context))
+      if (CGUIDialogContentSettings::Show(scraper, bScan, content))
       {
         m_musicdatabase.SetScraperForPath(path,scraper);
         if (bScan)
