@@ -111,7 +111,7 @@ bool CAddonsDirectory::GetDirectory(const CStdString& strPath, CFileItemList &it
   {
     TYPE type = TranslateType(path.GetFileName());
     items.SetProperty("addoncategory",TranslateType(type, true));
-    items.m_strPath = strPath;
+    items.SetPath(strPath);
 
     // add content types
     if (type == ADDON_SCRAPER && path.GetOptions().IsEmpty())
