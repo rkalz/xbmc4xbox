@@ -400,9 +400,7 @@ CStdString CAddon::GetString(uint32_t id)
  */
 bool CAddon::HasSettings()
 {
-  CStdString addonFileName = m_props.path;
-  URIUtils::AddFileToFolder(addonFileName, "resources", addonFileName);
-  URIUtils::AddFileToFolder(addonFileName, "settings.xml", addonFileName);
+  CStdString addonFileName = URIUtils::AddFileToFolder(m_props.path, "resources/settings.xml");
 
   // Load the settings file to verify it's valid
   TiXmlDocument xmlDoc;
@@ -419,9 +417,7 @@ bool CAddon::HasSettings()
 
 bool CAddon::LoadSettings()
 {
-  CStdString addonFileName = m_props.path;
-  URIUtils::AddFileToFolder(addonFileName, "resources", addonFileName);
-  URIUtils::AddFileToFolder(addonFileName, "settings.xml", addonFileName);
+  CStdString addonFileName = URIUtils::AddFileToFolder(m_props.path, "resources/settings.xml");
 
   if (!m_addonXmlDoc.LoadFile(addonFileName))
   {
