@@ -139,7 +139,7 @@ bool CGUIWindowScripts::OnPlayMedia(int iItem)
   if (g_pythonParser.StopScript(strPath))
   { // update items
     int selectedItem = m_viewControl.GetSelectedItem();
-    Update(m_vecItems->m_strPath);
+    Update(m_vecItems->GetPath());
     m_viewControl.SetSelectedItem(selectedItem);
     return true;
   }
