@@ -1215,7 +1215,7 @@ namespace VIDEO
     return INFO_ADDED;
   }
 
-  CStdString CVideoInfoScanner::GetnfoFile(CFileItem *item, bool bGrabAny)
+  CStdString CVideoInfoScanner::GetnfoFile(CFileItem *item, bool bGrabAny) const
   {
     CStdString nfoFile;
     // Find a matching .nfo file
