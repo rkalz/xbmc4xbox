@@ -507,7 +507,10 @@ namespace VIDEO
       if (m_pObserver)
         m_pObserver->OnSetTitle(pItem->GetVideoInfoTag()->m_strTitle);
 
-      long lResult = AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress);
+      long lResult = AddMovie(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag());
+      if (lResult < 0)
+        return INFO_ERROR;
+      GetArtwork(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), bDirNames, bRefresh, pDlgProgress);
       if (bRefresh && g_guiSettings.GetBool("videolibrary.seasonthumbs"))
         FetchSeasonThumbs(lResult);
       if (!bRefresh)
@@ -577,8 +580,9 @@ namespace VIDEO
       if (m_pObserver)
         m_pObserver->OnSetTitle(pItem->GetVideoInfoTag()->m_strTitle);
 
-      if (AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress) < 0)
+      if (AddMovie(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag()) < 0)
         return INFO_ERROR;
+      GetArtwork(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), bDirNames, bRefresh, pDlgProgress);
       return INFO_ADDED;
     }
     if (result == CNfoFile::URL_NFO || result == CNfoFile::COMBINED_NFO)
@@ -625,8 +629,9 @@ namespace VIDEO
       if (m_pObserver)
         m_pObserver->OnSetTitle(pItem->GetVideoInfoTag()->m_strTitle);
 
-      if (AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress) < 0)
+      if (AddMovie(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag()) < 0)
         return INFO_ERROR;
+      GetArtwork(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), bDirNames, bRefresh, pDlgProgress);
       return INFO_ADDED;
     }
     if (result == CNfoFile::URL_NFO || result == CNfoFile::COMBINED_NFO)
@@ -1002,9 +1007,8 @@ namespace VIDEO
     return lResult;
   }
 
-  long CVideoInfoScanner::AddMovieAndGetThumb(CFileItem *pItem, const CONTENT_TYPE &content, CVideoInfoTag &movieDetails, int idShow, bool bApplyToDir, bool bRefresh, CGUIDialogProgress* pDialog /* == NULL */)
+  void CVideoInfoScanner::GetArtwork(CFileItem *pItem, const CONTENT_TYPE &content, CVideoInfoTag &movieDetails, bool bApplyToDir, bool bRefresh, CGUIDialogProgress* pDialog /* == NULL */)
   {
-    long lResult = AddMovie(pItem, content, movieDetails, idShow);
     // get & save fanart image
     if (!pItem->CacheLocalFanart() || bRefresh)
     {
@@ -1069,7 +1073,6 @@ namespace VIDEO
 
     if (g_guiSettings.GetBool("videolibrary.actorthumbs"))
       FetchActorThumbs(movieDetails.m_cast, strDirectory);
-    return lResult;
   }
 
   void CVideoInfoScanner::DownloadImage(const CStdString &url, const CStdString &destination, bool asThumb /*= true */, CGUIDialogProgress *progress /*= NULL */, const CStdString &directory /*= "" */)
@@ -1155,8 +1158,9 @@ namespace VIDEO
           strTitle.Format("%s - %ix%i - %s", strShowTitle.c_str(), episodeDetails. m_iSeason,episodeDetails.m_iEpisode, episodeDetails.m_strTitle.c_str());
           m_pObserver->OnSetTitle(strTitle);
         }
-        if (AddMovieAndGetThumb(&item, CONTENT_TVSHOWS, episodeDetails, idShow) < 0)
+        if (AddMovie(&item, CONTENT_TVSHOWS, episodeDetails, idShow) < 0)
           return INFO_ERROR;
+        GetArtwork(&item, CONTENT_TVSHOWS, episodeDetails);
         continue;
       }
 
@@ -1206,8 +1210,9 @@ namespace VIDEO
         }
         CFileItem item;
         item.SetPath(file->strPath);
-        if (AddMovieAndGetThumb(&item, CONTENT_TVSHOWS, episodeDetails, idShow) < 0)
+        if (AddMovie(&item, CONTENT_TVSHOWS, episodeDetails, idShow) < 0)
           return INFO_ERROR;
+        GetArtwork(&item, CONTENT_TVSHOWS, episodeDetails);
       }
     }
     if (g_guiSettings.GetBool("videolibrary.seasonthumbs"))
@@ -1346,7 +1351,10 @@ namespace VIDEO
         pDialog->Progress();
       }
 
-      return AddMovieAndGetThumb(pItem, scraper->Content(), movieDetails, -1, bUseDirNames, bRefresh);
+      long id = AddMovie(pItem, scraper->Content(), movieDetails);
+      if (id >= 0)
+        GetArtwork(pItem, scraper->Content(), movieDetails, bUseDirNames, bRefresh);
+      return id;
     }
     return -1; // no info found, or cancelled
   }
