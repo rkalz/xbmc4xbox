@@ -139,7 +139,7 @@ void CGUIDialogAddonSettings::OnInitWindow()
 }
 
 // \brief Show CGUIDialogOK dialog, then wait for user to dismiss it.
-bool CGUIDialogAddonSettings::ShowAndGetInput(const AddonPtr &addon)
+bool CGUIDialogAddonSettings::ShowAndGetInput(const AddonPtr &addon, bool saveToDisk /* = true */)
 {
   if (!addon)
     return false;
@@ -160,6 +160,7 @@ bool CGUIDialogAddonSettings::ShowAndGetInput(const AddonPtr &addon)
 
     pDialog->m_changed = false;
     pDialog->m_addon = addon;
+    pDialog->m_saveToDisk = saveToDisk;
     pDialog->DoModal();
     ret = true;
   }
@@ -409,7 +410,8 @@ void CGUIDialogAddonSettings::SaveSettings(void)
   for (map<CStdString, CStdString>::iterator i = m_settings.begin(); i != m_settings.end(); ++i)
     m_addon->UpdateSetting(i->first, i->second);
 
-  m_addon->SaveSettings();
+  if (m_saveToDisk)
+    m_addon->SaveSettings();
 }
 
 void CGUIDialogAddonSettings::FreeSections()
