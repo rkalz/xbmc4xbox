@@ -1348,8 +1348,13 @@ int CBuiltins::Execute(const CStdString& execString)
   else if (execute.Equals("addon.default.opensettings") && params.size() == 1)
   {
     AddonPtr addon;
-    if (CAddonMgr::Get().GetDefault(TranslateType(params[0]), addon))
+    ADDON::TYPE type = TranslateType(params[0]);
+    if (CAddonMgr::Get().GetDefault(type, addon))
+    {
       CGUIDialogAddonSettings::ShowAndGetInput(addon);
+      if (type == ADDON_VIZ)
+        g_windowManager.SendMessage(GUI_MSG_VISUALISATION_RELOAD, 0, 0);
+    }
   }
   else
     return -1;
