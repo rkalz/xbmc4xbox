@@ -395,7 +395,7 @@ namespace VIDEO
         ret = RetreiveInfoForMusicVideo(pItem, bDirNames, info2, useLocal, pURL, pDlgProgress);
       else
       {
-        CLog::Log(LOGERROR, "%s - Unknown content type %d", __FUNCTION__, info2->Content());
+        CLog::Log(LOGERROR, "VideoInfoScanner: Unknown content type %d (%s)", info2->Content(), pItem->GetPath().c_str());
         return false;
       }
       if (ret == INFO_CANCELLED || ret == INFO_ERROR)
@@ -955,12 +955,9 @@ namespace VIDEO
   {
     // ensure our database is open (this can get called via other classes)
     if (!m_database.Open())
-    {
-      CLog::Log(LOGERROR, "%s - failed to open database", __FUNCTION__);
       return -1;
-    }
     
-    CLog::Log(LOGDEBUG, "Adding new item to %s:%s", TranslateContent(content).c_str(), pItem->GetPath().c_str());
+    CLog::Log(LOGDEBUG, "VideoInfoScanner: Adding new item to %s:%s", TranslateContent(content).c_str(), pItem->GetPath().c_str());
     long lResult = -1;
 
     // add to all movies in the stacked set
