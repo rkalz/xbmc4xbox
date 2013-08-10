@@ -482,6 +482,7 @@ int CGUIWindowAddonBrowser::SelectAddonID(TYPE type, CStdString &addonID, bool s
   {
     CFileItemPtr item(new CFileItem("", false));
     item->SetLabel(g_localizeStrings.Get(231));
+    item->SetIconImage("DefaultAddonNone.png");
     items.Add(item);
   }
   for (ADDON::IVECADDONS i = addons.begin(); i != addons.end(); ++i)
