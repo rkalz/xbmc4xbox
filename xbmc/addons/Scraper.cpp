@@ -27,7 +27,8 @@
 #include "utils/ScraperUrl.h"
 #include "utils/CharsetConverter.h"
 #include "utils/log.h"
-#include "AdvancedSettings.h"
+#include "utils/URIUtils.h"
+#include "settings/AdvancedSettings.h"
 #include "FileItem.h"
 #include <sstream>
 
@@ -185,14 +186,14 @@ CStdString CScraper::GetPathSettings()
 
 void CScraper::ClearCache()
 {
-  CStdString strCachePath = CUtil::AddFileToFolder(g_advancedSettings.m_cachePath, "scrapers");
+  CStdString strCachePath = URIUtils::AddFileToFolder(g_advancedSettings.m_cachePath, "scrapers");
 
   // create scraper cache dir if needed
   if (!CDirectory::Exists(strCachePath))
     CDirectory::Create(strCachePath);
 
-  strCachePath = CUtil::AddFileToFolder(strCachePath, ID());
-  CUtil::AddSlashAtEnd(strCachePath);
+  strCachePath = URIUtils::AddFileToFolder(strCachePath, ID());
+  URIUtils::AddSlashAtEnd(strCachePath);
 
   if (CDirectory::Exists(strCachePath))
   {
@@ -202,7 +203,7 @@ void CScraper::ClearCache()
     {
       // wipe cache
       if (items[i]->m_dateTime + m_persistence <= CDateTime::GetUTCDateTime())
-        CFile::Delete(items[i]->m_strPath);
+        CFile::Delete(items[i]->GetPath());
     }
   }
   else

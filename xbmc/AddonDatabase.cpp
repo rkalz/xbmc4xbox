@@ -20,7 +20,7 @@
  */
 
 #include "AddonDatabase.h"
-#include "AddonManager.h"
+#include "addons/AddonManager.h"
 #include "utils/log.h"
 #include "XBDateTime.h"
 #include "utils/StringUtils.h"

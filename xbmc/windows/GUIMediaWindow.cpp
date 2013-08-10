@@ -856,7 +856,7 @@ bool CGUIMediaWindow::OnClick(int iItem)
 
   if (pItem->m_bIsFolder)
   {
-    CURL url(pItem->m_strPath);
+    CURL url(pItem->GetPath());
     if (url.GetProtocol() == "script")
     {
       // execute the script
