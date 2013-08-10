@@ -2820,10 +2820,10 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\addons\Visualisation.cpp">
 				</File>
 				<File
-					RelativePath=".\xbmc\addonssc\Visualisation.h">
+					RelativePath=".\xbmc\addons\Visualisation.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\addons\Visualisation.h">
+					RelativePath=".\xbmc\addonssc\Visualisation.h">
 				</File>
 			</Filter>
 			<Filter
@@ -4596,6 +4596,9 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					</File>
 					<File
 						RelativePath=".\xbmc\lib\libPython\xbmcmodule\controlradiobutton.cpp">
+					</File>
+					<File
+						RelativePath=".\xbmc\lib\libPython\xbmcmodule\controlslider.cpp">
 					</File>
 					<File
 						RelativePath=".\xbmc\lib\libPython\xbmcmodule\controlspin.cpp">
