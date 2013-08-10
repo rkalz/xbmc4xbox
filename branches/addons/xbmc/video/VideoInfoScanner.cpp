@@ -494,10 +494,10 @@ namespace VIDEO
       if (m_pObserver)
         m_pObserver->OnSetTitle(pItem->GetVideoInfoTag()->m_strTitle);
 
-      long lResult = AddMovie(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag());
+      long lResult = AddMovie(pItem.get(), info2->Content());
       if (lResult < 0)
         return INFO_ERROR;
-      GetArtwork(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), bDirNames, fetchEpisodes, pDlgProgress);
+      GetArtwork(pItem.get(), info2->Content(), bDirNames, fetchEpisodes, pDlgProgress);
       if (!fetchEpisodes && g_guiSettings.GetBool("videolibrary.seasonthumbs"))
         FetchSeasonThumbs(lResult);
       if (fetchEpisodes)
@@ -520,9 +520,9 @@ namespace VIDEO
     long lResult=-1;
     if (GetDetails(pItem.get(), url, info2, result == CNfoFile::COMBINED_NFO ? &m_nfoReader : NULL, pDlgProgress))
     {
-      if ((lResult = AddMovie(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag())) < 0)
+      if ((lResult = AddMovie(pItem.get(), info2->Content())) < 0)
         return INFO_ERROR;
-      GetArtwork(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), false, useLocal);
+      GetArtwork(pItem.get(), info2->Content(), false, useLocal);
     }
     if (fetchEpisodes)
     {
@@ -570,9 +570,9 @@ namespace VIDEO
       if (m_pObserver)
         m_pObserver->OnSetTitle(pItem->GetVideoInfoTag()->m_strTitle);
 
-      if (AddMovie(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag()) < 0)
+      if (AddMovie(pItem.get(), info2->Content()) < 0)
         return INFO_ERROR;
-      GetArtwork(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), bDirNames, true, pDlgProgress);
+      GetArtwork(pItem.get(), info2->Content(), bDirNames, true, pDlgProgress);
       return INFO_ADDED;
     }
     if (result == CNfoFile::URL_NFO || result == CNfoFile::COMBINED_NFO)
@@ -590,9 +590,9 @@ namespace VIDEO
 
     if (GetDetails(pItem.get(), url, info2, result == CNfoFile::COMBINED_NFO ? &m_nfoReader : NULL, pDlgProgress))
     {
-      if (AddMovie(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag()) < 0)
+      if (AddMovie(pItem.get(), info2->Content()) < 0)
         return INFO_ERROR;
-      GetArtwork(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), bDirNames, useLocal);
+      GetArtwork(pItem.get(), info2->Content(), bDirNames, useLocal);
       return INFO_ADDED;
     }
     // TODO: This is not strictly correct as we could fail to download information here or error, or be cancelled
@@ -622,9 +622,9 @@ namespace VIDEO
       if (m_pObserver)
         m_pObserver->OnSetTitle(pItem->GetVideoInfoTag()->m_strTitle);
 
-      if (AddMovie(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag()) < 0)
+      if (AddMovie(pItem.get(), info2->Content()) < 0)
         return INFO_ERROR;
-      GetArtwork(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), bDirNames, true, pDlgProgress);
+      GetArtwork(pItem.get(), info2->Content(), bDirNames, true, pDlgProgress);
       return INFO_ADDED;
     }
     if (result == CNfoFile::URL_NFO || result == CNfoFile::COMBINED_NFO)
@@ -642,9 +642,9 @@ namespace VIDEO
 
     if (GetDetails(pItem.get(), url, info2, result == CNfoFile::COMBINED_NFO ? &m_nfoReader : NULL, pDlgProgress))
     {
-      if (AddMovie(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag()) < 0)
+      if (AddMovie(pItem.get(), info2->Content()) < 0)
         return INFO_ERROR;
-      GetArtwork(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), bDirNames, useLocal);
+      GetArtwork(pItem.get(), info2->Content(), bDirNames, useLocal);
       return INFO_ADDED;
     }
     // TODO: This is not strictly correct as we could fail to download information here or error, or be cancelled
@@ -932,7 +932,7 @@ namespace VIDEO
     return bMatched;
   }
 
-  long CVideoInfoScanner::AddMovie(CFileItem *pItem, const CONTENT_TYPE &content, CVideoInfoTag &movieDetails, int idShow)
+  long CVideoInfoScanner::AddMovie(CFileItem *pItem, const CONTENT_TYPE &content, int idShow)
   {
     // ensure our database is open (this can get called via other classes)
     if (!m_database.Open())
@@ -941,7 +941,7 @@ namespace VIDEO
     CLog::Log(LOGDEBUG, "VideoInfoScanner: Adding new item to %s:%s", TranslateContent(content).c_str(), pItem->GetPath().c_str());
     long lResult = -1;
 
-    // add to all movies in the stacked set
+    CVideoInfoTag &movieDetails = *pItem->GetVideoInfoTag();
     if (content == CONTENT_MOVIES)
     {
       // find local trailer first
@@ -1003,8 +1003,9 @@ namespace VIDEO
     return lResult;
   }
 
-  void CVideoInfoScanner::GetArtwork(CFileItem *pItem, const CONTENT_TYPE &content, CVideoInfoTag &movieDetails, bool bApplyToDir, bool useLocal, CGUIDialogProgress* pDialog /* == NULL */)
+  void CVideoInfoScanner::GetArtwork(CFileItem *pItem, const CONTENT_TYPE &content, bool bApplyToDir, bool useLocal, CGUIDialogProgress* pDialog /* == NULL */)
   {
+    CVideoInfoTag &movieDetails = *pItem->GetVideoInfoTag();
     // get & save fanart image
     if (!useLocal || !pItem->CacheLocalFanart())
     {
@@ -1113,7 +1114,6 @@ namespace VIDEO
       if ((pDlgProgress && pDlgProgress->IsCanceled()) || m_bStop)
         return INFO_CANCELLED;
 
-      CVideoInfoTag episodeDetails;
       if (m_database.GetEpisodeId(file->strPath, file->iEpisode, file->iSeason) > -1)
       {
         if (m_pObserver)
@@ -1131,16 +1131,16 @@ namespace VIDEO
       CNfoFile::NFOResult result = CheckForNFOFile(&item, false, info, scrUrl);
       if (result == CNfoFile::FULL_NFO)
       {
-        m_nfoReader.GetDetails(episodeDetails);
+        m_nfoReader.GetDetails(*item.GetVideoInfoTag());
         if (m_pObserver)
         {
           CStdString strTitle;
-          strTitle.Format("%s - %ix%i - %s", strShowTitle.c_str(), episodeDetails. m_iSeason,episodeDetails.m_iEpisode, episodeDetails.m_strTitle.c_str());
+          strTitle.Format("%s - %ix%i - %s", strShowTitle.c_str(), item.GetVideoInfoTag()->m_iSeason, item.GetVideoInfoTag()->m_iEpisode, item.GetVideoInfoTag()->m_strTitle.c_str());
           m_pObserver->OnSetTitle(strTitle);
         }
-        if (AddMovie(&item, CONTENT_TVSHOWS, episodeDetails, idShow) < 0)
+        if (AddMovie(&item, CONTENT_TVSHOWS, idShow) < 0)
           return INFO_ERROR;
-        GetArtwork(&item, CONTENT_TVSHOWS, episodeDetails);
+        GetArtwork(&item, CONTENT_TVSHOWS);
         continue;
       }
 
@@ -1175,21 +1175,21 @@ namespace VIDEO
       if (bFound)
       {
         CIMDB imdb(scraper);
-        if (!imdb.GetEpisodeDetails(guide->cScraperUrl, episodeDetails, pDlgProgress))
+        CFileItem item;
+        item.SetPath(file->strPath);
+        if (!imdb.GetEpisodeDetails(guide->cScraperUrl, *item.GetVideoInfoTag(), pDlgProgress))
           return INFO_NOT_FOUND; // TODO: should we just skip to the next episode?
-        episodeDetails.m_iSeason = guide->key.first;
-        episodeDetails.m_iEpisode = guide->key.second;
+        item.GetVideoInfoTag()->m_iSeason = guide->key.first;
+        item.GetVideoInfoTag()->m_iEpisode = guide->key.second;
         if (m_pObserver)
         {
           CStdString strTitle;
-          strTitle.Format("%s - %ix%i - %s", strShowTitle.c_str(), episodeDetails.m_iSeason, episodeDetails.m_iEpisode, episodeDetails.m_strTitle.c_str());
+          strTitle.Format("%s - %ix%i - %s", strShowTitle.c_str(), item.GetVideoInfoTag()->m_iSeason, item.GetVideoInfoTag()->m_iEpisode, item.GetVideoInfoTag()->m_strTitle.c_str());
           m_pObserver->OnSetTitle(strTitle);
         }
-        CFileItem item;
-        item.SetPath(file->strPath);
-        if (AddMovie(&item, CONTENT_TVSHOWS, episodeDetails, idShow) < 0)
+        if (AddMovie(&item, CONTENT_TVSHOWS, idShow) < 0)
           return INFO_ERROR;
-        GetArtwork(&item, CONTENT_TVSHOWS, episodeDetails);
+        GetArtwork(&item, CONTENT_TVSHOWS);
       }
     }
     if (g_guiSettings.GetBool("videolibrary.seasonthumbs"))
