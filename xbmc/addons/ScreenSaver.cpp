@@ -24,6 +24,12 @@
 namespace ADDON
 {
 
+  CScreenSaver::CScreenSaver(const char *addonID)
+   : ADDON::CAddonDll<DllScreenSaver, ScreenSaver, SCR_PROPS>(NULL)
+  {
+    Props().id = addonID;
+  }
+
 bool CScreenSaver::CreateScreenSaver()
 {
  // pass it the screen width,height
