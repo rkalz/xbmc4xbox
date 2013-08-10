@@ -249,8 +249,8 @@ void CGUISettings::Initialize()
   AddBool(2, "musiclibrary.showcompilationartists", 13414, true);
   AddSeparator(3,"musiclibrary.sep1");
   AddBool(4,"musiclibrary.downloadinfo", 20192, false);
-  AddDefaultAddon(5, "musiclibrary.albumscraper", 20193, "metadata.allmusic.com", ADDON_SCRAPER_ALBUMS);
-  AddDefaultAddon(6, "musiclibrary.artistscraper", 20194, "metadata.allmusic.com", ADDON_SCRAPER_ARTISTS);
+  AddDefaultAddon(5, "musiclibrary.albumsscraper", 20193, "metadata.allmusic.com", ADDON_SCRAPER_ALBUMS);
+  AddDefaultAddon(6, "musiclibrary.artistsscraper", 20194, "metadata.allmusic.com", ADDON_SCRAPER_ARTISTS);
   AddBool(8, "musiclibrary.updateonstartup", 22000, false);
   AddBool(0, "musiclibrary.backgroundupdate", 22001, false);
   AddSeparator(9,"musiclibrary.sep2");
@@ -476,9 +476,9 @@ void CGUISettings::Initialize()
   AddBool(9, "postprocessing.dering", 311, false);
 
   AddCategory(5, "scrapers", 21412);
-  AddDefaultAddon(1, "scrapers.moviedefault", 21413, "metadata.themoviedb.org", ADDON_SCRAPER_MOVIES);
-  AddDefaultAddon(2, "scrapers.tvshowdefault", 21414, "metadata.tvdb.com", ADDON_SCRAPER_TVSHOWS);
-  AddDefaultAddon(3, "scrapers.musicvideodefault", 21415, "metadata.mtv.com", ADDON_SCRAPER_MUSICVIDEOS);
+  AddDefaultAddon(1, "scrapers.moviesdefault", 21413, "metadata.themoviedb.org", ADDON_SCRAPER_MOVIES);
+  AddDefaultAddon(2, "scrapers.tvshowsdefault", 21414, "metadata.tvdb.com", ADDON_SCRAPER_TVSHOWS);
+  AddDefaultAddon(3, "scrapers.musicvideosdefault", 21415, "metadata.mtv.com", ADDON_SCRAPER_MUSICVIDEOS);
   AddSeparator(4,"scrapers.sep2");
   AddBool(5, "scrapers.langfallback", 21416, false);
 
