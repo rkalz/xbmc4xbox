@@ -468,7 +468,7 @@ namespace VIDEO
       {
         INFO_RET ret = RetrieveInfoForEpisodes(pItem, lResult, info2, pDlgProgress);
         if (ret == INFO_ADDED)
-          m_database.SetPathHash(pItem->m_strPath, pItem->GetProperty("hash"));
+          m_database.SetPathHash(pItem->GetPath(), pItem->GetProperty("hash"));
         return ret;
       }
       return INFO_ADDED;
@@ -615,7 +615,7 @@ namespace VIDEO
     EPISODES files;
     // fetch episode guide
     CVideoInfoTag details;
-    m_database.GetTvShowInfo(item->m_strPath, details, showID);
+    m_database.GetTvShowInfo(item->GetPath(), details, showID);
     if (!details.m_strEpisodeGuide.IsEmpty()) // assume local-only series if no episode guide url
     {
       CScraperUrl url;
@@ -646,7 +646,7 @@ namespace VIDEO
       return INFO_CANCELLED;
 
     if (m_pObserver)
-      m_pObserver->OnDirectoryChanged(item->m_strPath);
+      m_pObserver->OnDirectoryChanged(item->GetPath());
 
     return OnProcessSeriesFolder(episodes, files, scraper, showID, details.m_strTitle, progress);
   }
