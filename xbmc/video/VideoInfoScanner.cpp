@@ -360,7 +360,7 @@ namespace VIDEO
       g_infoManager.GetBool(i);
     //m_database.BeginTransaction();
 
-    bool Return(false);
+    bool FoundSomeInfo = false;
     for (int i = 0; i < (int)items.Size(); ++i)
     {
       m_nfoReader.Close();
@@ -386,7 +386,7 @@ namespace VIDEO
         }
 
       }
-      int ret = 0;
+      INFO_RET ret = INFO_CANCELLED;
       if (info2->Content() == CONTENT_TVSHOWS)
         ret = RetreiveInfoForTvShow(pItem, bDirNames, info2, bRefresh, pURL, pDlgProgress, ignoreNfo);
       else if (info2->Content() == CONTENT_MOVIES)
@@ -398,14 +398,12 @@ namespace VIDEO
         CLog::Log(LOGERROR, "%s - Unknown content type %d", __FUNCTION__, info2->Content());
         return false;
       }
-      if (ret > 0)
-      {
-        if (ret == 2)
-          i--; // WTF?
-        Return = true;
-      }
-      else if (ret < 0)
+      if (ret == INFO_CANCELLED || ret == INFO_ERROR)
         return false;
+      if (ret == INFO_ADDED || ret == INFO_HAVE_ALREADY || ret == INFO_SCAN_AGAIN)
+        FoundSomeInfo = true;
+      if (ret == INFO_SCAN_AGAIN)
+        i--; // WTF?
 
       pURL = NULL;
     }
@@ -416,10 +414,10 @@ namespace VIDEO
     //m_database.CommitTransaction();
     g_infoManager.ResetPersistentCache();
     m_database.Close();
-    return Return;
+    return FoundSomeInfo;
   }
 
-  int CVideoInfoScanner::RetreiveInfoForTvShow(CFileItemPtr pItem, bool bDirNames, ScraperPtr &info2, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
+  INFO_RET CVideoInfoScanner::RetreiveInfoForTvShow(CFileItemPtr pItem, bool bDirNames, ScraperPtr &info2, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
   {
     m_IMDB.SetScraperInfo(info2);
 
@@ -441,7 +439,7 @@ namespace VIDEO
       m_database.GetTvShowInfo(pItem->GetPath(), showDetails, idTvShow);
       EnumerateSeriesFolder(pItem.get(), files);
       if (files.size() == 0) // no update or no files
-        return 0;
+        return INFO_NOT_NEEDED;
 
       //convert m_strEpisodeGuide in url.m_scrURL
       if (!showDetails.m_strEpisodeGuide.IsEmpty()) // assume local-only series if no episode guide url
@@ -465,7 +463,7 @@ namespace VIDEO
             pDlgProgress->Close();
           //m_database.RollbackTransaction();
           m_database.Close();
-          return -1;
+          return INFO_ERROR;
         }
       }
       if (m_bStop || (pDlgProgress && pDlgProgress->IsCanceled()))
@@ -474,23 +472,21 @@ namespace VIDEO
           pDlgProgress->Close();
         //m_database.RollbackTransaction();
         m_database.Close();
-        return -1;
+        return INFO_CANCELLED;
       }
       if (m_pObserver)
         m_pObserver->OnDirectoryChanged(pItem->GetPath());
 
-      if (OnProcessSeriesFolder(episodes, files, idTvShow, showDetails.m_strTitle, pDlgProgress))
-      {
+      INFO_RET ret = OnProcessSeriesFolder(episodes, files, idTvShow, showDetails.m_strTitle, pDlgProgress);
+      if (ret == INFO_ADDED)
         m_database.SetPathHash(pItem->GetPath(), pItem->GetProperty("hash"));
-        return 1;
-      }
-      return 0;
+      return ret;
     }
 
     if (ProgressCancelled(pDlgProgress, pItem->m_bIsFolder ? 20353 : 20361, pItem->GetLabel()))
     {
       m_database.Close();
-      return -1;
+      return INFO_CANCELLED;
     }
 
     CNfoFile::NFOResult result=CNfoFile::NO_NFO;
@@ -516,8 +512,8 @@ namespace VIDEO
       if (bRefresh && g_guiSettings.GetBool("videolibrary.seasonthumbs"))
         FetchSeasonThumbs(lResult);
       if (!bRefresh)
-        return 2; // WTF?
-      return 1;
+        return INFO_SCAN_AGAIN; // WTF?
+      return INFO_ADDED;
     }
     if (result == CNfoFile::URL_NFO || result == CNfoFile::COMBINED_NFO)
       pURL = &scrUrl;
@@ -527,7 +523,7 @@ namespace VIDEO
     if (pURL)
       url = *pURL;
     else if ((retVal = FindVideo(pItem->GetMovieName(bDirNames), info2, url, pDlgProgress)) <= 0)
-      return retVal;
+      return retVal < 0 ? INFO_CANCELLED : INFO_NOT_FOUND;
 
     if (m_pObserver && !url.strTitle.IsEmpty())
       m_pObserver->OnSetTitle(url.strTitle);
@@ -544,7 +540,7 @@ namespace VIDEO
         url.ParseEpisodeGuide(details.m_strEpisodeGuide);
         EnumerateSeriesFolder(pItem.get(), files);
         if (!m_IMDB.GetEpisodeList(url, episodes))
-          return 0;
+          return INFO_NOT_FOUND;
       }
       if (OnProcessSeriesFolder(episodes, files, lResult, details.m_strTitle, pDlgProgress))
         m_database.SetPathHash(pItem->GetPath(), pItem->GetProperty("hash"));
@@ -552,22 +548,22 @@ namespace VIDEO
     else
       if (g_guiSettings.GetBool("videolibrary.seasonthumbs"))
         FetchSeasonThumbs(lResult);
-    return 1;
+    return INFO_ADDED;
   }
 
-  int CVideoInfoScanner::RetreiveInfoForMovie(CFileItemPtr pItem, bool bDirNames, ScraperPtr &info2, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
+  INFO_RET CVideoInfoScanner::RetreiveInfoForMovie(CFileItemPtr pItem, bool bDirNames, ScraperPtr &info2, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
   {
     if (pItem->m_bIsFolder || !pItem->IsVideo() || pItem->IsNFO() || pItem->IsPlayList())
-      return 0;
+      return INFO_NOT_NEEDED;
 
     if (ProgressCancelled(pDlgProgress, 198, pItem->GetLabel()))
     {
       m_database.Close();
-      return -1;
+      return INFO_CANCELLED;
     }
 
     if (m_database.HasMovieInfo(pItem->GetPath()))
-      return 0;
+      return INFO_HAVE_ALREADY;
 
     CNfoFile::NFOResult result=CNfoFile::NO_NFO;
     CScraperUrl scrUrl;
@@ -581,8 +577,9 @@ namespace VIDEO
       if (m_pObserver)
         m_pObserver->OnSetTitle(pItem->GetVideoInfoTag()->m_strTitle);
 
-      AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress);
-      return 1;
+      if (AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress) < 0)
+        return INFO_ERROR;
+      return INFO_ADDED;
     }
     if (result == CNfoFile::URL_NFO || result == CNfoFile::COMBINED_NFO)
       pURL = &scrUrl;
@@ -592,28 +589,29 @@ namespace VIDEO
     if (pURL)
       url = *pURL;
     else if ((retVal = FindVideo(pItem->GetMovieName(bDirNames), info2, url, pDlgProgress)) <= 0)
-      return retVal;
+      return retVal < 0 ? INFO_CANCELLED : INFO_NOT_FOUND;
 
     if (m_pObserver && !url.strTitle.IsEmpty())
       m_pObserver->OnSetTitle(url.strTitle);
 
+    // TODO: This is not strictly correct as we could fail to download information here or error, or be cancelled
     GetIMDBDetails(pItem.get(), url, info2, bDirNames, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
-    return 1;
+    return INFO_ADDED;
   }
 
-  int CVideoInfoScanner::RetreiveInfoForMusicVideo(CFileItemPtr pItem, bool bDirNames, ScraperPtr &info2, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
+  INFO_RET CVideoInfoScanner::RetreiveInfoForMusicVideo(CFileItemPtr pItem, bool bDirNames, ScraperPtr &info2, bool bRefresh, CScraperUrl* pURL, CGUIDialogProgress* pDlgProgress, bool ignoreNfo)
   {
     if (pItem->m_bIsFolder || !pItem->IsVideo() || pItem->IsNFO() || pItem->IsPlayList())
-      return 0;
+      return INFO_NOT_NEEDED;
 
     if (ProgressCancelled(pDlgProgress, 20394, pItem->GetLabel()))
     {
       m_database.Close();
-      return -1;
+      return INFO_CANCELLED;
     }
 
     if (m_database.HasMusicVideoInfo(pItem->GetPath()))
-      return 0;
+      return INFO_HAVE_ALREADY;
 
     CNfoFile::NFOResult result=CNfoFile::NO_NFO;
     CScraperUrl scrUrl;
@@ -627,7 +625,9 @@ namespace VIDEO
       if (m_pObserver)
         m_pObserver->OnSetTitle(pItem->GetVideoInfoTag()->m_strTitle);
 
-      return AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress);
+      if (AddMovieAndGetThumb(pItem.get(), info2->Content(), *pItem->GetVideoInfoTag(), -1, bDirNames, bRefresh, pDlgProgress) < 0)
+        return INFO_ERROR;
+      return INFO_ADDED;
     }
     if (result == CNfoFile::URL_NFO || result == CNfoFile::COMBINED_NFO)
       pURL = &scrUrl;
@@ -637,13 +637,14 @@ namespace VIDEO
     if (pURL)
       url = *pURL;
     else if ((retVal = FindVideo(pItem->GetMovieName(bDirNames), info2, url, pDlgProgress)) <= 0)
-      return retVal;
+      return retVal < 0 ? INFO_CANCELLED : INFO_NOT_FOUND;
 
     if (m_pObserver && !url.strTitle.IsEmpty())
       m_pObserver->OnSetTitle(url.strTitle);
 
+    // TODO: This is not strictly correct as we could fail to download information here or error, or be cancelled
     GetIMDBDetails(pItem.get(), url, info2, bDirNames, pDlgProgress, result == CNfoFile::COMBINED_NFO, ignoreNfo);
-    return 1;
+    return INFO_ADDED;
   }
 
   void CVideoInfoScanner::EnumerateSeriesFolder(CFileItem* item, EPISODES& episodeList)
@@ -1092,7 +1093,7 @@ namespace VIDEO
       ApplyIMDBThumbToFolder(directory, destination);
   }
 
-  bool CVideoInfoScanner::OnProcessSeriesFolder(IMDB_EPISODELIST& episodes, EPISODES& files, int idShow, const CStdString& strShowTitle, CGUIDialogProgress* pDlgProgress /* = NULL */)
+  INFO_RET CVideoInfoScanner::OnProcessSeriesFolder(IMDB_EPISODELIST& episodes, EPISODES& files, int idShow, const CStdString& strShowTitle, CGUIDialogProgress* pDlgProgress /* = NULL */)
   {
     if (pDlgProgress)
     {
@@ -1126,7 +1127,7 @@ namespace VIDEO
           pDlgProgress->Close();
         //m_database.RollbackTransaction();
         m_database.Close();
-        return false;
+        return INFO_CANCELLED;
       }
 
       CVideoInfoTag episodeDetails;
@@ -1154,7 +1155,8 @@ namespace VIDEO
           strTitle.Format("%s - %ix%i - %s", strShowTitle.c_str(), episodeDetails. m_iSeason,episodeDetails.m_iEpisode, episodeDetails.m_strTitle.c_str());
           m_pObserver->OnSetTitle(strTitle);
         }
-        AddMovieAndGetThumb(&item, CONTENT_TVSHOWS, episodeDetails, idShow);
+        if (AddMovieAndGetThumb(&item, CONTENT_TVSHOWS, episodeDetails, idShow) < 0)
+          return INFO_ERROR;
         continue;
       }
 
@@ -1191,7 +1193,7 @@ namespace VIDEO
         if (!m_IMDB.GetEpisodeDetails(guide->cScraperUrl, episodeDetails, pDlgProgress))
         {
           m_database.Close();
-          return false;
+          return INFO_NOT_FOUND; // TODO: should we just skip to the next episode?
         }
         episodeDetails.m_iSeason = guide->key.first;
         episodeDetails.m_iEpisode = guide->key.second;
@@ -1203,13 +1205,14 @@ namespace VIDEO
         }
         CFileItem item;
         item.SetPath(file->strPath);
-        AddMovieAndGetThumb(&item, CONTENT_TVSHOWS, episodeDetails, idShow);
+        if (AddMovieAndGetThumb(&item, CONTENT_TVSHOWS, episodeDetails, idShow) < 0)
+          return INFO_ERROR;
       }
     }
     if (g_guiSettings.GetBool("videolibrary.seasonthumbs"))
       FetchSeasonThumbs(idShow);
     m_database.Close();
-    return true;
+    return INFO_ADDED;
   }
 
   CStdString CVideoInfoScanner::GetnfoFile(CFileItem *item, bool bGrabAny)
@@ -1344,7 +1347,7 @@ namespace VIDEO
 
       return AddMovieAndGetThumb(pItem, scraper->Content(), movieDetails, -1, bUseDirNames, bRefresh);
     }
-    return -1;
+    return -1; // no info found, or cancelled
   }
 
   void CVideoInfoScanner::ApplyIMDBThumbToFolder(const CStdString &folder, const CStdString &imdbThumb)
@@ -1586,14 +1589,14 @@ namespace VIDEO
     if (returncode == -1 || (returncode == 0 && !DownloadFailed(progress)))
     {
       m_bStop = true;
-      return -1;
+      return -1; // cancelled
     }
     if (returncode > 0 && movielist.size())
     {
       url = movielist[0];
-      return 1;
+      return 1;  // found a movie
     }
-    return 0;
+    return 0;    // didn't find anything
   }
 
 }
