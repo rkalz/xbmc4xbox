@@ -55,6 +55,9 @@
 #include "FileSystem/FileDirectoryFactory.h"
 #include "GUIEditControl.h"
 #include "dialogs/GUIDialogKeyboard.h"
+#ifdef HAS_PYTHON
+#include "lib/libPython/XBPython.h"
+#endif
 
 #define CONTROL_BTNVIEWASICONS     2
 #define CONTROL_BTNSORTBY          3
@@ -853,6 +856,21 @@ bool CGUIMediaWindow::OnClick(int iItem)
 
   if (pItem->m_bIsFolder)
   {
+    CURL url(pItem->m_strPath);
+    if (url.GetProtocol() == "script")
+    {
+      // execute the script
+      AddonPtr addon;
+      if (CAddonMgr::Get().GetAddon(url.GetHostName(), addon))
+      {
+#ifdef HAS_PYTHON
+        if (!g_pythonParser.StopScript(addon->LibPath()))
+          g_pythonParser.evalFile(addon->LibPath());
+#endif
+        return true;
+      }
+    }
+
     if ( pItem->m_bIsShareOrDrive )
     {
       const CStdString& strLockType=m_guiState->GetLockType();
