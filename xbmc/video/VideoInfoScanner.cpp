@@ -477,7 +477,7 @@ namespace VIDEO
       if (m_pObserver)
         m_pObserver->OnDirectoryChanged(pItem->GetPath());
 
-      INFO_RET ret = OnProcessSeriesFolder(episodes, files, idTvShow, showDetails.m_strTitle, pDlgProgress);
+      INFO_RET ret = OnProcessSeriesFolder(episodes, files, info2, idTvShow, showDetails.m_strTitle, pDlgProgress);
       if (ret == INFO_ADDED)
         m_database.SetPathHash(pItem->GetPath(), pItem->GetProperty("hash"));
       return ret;
@@ -542,7 +542,7 @@ namespace VIDEO
         if (!m_IMDB.GetEpisodeList(url, episodes))
           return INFO_NOT_FOUND;
       }
-      if (OnProcessSeriesFolder(episodes, files, lResult, details.m_strTitle, pDlgProgress))
+      if (OnProcessSeriesFolder(episodes, files, info2, lResult, details.m_strTitle, pDlgProgress))
         m_database.SetPathHash(pItem->GetPath(), pItem->GetProperty("hash"));
     }
     else
@@ -1093,7 +1093,7 @@ namespace VIDEO
       ApplyIMDBThumbToFolder(directory, destination);
   }
 
-  INFO_RET CVideoInfoScanner::OnProcessSeriesFolder(IMDB_EPISODELIST& episodes, EPISODES& files, int idShow, const CStdString& strShowTitle, CGUIDialogProgress* pDlgProgress /* = NULL */)
+  INFO_RET CVideoInfoScanner::OnProcessSeriesFolder(IMDB_EPISODELIST& episodes, EPISODES& files, const ADDON::ScraperPtr &scraper, int idShow, const CStdString& strShowTitle, CGUIDialogProgress* pDlgProgress /* = NULL */)
   {
     if (pDlgProgress)
     {
@@ -1143,7 +1143,7 @@ namespace VIDEO
 
       // handle .nfo files
       CScraperUrl scrUrl;
-      ScraperPtr info(m_IMDB.GetScraperInfo());
+      ScraperPtr info(scraper);
       item.GetVideoInfoTag()->m_iEpisode = file->iEpisode;
       CNfoFile::NFOResult result = CheckForNFOFile(&item, false, info, scrUrl);
       if (result == CNfoFile::FULL_NFO)
