@@ -22,7 +22,6 @@
 #include "XMLUtils.h"
 #include "ScraperUrl.h"
 #include "settings/AdvancedSettings.h"
-#include "Util.h"
 #include "CharsetConverter.h"
 #include "URL.h"
 #include "FileSystem/CurlFile.h"
@@ -317,4 +316,23 @@ bool CScraperUrl::ParseEpisodeGuide(CStdString strUrls)
     return false;
 
   return true;
+}
+
+void CScraperUrl::GetThumbURLs(std::vector<CStdString> &thumbs, int season) const
+{
+  for (vector<SUrlEntry>::const_iterator iter = m_url.begin(); iter != m_url.end(); ++iter)
+  {
+    if ((iter->m_type == CScraperUrl::URL_TYPE_GENERAL && season == -1)
+     || (iter->m_type == CScraperUrl::URL_TYPE_SEASON && iter->m_season == season))
+    {
+      CStdString thumb = iter->m_url;
+      CStdString spoof = iter->m_spoof;
+      if (!spoof.IsEmpty())
+      {
+        CURL::Encode(spoof);
+        thumb += "|Referer=" + spoof;
+      }
+      thumbs.push_back(thumb);
+    }
+  }
 }
