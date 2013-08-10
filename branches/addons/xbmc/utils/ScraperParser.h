@@ -48,7 +48,6 @@ public:
   bool HasFunction(const CStdString& strTag);
 
   CStdString m_param[MAX_SCRAPER_BUFFERS];
-  void ClearCache();
 
 private:
   bool Load(const CStdString& strXMLFile);
