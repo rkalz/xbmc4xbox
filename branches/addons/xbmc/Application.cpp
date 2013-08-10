@@ -197,6 +197,8 @@
 #include "GUIControlFactory.h"
 #include "cores/dlgcache.h"
 #include "guilib/GUIControlFactory.h"
+#include "utils/JobManager.h"
+#include "utils/SaveFileStateJob.h"
 
 #ifdef _LINUX
 #include "XHandle.h"
@@ -4264,93 +4266,10 @@ bool CApplication::IsPlayingFullScreenVideo() const
 
 void CApplication::SaveFileState()
 {
-  CStdString progressTrackingFile = m_progressTrackingItem->GetPath();
-
-  if (progressTrackingFile != "")
-  {
-    if (m_progressTrackingItem->IsVideo())
-    {
-      CLog::Log(LOGDEBUG, "%s - Saving file state for video item %s", __FUNCTION__, progressTrackingFile.c_str());
-
-      CVideoDatabase videodatabase;
-      if (videodatabase.Open())
-      {
-        bool updateListing = false;
-        // No resume & watched status for livetv
-        if (!m_progressTrackingItem->IsLiveTV())
-        {
-          if (m_progressTrackingPlayCountUpdate)
-          {
-            CLog::Log(LOGDEBUG, "%s - Marking video item %s as watched", __FUNCTION__, progressTrackingFile.c_str());
-
-            // consider this item as played
-            videodatabase.IncrementPlayCount(*m_progressTrackingItem);
-            m_progressTrackingItem->GetVideoInfoTag()->m_playCount++;
-            m_progressTrackingItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED, true);
-            updateListing = true;
-          }
-
-          if (m_progressTrackingVideoResumeBookmark.timeInSeconds < 0.0f)
-          {
-            videodatabase.ClearBookMarksOfFile(progressTrackingFile, CBookmark::RESUME);
-          }
-          else if (m_progressTrackingVideoResumeBookmark.timeInSeconds > 0.0f)
-          {
-            videodatabase.AddBookMarkToFile(progressTrackingFile, m_progressTrackingVideoResumeBookmark, CBookmark::RESUME);
-          }
-        }
-
-        if (g_settings.m_currentVideoSettings != g_settings.m_defaultVideoSettings)
-        {
-          videodatabase.SetVideoSettings(progressTrackingFile, g_settings.m_currentVideoSettings);
-        }
-
-        if ((m_progressTrackingItem->IsDVDImage() ||
-             m_progressTrackingItem->IsDVDFile()    ) &&
-             m_progressTrackingItem->HasVideoInfoTag() &&
-             m_progressTrackingItem->GetVideoInfoTag()->HasStreamDetails())
-        {
-          videodatabase.SetStreamDetailsForFile(m_progressTrackingItem->GetVideoInfoTag()->m_streamDetails,progressTrackingFile);
-          updateListing = true;
-        }
-        videodatabase.Close();
-        
-        if (updateListing)
-        {
-          CUtil::DeleteVideoDatabaseDirectoryCache();
-//          CFileItemPtr msgItem(new CFileItem(*m_progressTrackingItem));
-//          if (m_progressTrackingItem->HasProperty("original_listitem_url"))
-//            msgItem->SetPath(m_progressTrackingItem->GetProperty("original_listitem_url"));
-          CGUIMessage message(GUI_MSG_NOTIFY_ALL, g_windowManager.GetActiveWindow(), 0, GUI_MSG_UPDATE, 0);
-//          CGUIMessage message(GUI_MSG_NOTIFY_ALL, g_windowManager.GetActiveWindow(), 0, GUI_MSG_UPDATE_ITEM, 1, msgItem); // 1 to update the listing as well 
-          g_windowManager.SendThreadMessage(message);
-        }
-      }
-    }
-
-    if (m_progressTrackingItem->IsAudio())
-    {
-      CLog::Log(LOGDEBUG, "%s - Saving file state for audio item %s", __FUNCTION__, progressTrackingFile.c_str());
-
-      if (m_progressTrackingPlayCountUpdate)
-      {
-        // Can't write to the musicdatabase while scanning for music info
-        CGUIDialogMusicScan *dialog = (CGUIDialogMusicScan *)g_windowManager.GetWindow(WINDOW_DIALOG_MUSIC_SCAN);
-        if (dialog && !dialog->IsDialogRunning())
-        {
-          // consider this item as played
-          CLog::Log(LOGDEBUG, "%s - Marking audio item %s as listened", __FUNCTION__, progressTrackingFile.c_str());
-
-          CMusicDatabase musicdatabase;
-          if (musicdatabase.Open())
-          {
-            musicdatabase.IncrTop100CounterByFileName(progressTrackingFile);
-            musicdatabase.Close();
-          }
-        }
-      }
-    }
-  }
+  CJob* job = new CSaveFileStateJob(*m_progressTrackingItem,
+      m_progressTrackingVideoResumeBookmark,
+      m_progressTrackingPlayCountUpdate);
+  CJobManager::GetInstance().AddJob(job, NULL);
 }
 
 void CApplication::UpdateFileState()
