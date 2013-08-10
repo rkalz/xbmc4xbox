@@ -1003,6 +1003,7 @@ namespace VIDEO
     if (g_advancedSettings.m_bVideoLibraryImportWatchedState)
       m_database.SetPlayCount(*pItem, movieDetails.m_playCount, movieDetails.m_lastPlayed);
 
+    m_database.Close();
     return lResult;
   }
 
@@ -1093,7 +1094,6 @@ namespace VIDEO
 
     if (g_guiSettings.GetBool("videolibrary.actorthumbs"))
       FetchActorThumbs(movieDetails.m_cast, strDirectory);
-    m_database.Close();
     return lResult;
   }
 
