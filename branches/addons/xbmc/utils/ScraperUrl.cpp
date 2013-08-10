@@ -318,6 +318,15 @@ bool CScraperUrl::ParseEpisodeGuide(CStdString strUrls)
   return true;
 }
 
+CStdString CScraperUrl::GetThumbURL(const CScraperUrl::SUrlEntry &entry)
+{
+  if (!entry.m_spoof.IsEmpty())
+    return entry.m_url;
+  CStdString spoof = entry.m_spoof;
+  CURL::Encode(spoof);
+  return entry.m_url + "|Referer=" + spoof;
+}
+
 void CScraperUrl::GetThumbURLs(std::vector<CStdString> &thumbs, int season) const
 {
   for (vector<SUrlEntry>::const_iterator iter = m_url.begin(); iter != m_url.end(); ++iter)
@@ -325,14 +334,7 @@ void CScraperUrl::GetThumbURLs(std::vector<CStdString> &thumbs, int season) cons
     if ((iter->m_type == CScraperUrl::URL_TYPE_GENERAL && season == -1)
      || (iter->m_type == CScraperUrl::URL_TYPE_SEASON && iter->m_season == season))
     {
-      CStdString thumb = iter->m_url;
-      CStdString spoof = iter->m_spoof;
-      if (!spoof.IsEmpty())
-      {
-        CURL::Encode(spoof);
-        thumb += "|Referer=" + spoof;
-      }
-      thumbs.push_back(thumb);
+      thumbs.push_back(GetThumbURL(*iter));
     }
   }
 }
