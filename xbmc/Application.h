@@ -32,6 +32,8 @@ class CFileItemList;
 namespace ADDON
 {
   class CSkinInfo;
+  class IAddon;
+  typedef boost::shared_ptr<IAddon> AddonPtr;
 }
 
 #include "dialogs/GUIDialogSeekBar.h"
@@ -223,7 +225,7 @@ protected:
   friend class CApplicationMessenger;
   // screensaver
   bool m_bScreenSave;
-  CStdString m_screenSaverMode;
+  ADDON::AddonPtr m_screenSaver;
 
   D3DGAMMARAMP m_OldRamp;
 
