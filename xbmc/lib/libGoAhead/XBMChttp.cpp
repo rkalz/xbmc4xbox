@@ -2318,6 +2318,8 @@ int CXbmcHttp::xbmcLookupAlbum(int numParas, CStdString paras[])
 
   CMusicInfoScraper scraper(info); 
 
+  info->ClearCache();
+
   if (numParas<1)
     return SetResponse(openTag+"Error:Missing album name");
   else
