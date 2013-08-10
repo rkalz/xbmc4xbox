@@ -4503,13 +4503,13 @@ bool CApplication::ResetScreenSaverWindow()
     return false;
 
   // if Screen saver is active
-  if (m_bScreenSave)
+  if (m_bScreenSave && m_screenSaver)
   {
     if (m_iScreenSaveLock == 0)
       if (g_settings.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE &&
           (g_settings.UsingLoginScreen() || g_guiSettings.GetBool("masterlock.startuplock")) &&
           g_settings.GetCurrentProfile().getLockMode() != LOCK_MODE_EVERYONE &&
-          m_screenSaverMode != "screensaver.xbmc.builtin.dim" && m_screenSaverMode != "screensaver.xbmc.builtin.black" && m_screenSaverMode != "visualization")
+          m_screenSaver->ID() != "screensaver.xbmc.builtin.dim" && m_screenSaver->ID() != "screensaver.xbmc.builtin.black" && m_screenSaver->ID() != "visualization")
       {
         m_iScreenSaveLock = 2;
         CGUIMessage msg(GUI_MSG_CHECK_LOCK,0,0);
@@ -4527,22 +4527,21 @@ bool CApplication::ResetScreenSaverWindow()
     m_screenSaverTimer.StartZero();
 
     float fFadeLevel = 1.0f;
-    if (m_screenSaverMode == "visualization" || m_screenSaverMode == "screensaver.xbmc.builtin.slideshow")
+    if (m_screenSaver->ID() == "visualization" || m_screenSaver->ID() == "screensaver.xbmc.builtin.slideshow")
     {
       // we can just continue as usual from vis mode
       return false;
     }
-    else if (m_screenSaverMode == "screensaver.xbmc.builtin.dim")
+    else if (m_screenSaver->ID() == "screensaver.xbmc.builtin.dim")
     {
-      AddonPtr addon;
-      if (CAddonMgr::Get().GetAddon(m_screenSaverMode, addon) && addon->LoadSettings())
-        fFadeLevel = 1.0f - 0.01f * (float) atof(addon->GetSetting("level"));
+      if (!m_screenSaver->GetSetting("level").IsEmpty())
+        fFadeLevel = 1.0f - 0.01f * (float)atof(m_screenSaver->GetSetting("level"));
     }
-    else if (m_screenSaverMode == "screensaver.xbmc.builtin.black")
+    else if (m_screenSaver->ID() == "screensaver.xbmc.builtin.black")
     {
       fFadeLevel = 0;
     }
-    else if (m_screenSaverMode != "None")
+    else if (!m_screenSaver->ID().IsEmpty())
     { // we're in screensaver window
       if (g_windowManager.GetActiveWindow() == WINDOW_SCREENSAVER)
         g_windowManager.PreviousWindow();  // show the previous window
@@ -4609,7 +4608,10 @@ void CApplication::ActivateScreenSaver(bool forceType /*= false */)
   m_bScreenSave = true;
 
   // Get Screensaver Mode
-  m_screenSaverMode = g_guiSettings.GetString("screensaver.mode");
+  m_screenSaver.reset();
+  if (!CAddonMgr::Get().GetAddon(g_guiSettings.GetString("screensaver.mode"), m_screenSaver))
+    m_screenSaver.reset(new CScreenSaver(""));
+  m_screenSaver->LoadSettings();
 
   // disable screensaver lock from the login screen
   m_iScreenSaveLock = g_windowManager.GetActiveWindow() == WINDOW_LOGIN_SCREEN ? 1 : 0;
@@ -4617,46 +4619,45 @@ void CApplication::ActivateScreenSaver(bool forceType /*= false */)
   {
     // set to Dim in the case of a dialog on screen or playing video
     if (g_windowManager.HasModalDialog() || (IsPlayingVideo() && g_guiSettings.GetBool("screensaver.usedimonpause")))
-      m_screenSaverMode = "screensaver.xbmc.builtin.dim";
+    {
+      if (!CAddonMgr::Get().GetAddon("screensaver.xbmc.builtin.dim", m_screenSaver))
+        m_screenSaver.reset(new CScreenSaver(""));
+      m_screenSaver->LoadSettings();
+    }
     // Check if we are Playing Audio and Vis instead Screensaver!
     else if (IsPlayingAudio() && g_guiSettings.GetBool("screensaver.usemusicvisinstead") && !g_guiSettings.GetString("musicplayer.visualisation").IsEmpty())
     { // activate the visualisation
-      m_screenSaverMode = "visualization";
+      m_screenSaver.reset(new CScreenSaver("visualization"));
       g_windowManager.ActivateWindow(WINDOW_VISUALISATION);
       return;
     }
   }
   // Picture slideshow
-  if (m_screenSaverMode == "screensaver.xbmc.builtin.slideshow")
+  if (m_screenSaver->ID() == "screensaver.xbmc.builtin.slideshow")
   {
-    AddonPtr addon;
-    if (CAddonMgr::Get().GetAddon(m_screenSaverMode, addon) && addon->LoadSettings())
-    {
-      // reset our codec info - don't want that on screen
-      g_infoManager.SetShowCodec(false);
-      CStdString type = addon->GetSetting("type");
-      CStdString path = addon->GetSetting("path");
-      if (type == "2" && path.IsEmpty())
-        type = "0";
-      if (type == "0")
-        path = "special://profile/thumbnails/Video/Fanart";
-      if (type == "1")
-        path = "special://profile/thumbnails/Music/Fanart";
-      m_applicationMessenger.PictureSlideShow(path, true, type != "2");
-    }
+    // reset our codec info - don't want that on screen
+    g_infoManager.SetShowCodec(false);
+    CStdString type = m_screenSaver->GetSetting("type");
+    CStdString path = m_screenSaver->GetSetting("path");
+    if (type == "2" && path.IsEmpty())
+      type = "0";
+    if (type == "0")
+      path = "special://profile/thumbnails/Video/Fanart";
+    if (type == "1")
+      path = "special://profile/thumbnails/Music/Fanart";
+    m_applicationMessenger.PictureSlideShow(path, true, type != "2");
     return;
   }
-  else if (m_screenSaverMode == "screensaver.xbmc.builtin.dim")
+  else if (m_screenSaver->ID() == "screensaver.xbmc.builtin.dim")
   {
-    AddonPtr addon;
-    if (CAddonMgr::Get().GetAddon(m_screenSaverMode, addon) && addon->LoadSettings())
-      fFadeLevel = 1.0f - 0.01f * (float) atof(addon->GetSetting("level"));
+    if (!m_screenSaver->GetSetting("level").IsEmpty())
+      fFadeLevel = 1.0f - 0.01f * (float)atof(m_screenSaver->GetSetting("level"));
   }
-  else if (m_screenSaverMode == "screensaver.xbmc.builtin.black")
+  else if (m_screenSaver->ID() == "screensaver.xbmc.builtin.black")
   {
     fFadeLevel = 0;
   }
-  else if (!g_guiSettings.GetString("screensaver.mode").IsEmpty())
+  else if (!m_screenSaver->ID().IsEmpty())
   {
     g_windowManager.ActivateWindow(WINDOW_SCREENSAVER);
     return ;
