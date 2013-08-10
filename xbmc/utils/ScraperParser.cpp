@@ -65,7 +65,6 @@ CScraperParser &CScraperParser::operator=(const CScraperParser &parser)
     if (parser.m_document)
     {
       m_scraper = parser.m_scraper;
-      m_persistence = parser.m_persistence;
       m_document = new TiXmlDocument(*parser.m_document);
       LoadFromXML();
     }
@@ -128,9 +127,6 @@ bool CScraperParser::LoadFromXML()
   bool result=false;
   if (strValue == "scraper")
   {
-    if (m_pRootElement->Attribute("cachePersistence"))
-      m_persistence.SetFromTimeString(m_pRootElement->Attribute("cachePersistence"));
-
     TiXmlElement* pChildElement = m_pRootElement->FirstChildElement("CreateSearchUrl");
     if (pChildElement)
     {
@@ -536,14 +532,15 @@ void CScraperParser::ClearCache()
   strCachePath = URIUtils::AddFileToFolder(strCachePath,URIUtils::GetFileName(m_strFile));
   URIUtils::AddSlashAtEnd(strCachePath);
 
-  if (CDirectory::Exists(strCachePath))
+  ScraperPtr scraper = boost::dynamic_pointer_cast<CScraper>(m_scraper);
+  if (CDirectory::Exists(strCachePath) && scraper)
   {
     CFileItemList items;
     CDirectory::GetDirectory(strCachePath,items);
     for (int i=0;i<items.Size();++i)
     {
       // wipe cache
-      if (items[i]->m_dateTime+m_persistence <= CDateTime::GetCurrentDateTime())
+      if (items[i]->m_dateTime + scraper->Persistence() <= CDateTime::GetUTCDateTime())
         CFile::Delete(items[i]->GetPath());
     }
   }
