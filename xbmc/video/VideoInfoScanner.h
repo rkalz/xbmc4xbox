@@ -74,8 +74,7 @@ namespace VIDEO
                   INFO_NOT_NEEDED,
                   INFO_HAVE_ALREADY,
                   INFO_NOT_FOUND,
-                  INFO_ADDED,
-                  INFO_SCAN_AGAIN };
+                  INFO_ADDED };
 
   class CVideoInfoScanner : CThread
   {
