@@ -4619,7 +4619,7 @@ void CApplication::ActivateScreenSaver(bool forceType /*= false */)
     if (g_windowManager.HasModalDialog() || (IsPlayingVideo() && g_guiSettings.GetBool("screensaver.usedimonpause")))
       m_screenSaverMode = "screensaver.xbmc.builtin.dim";
     // Check if we are Playing Audio and Vis instead Screensaver!
-    else if (IsPlayingAudio() && g_guiSettings.GetBool("screensaver.usemusicvisinstead") && g_guiSettings.GetString("musicplayer.visualisation") != "_virtual.none")
+    else if (IsPlayingAudio() && g_guiSettings.GetBool("screensaver.usemusicvisinstead") && !g_guiSettings.GetString("musicplayer.visualisation").IsEmpty())
     { // activate the visualisation
       m_screenSaverMode = "_virtual.viz";
       g_windowManager.ActivateWindow(WINDOW_VISUALISATION);
@@ -4656,7 +4656,7 @@ void CApplication::ActivateScreenSaver(bool forceType /*= false */)
   {
     fFadeLevel = 0;
   }
-  else if (m_screenSaverMode != "_virtual.none")
+  else if (!g_guiSettings.GetString("screensaver.mode").IsEmpty())
   {
     g_windowManager.ActivateWindow(WINDOW_SCREENSAVER);
     return ;
@@ -5205,7 +5205,7 @@ void CApplication::ProcessSlow()
   }
 
   // Check if we need to activate the screensaver (if enabled).
-  if (g_guiSettings.GetString("screensaver.mode") != "_virtual.none")
+  if (!g_guiSettings.GetString("screensaver.mode").IsEmpty())
     CheckScreenSaver();
 
   // check if we need to shutdown (if enabled)
