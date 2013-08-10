@@ -4536,7 +4536,7 @@ bool CApplication::ResetScreenSaverWindow()
     {
       AddonPtr addon;
       if (CAddonMgr::Get().GetAddon(m_screenSaverMode, addon) && addon->LoadSettings())
-        fFadeLevel = 1.0f - 0.01f * atof(addon->GetSetting("level"));
+        fFadeLevel = 1.0f - 0.01f * (float) atof(addon->GetSetting("level"));
     }
     else if (m_screenSaverMode == "screensaver.xbmc.builtin.black")
     {
@@ -4650,7 +4650,7 @@ void CApplication::ActivateScreenSaver(bool forceType /*= false */)
   {
     AddonPtr addon;
     if (CAddonMgr::Get().GetAddon(m_screenSaverMode, addon) && addon->LoadSettings())
-      fFadeLevel = 1.0f - 0.01f * atof(addon->GetSetting("level"));
+      fFadeLevel = 1.0f - 0.01f * (float) atof(addon->GetSetting("level"));
   }
   else if (m_screenSaverMode == "screensaver.xbmc.builtin.black")
   {
