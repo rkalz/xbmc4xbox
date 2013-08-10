@@ -208,7 +208,7 @@ protected:
   std::map<CStdString, int /*CPathCache*/> m_thumbCache;
   std::map<CStdString, CAlbumCache> m_albumCache;
   virtual bool CreateTables();
-  virtual int GetMinVersion() const { return 15; };
+  virtual int GetMinVersion() const { return 16; };
 
   const char *GetDefaultDBName() const { return "MyMusic7"; };
 

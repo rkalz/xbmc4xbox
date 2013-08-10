@@ -53,6 +53,7 @@
 #include "utils/variant.h"
 #include "interfaces/AnnouncementManager.h"
 #include "utils/log.h"
+#include "GUIWindowAddonBrowser.h"
 
 using namespace std;
 using namespace AUTOPTR;
@@ -3234,6 +3235,26 @@ bool CMusicDatabase::UpdateOldVersion(int version)
       m_pDS->exec("CREATE INDEX idxSong6 ON song(idPath)");
 
       CreateViews();
+    }
+    if (version < 16)
+    { // update for old scrapers
+      m_pDS->query("select strPath,strScraperPath from content");
+      set<CStdString> scrapers;
+      while (!m_pDS->eof())
+      {
+        // translate the addon
+        CStdString scraperID = ADDON::UpdateMusicScraper(m_pDS->fv(1).get_asString());
+        if (!scraperID.IsEmpty())
+        {
+          scrapers.insert(scraperID);
+          CStdString update = FormatSQL("update content set strScraperPath='%s' where strPath='%s'", scraperID.c_str(), m_pDS->fv(0).get_asString().c_str());
+          m_pDS2->exec(update);
+        }
+        m_pDS->next();
+      }
+      m_pDS->close();
+      // ensure these scrapers are installed
+      CGUIWindowAddonBrowser::InstallAddonsFromXBMCRepo(scrapers);
     }
   }
   catch (...)
