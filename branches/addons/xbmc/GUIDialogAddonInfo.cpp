@@ -20,7 +20,7 @@
  */
 
 #include "GUIDialogAddonInfo.h"
-#include "GUIDialogYesNo.h"
+#include "dialogs/GUIDialogYesNo.h"
 #include "addons/AddonManager.h"
 #include "AddonDatabase.h"
 #include "FileItem.h"
