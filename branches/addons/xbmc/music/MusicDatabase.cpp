@@ -4006,7 +4006,7 @@ bool CMusicDatabase::SetScraperForPath(const CStdString& strPath, const ADDON::S
 
     // insert new settings
     strSQL = PrepareSQL("insert into content (strPath, strScraperPath, strContent, strSettings) values ('%s','%s','%s','%s')",
-      strPath.c_str(), scraper->Parent()->ID().c_str(), ADDON::TranslateContent(scraper->Content()).c_str(), scraper->GetSettings().c_str());
+      strPath.c_str(), scraper->ID().c_str(), ADDON::TranslateContent(scraper->Content()).c_str(), scraper->GetSettings().c_str());
 
     m_pDS->exec(strSQL.c_str());
 
@@ -4131,7 +4131,7 @@ bool CMusicDatabase::ScraperInUse(const ADDON::ScraperPtr &scraper) const
   }
   catch (...)
   {
-    CLog::Log(LOGERROR, "%s(%s) failed", __FUNCTION__, scraper->Parent()->ID().c_str());
+    CLog::Log(LOGERROR, "%s(%s) failed", __FUNCTION__, scraper->ID().c_str());
   }
   return false;
 }
