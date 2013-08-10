@@ -398,8 +398,6 @@ bool CGUIWindowVideoBase::ShowIMDB(CFileItem *item, const ScraperPtr &info2)
   CGUIDialogSelect* pDlgSelect = (CGUIDialogSelect*)g_windowManager.GetWindow(WINDOW_DIALOG_SELECT);
   CGUIWindowVideoInfo* pDlgInfo = (CGUIWindowVideoInfo*)g_windowManager.GetWindow(WINDOW_VIDEO_INFO);
 
-  CVideoInfoScanner scanner;
-  scanner.m_IMDB.SetScraperInfo(info2);
   ScraperPtr info(info2); // use this as nfo might change it..
 
   if (!pDlgProgress) return false;
@@ -520,6 +518,7 @@ bool CGUIWindowVideoBase::ShowIMDB(CFileItem *item, const ScraperPtr &info2)
   CStdString movieName = item->GetMovieName(settings.parent_name);
 
   CScraperUrl scrUrl;
+  CVideoInfoScanner scanner;
   bool hasDetails = false;
   bool listNeedsUpdating = false;
   bool ignoreNfo = false;
@@ -535,8 +534,6 @@ bool CGUIWindowVideoBase::ShowIMDB(CFileItem *item, const ScraperPtr &info2)
       if (nfoResult != CNfoFile::NO_NFO)
       {
         hasDetails = true;
-        if (nfoResult == CNfoFile::URL_NFO || nfoResult == CNfoFile::COMBINED_NFO)
-          scanner.m_IMDB.SetScraperInfo(info);
       }
 
       if (needsRefresh)
@@ -565,7 +562,6 @@ bool CGUIWindowVideoBase::ShowIMDB(CFileItem *item, const ScraperPtr &info2)
     {
       // 4a. show dialog that we're busy querying www.imdb.com
       CStdString strHeading;
-      scanner.m_IMDB.SetScraperInfo(info);
       strHeading.Format(g_localizeStrings.Get(197),info->Name().c_str());
       pDlgProgress->SetHeading(strHeading);
       pDlgProgress->SetLine(0, movieName);
@@ -575,7 +571,8 @@ bool CGUIWindowVideoBase::ShowIMDB(CFileItem *item, const ScraperPtr &info2)
       pDlgProgress->Progress();
 
       // 4b. do the websearch
-      int returncode = scanner.m_IMDB.FindMovie(movieName, movielist, pDlgProgress);
+      CIMDB imdb(info);
+      int returncode = imdb.FindMovie(movieName, movielist, pDlgProgress);
       if (returncode > 0)
       {
         pDlgProgress->Close();
