@@ -180,10 +180,8 @@ void CGUIWindowAddonBrowser::GetContextButtons(int itemNumber,
   if (pItem->GetPath().Equals("addons://enabled/"))
     buttons.Add(CONTEXT_BUTTON_SCAN,24034);
   
-  TYPE type = TranslateType(pItem->GetProperty("Addon.intType"));
   AddonPtr addon;
-  if (!CAddonMgr::Get().GetAddon(pItem->GetProperty("Addon.ID"),
-                                  addon, type, false))
+  if (!CAddonMgr::Get().GetAddon(pItem->GetProperty("Addon.ID"), addon))
     return;
 
   if (addon->Type() == ADDON_REPOSITORY)
@@ -208,10 +206,8 @@ bool CGUIWindowAddonBrowser::OnContextButton(int itemNumber,
       return true;
     }
   }
-  TYPE type = TranslateType(pItem->GetProperty("Addon.intType"));
   AddonPtr addon;
-  if (!CAddonMgr::Get().GetAddon(pItem->GetProperty("Addon.ID"),
-                                  addon, type, false))
+  if (!CAddonMgr::Get().GetAddon(pItem->GetProperty("Addon.ID"), addon))
     return false;
 
   if (button == CONTEXT_BUTTON_SETTINGS)
