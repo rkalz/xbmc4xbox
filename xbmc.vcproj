@@ -1003,6 +1003,9 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\music\infoscanner\MusicAlbumInfo.cpp">
 				</File>
 				<File
+					RelativePath=".\xbmc\music\infoscanner\MusicAlbumInfo.h">
+				</File>
+				<File
 					RelativePath=".\xbmc\music\infoscanner\MusicArtistInfo.cpp">
 				</File>
 				<File

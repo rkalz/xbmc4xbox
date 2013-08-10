@@ -23,12 +23,18 @@
  */
 
 #include <vector>
-#include "tinyXML/tinyxml.h"
 #include "utils/StdString.h"
 #include "addons/IAddon.h"
-#include "XBDateTime.h"
 
 #define MAX_SCRAPER_BUFFERS 20
+
+namespace ADDON
+{
+  class CScraper;
+}
+
+class TiXmlElement;
+class TiXmlDocument;
 
 class CScraperSettings;
 
@@ -39,18 +45,20 @@ public:
   CScraperParser(const CScraperParser& parser);
   ~CScraperParser();
   CScraperParser& operator= (const CScraperParser& parser);
+  bool Load(const CStdString& strXMLFile);
 
   void Clear();
-  bool Load(const ADDON::AddonPtr& scraper);
   const CStdString GetFilename() { return m_strFile; }
   const CStdString GetSearchStringEncoding() { return m_SearchStringEncoding; }
-  const CStdString Parse(const CStdString& strTag);
+  const CStdString Parse(const CStdString& strTag,
+                         ADDON::CScraper* scraper);
   bool HasFunction(const CStdString& strTag);
+
+  void AddDocument(const TiXmlDocument* doc);
 
   CStdString m_param[MAX_SCRAPER_BUFFERS];
 
 private:
-  bool Load(const CStdString& strXMLFile);
   bool LoadFromXML();
   void ReplaceBuffers(CStdString& strDest);
   void ParseExpression(const CStdString& input, CStdString& dest, TiXmlElement* element, bool bAppend);
@@ -64,13 +72,13 @@ private:
   void GetBufferParams(bool* result, const char* attribute, bool defvalue);
   void InsertToken(CStdString& strOutput, int buf, const char* token);
 
-  ADDON::AddonPtr m_scraper;
   TiXmlDocument* m_document;
   TiXmlElement* m_pRootElement;
 
   const char* m_SearchStringEncoding;
 
   CStdString m_strFile;
+  ADDON::CScraper* m_scraper;
 };
 
 #endif
