@@ -31,7 +31,6 @@
  */
 
 #include "Thread.h"
-#include "ScraperParser.h"
 #include "video/VideoInfoTag.h"
 #include "addons/Scraper.h"
 #include "XBDateTime.h"
@@ -68,7 +67,7 @@ public:
   static void ShowErrorDialog(const TiXmlElement* element);
 protected:
   void RemoveAllAfter(char* szMovie, const char* szSearch);
-  int InternalFindMovie(const CStdString& strMovie, IMDB_MOVIELIST& movielist, bool& sortMovieList, const CStdString& strFunction="GetSearchResults", CScraperUrl* pUrl=NULL);
+  int InternalFindMovie(const CStdString& strMovie, IMDB_MOVIELIST& movielist, bool& sortMovieList);
   bool InternalGetDetails(const CScraperUrl& url, CVideoInfoTag& movieDetails, const CStdString& strFunction="GetDetails");
   bool InternalGetEpisodeList(const CScraperUrl& url, IMDB_EPISODELIST& details);
   bool ParseDetails(TiXmlDocument &doc, CVideoInfoTag &movieDetails);
@@ -78,7 +77,6 @@ protected:
   static bool RelevanceSortFunction(const CScraperUrl& left, const CScraperUrl &right);
 
   XFILE::CCurlFile m_http;
-  CScraperParser m_parser;
 
   // threaded stuff
   void Process();
