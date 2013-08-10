@@ -50,8 +50,6 @@ namespace ADDON
     virtual ~CScraper() {}
     virtual AddonPtr Clone(const AddonPtr &self) const;
 
-    // from CAddon
-    virtual bool HasSettings();
     virtual bool LoadSettings();
 
     // scraper specialization

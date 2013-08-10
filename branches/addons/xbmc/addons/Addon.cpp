@@ -255,6 +255,7 @@ CAddon::CAddon(const cp_extension_t *ext)
   m_enabled = true;
   m_hasStrings = false;
   m_checkedStrings = false;
+  m_settingsLoaded = false;
 }
 
 CAddon::CAddon(const AddonProps &props)
@@ -268,6 +269,7 @@ CAddon::CAddon(const AddonProps &props)
   m_enabled = true;
   m_hasStrings = false;
   m_checkedStrings = false;
+  m_settingsLoaded = false;
 }
 
 CAddon::CAddon(const CAddon &rhs, const AddonPtr &parent)
@@ -275,6 +277,8 @@ CAddon::CAddon(const CAddon &rhs, const AddonPtr &parent)
   , m_parent(parent)
 {
   m_userXmlDoc  = rhs.m_userXmlDoc;
+  m_addonXmlDoc = rhs.m_addonXmlDoc;
+  m_settingsLoaded = rhs.m_settingsLoaded;
   BuildProfilePath();
   URIUtils::AddFileToFolder(Profile(), "settings.xml", m_userSettingsPath);
   m_strLibName  = rhs.m_strLibName;
@@ -402,23 +406,14 @@ CStdString CAddon::GetString(uint32_t id)
  */
 bool CAddon::HasSettings()
 {
-  CStdString addonFileName = URIUtils::AddFileToFolder(m_props.path, "resources/settings.xml");
-
-  // Load the settings file to verify it's valid
-  TiXmlDocument xmlDoc;
-  if (!xmlDoc.LoadFile(addonFileName))
-    return false;
-
-  // Make sure that the addon XML has the settings element
-  TiXmlElement *setting = xmlDoc.RootElement();
-  if (!setting || strcmpi(setting->Value(), "settings") != 0)
-    return false;
-
-  return true;
+  return LoadSettings();
 }
 
 bool CAddon::LoadSettings()
 {
+  if (m_settingsLoaded)
+    return true;
+
   CStdString addonFileName = URIUtils::AddFileToFolder(m_props.path, "resources/settings.xml");
 
   if (!m_addonXmlDoc.LoadFile(addonFileName))
@@ -434,32 +429,29 @@ bool CAddon::LoadSettings()
     CLog::Log(LOGERROR, "Error loading Settings %s: cannot find root element 'settings'", addonFileName.c_str());
     return false;
   }
-  return LoadUserSettings();
+  LoadUserSettings();
+  m_settingsLoaded = true;
+  return true;
 }
 
-bool CAddon::LoadUserSettings(bool create)
+bool CAddon::HasUserSettings()
 {
-  // Load the user saved settings. If it does not exist, create it
-  if (!m_userXmlDoc.LoadFile(m_userSettingsPath))
-  {
-    if (!create)
-      return false;
+  if (!LoadSettings())
+    return false;
 
-    TiXmlDocument doc;
-    TiXmlDeclaration decl("1.0", "UTF-8", "yes");
-    doc.InsertEndChild(decl);
+  return NULL != m_userXmlDoc.RootElement();
+}
 
-    TiXmlElement xmlRootElement("settings");
-    doc.InsertEndChild(xmlRootElement);
-
-    m_userXmlDoc = doc;
-  }
-
-  return true;
+bool CAddon::LoadUserSettings()
+{
+  return m_userXmlDoc.LoadFile(m_userSettingsPath);
 }
 
 void CAddon::SaveSettings(void)
 {
+  if (!m_userXmlDoc.RootElement())
+    return; // no settings to save
+
   // break down the path into directories
   CStdString strRoot, strAddon;
   URIUtils::GetDirectory(m_userSettingsPath, strAddon);
@@ -476,8 +468,11 @@ void CAddon::SaveSettings(void)
   m_userXmlDoc.SaveFile(m_userSettingsPath);
 }
 
-CStdString CAddon::GetSetting(const CStdString& key) const
+CStdString CAddon::GetSetting(const CStdString& key)
 {
+  if (!LoadSettings())
+    return ""; // no settings available
+
   if (m_userXmlDoc.RootElement())
   {
     // Try to find the setting and return its value

@@ -86,9 +86,6 @@ bool CPluginDirectory::StartScript(const CStdString& strPath)
     return false;
   }
 
-  if (m_addon->HasSettings())
-    m_addon->LoadSettings();
-
   // get options
   CStdString options = url.GetOptions();
   URIUtils::RemoveSlashAtEnd(options); // This MAY kill some scripts (eg though with a URL ending with a slash), but
@@ -407,9 +404,6 @@ bool CPluginDirectory::RunScriptWithParams(const CStdString& strPath)
     CLog::Log(LOGERROR, "Unable to find plugin %s", url.GetHostName().c_str());
     return false;
   }
-
-  if (addon->HasSettings())
-    addon->LoadSettings();
 
   // options
   CStdString options = url.GetOptions();
