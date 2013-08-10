@@ -3309,9 +3309,8 @@ void CVideoDatabase::SetScraperForPath(const CStdString& filePath, const Scraper
     }
     else
     {
-      assert(scraper->Parent());
       CStdString content = TranslateContent(scraper->Content());
-      strSQL=PrepareSQL("update path set strContent='%s', strScraper='%s', scanRecursive=%i, useFolderNames=%i, strSettings='%s', noUpdate=%i, exclude=0 where idPath=%i", content.c_str(), scraper->Parent()->ID().c_str(),settings.recurse,settings.parent_name,scraper->GetSettings().c_str(),settings.noupdate, idPath);
+      strSQL=PrepareSQL("update path set strContent='%s', strScraper='%s', scanRecursive=%i, useFolderNames=%i, strSettings='%s', noUpdate=%i, exclude=0 where idPath=%i", content.c_str(), scraper->ID().c_str(),settings.recurse,settings.parent_name,scraper->GetSettings().c_str(),settings.noupdate, idPath);
     }
     m_pDS->exec(strSQL.c_str());
   }
@@ -3338,7 +3337,7 @@ bool CVideoDatabase::ScraperInUse(const ADDON::ScraperPtr &scraper) const
   }
   catch (...)
   {
-    CLog::Log(LOGERROR, "%s(%s) failed", __FUNCTION__, scraper->Parent()->ID().c_str());
+    CLog::Log(LOGERROR, "%s(%s) failed", __FUNCTION__, scraper->ID().c_str());
   }
   return false;
 }
