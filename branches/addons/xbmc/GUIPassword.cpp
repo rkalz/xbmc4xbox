@@ -377,7 +377,6 @@ bool CGUIPassword::CheckMenuLock(int iWindowID)
       bCheckPW = g_settings.GetCurrentProfile().filesLocked();
       break;
     case WINDOW_PROGRAMS:       // Programs
-    case WINDOW_SCRIPTS:
       bCheckPW = g_settings.GetCurrentProfile().programsLocked();
       break;
     case WINDOW_GAMESAVES:
