@@ -718,11 +718,6 @@ bool URIUtils::IsVideoDb(const CStdString& strFile)
   return strFile.Left(8).Equals("videodb:");
 }
 
-bool URIUtils::IsShoutCast(const CStdString& strFile)
-{
-  return strFile.Left(6).Equals("shout:");
-}
-
 bool URIUtils::IsLastFM(const CStdString& strFile)
 {
   return strFile.Left(7).Equals("lastfm:");
