@@ -176,11 +176,6 @@ public:
    */
   void SetFromDBDateTime(const CStdString &dateTime);
 
-  /*! \brief set from a database datetime format YYYY-MM-DD HH:MM:SS
-   \sa GetAsDBDateTime()
-   */
-  void SetFromDBDateTime(const CStdString &dateTime);
-
   void GetAsSystemTime(SYSTEMTIME& time) const;
   void GetAsTime(time_t& time) const;
   void GetAsTm(tm& time) const;
