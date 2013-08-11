@@ -59,6 +59,7 @@ namespace VIDEO
     m_currentItem = 0;
     m_itemCount = 0;
     m_bClean = false;
+    m_scanAll = false;
   }
 
   CVideoInfoScanner::~CVideoInfoScanner()
@@ -133,10 +134,11 @@ namespace VIDEO
     }
   }
 
-  void CVideoInfoScanner::Start(const CStdString& strDirectory, bool bUpdateAll)
+  void CVideoInfoScanner::Start(const CStdString& strDirectory, bool bUpdateAll, bool scanAll)
   {
     m_strStartDir = strDirectory;
     m_bUpdateAll = bUpdateAll;
+    m_scanAll = scanAll;
     m_pathsToScan.clear();
     m_pathsToClean.clear();
 
@@ -217,11 +219,12 @@ namespace VIDEO
     if (CUtil::ExcludeFileOrFolder(strDirectory, regexps))
       return true;
 
-    if (content == CONTENT_NONE)
-      bSkip = true;
+    bool ignoreFolder = !m_scanAll && settings.noupdate;
+    if (content == CONTENT_NONE || ignoreFolder)
+      return true;
 
     CStdString hash, dbHash;
-    if ((content == CONTENT_MOVIES || content == CONTENT_MUSICVIDEOS) && !settings.noupdate)
+    if (content == CONTENT_MOVIES ||content == CONTENT_MUSICVIDEOS)
     {
       if (m_pObserver)
         m_pObserver->OnStateChanged(content == CONTENT_MOVIES ? FETCHING_MOVIE_INFO : FETCHING_MUSICVIDEO_INFO);
@@ -265,7 +268,7 @@ namespace VIDEO
           hash = fastHash;
       }
     }
-    else if (content == CONTENT_TVSHOWS && !settings.noupdate)
+    else if (content == CONTENT_TVSHOWS)
     {
       if (m_pObserver)
         m_pObserver->OnStateChanged(FETCHING_TVSHOW_INFO);

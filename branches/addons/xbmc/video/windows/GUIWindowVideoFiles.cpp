@@ -330,7 +330,7 @@ void CGUIWindowVideoFiles::OnAssignContent(int iItem, int iFound, ADDON::Scraper
 
     if (bScan)
     {
-      OnScan(item->GetPath());
+      OnScan(item->GetPath(), true);
     }
   }
 }
