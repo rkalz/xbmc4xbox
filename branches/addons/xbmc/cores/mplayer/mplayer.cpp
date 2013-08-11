@@ -930,29 +930,20 @@ bool CMPlayer::OpenFile(const CFileItem& file, const CPlayerOptions& initoptions
     bool bSupportsAC3Out = g_audioConfig.GetAC3Enabled();
     bool bSupportsDTSOut = g_audioConfig.GetDTSEnabled();
 
-    // shoutcast is always stereo
-    if (file.IsShoutCast() )
-    {
-      options.SetChannels(0);
-      options.SetAC3PassTru(false);
-      options.SetDTSPassTru(false);
-    }
-    else
-    {
-      // Since the xbox downmixes any multichannel track to dolby surround if we don't have a dd reciever,
-      // always tell mplayer to output the maximum number of channels.
-      options.SetChannels(6);
+    // Since the xbox downmixes any multichannel track to dolby surround if we don't have a dd reciever,
+    // always tell mplayer to output the maximum number of channels.
+    options.SetChannels(6);
 
-      // if we're using digital out
-      // then try using direct passtrough
-      if (g_guiSettings.GetInt("audiooutput.mode") == AUDIO_DIGITAL)
-      {
-        options.SetAC3PassTru(bSupportsAC3Out);
-        options.SetDTSPassTru(bSupportsDTSOut);
+    // if we're using digital out
+    // then try using direct passtrough
+    if (g_guiSettings.GetInt("audiooutput.mode") == AUDIO_DIGITAL)
+    {
+      options.SetAC3PassTru(bSupportsAC3Out);
+      options.SetDTSPassTru(bSupportsDTSOut);
 
-        if ((g_settings.m_currentVideoSettings.m_OutputToAllSpeakers && bIsVideo) || (g_guiSettings.GetBool("musicplayer.outputtoallspeakers")) && (!bIsVideo))
+      if ((g_settings.m_currentVideoSettings.m_OutputToAllSpeakers && bIsVideo) || (g_guiSettings.GetBool("musicplayer.outputtoallspeakers")) && (!bIsVideo))
           options.SetLimitedHWAC3(true); //Will limit hwac3 to not kick in on 2.0 channel streams
-      }
+
     }
 
     // Volume amplification has been replaced with dynamic range compression
