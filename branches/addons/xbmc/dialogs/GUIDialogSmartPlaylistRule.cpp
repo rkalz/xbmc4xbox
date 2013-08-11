@@ -30,7 +30,7 @@
 #include "GUIEditControl.h"
 #include "storage/MediaManager.h"
 #include "LocalizeStrings.h"
-#include "Settings.h"
+#include "settings/Settings.h"
 
 #define CONTROL_FIELD           15
 #define CONTROL_OPERATOR        16
