@@ -40,6 +40,7 @@
 #include "FileItem.h"
 #include "utils/URIUtils.h"
 #include "LocalizeStrings.h"
+#include "utils/Builtins.h"
 #include "utils/log.h"
 
 using namespace XFILE;
@@ -754,4 +755,14 @@ CStdString CGUIWindowPrograms::GetStartFolder(const CStdString &dir)
     return dir;
   }
   return CGUIMediaWindow::GetStartFolder(dir);
+}
+
+bool CGUIWindowPrograms::OnClick(int iItem)
+{
+  if (m_vecItems->Get(iItem)->m_strPath.Equals("addons://more"))
+  {
+    CBuiltins::Execute("ActivateWindow(AddonBrowser,addons://all/xbmc.python.script)");
+    return true;
+  }
+  return CGUIMediaWindow::OnClick(iItem);
 }
