@@ -213,7 +213,7 @@ bool CGUIWindowAddonBrowser::OnContextButton(int itemNumber,
 bool CGUIWindowAddonBrowser::OnClick(int iItem)
 {
   CFileItemPtr item = m_vecItems->Get(iItem);
-  if (item->m_strPath == "install://")
+  if (item->GetPath() == "install://")
   {
     // pop up filebrowser to grab an installed folder
     VECSOURCES shares = g_settings.m_fileSources;
