@@ -102,7 +102,7 @@ bool CAddonsDirectory::GetDirectory(const CStdString& strPath, CFileItemList &it
       {
         for (unsigned int j=0;j<addons.size();++j)
         {
-          if (addons[j]->Type() == (TYPE)i)
+          if (addons[j]->IsType((TYPE)i))
           {
             CFileItemPtr item(new CFileItem(TranslateType((TYPE)i,true)));
             item->SetPath(URIUtils::AddFileToFolder(strPath,TranslateType((TYPE)i,false)));
@@ -125,7 +125,7 @@ bool CAddonsDirectory::GetDirectory(const CStdString& strPath, CFileItemList &it
     // FIXME: Categorisation of addons needs adding here
     for (unsigned int j=0;j<addons.size();++j)
     {
-      if (addons[j]->Type() != type)
+      if (!addons[j]->IsType(type))
         addons.erase(addons.begin()+j--);
     }
   }
