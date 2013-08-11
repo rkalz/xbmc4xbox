@@ -41,8 +41,6 @@ public:
   virtual bool OnMessage(CGUIMessage& message);
 //  virtual bool OnAction(const CAction &action);
 
-  void RegisterJob(const CStdString& id, unsigned int jobid);
-
   // job callback
   void OnJobComplete(unsigned int jobID, bool success, CJob* job);
 
@@ -68,6 +66,7 @@ public:
   static void InstallAddonsFromXBMCRepo(const std::set<CStdString> &addonIDs);
 
 protected:
+  void RegisterJob(const CStdString& id, unsigned int jobid);
   void UnRegisterJob(unsigned int jobID);
   virtual void GetContextButtons(int itemNumber, CContextButtons &buttons);
   virtual bool OnContextButton(int itemNumber, CONTEXT_BUTTON button);
@@ -76,7 +75,8 @@ protected:
   virtual bool GetDirectory(const CStdString &strDirectory, CFileItemList &items);
   virtual bool Update(const CStdString &strDirectory);
   virtual CStdString GetStartFolder(const CStdString &dir);
-  std::map<CStdString,unsigned int> m_idtojobid;
+  typedef std::map<CStdString,unsigned int> JobMap;
+  JobMap m_downloadJobs;
   CCriticalSection m_critSection;
   CPictureThumbLoader m_thumbLoader;
 };
