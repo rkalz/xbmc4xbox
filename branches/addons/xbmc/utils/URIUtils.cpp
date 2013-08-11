@@ -575,6 +575,12 @@ bool URIUtils::IsPlugin(const CStdString& strFile)
   return url.GetProtocol().Equals("plugin");
 }
 
+bool URIUtils::IsAddonsPath(const CStdString& strFile)
+{
+  CURL url(strFile);
+  return url.GetProtocol().Equals("addons");
+}
+
 bool URIUtils::IsCDDA(const CStdString& strFile)
 {
   return strFile.Left(5).Equals("cdda:");
