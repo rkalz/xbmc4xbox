@@ -156,6 +156,8 @@ bool CRepositoryUpdateJob::DoWork()
     return false;
 
   // check for updates
+  CAddonDatabase database;
+  database.Open();
   for (unsigned int i=0;i<addons.size();++i)
   {
     AddonPtr addon;
@@ -175,8 +177,6 @@ bool CRepositoryUpdateJob::DoWork()
     }
     if (addon && !addons[i]->Props().broken.IsEmpty())
     {
-      CAddonDatabase database;
-      database.Open();
       if (database.IsAddonBroken(addon->ID()).IsEmpty())
       {
         if (CGUIDialogYesNo::ShowAndGetInput(addon->Name(),
@@ -188,6 +188,8 @@ bool CRepositoryUpdateJob::DoWork()
         database.BreakAddon(addon->ID(),true,addons[i]->Props().broken);
       }
     }
+    if (addon && addons[i]->Props().broken.IsEmpty())
+      database.BreakAddon(addon->ID(),false);
   }
 
   return true;
