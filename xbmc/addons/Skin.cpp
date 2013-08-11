@@ -44,10 +44,8 @@ namespace ADDON
 CSkinInfo::CSkinInfo(const cp_extension_t *ext)
   : CAddon(ext)
 {
-  GetDefaultResolution(ext, "@defaultresolution", m_DefaultResolution, PAL_4x3);
-  GetDefaultResolution(ext, "@defaultresolutionwide", m_DefaultResolutionWide, INVALID);
-  CLog::Log(LOGINFO, "Default 4:3 resolution directory is %s", URIUtils::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolution)).c_str());
-  CLog::Log(LOGINFO, "Default 16:9 resolution directory is %s", URIUtils::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolutionWide)).c_str());
+  m_DefaultResolution = TranslateResolution(CAddonMgr::Get().GetExtValue(ext->configuration, "@defaultresolution"), PAL_4x3);
+  m_DefaultResolutionWide = TranslateResolution(CAddonMgr::Get().GetExtValue(ext->configuration, "@defaultresolutionwide"), INVALID);
 
   CStdString str = CAddonMgr::Get().GetExtValue(ext->configuration, "@effectslowdown");
   if (!str.IsEmpty())
@@ -70,6 +68,8 @@ CSkinInfo::~CSkinInfo()
 
 void CSkinInfo::Start(const CStdString& strSkinDir /* = "" */)
 {
+  CLog::Log(LOGINFO, "Default 4:3 resolution directory is %s", URIUtils::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolution)).c_str());
+  CLog::Log(LOGINFO, "Default 16:9 resolution directory is %s", URIUtils::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolutionWide)).c_str());
   LoadIncludes();
 }
 
@@ -154,24 +154,6 @@ CStdString CSkinInfo::GetDirFromRes(RESOLUTION res) const
     break;
   }
   return strRes;
-}
-
-RESOLUTION CSkinInfo::TranslateResolution(const CStdString &res, RESOLUTION def)
-{
-  if (res.Equals("pal"))
-    return PAL_4x3;
-  else if (res.Equals("pal16x9"))
-    return PAL_16x9;
-  else if (res.Equals("ntsc"))
-    return NTSC_4x3;
-  else if (res.Equals("ntsc16x9"))
-    return NTSC_16x9;
-  else if (res.Equals("720p"))
-    return HDTV_720p;
-  else if (res.Equals("1080i"))
-    return HDTV_1080i;
-  CLog::Log(LOGERROR, "%s invalid resolution specified for %s", __FUNCTION__, res.c_str());
-  return def;
 }
 
 double CSkinInfo::GetMinVersion()
@@ -272,41 +254,22 @@ void CSkinInfo::GetSkinPaths(std::vector<CStdString> &paths) const
     paths.push_back(URIUtils::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolution)));
 }
 
-void CSkinInfo::GetDefaultResolution(const cp_extension_t *ext, const char *tag, RESOLUTION &res, const RESOLUTION &def) const
+RESOLUTION CSkinInfo::TranslateResolution(const CStdString &res, RESOLUTION def)
 {
-  //FIXME! only respects one extension per addon
-  CStdString strRes(CAddonMgr::Get().GetExtValue(ext->configuration, tag));
-  if (!strRes.empty())
-  {
-    strRes.ToLower();
-    if (strRes == "pal") {
-      res = PAL_4x3;
-      return;
-    }
-    else if (strRes == "pal16x9") {
-      res = PAL_16x9;
-      return;
-    }
-    else if (strRes == "ntsc") {
-      res = NTSC_4x3;
-      return;
-    }
-    else if (strRes == "ntsc16x9") {
-      res = NTSC_16x9;
-      return;
-    }
-    else if (strRes == "720p") {
-      res = HDTV_720p;
-      return;
-    }
-    else if (strRes == "1080i") {
-      res = HDTV_1080i;
-      return;
-    }
-  }
-
-  CLog::Log(LOGERROR, "%s invalid resolution specified for <%s>, %s", __FUNCTION__, tag, strRes.c_str());
-  res = def;
+  if (res.Equals("pal"))
+    return PAL_4x3;
+  else if (res.Equals("pal16x9"))
+    return PAL_16x9;
+  else if (res.Equals("ntsc"))
+    return NTSC_4x3;
+  else if (res.Equals("ntsc16x9"))
+    return NTSC_16x9;
+  else if (res.Equals("720p"))
+    return HDTV_720p;
+  else if (res.Equals("1080i"))
+    return HDTV_1080i;
+  CLog::Log(LOGERROR, "%s invalid resolution specified for %s", __FUNCTION__, res.c_str());
+  return def;
 }
 
 int CSkinInfo::GetFirstWindow() const
