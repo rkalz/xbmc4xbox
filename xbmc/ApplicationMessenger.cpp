@@ -118,8 +118,7 @@ void CApplicationMessenger::SendMessage(ThreadMessage& message, bool wait)
   msg->strParam = message.strParam;
   msg->params = message.params;
 
-  if (msg->dwMessage == TMSG_DIALOG_DOMODAL ||
-      msg->dwMessage == TMSG_WRITE_SCRIPT_OUTPUT)
+  if (msg->dwMessage == TMSG_DIALOG_DOMODAL)
     m_vecWindowMessages.push(msg);
   else
     m_vecMessages.push(msg);
@@ -499,16 +498,6 @@ case TMSG_POWERDOWN:
         CGUIDialog* pDialog = (CGUIDialog*)g_windowManager.GetWindow(pMsg->dwParam1);
         if (!pDialog) return ;
         pDialog->DoModal();
-      }
-      break;
-
-    case TMSG_WRITE_SCRIPT_OUTPUT:
-      {
-        //send message to window 2004 (CGUIWindowScriptsInfo)
-        CGUIMessage msg(GUI_MSG_USER, 0, 0);
-        msg.SetLabel(pMsg->strParam);
-        CGUIWindow* pWindowScripts = g_windowManager.GetWindow(WINDOW_SCRIPTS);
-        if (pWindowScripts) pWindowScripts->OnMessage(msg);
       }
       break;
 
