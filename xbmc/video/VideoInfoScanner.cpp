@@ -616,7 +616,13 @@ namespace VIDEO
   INFO_RET CVideoInfoScanner::RetrieveInfoForEpisodes(CFileItemPtr item, long showID, const ADDON::ScraperPtr &scraper, CGUIDialogProgress *progress)
   {
     IMDB_EPISODELIST episodes;
+
+    // enumerate episodes
     EPISODES files;
+    EnumerateSeriesFolder(item.get(), files);
+    if (files.size() == 0) // no update or no files
+      return INFO_NOT_NEEDED;
+
     // fetch episode guide
     CVideoInfoTag details;
     m_database.GetTvShowInfo(item->GetPath(), details, showID);
@@ -624,10 +630,6 @@ namespace VIDEO
     {
       CScraperUrl url;
       url.ParseEpisodeGuide(details.m_strEpisodeGuide);
-
-      EnumerateSeriesFolder(item.get(), files);
-      if (files.size() == 0) // no update or no files
-        return INFO_NOT_NEEDED;
 
       if (progress)
       {
