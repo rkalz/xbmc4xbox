@@ -64,6 +64,12 @@ CStdString CGUIViewStateWindowMusic::GetExtensions()
   return g_settings.m_musicExtensions;
 }
 
+VECSOURCES& CGUIViewStateWindowMusic::GetSources()
+{
+  AddAddonsSource("audio", g_localizeStrings.Get(1038));
+  return CGUIViewState::GetSources();
+}
+
 CGUIViewStateMusicSearch::CGUIViewStateMusicSearch(const CFileItemList& items) : CGUIViewStateWindowMusic(items)
 {
   CStdString strTrackLeft=g_guiSettings.GetString("musicfiles.librarytrackformat");
@@ -651,7 +657,7 @@ void CGUIViewStateWindowMusicSongs::SaveViewState()
 
 VECSOURCES& CGUIViewStateWindowMusicSongs::GetSources()
 {
-  AddOrReplace(g_settings.m_musicSources, CGUIViewState::GetSources());
+  AddOrReplace(g_settings.m_musicSources, CGUIViewStateWindowMusic::GetSources());
   return g_settings.m_musicSources; 
 }
 
