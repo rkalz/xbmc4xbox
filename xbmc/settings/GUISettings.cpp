@@ -425,8 +425,7 @@ void CGUISettings::Initialize()
   AddString(12, "videolibrary.export", 647, "", BUTTON_CONTROL_STANDARD);
   AddString(13, "videolibrary.import", 648, "", BUTTON_CONTROL_STANDARD);
 
-  AddCategory(5, "videoplayer", 14086);
-  AddInt(1, "videoplayer.resumeautomatically", 12017, RESUME_ASK, RESUME_NO, 1, RESUME_ASK, SPIN_CONTROL_TEXT);
+  AddCategory(5, "videoplayer", 14086);;
   AddString(2, "videoplayer.calibrate", 214, "", BUTTON_CONTROL_STANDARD);
   AddSeparator(3, "videoplayer.sep1");
   AddInt(4, "videoplayer.rendermethod", 13354, RENDER_HQ_RGB_SHADER, RENDER_LQ_RGB_SHADER, 1, RENDER_HQ_RGB_SHADERV2, SPIN_CONTROL_TEXT);
@@ -442,7 +441,7 @@ void CGUISettings::Initialize()
   AddInt(15, "videoplayer.skiploopfilter", 14100, VS_SKIPLOOP_NONREF, VS_SKIPLOOP_DEFAULT, 1, VS_SKIPLOOP_ALL, SPIN_CONTROL_TEXT);
 
   AddCategory(5, "myvideos", 14081);
-  AddInt(0, "myvideos.selectaction", 22079, SELECT_ACTION_PLAY, SELECT_ACTION_PLAY, 1, SELECT_ACTION_INFO, SPIN_CONTROL_TEXT);
+  AddInt(0, "myvideos.selectaction", 22079, SELECT_ACTION_PLAY_OR_RESUME, SELECT_ACTION_CHOOSE, 1, SELECT_ACTION_INFO, SPIN_CONTROL_TEXT);
   AddBool(1, "myvideos.treatstackasfile", 20051, true);
   AddBool(2, "myvideos.extractflags",20433, false);
   AddBool(3, "myvideos.cleanstrings", 20418, false);
