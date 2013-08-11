@@ -36,6 +36,7 @@ public:
 
   void PopulateTrainersList();
 protected:
+  virtual bool OnClick(int iItem);
   virtual void OnItemLoaded(CFileItem* pItem) {};
   virtual bool Update(const CStdString& strDirectory);
   virtual bool OnPlayMedia(int iItem);
