@@ -380,8 +380,7 @@ void CGUIWindowVideoFiles::GetContextButtons(int itemNumber, CContextButtons &bu
   if (item && !item->GetPath().IsEmpty())
   {
     // are we in the playlists location?
-    if (m_vecItems->IsVirtualDirectoryRoot() &&
-        !item->IsLiveTV() && !item->IsAddonsPath())
+    if (m_vecItems->IsVirtualDirectoryRoot())
     {
       // get the usual shares, and anything for all media windows
       CGUIDialogContextMenu::GetContextButtons("video", item, buttons);
@@ -394,7 +393,8 @@ void CGUIWindowVideoFiles::GetContextButtons(int itemNumber, CContextButtons &bu
       {
         CGUIDialogVideoScan *pScanDlg = (CGUIDialogVideoScan *)g_windowManager.GetWindow(WINDOW_DIALOG_VIDEO_SCAN);
         if (!pScanDlg || (pScanDlg && !pScanDlg->IsScanning()))
-          buttons.Add(CONTEXT_BUTTON_SET_CONTENT, 20333);
+          if (!item->IsLiveTV() && !item->IsPlugin() && !item->IsAddonsPath())
+            buttons.Add(CONTEXT_BUTTON_SET_CONTENT, 20333);
         CVideoDatabase database;
         database.Open();
         ADDON::ScraperPtr info = database.GetScraperForPath(item->GetPath());
