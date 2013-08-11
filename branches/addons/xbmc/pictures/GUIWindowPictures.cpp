@@ -640,9 +640,8 @@ void CGUIWindowPictures::OnInfo(int itemNumber)
 
 CStdString CGUIWindowPictures::GetStartFolder(const CStdString &dir)
 {
-  CLog::Log(LOGDEBUG, "exobuzz %s", dir.c_str());
-  if (dir.Equals("Plugins") || dir.Equals("Addons"))
-    return "plugin://pictures/";
+   if (dir.Equals("Plugins") || dir.Equals("Addons"))
+    return "addons://sources/image/";
 
   SetupShares();
   VECSOURCES shares;
