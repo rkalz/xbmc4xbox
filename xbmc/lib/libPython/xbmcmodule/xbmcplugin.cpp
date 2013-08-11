@@ -280,7 +280,7 @@ namespace PYXBMC
     if (!PyArg_ParseTupleAndKeywords(
       args,
       kwds,
-      (char*)"ii|o",
+      (char*)"ii|O",
       (char**)keywords,
       &handle,
       &sortMethod,
