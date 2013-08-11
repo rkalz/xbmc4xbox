@@ -76,11 +76,11 @@ protected:
   virtual void UpdateButtons();
   virtual bool GetDirectory(const CStdString &strDirectory, CFileItemList &items);
   virtual bool Update(const CStdString &strDirectory);
+  virtual CStdString GetStartFolder(const CStdString &dir);
   std::map<CStdString,CFileOperationJob*> m_idtojob;
   std::map<CStdString,unsigned int> m_idtojobid;
   std::map<CFileOperationJob*,CStdString> m_jobtoid;
   CCriticalSection m_critSection;
   CPictureThumbLoader m_thumbLoader;
-  CStdString m_startDirectory;
 };
 
