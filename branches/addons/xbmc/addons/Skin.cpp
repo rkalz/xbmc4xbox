@@ -249,10 +249,8 @@ void CSkinInfo::GetSkinPaths(std::vector<CStdString> &paths) const
 {
   RESOLUTION resToUse = INVALID;
   GetSkinPath("Home.xml", &resToUse);
-  if (resToUse == HDTV_1080i)
-    paths.push_back(URIUtils::AddFileToFolder(Path(), GetDirFromRes(HDTV_1080i)));
-  if (resToUse == HDTV_720p)
-    paths.push_back(URIUtils::AddFileToFolder(Path(), GetDirFromRes(HDTV_720p)));
+  paths.push_back(URIUtils::AddFileToFolder(Path(), GetDirFromRes(resToUse)));
+  // see if we need to add other paths
   if (resToUse != m_DefaultResolutionWide && IsWide(resToUse))
     paths.push_back(URIUtils::AddFileToFolder(Path(), GetDirFromRes(m_DefaultResolutionWide)));
   if (resToUse != m_DefaultResolution && (!IsWide(resToUse) || m_DefaultResolutionWide != m_DefaultResolution))
