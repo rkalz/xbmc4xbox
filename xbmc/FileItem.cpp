@@ -2396,6 +2396,7 @@ CStdString CFileItem::GetUserMusicThumb(bool alwaysCheckRemote /* = false */) co
    || IsInternetStream()
    || URIUtils::IsUPnP(m_strPath)
    || IsPlugin()
+   || IsAddonsPath()
    || (URIUtils::IsFTP(m_strPath) && !g_advancedSettings.m_bFTPThumbs)
    || IsParentFolder()
    || IsMusicDb())
@@ -2560,6 +2561,7 @@ CStdString CFileItem::GetUserVideoThumb() const
    || m_strPath.Left(4).Equals("dvd:")
    || (URIUtils::IsFTP(m_strPath) && !g_advancedSettings.m_bFTPThumbs)
    || IsPlugin()
+   || IsAddonsPath()
    || IsParentFolder()
    || IsLiveTV())
     return "";
@@ -2726,6 +2728,7 @@ CStdString CFileItem::GetLocalFanart() const
    || URIUtils::IsUPnP(strFile)
    || IsLiveTV()
    || IsPlugin()
+   || IsAddonsPath()
    || m_strPath.Left(4).Equals("dvd:")
    || (URIUtils::IsFTP(strFile) && !g_advancedSettings.m_bFTPThumbs)
    || m_strPath.IsEmpty())
