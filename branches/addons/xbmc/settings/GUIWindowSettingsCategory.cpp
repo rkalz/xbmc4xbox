@@ -700,8 +700,8 @@ void CGUIWindowSettingsCategory::CreateSettings()
     {
       CSettingInt *pSettingInt = (CSettingInt*)pSetting;
       CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(GetSetting(strSetting)->GetID());
-//      pControl->AddLabel(g_localizeStrings.Get(22080), SELECT_ACTION_CHOOSE);
-      pControl->AddLabel(g_localizeStrings.Get(208), SELECT_ACTION_PLAY);
+      pControl->AddLabel(g_localizeStrings.Get(22080), SELECT_ACTION_CHOOSE);
+      pControl->AddLabel(g_localizeStrings.Get(208), SELECT_ACTION_PLAY_OR_RESUME);
       pControl->AddLabel(g_localizeStrings.Get(22081), SELECT_ACTION_INFO);
       pControl->SetValue(pSettingInt->GetData());
     }
@@ -781,15 +781,6 @@ void CGUIWindowSettingsCategory::CreateSettings()
     else if (strSetting.Equals("locale.country"))
     {
       FillInRegions(pSetting);
-    }
-    else if (strSetting.Equals("videoplayer.resumeautomatically"))
-    {
-      CSettingInt *pSettingInt = (CSettingInt*)pSetting;
-      CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(GetSetting(strSetting)->GetID());
-      pControl->AddLabel(g_localizeStrings.Get(106), RESUME_NO);
-      pControl->AddLabel(g_localizeStrings.Get(107), RESUME_YES);
-      pControl->AddLabel(g_localizeStrings.Get(12020), RESUME_ASK);
-      pControl->SetValue(pSettingInt->GetData());
     }
     else if (strSetting.Equals("videoplayer.defaultplayer"))
     {
