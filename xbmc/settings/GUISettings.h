@@ -136,6 +136,13 @@
 #define PLAYER_DVDPLAYER  1
 #define PLAYER_PAPLAYER   2
 
+enum VideoSelectAction
+{
+  SELECT_ACTION_CHOOSE = 0,
+  SELECT_ACTION_PLAY,
+  SELECT_ACTION_INFO
+};
+
 // replay gain settings struct for quick access by the player multiple
 // times per second (saves doing settings lookup)
 struct ReplayGainSettings

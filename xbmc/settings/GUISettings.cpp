@@ -442,10 +442,11 @@ void CGUISettings::Initialize()
   AddInt(15, "videoplayer.skiploopfilter", 14100, VS_SKIPLOOP_NONREF, VS_SKIPLOOP_DEFAULT, 1, VS_SKIPLOOP_ALL, SPIN_CONTROL_TEXT);
 
   AddCategory(5, "myvideos", 14081);
-  AddBool(0, "myvideos.treatstackasfile", 20051, true);
-  AddBool(0, "myvideos.extractflags",20433, false);
+  AddInt(0, "myvideos.selectaction", 22079, SELECT_ACTION_PLAY, SELECT_ACTION_PLAY, 1, SELECT_ACTION_INFO, SPIN_CONTROL_TEXT);
+  AddBool(1, "myvideos.treatstackasfile", 20051, true);
+  AddBool(2, "myvideos.extractflags",20433, false);
   AddBool(3, "myvideos.cleanstrings", 20418, false);
-  AddBool(0, "myvideos.extractthumb",20433, false);
+  AddBool(4, "myvideos.extractthumb",20433, false);
 
   AddCategory(5, "subtitles", 287);
   AddString(1, "subtitles.font", 288, "Arial.ttf", SPIN_CONTROL_TEXT);
