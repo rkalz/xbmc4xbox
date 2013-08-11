@@ -23,7 +23,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "NfoFile.h"
-#include "MusicDatabase.h"
+#include "music/MusicDatabase.h"
 #include "video/VideoDatabase.h"
 #include "utils/IMDB.h"
 #include "addons/AddonManager.h"
@@ -167,7 +167,6 @@ bool CNfoFile::DoScrape(ScraperPtr& scraper)
   
   CScraperUrl url;
   CCurlFile http;
-  vector<CStdString> xml = scraper->Run("NfoUrl",url,http,&extras);
   vector<CStdString> xml;
   if (scraper->GetParser().HasFunction("NfoUrl"))
     xml = scraper->Run("NfoUrl",url,http,&extras);
