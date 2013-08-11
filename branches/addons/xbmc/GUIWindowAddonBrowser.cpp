@@ -78,8 +78,8 @@ bool CGUIWindowAddonBrowser::OnMessage(CGUIMessage& message)
       m_rootDir.AllowNonLocalSources(false);
 
       // is this the first time the window is opened?
-      if (m_vecItems->m_strPath == "?" && message.GetStringParam().IsEmpty())
-        m_vecItems->m_strPath = "";
+      if (m_vecItems->GetPath() == "?" && message.GetStringParam().IsEmpty())
+        m_vecItems->SetPath("");
     }
     break;
   case GUI_MSG_CLICKED:
