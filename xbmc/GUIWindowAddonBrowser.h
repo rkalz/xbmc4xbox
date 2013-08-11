@@ -43,6 +43,7 @@ public:
 
   // job callback
   void OnJobComplete(unsigned int jobID, bool success, CJob* job);
+  void OnJobProgress(unsigned int jobID, unsigned int progress, unsigned int total, const CJob *job);
 
   static unsigned int AddJob(const CStdString& path);
 
@@ -80,7 +81,19 @@ protected:
   virtual bool GetDirectory(const CStdString &strDirectory, CFileItemList &items);
   virtual bool Update(const CStdString &strDirectory);
   virtual CStdString GetStartFolder(const CStdString &dir);
-  typedef std::map<CStdString,unsigned int> JobMap;
+private:
+  class CDownloadJob
+  {
+  public:
+    CDownloadJob(unsigned int id)
+    {
+      jobID = id;
+      progress = 0;
+    }
+    unsigned int jobID;
+    unsigned int progress;
+  };
+  typedef std::map<CStdString,CDownloadJob> JobMap;
   JobMap m_downloadJobs;
   CCriticalSection m_critSection;
   CPictureThumbLoader m_thumbLoader;
