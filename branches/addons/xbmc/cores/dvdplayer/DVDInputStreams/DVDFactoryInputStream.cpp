@@ -73,12 +73,6 @@ CDVDInputStream* CDVDFactoryInputStream::CreateInputStream(IDVDPlayer* pPlayer, 
   else if(file.substr(0, 7) == "htsp://")
     return new CDVDInputStreamHTSP();
 #endif
-  //else if (item.IsShoutCast())
-  //  /* this should be replaced with standard file as soon as ffmpeg can handle raw aac */
-  //  /* currently ffmpeg isn't able to detect that */
-  //  return (new CDVDInputStreamHttp());
-  //else if (item.IsInternetStream() )  
-  //  return (new CDVDInputStreamHttp());
   
   // our file interface handles all these types of streams
   return (new CDVDInputStreamFile());

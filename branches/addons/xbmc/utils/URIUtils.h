@@ -70,7 +70,6 @@ public:
   static bool IsScript(const CStdString& strFile);
   static bool IsRAR(const CStdString& strFile);
   static bool IsRemote(const CStdString& strFile);
-  static bool IsShoutCast(const CStdString& strFile);
   static bool IsSmb(const CStdString& strFile);
   static bool IsSpecial(const CStdString& strFile);
   static bool IsStack(const CStdString& strFile);
