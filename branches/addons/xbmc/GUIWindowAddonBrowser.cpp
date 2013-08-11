@@ -360,8 +360,12 @@ pair<CFileOperationJob*,unsigned int> CGUIWindowAddonBrowser::AddJob(const CStdS
   CStdString dest="special://home/addons/packages/";
   CStdString package = URIUtils::AddFileToFolder("special://home/addons/packages/",
                                               URIUtils::GetFileName(path));
-  // check for cached copy
   if (URIUtils::HasSlashAtEnd(path))
+  {
+    dest = "special://home/addons/";
+    list.Add(CFileItemPtr(new CFileItem(path,true)));
+  }
+  else
   {
     // check for cached copy
     if (CFile::Exists(package))
@@ -375,11 +379,6 @@ pair<CFileOperationJob*,unsigned int> CGUIWindowAddonBrowser::AddJob(const CStdS
     {
       list.Add(CFileItemPtr(new CFileItem(path,false)));
     }
-    dest = "special://home/addons/";
-  }
-  else
-  {
-    list.Add(CFileItemPtr(new CFileItem(path,false)));
   }
 
   list[0]->Select(true);
