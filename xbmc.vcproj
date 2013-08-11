@@ -1477,12 +1477,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\programs\GUIViewStatePrograms.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\GUIViewStateScripts.cpp">
-				</File>
-				<File
-					RelativePath=".\xbmc\GUIViewStateScripts.h">
-				</File>
-				<File
 					RelativePath=".\xbmc\GUIWindowAddonBrowser.cpp">
 				</File>
 				<File
@@ -1523,9 +1517,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 				</File>
 				<File
 					RelativePath=".\xbmc\windows\GUIWindowScreensaver.cpp">
-				</File>
-				<File
-					RelativePath=".\xbmc\GUIWindowScripts.cpp">
 				</File>
 				<File
 					RelativePath=".\xbmc\pictures\GUIWindowSlideShow.cpp">
@@ -2826,10 +2817,10 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 					RelativePath=".\xbmc\addons\Visualisation.cpp">
 				</File>
 				<File
-					RelativePath=".\xbmc\addonssc\Visualisation.h">
+					RelativePath=".\xbmc\addons\Visualisation.h">
 				</File>
 				<File
-					RelativePath=".\xbmc\addons\Visualisation.h">
+					RelativePath=".\xbmc\addonssc\Visualisation.h">
 				</File>
 			</Filter>
 			<Filter
@@ -3101,9 +3092,6 @@ bundler xbelogo\saveimage.rdf -o xbelogo\saveimage.xbx
 			</File>
 			<File
 				RelativePath=".\xbmc\windows\GUIWindowScreensaver.h">
-			</File>
-			<File
-				RelativePath=".\xbmc\GUIWindowScripts.h">
 			</File>
 			<File
 				RelativePath=".\xbmc\settings\GUIWindowSettings.h">
