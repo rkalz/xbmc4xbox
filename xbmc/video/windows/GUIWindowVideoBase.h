@@ -38,7 +38,6 @@ public:
   int  GetResumeItemOffset(const CFileItem *item);
 
   void AddToDatabase(int iItem);
-  static void OnScan(const CStdString& strPath, bool scanAll = false);
   virtual void OnInfo(CFileItem* pItem, const ADDON::ScraperPtr& scraper);
   virtual void OnStreamDetails(const CStreamDetails &details, const CStdString &strFileName, long lFileId);
   static void MarkWatched(const CFileItemPtr &pItem, bool bMark);
@@ -60,6 +59,7 @@ public:
   static void AppendAndClearSearchItems(CFileItemList &searchItems, const CStdString &prependLabel, CFileItemList &results);
 
 protected:
+  void OnScan(const CStdString& strPath, bool scanAll = false);
   virtual void UpdateButtons();
   virtual bool Update(const CStdString &strDirectory);
   virtual bool GetDirectory(const CStdString &strDirectory, CFileItemList &items);

@@ -24,7 +24,7 @@
 #include "GUIDialogKeyboard.h"
 #include "dialogs/GUIDialogFileBrowser.h"
 #include "settings/GUIDialogContentSettings.h"
-#include "video/windows/GUIWindowVideoFiles.h"
+#include "dialogs/GUIDialogVideoScan.h"
 #include "GUIWindowManager.h"
 #include "Util.h"
 #include "utils/URIUtils.h"
@@ -160,8 +160,11 @@ bool CGUIDialogMediaSource::ShowAndAddMediaSource(const CStdString &type)
     if (type == "video")
     {
       if (dialog->m_bRunScan)
-        CGUIWindowVideoBase::OnScan(share.strPath, true);
-
+      {
+        CGUIDialogVideoScan* scanner = (CGUIDialogVideoScan*)g_windowManager.GetWindow(WINDOW_DIALOG_VIDEO_SCAN);
+        if (scanner)
+          scanner->StartScanning(share.strPath, true);
+      }
     }
   }
   dialog->m_paths->Clear();
