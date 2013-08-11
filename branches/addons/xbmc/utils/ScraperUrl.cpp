@@ -181,13 +181,11 @@ const CScraperUrl::SUrlEntry CScraperUrl::GetSeasonThumb(int season) const
   return result;
 }
 
-bool CScraperUrl::Get(const SUrlEntry& scrURL, std::string& strHTML, XFILE::CCurlFile& http, const CStdString& cacheContext1)
+bool CScraperUrl::Get(const SUrlEntry& scrURL, std::string& strHTML, XFILE::CCurlFile& http, const CStdString& cacheContext)
 {
   CURL url(scrURL.m_url);
   http.SetReferer(scrURL.m_spoof);
   CStdString strCachePath;
-
-  CStdString cacheContext = URIUtils::GetFileName(cacheContext1);
 
   if (scrURL.m_isgz)
     http.SetContentEncoding("gzip");
