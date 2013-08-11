@@ -328,7 +328,7 @@ void CGUIWindowVideoFiles::OnAssignContent(int iItem, int iFound, ADDON::Scraper
     m_database.SetScraperForPath(item->GetPath(),info,settings);
     m_database.Close();
 
-    if (!settings.exclude && bScan)
+    if (bScan)
     {
       OnScan(item->GetPath());
     }
