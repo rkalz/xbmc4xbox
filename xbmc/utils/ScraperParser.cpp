@@ -116,6 +116,19 @@ bool CScraperParser::LoadFromXML()
         m_SearchStringEncoding = "UTF-8";
     }
 
+    pChildElement = m_pRootElement->FirstChildElement("CreateArtistSearchUrl");
+    if (pChildElement)
+    {
+      if (!(m_SearchStringEncoding = pChildElement->Attribute("SearchStringEncoding")))
+        m_SearchStringEncoding = "UTF-8";
+    }
+    pChildElement = m_pRootElement->FirstChildElement("CreateAlbumSearchUrl");
+    if (pChildElement)
+    {
+      if (!(m_SearchStringEncoding = pChildElement->Attribute("SearchStringEncoding")))
+        m_SearchStringEncoding = "UTF-8";
+    }
+
     return true;
   }
 

@@ -100,6 +100,8 @@ void CMusicInfoScraper::FindAlbumInfo()
   vector<CStdString> extras;
   extras.push_back(strAlbum);
   extras.push_back(m_strArtist);
+  g_charsetConverter.utf8To(m_scraper->GetParser().GetSearchStringEncoding(), strAlbum, extras[0]);
+  g_charsetConverter.utf8To(m_scraper->GetParser().GetSearchStringEncoding(), m_strArtist, extras[1]);
   CURL::Encode(extras[0]);
   CURL::Encode(extras[1]);
 
@@ -184,6 +186,7 @@ void CMusicInfoScraper::FindArtistInfo()
 
   vector<CStdString> extras;
   extras.push_back(m_strArtist);
+  g_charsetConverter.utf8To(m_scraper->GetParser().GetSearchStringEncoding(), m_strArtist, extras[0]);
   CURL::Encode(extras[0]);
 
   CLog::Log(LOGDEBUG, "%s: Searching for '%s' using %s scraper (file: '%s', content: '%s')",
