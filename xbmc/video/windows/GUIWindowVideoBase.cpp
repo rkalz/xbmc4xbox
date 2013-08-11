@@ -1863,7 +1863,7 @@ void CGUIWindowVideoBase::OnScan(const CStdString& strPath, bool scanAll)
 {
   CGUIDialogVideoScan* pDialog = (CGUIDialogVideoScan*)g_windowManager.GetWindow(WINDOW_DIALOG_VIDEO_SCAN);
   if (pDialog)
-    pDialog->StartScanning(strPath, false, scanAll);
+    pDialog->StartScanning(strPath, scanAll);
 }
 
 void CGUIWindowVideoBase::AppendAndClearSearchItems(CFileItemList &searchItems, const CStdString &prependLabel, CFileItemList &results)
