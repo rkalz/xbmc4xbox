@@ -912,7 +912,7 @@ bool CGUIWindowVideoBase::OnInfo(int iItem)
 
   CFileItemPtr item = m_vecItems->Get(iItem);
 
-  if (item->m_strPath.Equals("add") || item->IsParentFolder())
+  if (item->GetPath().Equals("add") || item->IsParentFolder())
     return false;
 
   ADDON::ScraperPtr scraper;
@@ -926,26 +926,26 @@ bool CGUIWindowVideoBase::OnInfo(int iItem)
       strDir = item->GetVideoInfoTag()->m_strPath;
     }
     else
-      CUtil::GetDirectory(item->m_strPath,strDir);
+      URIUtils::GetDirectory(item->GetPath(),strDir);
 
     SScanSettings settings;
     bool foundDirectly = false;
     scraper = m_database.GetScraperForPath(strDir, settings, foundDirectly);
 
     if (!scraper &&
-        !(m_database.HasMovieInfo(item->m_strPath) ||
+        !(m_database.HasMovieInfo(item->GetPath()) ||
           m_database.HasTvShowInfo(strDir)           ||
-          m_database.HasEpisodeInfo(item->m_strPath)))
+          m_database.HasEpisodeInfo(item->GetPath())))
     {
       // hack
       CGUIDialogVideoScan* pDialog = (CGUIDialogVideoScan*)g_windowManager.GetWindow(WINDOW_DIALOG_VIDEO_SCAN);
       if (pDialog && pDialog->IsScanning())
         return true;
 
-      CStdString strOldPath = item->m_strPath;
-      item->m_strPath = strDir;
+      CStdString strOldPath = item->GetPath();
+      item->SetPath(strDir);
       OnAssignContent(iItem,1, scraper, settings);
-      item->m_strPath = strOldPath;
+      item->SetPath(strOldPath);
       return true;
     }
 
