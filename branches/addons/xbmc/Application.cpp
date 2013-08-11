@@ -4628,7 +4628,6 @@ void CApplication::CheckShutdown()
     m_applicationMessenger.Shutdown(); // Turn off the box
   }
 #endif
-  ADDON::CAddonMgr::Get().UpdateRepos();
 }
 
 //Check if hd spindown must be blocked
@@ -5176,6 +5175,9 @@ void CApplication::ProcessSlow()
 
   //Check to see if current playing Title has changed and whether we should broadcast the fact
   CheckForTitleChange();
+  
+  if (!IsPlayingVideo())
+    ADDON::CAddonMgr::Get().UpdateRepos();
 }
 
 // Global Idle Time in Seconds
