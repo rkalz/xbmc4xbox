@@ -44,7 +44,6 @@ public:
   virtual bool GetDirectory(const CStdString& strPath, CFileItemList& items);
   virtual bool IsAllowed(const CStdString &strFile) const { return true; };
   static bool RunScriptWithParams(const CStdString& strPath);
-  bool StartScript(const CStdString& strPath);
   static bool GetPluginResult(const CStdString& strPath, CFileItem &resultItem);
 
   // callbacks from python
@@ -61,7 +60,8 @@ public:
 
 private:
   ADDON::AddonPtr m_addon;
-  bool WaitOnScriptResult(const CStdString &scriptPath, const CStdString &scriptName);
+  bool StartScript(const CStdString& strPath, bool retrievingDir);
+  bool WaitOnScriptResult(const CStdString &scriptPath, const CStdString &scriptName, bool retrievingDir);
 
   static std::vector<CPluginDirectory*> globalHandles;
   static int getNewHandle(CPluginDirectory *cp);
