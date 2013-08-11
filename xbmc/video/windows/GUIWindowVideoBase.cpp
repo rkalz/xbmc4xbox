@@ -1007,24 +1007,27 @@ void CGUIWindowVideoBase::GetContextButtons(int itemNumber, CContextButtons &but
       CStdString path(item->GetPath());
       if (item->IsVideoDb() && item->HasVideoInfoTag())
         path = item->GetVideoInfoTag()->m_strFileNameAndPath;
-      if (URIUtils::IsStack(path))
+      if (!item->IsPlugin() && !item->IsAddonsPath() && !item->IsLiveTV())
       {
-        vector<int> times;
-        if (m_database.GetStackTimes(path,times))
-          buttons.Add(CONTEXT_BUTTON_PLAY_PART, 20324);
-      }
+        if (URIUtils::IsStack(path))
+        {
+          vector<int> times;
+          if (m_database.GetStackTimes(path,times))
+            buttons.Add(CONTEXT_BUTTON_PLAY_PART, 20324);
+        }
 
-      if (GetID() != WINDOW_VIDEO_NAV || (!m_vecItems->GetPath().IsEmpty() &&
-         !item->GetPath().Left(19).Equals("newsmartplaylist://")))
-      {
-        buttons.Add(CONTEXT_BUTTON_QUEUE_ITEM, 13347);      // Add to Playlist
-      }
+        if (GetID() != WINDOW_VIDEO_NAV || (!m_vecItems->GetPath().IsEmpty() &&
+           !item->GetPath().Left(19).Equals("newsmartplaylist://")))
+        {
+          buttons.Add(CONTEXT_BUTTON_QUEUE_ITEM, 13347);      // Add to Playlist
+        }
 
-      // allow a folder to be ad-hoc queued and played by the default player
-      if (item->m_bIsFolder || (item->IsPlayList() &&
-         !g_advancedSettings.m_playlistAsFolders))
-      {
-        buttons.Add(CONTEXT_BUTTON_PLAY_ITEM, 208);
+        // allow a folder to be ad-hoc queued and played by the default player
+        if (item->m_bIsFolder || (item->IsPlayList() &&
+           !g_advancedSettings.m_playlistAsFolders))
+        {
+          buttons.Add(CONTEXT_BUTTON_PLAY_ITEM, 208);
+        }
       }
       else
       { // get players
