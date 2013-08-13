@@ -1198,14 +1198,15 @@ HRESULT CApplication::Initialize()
 
   CDirectory::Create(g_settings.GetProfilesThumbFolder());
 
-  CUtil::WipeDir("Z:\\");
-  CreateDirectory("Z:\\temp", NULL); // temp directory for python and dllGetTempPathA
-  CreateDirectory("Q:\\scripts", NULL);
-  CreateDirectory("Q:\\language", NULL);
-  CreateDirectory("Q:\\sounds", NULL);
-  CreateDirectory(g_settings.GetUserDataFolder()+"\\visualisations",NULL);
-  CreateDirectory(g_settings.GetUserDataFolder()+"\\addons",NULL);
-  CreateDirectory(g_settings.GetUserDataFolder()+"\\addons\\packages",NULL);
+  CDirectory::Create("special://home/");
+  CDirectory::Create("special://home/addons");
+  CDirectory::Create("special://home/addons/packages");
+  CDirectory::Create("special://home/media");
+  CDirectory::Create("special://home/sounds");
+  CDirectory::Create("special://home/system");
+  CDirectory::Create("special://masterprofile");
+  CUtil::WipeDir("special://temp/");
+  CDirectory::Create("special://temp/temp"); // temp directory for python and dllGetTempPathA
 
   // initialize network
   if (!m_bXboxMediacenterLoaded)
@@ -5771,11 +5772,11 @@ void CApplication::InitDirectoriesXbox()
 
   // map our special drives to the correct drive letter
   CSpecialProtocol::SetXBMCPath(install_path);
-  CSpecialProtocol::SetHomePath(install_path);
+  CSpecialProtocol::SetHomePath("Q:\\home");
   CSpecialProtocol::SetTempPath("Z:\\");
 
   // First profile is always the Master Profile
-  CSpecialProtocol::SetMasterProfilePath("Q:\\UserData");
+  CSpecialProtocol::SetMasterProfilePath("Q:\\home\\UserData");
 
   g_settings.LoadProfiles(PROFILES_FILE);
 }
