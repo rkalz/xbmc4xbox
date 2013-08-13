@@ -1,8 +1,8 @@
 @echo off
 ECHO ----------------------------------------
 echo Creating Confluence Build Folder
-rmdir ..\..\project\Win32BuildSetup\BUILD_WIN32\Xbmc\addons\skin.confluence\ /S /Q
-md ..\..\project\Win32BuildSetup\BUILD_WIN32\Xbmc\addons\skin.confluence\media\
+rmdir ..\..\BUILDTMP /S /Q
+md ..\..\BUILDTMP\skin.confluence\media\
 
 Echo .svn>exclude.txt
 Echo Thumbs.db>>exclude.txt
@@ -13,12 +13,12 @@ Echo \skin.confluence\media\>>exclude.txt
 Echo exclude.txt>>exclude.txt
 
 ECHO ----------------------------------------
-ECHO Creating XBT File...
-START /B /WAIT ..\..\Tools\TexturePacker\TexturePacker -input media -output ..\..\project\Win32BuildSetup\BUILD_WIN32\Xbmc\addons\skin.confluence\media\Textures.xbt
+ECHO Creating XPR File...
+START /B /WAIT ..\..\Tools\XBMCTex\XBMCTex -input media -output ..\..\BUILDTMP\skin.confluence\media -noprotect
 
 ECHO ----------------------------------------
 ECHO XBT Texture Files Created...
 ECHO Building Skin Directory...
-xcopy "..\skin.confluence" "..\..\project\Win32BuildSetup\BUILD_WIN32\Xbmc\addons\skin.confluence" /E /Q /I /Y /EXCLUDE:exclude.txt
+xcopy "..\skin.confluence" "..\..\BUILDTMP\skin.confluence" /E /Q /I /Y /EXCLUDE:exclude.txt
 
 del exclude.txt

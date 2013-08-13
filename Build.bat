@@ -17,7 +17,7 @@ SET XBE_PATCH=tools\xbepatch\xbepatch.exe
 
 SET COMPRESS_FILE=XBMC4XBOX.zip
 SET COMPRESS=C:\Program Files\7-zip\7z.exe
-SET COMPRESS_OPTS=a %COMPRESS_FILE% -r
+SET COMPRESS_OPTS=a %COMPRESS_FILE%
 
 SET Silent=0
 SET SkipCompression=0
@@ -202,8 +202,10 @@ GOTO:EOF
   ECHO Desktop.ini>>exclude.txt
   ECHO dsstdfx.bin>>exclude.txt
   ECHO exclude.txt>>exclude.txt
+  ECHO addons\skin >>exclude.txt
 
-  xcopy UserData %~1\UserData /E /Q /I /Y /EXCLUDE:exclude.txt
+  mkdir %~1\home
+  xcopy UserData %~1\home\UserData /E /Q /I /Y /EXCLUDE:exclude.txt
   xcopy *.txt %~1 /EXCLUDE:exclude.txt
 
   SET RUN_ME=%~1\run_me.bat
@@ -220,26 +222,24 @@ GOTO:EOF
     ECHO subst q: /D >>%RUN_ME%
   )
 
-  cd "skin\PM3.HD"
+  cd "addons/skin.confluence"
   CALL build.bat
   cd ..\..
-  xcopy "skin\PM3.HD\BUILD\PM3.HD" "%~1\skin\PM3.HD" /E /Q /I /Y /EXCLUDE:exclude.txt
+  xcopy "BUILDTMP\skin.confluence" "%~1\addons\skin.confluence" /E /Q /I /Y /EXCLUDE:exclude.txt
 
-  cd "skin\Confluence Lite"
-  CALL build.bat
-  cd ..\..
-  xcopy "skin\Confluence Lite\BUILD\Confluence Lite" "%~1\skin\Confluence Lite" /E /Q /I /Y /EXCLUDE:exclude.txt
-
-  xcopy credits %~1\credits /Q /I /Y /EXCLUDE:exclude.txt
+  rmdir BUILDTMP /S /Q
+  
+  xcopy addons %~1\addons /E /Q /I /Y /EXCLUDE:exclude.txt
+  rem xcopy credits %~1\credits /Q /I /Y /EXCLUDE:exclude.txt
   xcopy language %~1\language /E /Q /I /Y /EXCLUDE:exclude.txt
-  xcopy screensavers %~1\screensavers /E /Q /I /Y /EXCLUDE:exclude.txt
-  xcopy visualisations %~1\visualisations /E /Q /I /Y /EXCLUDE:exclude.txt
+  rem xcopy screensavers %~1\screensavers /E /Q /I /Y /EXCLUDE:exclude.txt
+  rem xcopy visualisations %~1\visualisations /E /Q /I /Y /EXCLUDE:exclude.txt
   xcopy system %~1\system /E /Q /I /Y /EXCLUDE:exclude.txt
   xcopy web\XBMC_Reloaded %~1\web /E /Q /I /Y /EXCLUDE:exclude.txt
   xcopy media   %~1\media   /E /Q /I /Y /EXCLUDE:exclude.txt
-  xcopy plugins %~1\plugins /E /Q /I /Y /EXCLUDE:exclude.txt
+  rem xcopy plugins %~1\plugins /E /Q /I /Y /EXCLUDE:exclude.txt
   xcopy sounds  %~1\sounds  /E /Q /I /Y /EXCLUDE:exclude.txt
-  xcopy scripts %~1\scripts /E /Q /I /Y /EXCLUDE:exclude.txt
+  rem xcopy scripts %~1\scripts /E /Q /I /Y /EXCLUDE:exclude.txt
   
   del exclude.txt
   GOTO:EOF
@@ -251,7 +251,7 @@ GOTO:EOF
   ECHO ------------------------------------------------------------
   IF EXIST "%COMPRESS%" (
     DEL %COMPRESS_FILE%
-    "%COMPRESS%" %COMPRESS_OPTS% %~1
+    "%COMPRESS%" %COMPRESS_OPTS% "%~1"
   ) ELSE ( 
     ECHO 7-Zip not installed!  Skipping compression...
   )
