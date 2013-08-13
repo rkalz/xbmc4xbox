@@ -18,8 +18,6 @@ class LegacyBase64TestCase(unittest.TestCase):
            "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE"
            "RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNT"
            "Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==\n")
-        # Non-bytes
-        eq(base64.encodestring(bytearray('abc')), 'YWJj\n')
 
     def test_decodestring(self):
         eq = self.assertEqual
@@ -34,8 +32,6 @@ class LegacyBase64TestCase(unittest.TestCase):
            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
            "0123456789!@#0^&*();:<>,. []{}")
         eq(base64.decodestring(''), '')
-        # Non-bytes
-        eq(base64.decodestring(bytearray("YWJj\n")), "abc")
 
     def test_encode(self):
         eq = self.assertEqual
@@ -77,10 +73,6 @@ class BaseXYTestCase(unittest.TestCase):
            "Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==")
         # Test with arbitrary alternative characters
         eq(base64.b64encode('\xd3V\xbeo\xf7\x1d', altchars='*$'), '01a*b$cd')
-        # Non-bytes
-        eq(base64.b64encode(bytearray('abcd')), 'YWJjZA==')
-        self.assertRaises(TypeError, base64.b64encode,
-                          '\xd3V\xbeo\xf7\x1d', altchars=bytearray('*$'))
         # Test standard alphabet
         eq(base64.standard_b64encode("www.python.org"), "d3d3LnB5dGhvbi5vcmc=")
         eq(base64.standard_b64encode("a"), "YQ==")
@@ -93,12 +85,8 @@ class BaseXYTestCase(unittest.TestCase):
            "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE"
            "RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0NT"
            "Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==")
-        # Non-bytes
-        eq(base64.standard_b64encode(bytearray('abcd')), 'YWJjZA==')
         # Test with 'URL safe' alternative characters
         eq(base64.urlsafe_b64encode('\xd3V\xbeo\xf7\x1d'), '01a-b_cd')
-        # Non-bytes
-        eq(base64.urlsafe_b64encode(bytearray('\xd3V\xbeo\xf7\x1d')), '01a-b_cd')
 
     def test_b64decode(self):
         eq = self.assertEqual
@@ -116,8 +104,6 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.b64decode(''), '')
         # Test with arbitrary alternative characters
         eq(base64.b64decode('01a*b$cd', altchars='*$'), '\xd3V\xbeo\xf7\x1d')
-        # Non-bytes
-        eq(base64.b64decode(bytearray("YWJj")), "abc")
         # Test standard alphabet
         eq(base64.standard_b64decode("d3d3LnB5dGhvbi5vcmc="), "www.python.org")
         eq(base64.standard_b64decode("YQ=="), "a")
@@ -130,12 +116,8 @@ class BaseXYTestCase(unittest.TestCase):
            "abcdefghijklmnopqrstuvwxyz"
            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
            "0123456789!@#0^&*();:<>,. []{}")
-        # Non-bytes
-        eq(base64.standard_b64decode(bytearray("YWJj")), "abc")
         # Test with 'URL safe' alternative characters
         eq(base64.urlsafe_b64decode('01a-b_cd'), '\xd3V\xbeo\xf7\x1d')
-        # Non-bytes
-        eq(base64.urlsafe_b64decode(bytearray('01a-b_cd')), '\xd3V\xbeo\xf7\x1d')
 
     def test_b64decode_error(self):
         self.assertRaises(TypeError, base64.b64decode, 'abc')
@@ -149,8 +131,6 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.b32encode('abc'), 'MFRGG===')
         eq(base64.b32encode('abcd'), 'MFRGGZA=')
         eq(base64.b32encode('abcde'), 'MFRGGZDF')
-        # Non-bytes
-        eq(base64.b32encode(bytearray('abcd')), 'MFRGGZA=')
 
     def test_b32decode(self):
         eq = self.assertEqual
@@ -161,8 +141,6 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.b32decode('MFRGG==='), 'abc')
         eq(base64.b32decode('MFRGGZA='), 'abcd')
         eq(base64.b32decode('MFRGGZDF'), 'abcde')
-        # Non-bytes
-        self.assertRaises(TypeError, base64.b32decode, bytearray('MFRGG==='))
 
     def test_b32decode_casefold(self):
         eq = self.assertEqual
@@ -193,8 +171,6 @@ class BaseXYTestCase(unittest.TestCase):
         eq = self.assertEqual
         eq(base64.b16encode('\x01\x02\xab\xcd\xef'), '0102ABCDEF')
         eq(base64.b16encode('\x00'), '00')
-        # Non-bytes
-        eq(base64.b16encode(bytearray('\x01\x02\xab\xcd\xef')), '0102ABCDEF')
 
     def test_b16decode(self):
         eq = self.assertEqual
@@ -204,13 +180,19 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertRaises(TypeError, base64.b16decode, '0102abcdef')
         # Case fold
         eq(base64.b16decode('0102abcdef', True), '\x01\x02\xab\xcd\xef')
-        # Non-bytes
-        eq(base64.b16decode(bytearray("0102ABCDEF")), '\x01\x02\xab\xcd\xef')
 
 
 
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(LegacyBase64TestCase))
+    suite.addTest(unittest.makeSuite(BaseXYTestCase))
+    return suite
+
+
 def test_main():
-    test_support.run_unittest(__name__)
+    test_support.run_suite(suite())
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main(defaultTest='suite')

@@ -1,35 +1,42 @@
 
-import os
+import sys, os, string
 import pickle
-import sys
-
-if sys.version_info[0] < 3 :
-    try:
-        import cPickle
-    except ImportError:
-        cPickle = None
-else :
+try:
+    import cPickle
+except ImportError:
     cPickle = None
-
 import unittest
+import glob
 
-from test_all import db, test_support, get_new_environment_path, get_new_database_path
+try:
+    # For Pythons w/distutils pybsddb
+    from bsddb3 import db
+except ImportError, e:
+    # For Python 2.3
+    from bsddb import db
+
 
 #----------------------------------------------------------------------
 
 class pickleTestCase(unittest.TestCase):
     """Verify that DBError can be pickled and unpickled"""
+    db_home = 'db_home'
     db_name = 'test-dbobj.db'
 
     def setUp(self):
-        self.homeDir = get_new_environment_path()
+        homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
+        self.homeDir = homeDir
+        try: os.mkdir(homeDir)
+        except os.error: pass
 
     def tearDown(self):
         if hasattr(self, 'db'):
             del self.db
         if hasattr(self, 'env'):
             del self.env
-        test_support.rmtree(self.homeDir)
+        files = glob.glob(os.path.join(self.homeDir, '*'))
+        for file in files:
+            os.remove(file)
 
     def _base_test_pickle_DBError(self, pickle):
         self.env = db.DBEnv()
@@ -37,7 +44,7 @@ class pickleTestCase(unittest.TestCase):
         self.db = db.DB(self.env)
         self.db.open(self.db_name, db.DB_HASH, db.DB_CREATE)
         self.db.put('spam', 'eggs')
-        self.assertEqual(self.db['spam'], 'eggs')
+        assert self.db['spam'] == 'eggs'
         try:
             self.db.put('spam', 'ham', flags=db.DB_NOOVERWRITE)
         except db.DBError, egg:

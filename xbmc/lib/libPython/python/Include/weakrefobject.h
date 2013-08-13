@@ -44,10 +44,10 @@ PyAPI_DATA(PyTypeObject) _PyWeakref_CallableProxyType;
 
 #define PyWeakref_CheckRef(op) PyObject_TypeCheck(op, &_PyWeakref_RefType)
 #define PyWeakref_CheckRefExact(op) \
-        (Py_TYPE(op) == &_PyWeakref_RefType)
+        ((op)->ob_type == &_PyWeakref_RefType)
 #define PyWeakref_CheckProxy(op) \
-        ((Py_TYPE(op) == &_PyWeakref_ProxyType) || \
-         (Py_TYPE(op) == &_PyWeakref_CallableProxyType))
+        (((op)->ob_type == &_PyWeakref_ProxyType) || \
+         ((op)->ob_type == &_PyWeakref_CallableProxyType))
 
 /* This macro calls PyWeakref_CheckRef() last since that can involve a
    function call; this makes it more likely that the function call
@@ -62,21 +62,11 @@ PyAPI_FUNC(PyObject *) PyWeakref_NewProxy(PyObject *ob,
                                                 PyObject *callback);
 PyAPI_FUNC(PyObject *) PyWeakref_GetObject(PyObject *ref);
 
-PyAPI_FUNC(Py_ssize_t) _PyWeakref_GetWeakrefCount(PyWeakReference *head);
+PyAPI_FUNC(long) _PyWeakref_GetWeakrefCount(PyWeakReference *head);
 
 PyAPI_FUNC(void) _PyWeakref_ClearRef(PyWeakReference *self);
 
-/* Explanation for the Py_REFCNT() check: when a weakref's target is part
-   of a long chain of deallocations which triggers the trashcan mechanism,
-   clearing the weakrefs can be delayed long after the target's refcount
-   has dropped to zero.  In the meantime, code accessing the weakref will
-   be able to "see" the target object even though it is supposed to be
-   unreachable.  See issue #16602. */
-
-#define PyWeakref_GET_OBJECT(ref)                           \
-    (Py_REFCNT(((PyWeakReference *)(ref))->wr_object) > 0   \
-     ? ((PyWeakReference *)(ref))->wr_object                \
-     : Py_None)
+#define PyWeakref_GET_OBJECT(ref) (((PyWeakReference *)(ref))->wr_object)
 
 
 #ifdef __cplusplus

@@ -3,6 +3,8 @@
 import copy
 import xml.dom
 
+from xml.dom.minicompat import *
+
 from xml.dom.NodeFilter import NodeFilter
 
 
@@ -91,7 +93,7 @@ class DOMBuilder:
 
     def canSetFeature(self, name, state):
         key = (_name_xform(name), state and 1 or 0)
-        return key in self._settings
+        return self._settings.has_key(key)
 
     # This dictionary maps from (feature,value) to a list of
     # (option,value) pairs that should be set on the Options object.
@@ -209,7 +211,7 @@ def _name_xform(name):
     return name.lower().replace('-', '_')
 
 
-class DOMEntityResolver(object):
+class DOMEntityResolver(NewStyle):
     __slots__ = '_opener',
 
     def resolveEntity(self, publicId, systemId):
@@ -247,13 +249,13 @@ class DOMEntityResolver(object):
 
     def _guess_media_encoding(self, source):
         info = source.byteStream.info()
-        if "Content-Type" in info:
+        if info.has_key("Content-Type"):
             for param in info.getplist():
                 if param.startswith("charset="):
                     return param.split("=", 1)[1].lower()
 
 
-class DOMInputSource(object):
+class DOMInputSource(NewStyle):
     __slots__ = ('byteStream', 'characterStream', 'stringData',
                  'encoding', 'publicId', 'systemId', 'baseURI')
 

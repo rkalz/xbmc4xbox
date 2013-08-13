@@ -3,10 +3,9 @@
 """
 
 from Tkinter import *
-import os
-
-from idlelib import textView
-from idlelib import idlever
+import string, os
+import textView
+import idlever
 
 class AboutDialog(Toplevel):
     """Modal about dialog for idle
@@ -66,7 +65,12 @@ class AboutDialog(Toplevel):
         labelPythonVer = Label(frameBg, text='Python version:  ' + \
                                sys.version.split()[0], fg=self.fg, bg=self.bg)
         labelPythonVer.grid(row=9, column=0, sticky=W, padx=10, pady=0)
-        tkVer = self.tk.call('info', 'patchlevel')
+        # handle weird tk version num in windoze python >= 1.6 (?!?)
+        tkVer = repr(TkVersion).split('.')
+        tkVer[len(tkVer)-1] = str('%.3g' % (float('.'+tkVer[len(tkVer)-1])))[2:]
+        if tkVer[len(tkVer)-1] == '':
+            tkVer[len(tkVer)-1] = '0'
+        tkVer = string.join(tkVer,'.')
         labelTkVer = Label(frameBg, text='Tk version:  '+
                            tkVer, fg=self.fg, bg=self.bg)
         labelTkVer.grid(row=9, column=1, sticky=W, padx=2, pady=0)
@@ -106,31 +110,45 @@ class AboutDialog(Toplevel):
         idle_credits_b.pack(side=LEFT, padx=10, pady=10)
 
     def ShowLicense(self):
-        self.display_printer_text('About - License', license)
+        self.display_printer_text(license, 'About - License')
 
     def ShowCopyright(self):
-        self.display_printer_text('About - Copyright', copyright)
+        self.display_printer_text(copyright, 'About - Copyright')
 
     def ShowPythonCredits(self):
-        self.display_printer_text('About - Python Credits', credits)
+        self.display_printer_text(credits, 'About - Python Credits')
 
     def ShowIDLECredits(self):
-        self.display_file_text('About - Credits', 'CREDITS.txt', 'iso-8859-1')
+        self.ViewFile('About - Credits','CREDITS.txt', 'iso-8859-1')
 
     def ShowIDLEAbout(self):
-        self.display_file_text('About - Readme', 'README.txt')
+        self.ViewFile('About - Readme', 'README.txt')
 
     def ShowIDLENEWS(self):
-        self.display_file_text('About - NEWS', 'NEWS.txt')
+        self.ViewFile('About - NEWS', 'NEWS.txt')
 
-    def display_printer_text(self, title, printer):
+    def display_printer_text(self, printer, title):
         printer._Printer__setup()
-        text = '\n'.join(printer._Printer__lines)
-        textView.view_text(self, title, text)
+        data = '\n'.join(printer._Printer__lines)
+        textView.TextViewer(self, title, None, data)
 
-    def display_file_text(self, title, filename, encoding=None):
-        fn = os.path.join(os.path.abspath(os.path.dirname(__file__)), filename)
-        textView.view_file(self, title, fn, encoding)
+    def ViewFile(self, viewTitle, viewFile, encoding=None):
+        fn = os.path.join(os.path.abspath(os.path.dirname(__file__)), viewFile)
+        if encoding:
+            import codecs
+            try:
+                textFile = codecs.open(fn, 'r')
+            except IOError:
+                import tkMessageBox
+                tkMessageBox.showerror(title='File Load Error',
+                                       message='Unable to load file %r .' % (fn,),
+                                       parent=self)
+                return
+            else:
+                data = textFile.read()
+        else:
+            data = None
+        textView.TextViewer(self, viewTitle, fn, data=data)
 
     def Ok(self, event=None):
         self.destroy()
@@ -139,7 +157,7 @@ if __name__ == '__main__':
     # test the dialog
     root = Tk()
     def run():
-        from idlelib import aboutDialog
+        import aboutDialog
         aboutDialog.AboutDialog(root, 'About')
     Button(root, text='Dialog', command=run).pack()
     root.mainloop()

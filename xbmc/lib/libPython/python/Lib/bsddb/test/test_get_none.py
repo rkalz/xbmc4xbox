@@ -2,17 +2,26 @@
 TestCases for checking set_get_returns_none.
 """
 
-import os, string
+import sys, os, string
+import tempfile
+from pprint import pprint
 import unittest
 
-from test_all import db, verbose, get_new_database_path
+try:
+    # For Pythons w/distutils pybsddb
+    from bsddb3 import db
+except ImportError:
+    # For Python 2.3
+    from bsddb import db
+
+from test_all import verbose
 
 
 #----------------------------------------------------------------------
 
 class GetReturnsNoneTestCase(unittest.TestCase):
     def setUp(self):
-        self.filename = get_new_database_path()
+        self.filename = tempfile.mktemp()
 
     def tearDown(self):
         try:
@@ -30,10 +39,10 @@ class GetReturnsNoneTestCase(unittest.TestCase):
             d.put(x, x * 40)
 
         data = d.get('bad key')
-        self.assertEqual(data, None)
+        assert data == None
 
-        data = d.get(string.letters[0])
-        self.assertEqual(data, string.letters[0]*40)
+        data = d.get('a')
+        assert data == 'a'*40
 
         count = 0
         c = d.cursor()
@@ -42,8 +51,8 @@ class GetReturnsNoneTestCase(unittest.TestCase):
             count = count + 1
             rec = c.next()
 
-        self.assertEqual(rec, None)
-        self.assertEqual(count, len(string.letters))
+        assert rec == None
+        assert count == 52
 
         c.close()
         d.close()
@@ -60,8 +69,8 @@ class GetReturnsNoneTestCase(unittest.TestCase):
         self.assertRaises(db.DBNotFoundError, d.get, 'bad key')
         self.assertRaises(KeyError, d.get, 'bad key')
 
-        data = d.get(string.letters[0])
-        self.assertEqual(data, string.letters[0]*40)
+        data = d.get('a')
+        assert data == 'a'*40
 
         count = 0
         exceptionHappened = 0
@@ -75,9 +84,9 @@ class GetReturnsNoneTestCase(unittest.TestCase):
                 exceptionHappened = 1
                 break
 
-        self.assertNotEqual(rec, None)
-        self.assertTrue(exceptionHappened)
-        self.assertEqual(count, len(string.letters))
+        assert rec != None
+        assert exceptionHappened
+        assert count == 52
 
         c.close()
         d.close()

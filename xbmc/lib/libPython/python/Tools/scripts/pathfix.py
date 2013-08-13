@@ -20,7 +20,7 @@
 # into a program for a different change to Python programs...
 
 import sys
-import re
+import regex
 import os
 from stat import *
 import getopt
@@ -59,7 +59,7 @@ def main():
             if fix(arg): bad = 1
     sys.exit(bad)
 
-ispythonprog = re.compile('^[a-zA-Z0-9_]+\.py$')
+ispythonprog = regex.compile('^[a-zA-Z0-9_]+\.py$')
 def ispython(name):
     return ispythonprog.match(name) >= 0
 

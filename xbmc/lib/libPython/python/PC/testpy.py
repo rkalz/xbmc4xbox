@@ -5,23 +5,23 @@ import sys
 # change this module too.
 
 try:
-    import os
+    import string
 except:
-    print """Could not import the standard "os" module.
+    print """Could not import the standard "string" module.
   Please check your PYTHONPATH environment variable."""
     sys.exit(1)
 
 try:
-    import symbol
+    import regex_syntax
 except:
-    print """Could not import the standard "symbol" module.  If this is
+    print """Could not import the standard "regex_syntax" module.  If this is
   a PC, you should add the dos_8x3 directory to your PYTHONPATH."""
     sys.exit(1)
 
 import os
 
 for dir in sys.path:
-    file = os.path.join(dir, "os.py")
+    file = os.path.join(dir, "string.py")
     if os.path.isfile(file):
         test = os.path.join(dir, "test")
         if os.path.isdir(test):

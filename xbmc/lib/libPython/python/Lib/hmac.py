@@ -3,13 +3,13 @@
 Implements the HMAC algorithm as described by RFC 2104.
 """
 
-import warnings as _warnings
-
-trans_5C = "".join ([chr (x ^ 0x5C) for x in xrange(256)])
-trans_36 = "".join ([chr (x ^ 0x36) for x in xrange(256)])
+def _strxor(s1, s2):
+    """Utility method. XOR the two strings s1 and s2 (must have same length).
+    """
+    return "".join(map(lambda x, y: chr(ord(x) ^ ord(y)), s1, s2))
 
 # The size of the digests returned by HMAC depends on the underlying
-# hashing module used.  Use digest_size from the instance of HMAC instead.
+# hashing module used.
 digest_size = None
 
 # A unique object passed by HMAC.copy() to the HMAC constructor, in order
@@ -18,59 +18,41 @@ digest_size = None
 _secret_backdoor_key = []
 
 class HMAC:
-    """RFC 2104 HMAC class.  Also complies with RFC 4231.
+    """RFC2104 HMAC class.
 
     This supports the API for Cryptographic Hash Functions (PEP 247).
     """
-    blocksize = 64  # 512-bit HMAC; can be changed in subclasses.
 
     def __init__(self, key, msg = None, digestmod = None):
         """Create a new HMAC object.
 
         key:       key for the keyed hash object.
         msg:       Initial input for the hash, if provided.
-        digestmod: A module supporting PEP 247.  *OR*
-                   A hashlib constructor returning a new hash object.
-                   Defaults to hashlib.md5.
+        digestmod: A module supporting PEP 247. Defaults to the md5 module.
         """
 
         if key is _secret_backdoor_key: # cheap
             return
 
         if digestmod is None:
-            import hashlib
-            digestmod = hashlib.md5
+            import md5
+            digestmod = md5
 
-        if hasattr(digestmod, '__call__'):
-            self.digest_cons = digestmod
-        else:
-            self.digest_cons = lambda d='': digestmod.new(d)
+        self.digestmod = digestmod
+        self.outer = digestmod.new()
+        self.inner = digestmod.new()
+        self.digest_size = digestmod.digest_size
 
-        self.outer = self.digest_cons()
-        self.inner = self.digest_cons()
-        self.digest_size = self.inner.digest_size
-
-        if hasattr(self.inner, 'block_size'):
-            blocksize = self.inner.block_size
-            if blocksize < 16:
-                # Very low blocksize, most likely a legacy value like
-                # Lib/sha.py and Lib/md5.py have.
-                _warnings.warn('block_size of %d seems too small; using our '
-                               'default of %d.' % (blocksize, self.blocksize),
-                               RuntimeWarning, 2)
-                blocksize = self.blocksize
-        else:
-            _warnings.warn('No block_size attribute on given digest object; '
-                           'Assuming %d.' % (self.blocksize),
-                           RuntimeWarning, 2)
-            blocksize = self.blocksize
+        blocksize = 64
+        ipad = "\x36" * blocksize
+        opad = "\x5C" * blocksize
 
         if len(key) > blocksize:
-            key = self.digest_cons(key).digest()
+            key = digestmod.new(key).digest()
 
         key = key + chr(0) * (blocksize - len(key))
-        self.outer.update(key.translate(trans_5C))
-        self.inner.update(key.translate(trans_36))
+        self.outer.update(_strxor(key, opad))
+        self.inner.update(_strxor(key, ipad))
         if msg is not None:
             self.update(msg)
 
@@ -87,21 +69,12 @@ class HMAC:
 
         An update to this copy won't affect the original object.
         """
-        other = self.__class__(_secret_backdoor_key)
-        other.digest_cons = self.digest_cons
+        other = HMAC(_secret_backdoor_key)
+        other.digestmod = self.digestmod
         other.digest_size = self.digest_size
         other.inner = self.inner.copy()
         other.outer = self.outer.copy()
         return other
-
-    def _current(self):
-        """Return a hash object for the current state.
-
-        To be used only internally with digest() and hexdigest().
-        """
-        h = self.outer.copy()
-        h.update(self.inner.digest())
-        return h
 
     def digest(self):
         """Return the hash value of this hashing object.
@@ -110,14 +83,15 @@ class HMAC:
         not altered in any way by this function; you can continue
         updating the object after calling this function.
         """
-        h = self._current()
+        h = self.outer.copy()
+        h.update(self.inner.digest())
         return h.digest()
 
     def hexdigest(self):
         """Like digest(), but returns a string of hexadecimal digits instead.
         """
-        h = self._current()
-        return h.hexdigest()
+        return "".join([hex(ord(x))[2:].zfill(2)
+                        for x in tuple(self.digest())])
 
 def new(key, msg = None, digestmod = None):
     """Create a new hashing object and return it.

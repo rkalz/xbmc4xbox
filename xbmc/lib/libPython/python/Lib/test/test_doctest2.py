@@ -12,11 +12,7 @@ the example.  It should be ignored:
 
 """
 
-import sys
-import unittest
 from test import test_support
-if sys.flags.optimize >= 2:
-    raise unittest.SkipTest("Cannot test docstrings with -O2")
 
 class C(object):
     u"""Class C.
@@ -84,7 +80,6 @@ class C(object):
         -12
         """)
 
-    @staticmethod
     def statm():
         """
         A static method.
@@ -96,7 +91,8 @@ class C(object):
         """
         return 666
 
-    @classmethod
+    statm = staticmethod(statm)
+
     def clsm(cls, val):
         """
         A class method.
@@ -107,6 +103,8 @@ class C(object):
         23
         """
         return val
+
+    clsm = classmethod(clsm)
 
 def test_main():
     from test import test_doctest2

@@ -1,8 +1,6 @@
 """A more or less complete user-defined wrapper around list objects."""
 
-import collections
-
-class UserList(collections.MutableSequence):
+class UserList:
     def __init__(self, initlist=None):
         self.data = []
         if initlist is not None:
@@ -25,7 +23,6 @@ class UserList(collections.MutableSequence):
         else: return other
     def __cmp__(self, other):
         return cmp(self.data, self.__cast(other))
-    __hash__ = None # Mutable sequence, so not hashable
     def __contains__(self, item): return item in self.data
     def __len__(self): return len(self.data)
     def __getitem__(self, i): return self.data[i]

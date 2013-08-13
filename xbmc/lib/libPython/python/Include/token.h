@@ -7,8 +7,6 @@
 extern "C" {
 #endif
 
-#undef TILDE   /* Prevent clash of our definition with system macro. Ex AIX, ioctl.h */
-
 #define ENDMARKER	0
 #define NAME		1
 #define NUMBER		2

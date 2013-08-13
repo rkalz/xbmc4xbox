@@ -2,8 +2,8 @@
    Test cases for pyclbr.py
    Nick Mathewson
 '''
-from test.test_support import run_unittest, import_module
-import sys
+from test.test_support import run_unittest
+import unittest, sys
 from types import ClassType, FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase
@@ -11,10 +11,8 @@ from unittest import TestCase
 StaticMethodType = type(staticmethod(lambda: None))
 ClassMethodType = type(classmethod(lambda c: None))
 
-# Silence Py3k warning
-import_module('commands', deprecated=True)
-
 # This next line triggers an error on old versions of pyclbr.
+
 from commands import getstatus
 
 # Here we test the python class browser code.
@@ -37,21 +35,21 @@ class PyclbrTest(TestCase):
         ''' succeed iff hasattr(obj,attr) or attr in ignore. '''
         if attr in ignore: return
         if not hasattr(obj, attr): print "???", attr
-        self.assertTrue(hasattr(obj, attr),
+        self.failUnless(hasattr(obj, attr),
                         'expected hasattr(%r, %r)' % (obj, attr))
 
 
     def assertHaskey(self, obj, key, ignore):
-        ''' succeed iff key in obj or key in ignore. '''
+        ''' succeed iff obj.has_key(key) or key in ignore. '''
         if key in ignore: return
-        if key not in obj:
-            print >>sys.stderr, "***", key
-        self.assertIn(key, obj)
+        if not obj.has_key(key):
+            print >>sys.stderr, "***",key
+        self.failUnless(obj.has_key(key))
 
     def assertEqualsOrIgnored(self, a, b, ignore):
         ''' succeed iff a == b or a in ignore or b in ignore '''
         if a not in ignore and b not in ignore:
-            self.assertEqual(a, b)
+            self.assertEquals(a, b)
 
     def checkModule(self, moduleName, module=None, ignore=()):
         ''' succeed iff pyclbr.readmodule_ex(modulename) corresponds
@@ -59,7 +57,7 @@ class PyclbrTest(TestCase):
             ignore are ignored.   If no module is provided, the appropriate
             module is loaded with __import__.'''
 
-        if module is None:
+        if module == None:
             # Import it.
             # ('<silly>' is to work around an API silliness in __import__)
             module = __import__(moduleName, globals(), {}, ['<silly>'])
@@ -94,15 +92,12 @@ class PyclbrTest(TestCase):
             self.assertHasattr(module, name, ignore)
             py_item = getattr(module, name)
             if isinstance(value, pyclbr.Function):
-                self.assertIsInstance(py_item, (FunctionType, BuiltinFunctionType))
+                self.assert_(isinstance(py_item, (FunctionType, BuiltinFunctionType)))
                 if py_item.__module__ != moduleName:
                     continue   # skip functions that came from somewhere else
-                self.assertEqual(py_item.__module__, value.module)
+                self.assertEquals(py_item.__module__, value.module)
             else:
-                self.assertIsInstance(py_item, (ClassType, type))
-                if py_item.__module__ != moduleName:
-                    continue   # skip classes that came from somewhere else
-
+                self.failUnless(isinstance(py_item, (ClassType, type)))
                 real_bases = [base.__name__ for base in py_item.__bases__]
                 pyclbr_bases = [ getattr(base, 'name', base)
                                  for base in value.super ]
@@ -126,7 +121,7 @@ class PyclbrTest(TestCase):
 
                 try:
                     self.assertListEq(foundMethods, actualMethods, ignore)
-                    self.assertEqual(py_item.__module__, value.module)
+                    self.assertEquals(py_item.__module__, value.module)
 
                     self.assertEqualsOrIgnored(py_item.__name__, value.name,
                                                ignore)
@@ -150,10 +145,8 @@ class PyclbrTest(TestCase):
 
     def test_easy(self):
         self.checkModule('pyclbr')
-        self.checkModule('doctest', ignore=("DocTestCase",))
-        # Silence Py3k warning
-        rfc822 = import_module('rfc822', deprecated=True)
-        self.checkModule('rfc822', rfc822)
+        self.checkModule('doctest')
+        self.checkModule('rfc822')
         self.checkModule('difflib')
 
     def test_decorators(self):
@@ -168,14 +161,9 @@ class PyclbrTest(TestCase):
         # These were once about the 10 longest modules
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('cgi', ignore=('log',))      # set with = in module
-        cm('urllib', ignore=('_CFNumberToInt32',
-                             '_CStringFromCFString',
-                             '_CFSetup',
-                             'getproxies_registry',
-                             'proxy_bypass_registry',
-                             'proxy_bypass_macosx_sysconf',
+        cm('mhlib')
+        cm('urllib', ignore=('getproxies_registry',
                              'open_https',
-                             'getproxies_macosx_sysconf',
                              'getproxies_internetconfig',)) # not on all platforms
         cm('pickle')
         cm('aifc', ignore=('openfp',))  # set with = in module
@@ -185,13 +173,8 @@ class PyclbrTest(TestCase):
         cm('pydoc')
 
         # Tests for modules inside packages
-        cm('email.parser')
+        cm('email.Parser')
         cm('test.test_pyclbr')
-
-    def test_issue_14798(self):
-        # test ImportError is raised when the first part of a dotted name is
-        # not a package
-        self.assertRaises(ImportError, pyclbr.readmodule_ex, 'asyncore.foo')
 
 
 def test_main():

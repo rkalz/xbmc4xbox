@@ -3,6 +3,7 @@
 # (Should learn how to tell the compiler to compile it as well.)
 
 import sys
+import os
 from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)
 

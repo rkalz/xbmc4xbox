@@ -18,13 +18,12 @@ Public functions:       Internaldate2tuple
 # IMAP4_SSL contributed by Tino Lange <Tino.Lange@isg.de> March 2002.
 # GET/SETQUOTA contributed by Andreas Zeidler <az@kreativkombinat.de> June 2002.
 # PROXYAUTH contributed by Rick Holbert <holbert.13@osu.edu> November 2002.
-# GET/SETANNOTATION contributed by Tomas Lindroos <skitta@abo.fi> June 2005.
 
-__version__ = "2.58"
+__version__ = "2.55"
 
-import binascii, errno, random, re, socket, subprocess, sys, time
+import binascii, os, random, re, socket, sys, time
 
-__all__ = ["IMAP4", "IMAP4_stream", "Internaldate2tuple",
+__all__ = ["IMAP4", "IMAP4_SSL", "IMAP4_stream", "Internaldate2tuple",
            "Int2AP", "ParseFlags", "Time2Internaldate"]
 
 #       Globals
@@ -52,7 +51,6 @@ Commands = {
         'EXPUNGE':      ('SELECTED',),
         'FETCH':        ('SELECTED',),
         'GETACL':       ('AUTH', 'SELECTED'),
-        'GETANNOTATION':('AUTH', 'SELECTED'),
         'GETQUOTA':     ('AUTH', 'SELECTED'),
         'GETQUOTAROOT': ('AUTH', 'SELECTED'),
         'MYRIGHTS':     ('AUTH', 'SELECTED'),
@@ -68,7 +66,6 @@ Commands = {
         'SEARCH':       ('SELECTED',),
         'SELECT':       ('AUTH', 'SELECTED'),
         'SETACL':       ('AUTH', 'SELECTED'),
-        'SETANNOTATION':('AUTH', 'SELECTED'),
         'SETQUOTA':     ('AUTH', 'SELECTED'),
         'SORT':         ('SELECTED',),
         'STATUS':       ('AUTH', 'SELECTED'),
@@ -136,10 +133,10 @@ class IMAP4:
             the command re-tried.
     "readonly" exceptions imply the command should be re-tried.
 
-    Note: to use this module, you must read the RFCs pertaining to the
-    IMAP4 protocol, as the semantics of the arguments to each IMAP4
-    command are left to the invoker, not to mention the results. Also,
-    most IMAP servers implement a sub-set of the commands available here.
+    Note: to use this module, you must read the RFCs pertaining
+    to the IMAP4 protocol, as the semantics of the arguments to
+    each IMAP4 command are left to the invoker, not to mention
+    the results.
     """
 
     class error(Exception): pass    # Logical errors - debug required
@@ -155,7 +152,7 @@ class IMAP4:
         self.tagged_commands = {}       # Tagged commands awaiting response
         self.untagged_responses = {}    # {typ: [data, ...], ...}
         self.continuation_response = '' # Last continuation response
-        self.is_readonly = False        # READ-ONLY desired state
+        self.is_readonly = None         # READ-ONLY desired state
         self.tagnum = 0
 
         # Open socket to server.
@@ -165,7 +162,7 @@ class IMAP4:
         # Create unique tag for this session,
         # and compile tagged response matcher.
 
-        self.tagpre = Int2AP(random.randint(4096, 65535))
+        self.tagpre = Int2AP(random.randint(0, 31999))
         self.tagre = re.compile(r'(?P<tag>'
                         + self.tagpre
                         + r'\d+) (?P<type>[A-Z]+) (?P<data>.*)')
@@ -189,10 +186,11 @@ class IMAP4:
         else:
             raise self.error(self.welcome)
 
-        typ, dat = self.capability()
-        if dat == [None]:
+        cap = 'CAPABILITY'
+        self._simple_command(cap)
+        if not cap in self.untagged_responses:
             raise self.error('no CAPABILITY response from server')
-        self.capabilities = tuple(dat[-1].upper().split())
+        self.capabilities = tuple(self.untagged_responses[cap][-1].upper().split())
 
         if __debug__:
             if self.debug >= 3:
@@ -226,7 +224,8 @@ class IMAP4:
         """
         self.host = host
         self.port = port
-        self.sock = socket.create_connection((host, port))
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect((host, port))
         self.file = self.sock.makefile('rb')
 
 
@@ -248,14 +247,7 @@ class IMAP4:
     def shutdown(self):
         """Close I/O established in "open"."""
         self.file.close()
-        try:
-            self.sock.shutdown(socket.SHUT_RDWR)
-        except socket.error as e:
-            # The server might already have closed the connection
-            if e.errno != errno.ENOTCONN:
-                raise
-        finally:
-            self.sock.close()
+        self.sock.close()
 
 
     def socket(self):
@@ -353,15 +345,6 @@ class IMAP4:
         return typ, dat
 
 
-    def capability(self):
-        """(typ, [data]) = <instance>.capability()
-        Fetch capabilities list from server."""
-
-        name = 'CAPABILITY'
-        typ, dat = self._simple_command(name)
-        return self._untagged_response(typ, dat, name)
-
-
     def check(self):
         """Checkpoint mailbox on server.
 
@@ -451,14 +434,6 @@ class IMAP4:
         """
         typ, dat = self._simple_command('GETACL', mailbox)
         return self._untagged_response(typ, dat, 'ACL')
-
-
-    def getannotation(self, mailbox, entry, attribute):
-        """(typ, [data]) = <instance>.getannotation(mailbox, entry, attribute)
-        Retrieve ANNOTATIONs."""
-
-        typ, dat = self._simple_command('GETANNOTATION', mailbox, entry, attribute)
-        return self._untagged_response(typ, dat, 'ANNOTATION')
 
 
     def getquota(self, root):
@@ -628,12 +603,12 @@ class IMAP4:
         return self._untagged_response(typ, dat, name)
 
 
-    def select(self, mailbox='INBOX', readonly=False):
+    def select(self, mailbox='INBOX', readonly=None):
         """Select a mailbox.
 
         Flush all untagged responses.
 
-        (typ, [data]) = <instance>.select(mailbox='INBOX', readonly=False)
+        (typ, [data]) = <instance>.select(mailbox='INBOX', readonly=None)
 
         'data' is count of messages in mailbox ('EXISTS' response).
 
@@ -642,7 +617,7 @@ class IMAP4:
         """
         self.untagged_responses = {}    # Flush old responses.
         self.is_readonly = readonly
-        if readonly:
+        if readonly is not None:
             name = 'EXAMINE'
         else:
             name = 'SELECT'
@@ -666,14 +641,6 @@ class IMAP4:
         (typ, [data]) = <instance>.setacl(mailbox, who, what)
         """
         return self._simple_command('SETACL', mailbox, who, what)
-
-
-    def setannotation(self, *args):
-        """(typ, [data]) = <instance>.setannotation(mailbox[, entry, attribute]+)
-        Set ANNOTATIONs."""
-
-        typ, dat = self._simple_command('SETANNOTATION', *args)
-        return self._untagged_response(typ, dat, 'ANNOTATION')
 
 
     def setquota(self, root, limits):
@@ -733,7 +700,7 @@ class IMAP4:
     def thread(self, threading_algorithm, charset, *search_criteria):
         """IMAPrev1 extension THREAD command.
 
-        (type, [data]) = <instance>.thread(threading_algorithm, charset, search_criteria, ...)
+        (type, [data]) = <instance>.thread(threading_alogrithm, charset, search_criteria, ...)
         """
         name = 'THREAD'
         typ, dat = self._simple_command(name, threading_algorithm, charset, *search_criteria)
@@ -752,13 +719,11 @@ class IMAP4:
         if not command in Commands:
             raise self.error("Unknown IMAP4 UID command: %s" % command)
         if self.state not in Commands[command]:
-            raise self.error("command %s illegal in state %s, "
-                             "only allowed in states %s" %
-                             (command, self.state,
-                              ', '.join(Commands[command])))
+            raise self.error('command %s illegal in state %s'
+                                    % (command, self.state))
         name = 'UID'
         typ, dat = self._simple_command(name, command, *args)
-        if command in ('SEARCH', 'SORT', 'THREAD'):
+        if command in ('SEARCH', 'SORT'):
             name = command
         else:
             name = 'FETCH'
@@ -819,10 +784,8 @@ class IMAP4:
 
         if self.state not in Commands[name]:
             self.literal = None
-            raise self.error("command %s illegal in state %s, "
-                             "only allowed in states %s" %
-                             (name, self.state,
-                              ', '.join(Commands[name])))
+            raise self.error(
+            'command %s illegal in state %s' % (name, self.state))
 
         for typ in ('OK', 'NO', 'BAD'):
             if typ in self.untagged_responses:
@@ -890,17 +853,14 @@ class IMAP4:
 
 
     def _command_complete(self, name, tag):
-        # BYE is expected after LOGOUT
-        if name != 'LOGOUT':
-            self._check_bye()
+        self._check_bye()
         try:
             typ, data = self._get_tagged_response(tag)
         except self.abort, val:
             raise self.abort('command: %s => %s' % (name, val))
         except self.error, val:
             raise self.error('command: %s => %s' % (name, val))
-        if name != 'LOGOUT':
-            self._check_bye()
+        self._check_bye()
         if typ == 'BAD':
             raise self.error('%s command error: %s %s' % (name, typ, data))
         return typ, data
@@ -1011,8 +971,6 @@ class IMAP4:
             raise self.abort('socket error: EOF')
 
         # Protocol mandates all lines terminated by CRLF
-        if not line.endswith('\r\n'):
-            raise self.abort('socket error: unterminated line')
 
         line = line[:-2]
         if __debug__:
@@ -1122,88 +1080,95 @@ class IMAP4:
 
 
 
-try:
-    import ssl
-except ImportError:
-    pass
-else:
-    class IMAP4_SSL(IMAP4):
+class IMAP4_SSL(IMAP4):
 
-        """IMAP4 client class over SSL connection
+    """IMAP4 client class over SSL connection
 
-        Instantiate with: IMAP4_SSL([host[, port[, keyfile[, certfile]]]])
+    Instantiate with: IMAP4_SSL([host[, port[, keyfile[, certfile]]]])
 
-                host - host's name (default: localhost);
-                port - port number (default: standard IMAP4 SSL port).
-                keyfile - PEM formatted file that contains your private key (default: None);
-                certfile - PEM formatted certificate chain file (default: None);
+            host - host's name (default: localhost);
+            port - port number (default: standard IMAP4 SSL port).
+            keyfile - PEM formatted file that contains your private key (default: None);
+            certfile - PEM formatted certificate chain file (default: None);
 
-        for more documentation see the docstring of the parent class IMAP4.
+    for more documentation see the docstring of the parent class IMAP4.
+    """
+
+
+    def __init__(self, host = '', port = IMAP4_SSL_PORT, keyfile = None, certfile = None):
+        self.keyfile = keyfile
+        self.certfile = certfile
+        IMAP4.__init__(self, host, port)
+
+
+    def open(self, host = '', port = IMAP4_SSL_PORT):
+        """Setup connection to remote server on "host:port".
+            (default: localhost:standard IMAP4 SSL port).
+        This connection will be used by the routines:
+            read, readline, send, shutdown.
         """
+        self.host = host
+        self.port = port
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect((host, port))
+        self.sslobj = socket.ssl(self.sock, self.keyfile, self.certfile)
 
 
-        def __init__(self, host = '', port = IMAP4_SSL_PORT, keyfile = None, certfile = None):
-            self.keyfile = keyfile
-            self.certfile = certfile
-            IMAP4.__init__(self, host, port)
+    def read(self, size):
+        """Read 'size' bytes from remote."""
+        # sslobj.read() sometimes returns < size bytes
+        chunks = []
+        read = 0
+        while read < size:
+            data = self.sslobj.read(size-read)
+            read += len(data)
+            chunks.append(data)
+
+        return ''.join(chunks)
 
 
-        def open(self, host = '', port = IMAP4_SSL_PORT):
-            """Setup connection to remote server on "host:port".
-                (default: localhost:standard IMAP4 SSL port).
-            This connection will be used by the routines:
-                read, readline, send, shutdown.
-            """
-            self.host = host
-            self.port = port
-            self.sock = socket.create_connection((host, port))
-            self.sslobj = ssl.wrap_socket(self.sock, self.keyfile, self.certfile)
-            self.file = self.sslobj.makefile('rb')
+    def readline(self):
+        """Read line from remote."""
+        # NB: socket.ssl needs a "readline" method, or perhaps a "makefile" method.
+        line = []
+        while 1:
+            char = self.sslobj.read(1)
+            line.append(char)
+            if char == "\n": return ''.join(line)
 
 
-        def read(self, size):
-            """Read 'size' bytes from remote."""
-            return self.file.read(size)
+    def send(self, data):
+        """Send data to remote."""
+        # NB: socket.ssl needs a "sendall" method to match socket objects.
+        bytes = len(data)
+        while bytes > 0:
+            sent = self.sslobj.write(data)
+            if sent == bytes:
+                break    # avoid copy
+            data = data[sent:]
+            bytes = bytes - sent
 
 
-        def readline(self):
-            """Read line from remote."""
-            return self.file.readline()
+    def shutdown(self):
+        """Close I/O established in "open"."""
+        self.sock.close()
 
 
-        def send(self, data):
-            """Send data to remote."""
-            bytes = len(data)
-            while bytes > 0:
-                sent = self.sslobj.write(data)
-                if sent == bytes:
-                    break    # avoid copy
-                data = data[sent:]
-                bytes = bytes - sent
+    def socket(self):
+        """Return socket instance used to connect to IMAP4 server.
+
+        socket = <instance>.socket()
+        """
+        return self.sock
 
 
-        def shutdown(self):
-            """Close I/O established in "open"."""
-            self.file.close()
-            self.sock.close()
+    def ssl(self):
+        """Return SSLObject instance used to communicate with the IMAP4 server.
 
+        ssl = <instance>.socket.ssl()
+        """
+        return self.sslobj
 
-        def socket(self):
-            """Return socket instance used to connect to IMAP4 server.
-
-            socket = <instance>.socket()
-            """
-            return self.sock
-
-
-        def ssl(self):
-            """Return SSLObject instance used to communicate with the IMAP4 server.
-
-            ssl = ssl.wrap_socket(<instance>.socket)
-            """
-            return self.sslobj
-
-    __all__.append("IMAP4_SSL")
 
 
 class IMAP4_stream(IMAP4):
@@ -1212,7 +1177,7 @@ class IMAP4_stream(IMAP4):
 
     Instantiate with: IMAP4_stream(command)
 
-            where "command" is a string that can be passed to subprocess.Popen()
+            where "command" is a string that can be passed to os.popen2()
 
     for more documentation see the docstring of the parent class IMAP4.
     """
@@ -1232,11 +1197,7 @@ class IMAP4_stream(IMAP4):
         self.port = None
         self.sock = None
         self.file = None
-        self.process = subprocess.Popen(self.command,
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            shell=True, close_fds=True)
-        self.writefile = self.process.stdin
-        self.readfile = self.process.stdout
+        self.writefile, self.readfile = os.popen2(self.command)
 
 
     def read(self, size):
@@ -1259,7 +1220,6 @@ class IMAP4_stream(IMAP4):
         """Close I/O established in "open"."""
         self.readfile.close()
         self.writefile.close()
-        self.process.wait()
 
 
 
@@ -1311,10 +1271,9 @@ Mon2num = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
         'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
 
 def Internaldate2tuple(resp):
-    """Parse an IMAP4 INTERNALDATE string.
+    """Convert IMAP4 INTERNALDATE to UT.
 
-    Return corresponding local time.  The return value is a
-    time.struct_time instance or None if the string has wrong format.
+    Returns Python time module tuple.
     """
 
     mo = InternalDate.match(resp)
@@ -1381,14 +1340,9 @@ def ParseFlags(resp):
 
 def Time2Internaldate(date_time):
 
-    """Convert date_time to IMAP4 INTERNALDATE representation.
+    """Convert 'date_time' to IMAP4 INTERNALDATE representation.
 
-    Return string in form: '"DD-Mmm-YYYY HH:MM:SS +HHMM"'.  The
-    date_time argument can be a number (int or float) representing
-    seconds since epoch (as returned by time.time()), a 9-tuple
-    representing local time (as returned by time.localtime()), or a
-    double-quoted string.  In the last case, it is assumed to already
-    be in the correct format.
+    Return string in form: '"DD-Mmm-YYYY HH:MM:SS +HHMM"'
     """
 
     if isinstance(date_time, (int, float)):

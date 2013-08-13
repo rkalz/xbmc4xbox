@@ -66,65 +66,6 @@
 
 using namespace std;
 
-typedef struct
-{
-  const char* name;
-  CGUIControl::GUICONTROLTYPES type;
-} ControlMapping;
-
-static const ControlMapping controls[] =
-   {{"button",            CGUIControl::GUICONTROL_BUTTON},
-    {"checkmark",         CGUIControl::GUICONTROL_CHECKMARK},
-    {"fadelabel",         CGUIControl::GUICONTROL_FADELABEL},
-    {"image",             CGUIControl::GUICONTROL_IMAGE},
-    {"largeimage",        CGUIControl::GUICONTROL_IMAGE},
-    {"image",             CGUIControl::GUICONTROL_BORDEREDIMAGE},
-    {"label",             CGUIControl::GUICONTROL_LABEL},
-    {"label",             CGUIControl::GUICONTROL_LISTLABEL},
-    {"group",             CGUIControl::GUICONTROL_GROUP},
-    {"group",             CGUIControl::GUICONTROL_LISTGROUP},
-    {"progress",          CGUIControl::GUICONTROL_PROGRESS},
-    {"radiobutton",       CGUIControl::GUICONTROL_RADIO},
-    {"rss",               CGUIControl::GUICONTROL_RSS},
-    {"selectbutton",      CGUIControl::GUICONTROL_SELECTBUTTON},
-    {"slider",            CGUIControl::GUICONTROL_SLIDER},
-    {"sliderex",          CGUIControl::GUICONTROL_SETTINGS_SLIDER},
-    {"spincontrol",       CGUIControl::GUICONTROL_SPIN},
-    {"spincontrolex",     CGUIControl::GUICONTROL_SPINEX},
-    {"textbox",           CGUIControl::GUICONTROL_TEXTBOX},
-    {"togglebutton",      CGUIControl::GUICONTROL_TOGGLEBUTTON},
-    {"videowindow",       CGUIControl::GUICONTROL_VIDEO},
-    {"mover",             CGUIControl::GUICONTROL_MOVER},
-    {"resize",            CGUIControl::GUICONTROL_RESIZE},
-    {"buttonscroller",    CGUIControl::GUICONTROL_BUTTONBAR},
-    {"edit",              CGUIControl::GUICONTROL_EDIT},
-    {"visualisation",     CGUIControl::GUICONTROL_VISUALISATION},
-    {"karvisualisation",  CGUIControl::GUICONTROL_VISUALISATION},
-    {"multiimage",        CGUIControl::GUICONTROL_MULTI_IMAGE},
-    {"grouplist",         CGUIControl::GUICONTROL_GROUPLIST},
-    {"scrollbar",         CGUIControl::GUICONTROL_SCROLLBAR},
-    {"multiselect",       CGUIControl::GUICONTROL_MULTISELECT},
-    {"list",              CGUIControl::GUICONTAINER_LIST},
-    {"wraplist",          CGUIControl::GUICONTAINER_WRAPLIST},
-    {"fixedlist",         CGUIControl::GUICONTAINER_FIXEDLIST},
-    {"panel",             CGUIControl::GUICONTAINER_PANEL}};
-
-CGUIControl::GUICONTROLTYPES CGUIControlFactory::TranslateControlType(const CStdString &type)
-{
-  for (unsigned int i = 0; i < sizeof(controls) / sizeof(controls[0]); ++i)
-    if (0 == type.CompareNoCase(controls[i].name))
-      return controls[i].type;
-  return CGUIControl::GUICONTROL_UNKNOWN;
-}
-
-CStdString CGUIControlFactory::TranslateControlType(CGUIControl::GUICONTROLTYPES type)
-{
-  for (unsigned int i = 0; i < sizeof(controls) / sizeof(controls[0]); ++i)
-    if (type == controls[i].type)
-      return controls[i].name;
-  return "";
-}
-
 CGUIControlFactory::CGUIControlFactory(void)
 {}
 
@@ -598,7 +539,6 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
 
   // get the control type
   CStdString strType = GetType(pControlNode);
-  CGUIControl::GUICONTROLTYPES type = TranslateControlType(strType);
 
   // resolve again with strType set so that <default> tags are added
   g_SkinInfo.ResolveIncludes(pControlNode, strType);
@@ -765,7 +705,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
   // adjust width and height accordingly for groups.  Groups should
   // take the width/height of the parent (adjusted for positioning)
   // if none is defined.
-  if (type == CGUIControl::GUICONTROL_GROUP || type == CGUIControl::GUICONTROL_GROUPLIST)
+  if (strType == "group" || strType == "grouplist")
   {
     if (!width)
       width = max(rect.right - posX, 0.0f);
@@ -1016,12 +956,12 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
   // view type
   VIEW_TYPE viewType = VIEW_TYPE_NONE;
   CStdString viewLabel;
-  if (type == CGUIControl::GUICONTAINER_PANEL)
+  if (strType == "panel")
   {
     viewType = VIEW_TYPE_ICON;
     viewLabel = g_localizeStrings.Get(536);
   }
-  else if (type == CGUIControl::GUICONTAINER_LIST)
+  else if (strType == "list")
   {
     viewType = VIEW_TYPE_LIST;
     viewLabel = g_localizeStrings.Get(535);
@@ -1077,7 +1017,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
   //
 
   CGUIControl *control = NULL;
-  if (type == CGUIControl::GUICONTROL_GROUP)
+  if (strType == "group")
   {
     if (insideContainer)
     {
@@ -1091,13 +1031,13 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
       ((CGUIControlGroup *)control)->SetRenderFocusedLast(renderFocusedLast);
     }
   }
-  else if (type == CGUIControl::GUICONTROL_GROUPLIST)
+  else if (strType == "grouplist")
   {
     control = new CGUIControlGroupList(
       parentID, id, posX, posY, width, height, buttonGap, pageControl, orientation, useControlCoords, labelInfo.align, scrollTime);
     ((CGUIControlGroup *)control)->SetRenderFocusedLast(renderFocusedLast);
   }
-  else if (type == CGUIControl::GUICONTROL_LABEL)
+  else if (strType == "label")
   {
     const CGUIInfoLabel &content = (infoLabels.size()) ? infoLabels[0] : CGUIInfoLabel("");
     if (insideContainer)
@@ -1113,7 +1053,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
       ((CGUILabelControl *)control)->SetWidthControl(minWidth, bScrollLabel);
     }
   }
-  else if (type == CGUIControl::GUICONTROL_EDIT)
+  else if (strType == "edit")
   {
     control = new CGUIEditControl(
       parentID, id, posX, posY, width, height, textureFocus, textureNoFocus,
@@ -1123,12 +1063,12 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
       ((CGUIEditControl *) control)->SetInputType(CGUIEditControl::INPUT_TYPE_PASSWORD, 0);
     ((CGUIEditControl *) control)->SetTextChangeActions(textChangeActions);          
   }
-  else if (type == CGUIControl::GUICONTROL_VIDEO)
+  else if (strType == "videowindow")
   {
     control = new CGUIVideoControl(
       parentID, id, posX, posY, width, height);
   }
-  else if (type == CGUIControl::GUICONTROL_FADELABEL)
+  else if (strType == "fadelabel")
   {
     control = new CGUIFadeLabelControl(
       parentID, id, posX, posY, width, height,
@@ -1136,7 +1076,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
 
     ((CGUIFadeLabelControl *)control)->SetInfo(infoLabels);
   }
-  else if (type == CGUIControl::GUICONTROL_RSS)
+  else if (strType == "rss")
   {
     control = new CGUIRSSControl(
       parentID, id, posX, posY, width, height,
@@ -1151,7 +1091,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     else
       CLog::Log(LOGERROR,"invalid rss url set referenced in skin");
   }
-  else if (type == CGUIControl::GUICONTROL_BUTTON)
+  else if (strType == "button")
   {
     control = new CGUIButtonControl(
       parentID, id, posX, posY, width, height,
@@ -1164,7 +1104,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     ((CGUIButtonControl *)control)->SetFocusActions(focusActions);
     ((CGUIButtonControl *)control)->SetUnFocusActions(unfocusActions);
   }
-  else if (type == CGUIControl::GUICONTROL_TOGGLEBUTTON)
+  else if (strType == "togglebutton")
   {
     control = new CGUIToggleButtonControl(
       parentID, id, posX, posY, width, height,
@@ -1179,7 +1119,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     ((CGUIToggleButtonControl *)control)->SetUnFocusActions(unfocusActions);
     ((CGUIToggleButtonControl *)control)->SetToggleSelect(iToggleSelect);
   }
-  else if (type == CGUIControl::GUICONTROL_CHECKMARK)
+  else if (strType == "checkmark")
   {
     control = new CGUICheckMarkControl(
       parentID, id, posX, posY, width, height,
@@ -1188,7 +1128,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
 
     ((CGUICheckMarkControl *)control)->SetLabel(strLabel);
   }
-  else if (type == CGUIControl::GUICONTROL_RADIO)
+  else if (strType == "radiobutton")
   {
     control = new CGUIRadioButtonControl(
       parentID, id, posX, posY, width, height,
@@ -1203,7 +1143,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     ((CGUIRadioButtonControl *)control)->SetFocusActions(focusActions);
     ((CGUIRadioButtonControl *)control)->SetUnFocusActions(unfocusActions);
   }
-  else if (type == CGUIControl::GUICONTROL_MULTISELECT)
+  else if (strType == "multiselect")
   {
     CGUIInfoLabel label;
     if (infoLabels.size())
@@ -1212,7 +1152,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
       parentID, id, posX, posY, width, height,
       textureFocus, textureNoFocus, labelInfo, label);
   }
-  else if (type == CGUIControl::GUICONTROL_SPIN)
+  else if (strType == "spincontrol")
   {
     control = new CGUISpinControl(
       parentID, id, posX, posY, width, height,
@@ -1238,7 +1178,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
       ((CGUISpinControl *)control)->SetFloatInterval(fInterval);
     }
   }
-  else if (type == CGUIControl::GUICONTROL_SLIDER)
+  else if (strType == "slider")
   {
     control = new CGUISliderControl(
       parentID, id, posX, posY, width, height,
@@ -1246,7 +1186,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
 
     ((CGUISliderControl *)control)->SetInfo(singleInfo);
   }
-  else if (type == CGUIControl::GUICONTROL_SETTINGS_SLIDER)
+  else if (strType == "sliderex")
   {
     labelInfo.align |= XBFONT_CENTER_Y;    // always center text vertically
     control = new CGUISettingsSliderControl(
@@ -1256,13 +1196,13 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     ((CGUISettingsSliderControl *)control)->SetText(strLabel);
     ((CGUISettingsSliderControl *)control)->SetInfo(singleInfo);
   }
-  else if (type == CGUIControl::GUICONTROL_SCROLLBAR)
+  else if (strType == "scrollbar")
   {
     control = new CGUIScrollBar(
       parentID, id, posX, posY, width, height,
       textureBackground, textureBar, textureBarFocus, textureNib, textureNibFocus, orientation, showOnePage);
   }
-  else if (type == CGUIControl::GUICONTROL_PROGRESS)
+  else if (strType == "progress")
   {
     control = new CGUIProgressControl(
       parentID, id, posX, posY, width, height,
@@ -1270,7 +1210,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
       textureOverlay, bReveal);
     ((CGUIProgressControl *)control)->SetInfo(singleInfo);
   }
-  else if (type == CGUIControl::GUICONTROL_IMAGE)
+  else if (strType == "image" || strType == "largeimage")
   {
     if (strType == "largeimage")
       texture.useLarge = true;
@@ -1290,14 +1230,14 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     ((CGUIImage *)control)->SetAspectRatio(aspect);
     ((CGUIImage *)control)->SetCrossFade(fadeTime);
   }
-  else if (type == CGUIControl::GUICONTROL_MULTI_IMAGE)
+  else if (strType == "multiimage")
   {
     control = new CGUIMultiImage(
       parentID, id, posX, posY, width, height, texture, timePerImage, fadeTime, randomized, loop, timeToPauseAtEnd);
     ((CGUIMultiImage *)control)->SetInfo(texturePath);
     ((CGUIMultiImage *)control)->SetAspectRatio(aspect);
   }
-  else if (type == CGUIControl::GUICONTAINER_LIST)
+  else if (strType == "list")
   {
     control = new CGUIListContainer(parentID, id, posX, posY, width, height, orientation, scrollTime, preloadItems);
     ((CGUIListContainer *)control)->LoadLayout(pControlNode);
@@ -1306,7 +1246,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     ((CGUIListContainer *)control)->SetPageControl(pageControl);
     ((CGUIListContainer *)control)->SetRenderOffset(offset);
   }
-  else if (type == CGUIControl::GUICONTAINER_WRAPLIST)
+  else if (strType == "wraplist")
   {
     control = new CGUIWrappingListContainer(parentID, id, posX, posY, width, height, orientation, scrollTime, preloadItems, focusPosition);
     ((CGUIWrappingListContainer *)control)->LoadLayout(pControlNode);
@@ -1315,7 +1255,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     ((CGUIWrappingListContainer *)control)->SetPageControl(pageControl);
     ((CGUIWrappingListContainer *)control)->SetRenderOffset(offset);
   }
-  else if (type == CGUIControl::GUICONTAINER_FIXEDLIST)
+  else if (strType == "fixedlist")
   {
     control = new CGUIFixedListContainer(parentID, id, posX, posY, width, height, orientation, scrollTime, preloadItems, focusPosition, iMovementRange);
     ((CGUIFixedListContainer *)control)->LoadLayout(pControlNode);
@@ -1324,7 +1264,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     ((CGUIFixedListContainer *)control)->SetPageControl(pageControl);
     ((CGUIFixedListContainer *)control)->SetRenderOffset(offset);
   }
-  else if (type == CGUIControl::GUICONTAINER_PANEL)
+  else if (strType == "panel")
   {
     control = new CGUIPanelContainer(parentID, id, posX, posY, width, height, orientation, scrollTime, preloadItems);
     ((CGUIPanelContainer *)control)->LoadLayout(pControlNode);
@@ -1333,7 +1273,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     ((CGUIPanelContainer *)control)->SetPageControl(pageControl);
     ((CGUIPanelContainer *)control)->SetRenderOffset(offset);
   }
-  else if (type == CGUIControl::GUICONTROL_TEXTBOX)
+  else if (strType == "textbox")
   {
     control = new CGUITextBox(
       parentID, id, posX, posY, width, height,
@@ -1344,7 +1284,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
       ((CGUITextBox *)control)->SetInfo(infoLabels[0]);
     ((CGUITextBox *)control)->SetAutoScrolling(pControlNode);
   }
-  else if (type == CGUIControl::GUICONTROL_SELECTBUTTON)
+  else if (strType == "selectbutton")
   {
     control = new CGUISelectButtonControl(
       parentID, id, posX, posY,
@@ -1354,19 +1294,19 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
 
     ((CGUISelectButtonControl *)control)->SetLabel(strLabel);
   }
-  else if (type == CGUIControl::GUICONTROL_MOVER)
+  else if (strType == "mover")
   {
     control = new CGUIMoverControl(
       parentID, id, posX, posY, width, height,
       textureFocus, textureNoFocus);
   }
-  else if (type == CGUIControl::GUICONTROL_RESIZE)
+  else if (strType == "resize")
   {
     control = new CGUIResizeControl(
       parentID, id, posX, posY, width, height,
       textureFocus, textureNoFocus);
   }
-  else if (type == CGUIControl::GUICONTROL_BUTTONBAR)
+  else if (strType == "buttonscroller")
   {
     control = new CGUIButtonScroller(
       parentID, id, posX, posY, width, height, buttonGap, iNumSlots, iDefaultSlot,
@@ -1374,7 +1314,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
       textureFocus, textureNoFocus, labelInfo);
     ((CGUIButtonScroller *)control)->LoadButtons(pControlNode);
   }
-  else if (type == CGUIControl::GUICONTROL_SPINEX)
+  else if (strType == "spincontrolex")
   {
     control = new CGUISpinControlEx(
       parentID, id, posX, posY, width, height, spinWidth, spinHeight,
@@ -1385,7 +1325,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     ((CGUISpinControlEx *)control)->SetText(strLabel);
     ((CGUISpinControlEx *)control)->SetReverse(bReverse);
   }
-  else if (type == CGUIControl::GUICONTROL_VISUALISATION)
+  else if (strType == "visualisation")
   {
     control = new CGUIVisualisationControl(parentID, id, posX, posY, width, height);
   }

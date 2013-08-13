@@ -9,7 +9,7 @@
 # XXX TO DO:
 # - for classes/modules, add "open source" to object browser
 
-from idlelib.TreeWidget import TreeItem, TreeNode, ScrolledCanvas
+from TreeWidget import TreeItem, TreeNode, ScrolledCanvas
 
 from repr import Repr
 
@@ -126,7 +126,7 @@ dispatch = {
 
 def make_objecttreeitem(labeltext, object, setfunction=None):
     t = type(object)
-    if t in dispatch:
+    if dispatch.has_key(t):
         c = dispatch[t]
     else:
         c = ObjectTreeItem

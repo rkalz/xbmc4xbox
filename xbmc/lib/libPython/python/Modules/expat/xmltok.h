@@ -111,8 +111,8 @@ extern "C" {
 
 typedef struct position {
   /* first line and first column are 0 not 1 */
-  XML_Size lineNumber;
-  XML_Size columnNumber;
+  unsigned long lineNumber;
+  unsigned long columnNumber;
 } POSITION;
 
 typedef struct {

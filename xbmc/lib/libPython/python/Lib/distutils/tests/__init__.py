@@ -15,10 +15,9 @@ by import rather than matching pre-defined names.
 import os
 import sys
 import unittest
-from test.test_support import run_unittest
 
 
-here = os.path.dirname(__file__) or os.curdir
+here = os.path.dirname(__file__)
 
 
 def test_suite():
@@ -33,4 +32,4 @@ def test_suite():
 
 
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main(defaultTest="test_suite")

@@ -39,66 +39,66 @@ extern "C" XPP_DEVICE_TYPE XDEVICE_TYPE_IR_REMOTE_TABLE;
 #include "FileSystem/CurlFile.h"
 CSysInfo g_sysinfo;
 
-bool CSysInfo::DoWork()
+void CBackgroundSystemInfoLoader::GetInformation()
 {
+  CSysInfo *callback = (CSysInfo *)m_callback;
 #ifdef HAS_XBOX_HARDWARE
   //Request only one time!
-  if(!m_bRequestDone)
+  if(!callback->m_bRequestDone)
   {
     // The X2 series of modchips cause an error on XBE launching if GetModChipInfo()
     if(!g_advancedSettings.m_DisableModChipDetection)
     {
-      m_XboxModChip     = GetModChipInfo();
+      callback->m_XboxModChip     = callback->GetModChipInfo();
     }
-    m_XboxBios        = GetBIOSInfo();
-    m_mplayerversion  = GetMPlayerVersion();
-    m_kernelversion   = GetKernelVersion();
-    m_cpufrequency    = GetCPUFreqInfo();
-    m_xboxversion     = GetXBVerInfo();
-    m_avpackinfo      = GetAVPackInfo();
-    m_videoencoder    = GetVideoEncoder();
-    m_xboxserial      = GetXBOXSerial();
-    m_hddlockkey      = GetHDDKey();
-    m_macadress       = GetMACAddress();
-    m_videoxberegion  = GetVideoXBERegion();
-    m_videodvdzone    = GetDVDZone();
-    m_produceinfo     = GetXBProduceInfo();
-    g_sysinfo.GetRefurbInfo(m_hddbootdate, m_hddcyclecount);
+    callback->m_XboxBios        = callback->GetBIOSInfo();
+    callback->m_mplayerversion  = callback->GetMPlayerVersion();
+    callback->m_kernelversion   = callback->GetKernelVersion();
+    callback->m_cpufrequency    = callback->GetCPUFreqInfo();
+    callback->m_xboxversion     = callback->GetXBVerInfo();
+    callback->m_avpackinfo      = callback->GetAVPackInfo();
+    callback->m_videoencoder    = callback->GetVideoEncoder();
+    callback->m_xboxserial      = callback->GetXBOXSerial();
+    callback->m_hddlockkey      = callback->GetHDDKey();
+    callback->m_macadress       = callback->GetMACAddress();
+    callback->m_videoxberegion  = callback->GetVideoXBERegion();
+    callback->m_videodvdzone    = callback->GetDVDZone();
+    callback->m_produceinfo     = callback->GetXBProduceInfo();
+    g_sysinfo.GetRefurbInfo(callback->m_hddbootdate, callback->m_hddcyclecount);
 
-    if (m_bSmartSupported && !m_bSmartEnabled)
+    if (callback->m_bSmartSupported && !callback->m_bSmartEnabled)
     {
       CLog::Log(LOGNOTICE, "Enabling SMART...");
       XKHDD::EnableSMART();
     }
 
-    m_bRequestDone = true;
+    callback->m_bRequestDone = true;
   }
 #endif
   //Request always
-  m_systemuptime = GetSystemUpTime(false);
-  m_systemtotaluptime = GetSystemUpTime(true);
-  m_InternetState = GetInternetState();
+  callback->m_systemuptime = callback->GetSystemUpTime(false);
+  callback->m_systemtotaluptime = callback->GetSystemUpTime(true);
+  callback->m_InternetState = callback->GetInternetState();
 #ifdef HAS_XBOX_HARDWARE
-  if (!m_hddRequest)
-    GetHDDInfo(m_HDDModel, 
-                          m_HDDSerial,
-                          m_HDDFirmware,
-                          m_HDDpw, 
-                          m_HDDLockState);
+  if (!callback->m_hddRequest)
+    callback->GetHDDInfo(callback->m_HDDModel, 
+                          callback->m_HDDSerial,
+                          callback->m_HDDFirmware,
+                          callback->m_HDDpw, 
+                          callback->m_HDDLockState);
   // don't check the DVD-ROM if we have already successfully retrieved its info, or it is specified
   // as not present in advancedsettings
-  if (!m_dvdRequest && !g_advancedSettings.m_noDVDROM)
-    GetDVDInfo(m_DVDModel, m_DVDFirmware);
+  if (!callback->m_dvdRequest && !g_advancedSettings.m_noDVDROM)
+    callback->GetDVDInfo(callback->m_DVDModel, callback->m_DVDFirmware);
 
-  if (m_bSmartEnabled)
-    byHddTemp = XKHDD::GetHddSmartTemp();
+  if (callback->m_bSmartEnabled)
+    callback->byHddTemp = XKHDD::GetHddSmartTemp();
   else
-    byHddTemp = 0;
+    callback->byHddTemp = 0;
 #endif
-  return true;
 }
 
-CStdString CSysInfo::TranslateInfo(int info) const
+const char *CSysInfo::TranslateInfo(int info)
 {
   switch(info)
   {
@@ -202,12 +202,11 @@ CStdString CSysInfo::TranslateInfo(int info) const
   case SYSTEM_HDD_TEMPERATURE:
   {
     CTemperature temp;
-    CStdString strTemp;
     temp.SetState(CTemperature::invalid);
     if(m_bSmartEnabled && byHddTemp != 0)
       temp = CTemperature::CreateFromCelsius((double)byHddTemp);
-    strTemp.Format("%s",temp.ToString());
-    return strTemp;
+    m_temp.Format("%s",temp.ToString());
+    return m_temp;
   }
 #endif
   case SYSTEM_UPTIME:
@@ -224,7 +223,11 @@ CStdString CSysInfo::TranslateInfo(int info) const
     return g_localizeStrings.Get(503); //Busy text
   }
 }
-
+DWORD CSysInfo::TimeToNextRefreshInMs()
+{ 
+  // request every 15 seconds
+  return 15000;
+}
 void CSysInfo::Reset()
 {
 #ifdef HAS_XBOX_HARDWARE
@@ -245,7 +248,7 @@ void CSysInfo::Reset()
   m_InternetState = "";
 }
 
-CSysInfo::CSysInfo(void) : CInfoLoader(15 * 1000)
+CSysInfo::CSysInfo(void) : CInfoLoader("sysinfo")
 {
 #ifdef HAS_XBOX_HARDWARE
   m_bRequestDone = false;

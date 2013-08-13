@@ -1,6 +1,8 @@
 # IBCarbonscan.py
 
 import sys
+import os
+import string
 import MacOS
 import sys
 

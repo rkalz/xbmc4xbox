@@ -1,8 +1,5 @@
 import unittest
 from test import test_support
-
-# Silence Py3k warning
-test_support.import_module('compiler', deprecated=True)
 from compiler import transformer, ast
 from compiler import compile
 
@@ -17,11 +14,11 @@ class Tests(unittest.TestCase):
 
         for s in snippets:
             a = transformer.parse(s)
-            self.assertIsInstance(a, ast.Module)
+            assert isinstance(a, ast.Module)
             child1 = a.getChildNodes()[0]
-            self.assertIsInstance(child1, ast.Stmt)
+            assert isinstance(child1, ast.Stmt)
             child2 = child1.getChildNodes()[0]
-            self.assertIsInstance(child2, ast.Assign)
+            assert isinstance(child2, ast.Assign)
 
             # This actually tests the compiler, but it's a way to assure the ast
             # is correct

@@ -27,6 +27,7 @@
 # preprocessor commands.
 
 import sys
+import regex
 import getopt
 
 defs = []

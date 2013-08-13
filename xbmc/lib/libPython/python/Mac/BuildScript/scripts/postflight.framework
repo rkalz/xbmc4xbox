@@ -4,29 +4,30 @@
 #
 
 PYVER="@PYVER@"
-FWK="/Library/Frameworks/Python.framework/Versions/@PYVER@"
+FWK="/Library/Frameworks/Python.framework/Versions/@PYVER@/"
 
-"${FWK}/bin/python@PYVER@" -Wi -tt \
+"${FWK}/bin/python" -Wi -tt \
     "${FWK}/lib/python${PYVER}/compileall.py" \
-    -f -x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
+    -x badsyntax -x site-packages \
     "${FWK}/lib/python${PYVER}"
 
-"${FWK}/bin/python@PYVER@" -Wi -tt -O \
+"${FWK}/bin/python" -Wi -tt -O \
     "${FWK}/lib/python${PYVER}/compileall.py" \
-    -f -x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
+    -x badsyntax -x site-packages \
     "${FWK}/lib/python${PYVER}"
 
-"${FWK}/bin/python@PYVER@" -Wi \
+"${FWK}/bin/python" -Wi -tt \
     "${FWK}/lib/python${PYVER}/compileall.py" \
-    -f -x badsyntax \
-    "${FWK}/lib/python${PYVER}/site-packages"
+    -x badsyntax -x site-packages \
+    "${FWK}/Mac/Tools"
 
-"${FWK}/bin/python@PYVER@" -Wi -O \
+"${FWK}/bin/python" -Wi -tt -O \
     "${FWK}/lib/python${PYVER}/compileall.py" \
-    -f -x badsyntax \
-    "${FWK}/lib/python${PYVER}/site-packages"
+    -x badsyntax -x site-packages \
+    "${FWK}/Mac/Tools"
 
-chgrp -R admin "${FWK}"
+
+chown -R admin "${FWK}"
 chmod -R g+w "${FWK}"
 
 exit 0

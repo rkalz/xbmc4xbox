@@ -15,7 +15,7 @@
 # * Fancy comments, like this bulleted list, arent handled :-)
 
 import re
-from idlelib.configHandler import idleConf
+from configHandler import idleConf
 
 class FormatParagraph:
 
@@ -32,8 +32,7 @@ class FormatParagraph:
         self.editwin = None
 
     def format_paragraph_event(self, event):
-        maxformatwidth = int(idleConf.GetOption('main','FormatParagraph',
-                                                'paragraph', type='int'))
+        maxformatwidth = int(idleConf.GetOption('main','FormatParagraph','paragraph'))
         text = self.editwin.text
         first, last = self.editwin.get_selection_indices()
         if first and last:
@@ -55,7 +54,7 @@ class FormatParagraph:
             # If the block ends in a \n, we dont want the comment
             # prefix inserted after it. (Im not sure it makes sense to
             # reformat a comment block that isnt made of complete
-            # lines, but whatever!)  Can't think of a clean solution,
+            # lines, but whatever!)  Can't think of a clean soltution,
             # so we hack away
             block_suffix = ""
             if not newdata[-1]:
@@ -76,7 +75,6 @@ class FormatParagraph:
         else:
             text.mark_set("insert", last)
         text.see("insert")
-        return "break"
 
 def find_paragraph(text, mark):
     lineno, col = map(int, mark.split("."))

@@ -25,14 +25,11 @@ def url2pathname(url):
         error = 'Bad URL: ' + url
         raise IOError, error
     drive = comp[0][-1].upper()
-    path = drive + ':'
     components = comp[1].split('/')
-    for comp in components:
+    path = drive + ':'
+    for  comp in components:
         if comp:
             path = path + '\\' + urllib.unquote(comp)
-    # Issue #11474: url like '/C|/' should convert into 'C:\\'
-    if path.endswith(':') and url.endswith('/'):
-        path += '\\'
     return path
 
 def pathname2url(p):
@@ -59,7 +56,7 @@ def pathname2url(p):
 
     drive = urllib.quote(comp[0].upper())
     components = comp[1].split('\\')
-    path = '///' + drive + ':'
+    path = '///' + drive + '|'
     for comp in components:
         if comp:
             path = path + '/' + urllib.quote(comp)

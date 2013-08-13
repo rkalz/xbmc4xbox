@@ -11,7 +11,6 @@ if __name__ == '__main__':
         'ftpmirror.py',
         'h2py.py',
         'lfcr.py',
-        '../i18n/pygettext.py',
         'logmerge.py',
         '../../Lib/tabnanny.py',
         '../../Lib/timeit.py',

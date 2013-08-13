@@ -3,8 +3,6 @@
 import re
 import sys
 
-from idlelib import macosxSupport
-
 class ZoomHeight:
 
     menudefs = [
@@ -31,14 +29,6 @@ def zoom_height(top):
     if sys.platform == 'win32':
         newy = 0
         newheight = newheight - 72
-
-    elif macosxSupport.runningAsOSXApp():
-        # The '88' below is a magic number that avoids placing the bottom
-        # of the window below the panel on my machine. I don't know how
-        # to calculate the correct value for this with tkinter.
-        newy = 22
-        newheight = newheight - newy - 88
-
     else:
         #newy = 24
         newy = 0

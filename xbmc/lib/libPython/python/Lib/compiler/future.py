@@ -15,9 +15,7 @@ def is_future(stmt):
 
 class FutureParser:
 
-    features = ("nested_scopes", "generators", "division",
-                "absolute_import", "with_statement", "print_function",
-                "unicode_literals")
+    features = ("nested_scopes", "generators", "division")
 
     def __init__(self):
         self.found = {} # set
@@ -52,7 +50,7 @@ class BadFutureParser:
             return
         if node.modname != "__future__":
             return
-        raise SyntaxError, "invalid future statement " + repr(node)
+        raise SyntaxError, "invalid future statement"
 
 def find_futures(node):
     p1 = FutureParser()
