@@ -15,27 +15,17 @@ INOUT = IN_OUT = "in-out"
 
 class BaseFunctionGenerator:
 
-    def __init__(self, name, condition=None, callname=None, modifiers=None):
+    def __init__(self, name, condition=None):
         if DEBUG: print "<--", name
         self.name = name
-        if callname:
-            self.callname = callname
-        else:
-            self.callname = name
         self.prefix = name
         self.objecttype = "PyObject" # Type of _self argument to function
         self.condition = condition
-        self.modifiers = modifiers
 
     def setprefix(self, prefix):
         self.prefix = prefix
 
-    def checkgenerate(self):
-        return True
-
     def generate(self):
-        if not self.checkgenerate():
-            return
         if DEBUG: print "-->", self.name
         if self.condition:
             Output()
@@ -60,8 +50,6 @@ class BaseFunctionGenerator:
         OutRbrace()
 
     def reference(self, name = None):
-        if not self.checkgenerate():
-            return
         if name is None:
             name = self.name
         docstring = self.docstring()
@@ -148,7 +136,7 @@ class FunctionGenerator(BaseFunctionGenerator):
         for arg in self.argumentList:
             if arg.flags == ErrorMode or arg.flags == SelfMode:
                 continue
-            if arg.type is None:
+            if arg.type == None:
                 str = 'void'
             else:
                 if hasattr(arg.type, 'typeName'):
@@ -187,8 +175,17 @@ class FunctionGenerator(BaseFunctionGenerator):
             arg.declare()
 
     def getargs(self):
+        fmt = ""
+        lst = ""
         sep = ",\n" + ' '*len("if (!PyArg_ParseTuple(")
-        fmt, lst = self.getargsFormatArgs(sep)
+        for arg in self.argumentList:
+            if arg.flags == SelfMode:
+                continue
+            if arg.mode in (InMode, InOutMode):
+                fmt = fmt + arg.getargsFormat()
+                args = arg.getargsArgs()
+                if args:
+                    lst = lst + sep + args
         Output("if (!PyArg_ParseTuple(_args, \"%s\"%s))", fmt, lst)
         IndentLevel()
         Output("return NULL;")
@@ -199,32 +196,15 @@ class FunctionGenerator(BaseFunctionGenerator):
             if arg.mode in (InMode, InOutMode):
                 arg.getargsCheck()
 
-    def getargsFormatArgs(self, sep):
-        fmt = ""
-        lst = ""
-        for arg in self.argumentList:
-            if arg.flags == SelfMode:
-                continue
-            if arg.mode in (InMode, InOutMode):
-                arg.getargsPreCheck()
-                fmt = fmt + arg.getargsFormat()
-                args = arg.getargsArgs()
-                if args:
-                    lst = lst + sep + args
-        return fmt, lst
-
     def precheck(self):
-        pass
-
-    def beginallowthreads(self):
-        pass
-
-    def endallowthreads(self):
         pass
 
     def callit(self):
         args = ""
-        s = "%s%s(" % (self.getrvforcallit(), self.callname)
+        if self.rv:
+            s = "%s = %s(" % (self.rv.name, self.name)
+        else:
+            s = "%s(" % self.name
         sep = ",\n" + ' '*len(s)
         for arg in self.argumentList:
             if arg is self.rv:
@@ -232,24 +212,26 @@ class FunctionGenerator(BaseFunctionGenerator):
             s = arg.passArgument()
             if args: s = sep + s
             args = args + s
-        self.beginallowthreads()
-        Output("%s%s(%s);",
-               self.getrvforcallit(), self.callname, args)
-        self.endallowthreads()
-
-    def getrvforcallit(self):
         if self.rv:
-            return "%s = " % self.rv.name
+            Output("%s = %s(%s);",
+                   self.rv.name, self.name, args)
         else:
-            return ""
+            Output("%s(%s);", self.name, args)
 
     def checkit(self):
         for arg in self.argumentList:
             arg.errorCheck()
 
     def returnvalue(self):
+        fmt = ""
+        lst = ""
         sep = ",\n" + ' '*len("return Py_BuildValue(")
-        fmt, lst = self.mkvalueFormatArgs(sep)
+        for arg in self.argumentList:
+            if not arg: continue
+            if arg.flags == ErrorMode: continue
+            if arg.mode in (OutMode, InOutMode):
+                fmt = fmt + arg.mkvalueFormat()
+                lst = lst + sep + arg.mkvalueArgs()
         if fmt == "":
             Output("Py_INCREF(Py_None);")
             Output("_res = Py_None;");
@@ -262,17 +244,6 @@ class FunctionGenerator(BaseFunctionGenerator):
             arg.cleanup()
         Output("return _res;")
 
-    def mkvalueFormatArgs(self, sep):
-        fmt = ""
-        lst = ""
-        for arg in self.argumentList:
-            if not arg: continue
-            if arg.flags == ErrorMode: continue
-            if arg.mode in (OutMode, InOutMode):
-                arg.mkvaluePreCheck()
-                fmt = fmt + arg.mkvalueFormat()
-                lst = lst + sep + arg.mkvalueArgs()
-        return fmt, lst
 
 class MethodGenerator(FunctionGenerator):
 
@@ -284,6 +255,7 @@ class MethodGenerator(FunctionGenerator):
         self.itself = Variable(t0, "_self->ob_itself", SelfMode)
         self.argumentList.append(self.itself)
         FunctionGenerator.parseArgumentList(self, args)
+
 
 def _test():
     void = None

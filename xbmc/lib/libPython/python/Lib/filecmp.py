@@ -11,6 +11,7 @@ Functions:
 
 import os
 import stat
+import warnings
 from itertools import ifilter, ifilterfalse, imap, izip
 
 __all__ = ["cmp","dircmp","cmpfiles"]
@@ -18,7 +19,7 @@ __all__ = ["cmp","dircmp","cmpfiles"]
 _cache = {}
 BUFSIZE=8*1024
 
-def cmp(f1, f2, shallow=1):
+def cmp(f1, f2, shallow=1, use_statcache=None):
     """Compare two files.
 
     Arguments:
@@ -30,6 +31,8 @@ def cmp(f1, f2, shallow=1):
     shallow -- Just check stat signature (do not read the files).
                defaults to 1.
 
+    use_statcache -- obsolete argument.
+
     Return value:
 
     True if the files are the same, False otherwise.
@@ -38,6 +41,9 @@ def cmp(f1, f2, shallow=1):
     with a cache invalidation mechanism relying on stale signatures.
 
     """
+    if use_statcache is not None:
+        warnings.warn("use_statcache argument is deprecated",
+                      DeprecationWarning)
 
     s1 = _sig(os.stat(f1))
     s2 = _sig(os.stat(f2))
@@ -48,12 +54,11 @@ def cmp(f1, f2, shallow=1):
     if s1[1] != s2[1]:
         return False
 
-    outcome = _cache.get((f1, f2, s1, s2))
-    if outcome is None:
-        outcome = _do_cmp(f1, f2)
-        if len(_cache) > 100:      # limit the maximum size of the cache
-            _cache.clear()
-        _cache[f1, f2, s1, s2] = outcome
+    result = _cache.get((f1, f2))
+    if result and (s1, s2) == result[:2]:
+        return result[2]
+    outcome = _do_cmp(f1, f2)
+    _cache[f1, f2] = s1, s2, outcome
     return outcome
 
 def _sig(st):
@@ -63,14 +68,15 @@ def _sig(st):
 
 def _do_cmp(f1, f2):
     bufsize = BUFSIZE
-    with open(f1, 'rb') as fp1, open(f2, 'rb') as fp2:
-        while True:
-            b1 = fp1.read(bufsize)
-            b2 = fp2.read(bufsize)
-            if b1 != b2:
-                return False
-            if not b1:
-                return True
+    fp1 = open(f1, 'rb')
+    fp2 = open(f2, 'rb')
+    while True:
+        b1 = fp1.read(bufsize)
+        b2 = fp2.read(bufsize)
+        if b1 != b2:
+            return False
+        if not b1:
+            return True
 
 # Directory comparison class.
 #
@@ -131,9 +137,9 @@ class dircmp:
     def phase1(self): # Compute common names
         a = dict(izip(imap(os.path.normcase, self.left_list), self.left_list))
         b = dict(izip(imap(os.path.normcase, self.right_list), self.right_list))
-        self.common = map(a.__getitem__, ifilter(b.__contains__, a))
-        self.left_only = map(a.__getitem__, ifilterfalse(b.__contains__, a))
-        self.right_only = map(b.__getitem__, ifilterfalse(a.__contains__, b))
+        self.common = map(a.__getitem__, ifilter(b.has_key, a))
+        self.left_only = map(a.__getitem__, ifilterfalse(b.has_key, a))
+        self.right_only = map(b.__getitem__, ifilterfalse(a.has_key, b))
 
     def phase2(self): # Distinguish files, directories, funnies
         self.common_dirs = []
@@ -238,12 +244,13 @@ class dircmp:
         self.methodmap[attr](self)
         return getattr(self, attr)
 
-def cmpfiles(a, b, common, shallow=1):
+def cmpfiles(a, b, common, shallow=1, use_statcache=None):
     """Compare common files in two directories.
 
     a, b -- directory names
     common -- list of file names found in both directories
     shallow -- if true, do comparison based solely on stat() information
+    use_statcache -- obsolete argument
 
     Returns a tuple of three lists:
       files that compare equal
@@ -251,6 +258,9 @@ def cmpfiles(a, b, common, shallow=1):
       filenames that aren't regular files.
 
     """
+    if use_statcache is not None:
+        warnings.warn("use_statcache argument is deprecated",
+                      DeprecationWarning)
     res = ([], [], [])
     for x in common:
         ax = os.path.join(a, x)
@@ -268,7 +278,7 @@ def cmpfiles(a, b, common, shallow=1):
 def _cmp(a, b, sh, abs=abs, cmp=cmp):
     try:
         return not abs(cmp(a, b, sh))
-    except (os.error, IOError):
+    except os.error:
         return 2
 
 

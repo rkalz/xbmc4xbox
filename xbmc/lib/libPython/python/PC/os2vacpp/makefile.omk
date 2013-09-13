@@ -164,7 +164,8 @@ MODULES		=                   \
                   StropModule.obj   \
                   StructModule.obj  \
                   TimeModule.obj    \
-                  ThreadModule.obj
+                  ThreadModule.obj  \
+                  YUVConvert.obj
 
 # Omitted Modules (and Description/Reason):
   #
@@ -219,7 +220,7 @@ MODULES		=                   \
 
   # zlibmodule.c    -- Wrapper of ZLib Compression API (GZip Format)
   # puremodule.c    -- Wrapper of Purify Debugging API (Probably Non-OS/2)
-  # dlmodule.c      -- Some Weird Form of Data Processing Module
+  # dlmodule.c      -- Some Wierd Form of Data Processing Module
   # xxmodule.c      -- Template to Create Your Own Module
 
 #
@@ -698,6 +699,30 @@ readline.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 pythonrun.h rangeobject.h sliceobject.h stringobject.h sysmodule.h \
 	 traceback.h tupleobject.h
 
+regexmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
+	 pyconfig.h dictobject.h fileobject.h floatobject.h funcobject.h \
+	 import.h intobject.h intrcheck.h listobject.h longobject.h \
+	 methodobject.h modsupport.h moduleobject.h mymalloc.h myproto.h \
+	 object.h objimpl.h pydebug.h pyerrors.h pyfpe.h pystate.h python.h \
+	 pythonrun.h rangeobject.h regexpr.h sliceobject.h stringobject.h \
+	 sysmodule.h traceback.h tupleobject.h
+
+regexpr.obj: abstract.h ceval.h classobject.h cobject.h \
+	 complexobject.h pyconfig.h dictobject.h fileobject.h floatobject.h \
+	 funcobject.h import.h intobject.h intrcheck.h listobject.h \
+	 longobject.h methodobject.h modsupport.h moduleobject.h mymalloc.h \
+	 myproto.h object.h objimpl.h pydebug.h pyerrors.h pyfpe.h \
+	 pystate.h python.h pythonrun.h rangeobject.h regexpr.h \
+	 sliceobject.h stringobject.h sysmodule.h traceback.h tupleobject.h
+
+reopmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
+	 pyconfig.h dictobject.h fileobject.h floatobject.h funcobject.h \
+	 import.h intobject.h intrcheck.h listobject.h longobject.h \
+	 methodobject.h modsupport.h moduleobject.h mymalloc.h myproto.h \
+	 object.h objimpl.h pydebug.h pyerrors.h pyfpe.h pystate.h python.h \
+	 pythonrun.h rangeobject.h regexpr.h sliceobject.h stringobject.h \
+	 sysmodule.h traceback.h tupleobject.h
+
 resource.obj: abstract.h c:\mptn\include\sys\time.h ceval.h classobject.h \
 	 cobject.h complexobject.h pyconfig.h dictobject.h fileobject.h \
 	 floatobject.h funcobject.h import.h intobject.h intrcheck.h \
@@ -802,7 +827,8 @@ svmodule.obj: abstract.h c:\mptn\include\sys\time.h ceval.h classobject.h \
 	 intrcheck.h listobject.h longobject.h methodobject.h modsupport.h \
 	 moduleobject.h mymalloc.h myproto.h object.h objimpl.h pydebug.h \
 	 pyerrors.h pyfpe.h pystate.h python.h pythonrun.h rangeobject.h \
-	 sliceobject.h stringobject.h sysmodule.h traceback.h tupleobject.h
+	 sliceobject.h stringobject.h sysmodule.h traceback.h tupleobject.h \
+	 yuv.h
 
 syslogmodule.obj: abstract.h ceval.h classobject.h cobject.h \
 	 complexobject.h pyconfig.h dictobject.h fileobject.h floatobject.h \
@@ -851,6 +877,8 @@ xxmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 object.h objimpl.h pydebug.h pyerrors.h pyfpe.h pystate.h python.h \
 	 pythonrun.h rangeobject.h sliceobject.h stringobject.h sysmodule.h \
 	 traceback.h tupleobject.h
+
+yuvconvert.obj: yuv.h
 
 zlibmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 pyconfig.h dictobject.h fileobject.h floatobject.h funcobject.h \
@@ -1154,6 +1182,8 @@ getcopyright.obj: abstract.h ceval.h classobject.h cobject.h \
 	 myproto.h object.h objimpl.h pydebug.h pyerrors.h pyfpe.h \
 	 pystate.h python.h pythonrun.h rangeobject.h sliceobject.h \
 	 stringobject.h sysmodule.h traceback.h tupleobject.h
+
+getmtime.obj: pyconfig.h
 
 getplatform.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 pyconfig.h dictobject.h fileobject.h floatobject.h funcobject.h \

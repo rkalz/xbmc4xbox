@@ -4,15 +4,20 @@ Provides the FileList class, used for poking about the filesystem
 and building lists of files.
 """
 
-__revision__ = "$Id$"
+# This module should be kept compatible with Python 2.1.
 
-import os, re
+__revision__ = "$Id: filelist.py 37828 2004-11-10 22:23:15Z loewis $"
+
+import os, string, re
 import fnmatch
+from types import *
+from glob import glob
 from distutils.util import convert_path
 from distutils.errors import DistutilsTemplateError, DistutilsInternalError
 from distutils import log
 
 class FileList:
+
     """A list of files built by on exploring the filesystem and filtered by
     applying various patterns to what we find there.
 
@@ -27,19 +32,22 @@ class FileList:
         filtering applied)
     """
 
-    def __init__(self, warn=None, debug_print=None):
+    def __init__(self,
+                 warn=None,
+                 debug_print=None):
         # ignore argument to FileList, but keep them for backwards
         # compatibility
+
         self.allfiles = None
         self.files = []
 
-    def set_allfiles(self, allfiles):
+    def set_allfiles (self, allfiles):
         self.allfiles = allfiles
 
-    def findall(self, dir=os.curdir):
+    def findall (self, dir=os.curdir):
         self.allfiles = findall(dir)
 
-    def debug_print(self, msg):
+    def debug_print (self, msg):
         """Print 'msg' to stdout if the global DEBUG (taken from the
         DISTUTILS_DEBUG environment variable) flag is true.
         """
@@ -49,24 +57,24 @@ class FileList:
 
     # -- List-like methods ---------------------------------------------
 
-    def append(self, item):
+    def append (self, item):
         self.files.append(item)
 
-    def extend(self, items):
+    def extend (self, items):
         self.files.extend(items)
 
-    def sort(self):
+    def sort (self):
         # Not a strict lexical sort!
         sortable_files = map(os.path.split, self.files)
         sortable_files.sort()
         self.files = []
         for sort_tuple in sortable_files:
-            self.files.append(os.path.join(*sort_tuple))
+            self.files.append(apply(os.path.join, sort_tuple))
 
 
     # -- Other miscellaneous utility methods ---------------------------
 
-    def remove_duplicates(self):
+    def remove_duplicates (self):
         # Assumes list has been sorted!
         for i in range(len(self.files) - 1, 0, -1):
             if self.files[i] == self.files[i - 1]:
@@ -75,8 +83,8 @@ class FileList:
 
     # -- "File template" methods ---------------------------------------
 
-    def _parse_template_line(self, line):
-        words = line.split()
+    def _parse_template_line (self, line):
+        words = string.split(line)
         action = words[0]
 
         patterns = dir = dir_pattern = None
@@ -109,40 +117,44 @@ class FileList:
 
         return (action, patterns, dir, dir_pattern)
 
-    def process_template_line(self, line):
+    # _parse_template_line ()
+
+
+    def process_template_line (self, line):
+
         # Parse the line: split it up, make sure the right number of words
         # is there, and return the relevant words.  'action' is always
         # defined: it's the first word of the line.  Which of the other
         # three are defined depends on the action; it'll be either
         # patterns, (dir and patterns), or (dir_pattern).
-        action, patterns, dir, dir_pattern = self._parse_template_line(line)
+        (action, patterns, dir, dir_pattern) = self._parse_template_line(line)
 
         # OK, now we know that the action is valid and we have the
         # right number of words on the line for that action -- so we
         # can proceed with minimal error-checking.
         if action == 'include':
-            self.debug_print("include " + ' '.join(patterns))
+            self.debug_print("include " + string.join(patterns))
             for pattern in patterns:
                 if not self.include_pattern(pattern, anchor=1):
                     log.warn("warning: no files found matching '%s'",
                              pattern)
 
         elif action == 'exclude':
-            self.debug_print("exclude " + ' '.join(patterns))
+            self.debug_print("exclude " + string.join(patterns))
             for pattern in patterns:
                 if not self.exclude_pattern(pattern, anchor=1):
                     log.warn(("warning: no previously-included files "
                               "found matching '%s'"), pattern)
 
         elif action == 'global-include':
-            self.debug_print("global-include " + ' '.join(patterns))
+            self.debug_print("global-include " + string.join(patterns))
             for pattern in patterns:
                 if not self.include_pattern(pattern, anchor=0):
                     log.warn(("warning: no files found matching '%s' " +
                               "anywhere in distribution"), pattern)
 
         elif action == 'global-exclude':
-            self.debug_print("global-exclude " + ' '.join(patterns))
+            self.debug_print("global-exclude " + string.join(patterns))
             for pattern in patterns:
                 if not self.exclude_pattern(pattern, anchor=0):
                     log.warn(("warning: no previously-included files matching "
@@ -151,7 +163,7 @@ class FileList:
 
         elif action == 'recursive-include':
             self.debug_print("recursive-include %s %s" %
-                             (dir, ' '.join(patterns)))
+                             (dir, string.join(patterns)))
             for pattern in patterns:
                 if not self.include_pattern(pattern, prefix=dir):
                     log.warn(("warning: no files found matching '%s' " +
@@ -160,7 +172,7 @@ class FileList:
 
         elif action == 'recursive-exclude':
             self.debug_print("recursive-exclude %s %s" %
-                             (dir, ' '.join(patterns)))
+                             (dir, string.join(patterns)))
             for pattern in patterns:
                 if not self.exclude_pattern(pattern, prefix=dir):
                     log.warn(("warning: no previously-included files matching "
@@ -182,15 +194,18 @@ class FileList:
             raise DistutilsInternalError, \
                   "this cannot happen: invalid action '%s'" % action
 
+    # process_template_line ()
+
+
     # -- Filtering/selection methods -----------------------------------
 
-    def include_pattern(self, pattern, anchor=1, prefix=None, is_regex=0):
+    def include_pattern (self, pattern,
+                         anchor=1, prefix=None, is_regex=0):
         """Select strings (presumably filenames) from 'self.files' that
-        match 'pattern', a Unix-style wildcard (glob) pattern.
-
-        Patterns are not quite the same as implemented by the 'fnmatch'
-        module: '*' and '?'  match non-special characters, where "special"
-        is platform-dependent: slash on Unix; colon, slash, and backslash on
+        match 'pattern', a Unix-style wildcard (glob) pattern.  Patterns
+        are not quite the same as implemented by the 'fnmatch' module: '*'
+        and '?'  match non-special characters, where "special" is platform-
+        dependent: slash on Unix; colon, slash, and backslash on
         DOS/Windows; and colon on Mac OS.
 
         If 'anchor' is true (the default), then the pattern match is more
@@ -210,7 +225,6 @@ class FileList:
 
         Return 1 if files are found.
         """
-        # XXX docstring lying about what the special chars are?
         files_found = 0
         pattern_re = translate_pattern(pattern, anchor, prefix, is_regex)
         self.debug_print("include_pattern: applying regex r'%s'" %
@@ -228,14 +242,16 @@ class FileList:
 
         return files_found
 
+    # include_pattern ()
 
-    def exclude_pattern(self, pattern, anchor=1, prefix=None, is_regex=0):
+
+    def exclude_pattern (self, pattern,
+                         anchor=1, prefix=None, is_regex=0):
         """Remove strings (presumably filenames) from 'files' that match
-        'pattern'.
-
-        Other parameters are the same as for 'include_pattern()', above.
-        The list 'self.files' is modified in place. Return 1 if files are
-        found.
+        'pattern'.  Other parameters are the same as for
+        'include_pattern()', above.
+        The list 'self.files' is modified in place.
+        Return 1 if files are found.
         """
         files_found = 0
         pattern_re = translate_pattern(pattern, anchor, prefix, is_regex)
@@ -249,11 +265,15 @@ class FileList:
 
         return files_found
 
+    # exclude_pattern ()
+
+# class FileList
+
 
 # ----------------------------------------------------------------------
 # Utility functions
 
-def findall(dir = os.curdir):
+def findall (dir = os.curdir):
     """Find all files under 'dir' and return the list of full filenames
     (relative to 'dir').
     """
@@ -285,12 +305,11 @@ def findall(dir = os.curdir):
     return list
 
 
-def glob_to_re(pattern):
-    """Translate a shell-like glob pattern to a regular expression.
-
-    Return a string containing the regex.  Differs from
-    'fnmatch.translate()' in that '*' does not match "special characters"
-    (which are platform-specific).
+def glob_to_re (pattern):
+    """Translate a shell-like glob pattern to a regular expression; return
+    a string containing the regex.  Differs from 'fnmatch.translate()' in
+    that '*' does not match "special characters" (which are
+    platform-specific).
     """
     pattern_re = fnmatch.translate(pattern)
 
@@ -298,27 +317,23 @@ def glob_to_re(pattern):
     # IMHO is wrong -- '?' and '*' aren't supposed to match slash in Unix,
     # and by extension they shouldn't match such "special characters" under
     # any OS.  So change all non-escaped dots in the RE to match any
-    # character except the special characters (currently: just os.sep).
-    sep = os.sep
-    if os.sep == '\\':
-        # we're using a regex to manipulate a regex, so we need
-        # to escape the backslash twice
-        sep = r'\\\\'
-    escaped = r'\1[^%s]' % sep
-    pattern_re = re.sub(r'((?<!\\)(\\\\)*)\.', escaped, pattern_re)
+    # character except the special characters.
+    # XXX currently the "special characters" are just slash -- i.e. this is
+    # Unix-only.
+    pattern_re = re.sub(r'(^|[^\\])\.', r'\1[^/]', pattern_re)
     return pattern_re
 
+# glob_to_re ()
 
-def translate_pattern(pattern, anchor=1, prefix=None, is_regex=0):
+
+def translate_pattern (pattern, anchor=1, prefix=None, is_regex=0):
     """Translate a shell-like wildcard pattern to a compiled regular
-    expression.
-
-    Return the compiled regex.  If 'is_regex' true,
+    expression.  Return the compiled regex.  If 'is_regex' true,
     then 'pattern' is directly compiled to a regex (if it's a string)
     or just returned as-is (assumes it's a regex object).
     """
     if is_regex:
-        if isinstance(pattern, str):
+        if type(pattern) is StringType:
             return re.compile(pattern)
         else:
             return pattern
@@ -329,15 +344,12 @@ def translate_pattern(pattern, anchor=1, prefix=None, is_regex=0):
         pattern_re = ''
 
     if prefix is not None:
-        # ditch end of pattern character
-        empty_pattern = glob_to_re('')
-        prefix_re = glob_to_re(prefix)[:-len(empty_pattern)]
-        sep = os.sep
-        if os.sep == '\\':
-            sep = r'\\'
-        pattern_re = "^" + sep.join((prefix_re, ".*" + pattern_re))
+        prefix_re = (glob_to_re(prefix))[0:-1] # ditch trailing $
+        pattern_re = "^" + os.path.join(prefix_re, ".*" + pattern_re)
     else:                               # no prefix -- respect anchor flag
         if anchor:
             pattern_re = "^" + pattern_re
 
     return re.compile(pattern_re)
+
+# translate_pattern ()

@@ -15,11 +15,12 @@
 # - optimize tree redraw after expand of subnode
 
 import os
+import sys
 from Tkinter import *
 import imp
 
-from idlelib import ZoomHeight
-from idlelib.configHandler import idleConf
+import ZoomHeight
+from configHandler import idleConf
 
 ICONDIR = "Icons"
 
@@ -397,7 +398,7 @@ class FileTreeItem(TreeItem):
             names = os.listdir(self.path)
         except os.error:
             return []
-        names.sort(key = os.path.normcase)
+        names.sort(lambda a, b: cmp(os.path.normcase(a), os.path.normcase(b)))
         sublist = []
         for name in names:
             item = FileTreeItem(os.path.join(self.path, name))
@@ -409,7 +410,7 @@ class FileTreeItem(TreeItem):
 
 class ScrolledCanvas:
     def __init__(self, master, **opts):
-        if 'yscrollincrement' not in opts:
+        if not opts.has_key('yscrollincrement'):
             opts['yscrollincrement'] = 17
         self.master = master
         self.frame = Frame(master)
@@ -452,7 +453,7 @@ class ScrolledCanvas:
 # Testing functions
 
 def test():
-    from idlelib import PyShell
+    import PyShell
     root = Toplevel(PyShell.root)
     root.configure(bd=0, bg="yellow")
     root.focus_set()

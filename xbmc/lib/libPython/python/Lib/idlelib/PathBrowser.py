@@ -2,8 +2,8 @@ import os
 import sys
 import imp
 
-from idlelib.TreeWidget import TreeItem
-from idlelib.ClassBrowser import ClassBrowser, ModuleBrowserTreeItem
+from TreeWidget import TreeItem
+from ClassBrowser import ClassBrowser, ModuleBrowserTreeItem
 
 class PathBrowser(ClassBrowser):
 
@@ -78,7 +78,7 @@ class DirBrowserTreeItem(TreeItem):
                 normed_name = os.path.normcase(name)
                 if normed_name[i:] == suff:
                     mod_name = name[:i]
-                    if mod_name not in modules:
+                    if not modules.has_key(mod_name):
                         modules[mod_name] = None
                         sorted.append((normed_name, name))
                         allnames.remove(name)
@@ -86,7 +86,7 @@ class DirBrowserTreeItem(TreeItem):
         return sorted
 
 def main():
-    from idlelib import PyShell
+    import PyShell
     PathBrowser(PyShell.flist)
     if sys.stdin is sys.__stdin__:
         mainloop()

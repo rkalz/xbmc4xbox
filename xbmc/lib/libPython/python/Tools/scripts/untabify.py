@@ -23,7 +23,7 @@ def main():
     for filename in args:
         process(filename, tabsize)
 
-def process(filename, tabsize, verbose=True):
+def process(filename, tabsize):
     try:
         f = open(filename)
         text = f.read()
@@ -43,10 +43,10 @@ def process(filename, tabsize, verbose=True):
         os.rename(filename, backup)
     except os.error:
         pass
-    with open(filename, "w") as f:
-        f.write(newtext)
-    if verbose:
-        print filename
+    f = open(filename, "w")
+    f.write(newtext)
+    f.close()
+    print filename
 
 if __name__ == '__main__':
     main()

@@ -1,10 +1,11 @@
 # Copyright (C) 2003 Python Software Foundation
 
 import unittest
+import os
+import sys
+import tempfile
 from test import test_support
-
-# Skip this test if aetools does not exist.
-test_support.import_module('aetools')
+import aetools
 
 class TestScriptpackages(unittest.TestCase):
 

@@ -20,66 +20,110 @@
  */
 
 #include "InfoLoader.h"
+#include "Weather.h"
+#include "SystemInfo.h"
+#include "GUIWindowManager.h"
+#include "GUIUserMessages.h"
 #include "LocalizeStrings.h"
-#include "JobManager.h"
-#include "TimeUtils.h"
+#include "utils/TimeUtils.h"
+#include "utils/log.h"
 
-CInfoJob::CInfoJob(CInfoLoader *loader)
+CBackgroundLoader::CBackgroundLoader(CInfoLoader *callback) : CThread()
 {
-  m_loader = loader;
+  m_callback = callback;
 }
 
-bool CInfoJob::DoWork()
+CBackgroundLoader::~CBackgroundLoader()
 {
-  if (m_loader)
-    return m_loader->DoWork();
-
-  return false;
 }
 
-CInfoLoader::CInfoLoader(unsigned int timeToRefresh)
+void CBackgroundLoader::Start()
+{
+  CThread::Create(true);
+}
+
+void CBackgroundLoader::Process()
+{
+  if (m_callback)
+  {
+    GetInformation();
+    // and inform our callback that we're done
+    m_callback->LoaderFinished();
+  }
+}
+
+CInfoLoader::CInfoLoader(const char *type)
 {
   m_refreshTime = 0;
-  m_timeToRefresh = timeToRefresh;
-  m_busy = false;
+  m_busy = true;
+  m_backgroundLoader = NULL;
+  m_type = type;
 }
 
 CInfoLoader::~CInfoLoader()
 {
+  if (m_backgroundLoader)
+    delete m_backgroundLoader;
 }
 
-void CInfoLoader::OnJobComplete(unsigned int jobID, bool success, CJob *job)
+void CInfoLoader::Refresh()
 {
-  m_refreshTime = CTimeUtils::GetFrameTime() + m_timeToRefresh;
+  if (!m_backgroundLoader)
+  {
+    if (m_type == "weather")
+      m_backgroundLoader = new CBackgroundWeatherLoader(this);
+    else if (m_type == "sysinfo")
+      m_backgroundLoader = new CBackgroundSystemInfoLoader(this);
+
+    if (!m_backgroundLoader)
+    {
+      CLog::Log(LOGERROR, "Unable to start the background %s loader", m_type.c_str());
+      return;
+    }
+
+    m_backgroundLoader->Start();
+  }
+  m_busy = true;
+}
+
+void CInfoLoader::LoaderFinished()
+{
+  m_refreshTime = CTimeUtils::GetFrameTime() + TimeToNextRefreshInMs();
+  m_backgroundLoader = NULL;
+  if (m_type == "weather" && m_busy)
+  {
+    CGUIMessage msg(GUI_MSG_NOTIFY_ALL,0,0,GUI_MSG_WEATHER_FETCHED);
+    g_windowManager.SendThreadMessage(msg);
+  }
   m_busy = false;
 }
 
-CStdString CInfoLoader::GetInfo(int info)
+const char *CInfoLoader::GetInfo(int info)
 {
   // Refresh if need be
-  if (m_refreshTime < CTimeUtils::GetFrameTime() && !m_busy)
-  { // queue up the job
-    m_busy = true;
-    CJobManager::GetInstance().AddJob(new CInfoJob(this), this);
+  if (m_refreshTime < CTimeUtils::GetFrameTime())
+  {
+    Refresh();
   }
-  if (m_busy)
+  if (m_busy && (m_type != "sysinfo") )
   {
     return BusyInfo(info);
   }
   return TranslateInfo(info);
 }
 
-CStdString CInfoLoader::BusyInfo(int info) const
+const char *CInfoLoader::BusyInfo(int info)
 {
-  return g_localizeStrings.Get(503);
+  m_busyText = g_localizeStrings.Get(503);
+  return m_busyText.c_str();
 }
 
-CStdString CInfoLoader::TranslateInfo(int info) const
+const char *CInfoLoader::TranslateInfo(int info)
 {
   return "";
 }
 
-void CInfoLoader::Refresh()
+void CInfoLoader::ResetTimer()
 {
   m_refreshTime = CTimeUtils::GetFrameTime();
 }

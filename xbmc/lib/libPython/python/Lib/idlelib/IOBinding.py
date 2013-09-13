@@ -7,7 +7,6 @@
 
 import os
 import types
-import pipes
 import sys
 import codecs
 import tempfile
@@ -17,7 +16,7 @@ import re
 from Tkinter import *
 from SimpleDialog import SimpleDialog
 
-from idlelib.configHandler import idleConf
+from configHandler import idleConf
 
 try:
     from codecs import BOM_UTF8
@@ -32,9 +31,6 @@ try:
     locale.setlocale(locale.LC_CTYPE, "")
 except (ImportError, locale.Error):
     pass
-
-# Encoding for file names
-filesystemencoding = sys.getfilesystemencoding()
 
 encoding = "ascii"
 if sys.platform == 'win32':
@@ -197,33 +193,29 @@ class IOBinding:
                 self.filename_change_hook()
 
     def open(self, event=None, editFile=None):
-        flist = self.editwin.flist
-        # Save in case parent window is closed (ie, during askopenfile()).
-        if flist:
+        if self.editwin.flist:
             if not editFile:
                 filename = self.askopenfile()
             else:
                 filename=editFile
             if filename:
-                # If editFile is valid and already open, flist.open will
-                # shift focus to its existing window.
-                # If the current window exists and is a fresh unnamed,
-                # unmodified editor window (not an interpreter shell),
-                # pass self.loadfile to flist.open so it will load the file
-                # in the current window (if the file is not already open)
-                # instead of a new window.
-                if (self.editwin and
-                        not getattr(self.editwin, 'interp', None) and
-                        not self.filename and
-                        self.get_saved()):
-                    flist.open(filename, self.loadfile)
+                # If the current window has no filename and hasn't been
+                # modified, we replace its contents (no loss).  Otherwise
+                # we open a new window.  But we won't replace the
+                # shell window (which has an interp(reter) attribute), which
+                # gets set to "not modified" at every new prompt.
+                try:
+                    interp = self.editwin.interp
+                except:
+                    interp = None
+                if not self.filename and self.get_saved() and not interp:
+                    self.editwin.flist.open(filename, self.loadfile)
                 else:
-                    flist.open(filename)
+                    self.editwin.flist.open(filename)
             else:
-                if self.text:
-                    self.text.focus_set()
+                self.text.focus_set()
             return "break"
-
+        #
         # Code for use outside IDLE:
         if self.get_saved():
             reply = self.maybesave()
@@ -271,7 +263,7 @@ class IOBinding:
         self.reset_undo()
         self.set_filename(filename)
         self.text.mark_set("insert", "1.0")
-        self.text.yview("insert")
+        self.text.see("insert")
         self.updaterecentfileslist(filename)
         return True
 
@@ -325,20 +317,17 @@ class IOBinding:
             return "yes"
         message = "Do you want to save %s before closing?" % (
             self.filename or "this untitled document")
-        confirm = tkMessageBox.askyesnocancel(
-                  title="Save On Close",
-                  message=message,
-                  default=tkMessageBox.YES,
-                  master=self.text)
-        if confirm:
-            reply = "yes"
+        m = tkMessageBox.Message(
+            title="Save On Close",
+            message=message,
+            icon=tkMessageBox.QUESTION,
+            type=tkMessageBox.YESNOCANCEL,
+            master=self.text)
+        reply = m.show()
+        if reply == "yes":
             self.save(None)
             if not self.get_saved():
                 reply = "cancel"
-        elif confirm is None:
-            reply = "cancel"
-        else:
-            reply = "no"
         self.text.focus_set()
         return reply
 
@@ -347,7 +336,7 @@ class IOBinding:
             self.save_as(event)
         else:
             if self.writefile(self.filename):
-                self.set_saved(True)
+                self.set_saved(1)
                 try:
                     self.editwin.store_file_breaks()
                 except AttributeError:  # may be a PyShell
@@ -473,28 +462,21 @@ class IOBinding:
             self.text.insert("end-1c", "\n")
 
     def print_window(self, event):
-        confirm = tkMessageBox.askokcancel(
-                  title="Print",
-                  message="Print to Default Printer",
-                  default=tkMessageBox.OK,
-                  master=self.text)
-        if not confirm:
-            self.text.focus_set()
-            return "break"
         tempfilename = None
         saved = self.get_saved()
         if saved:
             filename = self.filename
         # shell undo is reset after every prompt, looks saved, probably isn't
         if not saved or filename is None:
+            # XXX KBK 08Jun03 Wouldn't it be better to ask the user to save?
             (tfd, tempfilename) = tempfile.mkstemp(prefix='IDLE_tmp_')
             filename = tempfilename
             os.close(tfd)
             if not self.writefile(tempfilename):
                 os.unlink(tempfilename)
                 return "break"
-        platform = os.name
-        printPlatform = True
+        platform=os.name
+        printPlatform=1
         if platform == 'posix': #posix platform
             command = idleConf.GetOption('main','General',
                                          'print-command-posix')
@@ -502,9 +484,9 @@ class IOBinding:
         elif platform == 'nt': #win32 platform
             command = idleConf.GetOption('main','General','print-command-win')
         else: #no printing for this platform
-            printPlatform = False
+            printPlatform=0
         if printPlatform:  #we can try to print for this platform
-            command = command % pipes.quote(filename)
+            command = command % filename
             pipe = os.popen(command, "r")
             # things can get ugly on NT if there is no printer available.
             output = pipe.read().strip()
@@ -516,7 +498,7 @@ class IOBinding:
                 output = "Printing command: %s\n" % repr(command) + output
                 tkMessageBox.showerror("Print status", output, master=self.text)
         else:  #no printing for this platform
-            message = "Printing is not enabled for this platform: %s" % platform
+            message="Printing is not enabled for this platform: %s" % platform
             tkMessageBox.showinfo("Print status", message, master=self.text)
         if tempfilename:
             os.unlink(tempfilename)
@@ -526,8 +508,8 @@ class IOBinding:
     savedialog = None
 
     filetypes = [
-        ("Python files", "*.py *.pyw", "TEXT"),
-        ("Text files", "*.txt", "TEXT"),
+        ("Python and text files", "*.py *.pyw *.txt", "TEXT"),
+        ("All text files", "*", "TEXT"),
         ("All files", "*"),
         ]
 
@@ -536,10 +518,7 @@ class IOBinding:
         if not self.opendialog:
             self.opendialog = tkFileDialog.Open(master=self.text,
                                                 filetypes=self.filetypes)
-        filename = self.opendialog.show(initialdir=dir, initialfile=base)
-        if isinstance(filename, unicode):
-            filename = filename.encode(filesystemencoding)
-        return filename
+        return self.opendialog.show(initialdir=dir, initialfile=base)
 
     def defaultfilename(self, mode="open"):
         if self.filename:
@@ -558,10 +537,7 @@ class IOBinding:
         if not self.savedialog:
             self.savedialog = tkFileDialog.SaveAs(master=self.text,
                                                   filetypes=self.filetypes)
-        filename = self.savedialog.show(initialdir=dir, initialfile=base)
-        if isinstance(filename, unicode):
-            filename = filename.encode(filesystemencoding)
-        return filename
+        return self.savedialog.show(initialdir=dir, initialfile=base)
 
     def updaterecentfileslist(self,filename):
         "Update recent file list on all editor windows"

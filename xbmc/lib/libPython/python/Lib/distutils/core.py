@@ -6,20 +6,20 @@ indirectly provides the Distribution and Command classes, although they are
 really defined in distutils.dist and distutils.cmd.
 """
 
-__revision__ = "$Id$"
+# This module should be kept compatible with Python 2.1.
 
-import sys
-import os
+__revision__ = "$Id: core.py 37828 2004-11-10 22:23:15Z loewis $"
+
+import sys, os
+from types import *
 
 from distutils.debug import DEBUG
-from distutils.errors import (DistutilsSetupError, DistutilsArgError,
-                              DistutilsError, CCompilerError)
+from distutils.errors import *
 from distutils.util import grok_environment_error
 
 # Mainly import these so setup scripts can "from distutils.core import" them.
 from distutils.dist import Distribution
 from distutils.cmd import Command
-from distutils.config import PyPIRCCommand
 from distutils.extension import Extension
 
 # This is a barebones help message generated displayed when the user
@@ -33,9 +33,9 @@ usage: %(script)s [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
    or: %(script)s cmd --help
 """
 
-def gen_usage(script_name):
+def gen_usage (script_name):
     script = os.path.basename(script_name)
-    return USAGE % {'script': script}
+    return USAGE % vars()
 
 
 # Some mild magic to control the behaviour of 'setup()' from 'run_setup()'.
@@ -47,9 +47,7 @@ setup_keywords = ('distclass', 'script_name', 'script_args', 'options',
                   'name', 'version', 'author', 'author_email',
                   'maintainer', 'maintainer_email', 'url', 'license',
                   'description', 'long_description', 'keywords',
-                  'platforms', 'classifiers', 'download_url',
-                  'requires', 'provides', 'obsoletes',
-                  )
+                  'platforms', 'classifiers', 'download_url',)
 
 # Legal keyword arguments for the Extension constructor
 extension_keywords = ('name', 'sources', 'include_dirs',
@@ -58,7 +56,7 @@ extension_keywords = ('name', 'sources', 'include_dirs',
                       'extra_objects', 'extra_compile_args', 'extra_link_args',
                       'swig_opts', 'export_symbols', 'depends', 'language')
 
-def setup(**attrs):
+def setup (**attrs):
     """The gateway to the Distutils: do everything your setup script needs
     to do, in a highly flexible and user-driven way.  Briefly: create a
     Distribution instance; find and parse config files; parse the command
@@ -101,9 +99,9 @@ def setup(**attrs):
     else:
         klass = Distribution
 
-    if 'script_name' not in attrs:
+    if not attrs.has_key('script_name'):
         attrs['script_name'] = os.path.basename(sys.argv[0])
-    if 'script_args' not in attrs:
+    if not attrs.has_key('script_args'):
         attrs['script_args'] = sys.argv[1:]
 
     # Create the Distribution instance, using the remaining arguments
@@ -111,7 +109,7 @@ def setup(**attrs):
     try:
         _setup_distribution = dist = klass(attrs)
     except DistutilsSetupError, msg:
-        if 'name' in attrs:
+        if attrs.has_key('name'):
             raise SystemExit, "error in %s setup command: %s" % \
                   (attrs['name'], msg)
         else:
@@ -131,9 +129,8 @@ def setup(**attrs):
     if _setup_stop_after == "config":
         return dist
 
-    # Parse the command line and override config files; any
-    # command-line errors are the end user's fault, so turn them into
-    # SystemExit to suppress tracebacks.
+    # Parse the command line; any command-line errors are the end user's
+    # fault, so turn them into SystemExit to suppress tracebacks.
     try:
         ok = dist.parse_command_line()
     except DistutilsArgError, msg:
@@ -170,8 +167,10 @@ def setup(**attrs):
 
     return dist
 
+# setup ()
 
-def run_setup(script_name, script_args=None, stop_after="run"):
+
+def run_setup (script_name, script_args=None, stop_after="run"):
     """Run a setup script in a somewhat controlled environment, and
     return the Distribution instance that drives things.  This is useful
     if you need to find out the distribution meta-data (passed as
@@ -209,18 +208,14 @@ def run_setup(script_name, script_args=None, stop_after="run"):
     _setup_stop_after = stop_after
 
     save_argv = sys.argv
-    g = {'__file__': script_name}
+    g = {}
     l = {}
     try:
         try:
             sys.argv[0] = script_name
             if script_args is not None:
                 sys.argv[1:] = script_args
-            f = open(script_name)
-            try:
-                exec f.read() in g, l
-            finally:
-                f.close()
+            execfile(script_name, g, l)
         finally:
             sys.argv = save_argv
             _setup_stop_after = None
@@ -239,4 +234,7 @@ def run_setup(script_name, script_args=None, stop_after="run"):
 
     # I wonder if the setup script's namespace -- g and l -- would be of
     # any interest to callers?
+    #print "_setup_distribution:", _setup_distribution
     return _setup_distribution
+
+# run_setup ()

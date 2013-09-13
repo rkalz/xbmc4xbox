@@ -26,6 +26,7 @@ askstring -- get a string from the user
 '''
 
 from Tkinter import *
+import os
 
 class Dialog(Toplevel):
 
@@ -45,13 +46,7 @@ class Dialog(Toplevel):
             title -- the dialog title
         '''
         Toplevel.__init__(self, parent)
-
-        self.withdraw() # remain invisible for now
-        # If the master is not viewable, don't
-        # make the child transient, or else it
-        # would be opened withdrawn
-        if parent.winfo_viewable():
-            self.transient(parent)
+        self.transient(parent)
 
         if title:
             self.title(title)
@@ -66,6 +61,8 @@ class Dialog(Toplevel):
 
         self.buttonbox()
 
+        self.wait_visibility() # window needs to be visible for the grab
+        self.grab_set()
 
         if not self.initial_focus:
             self.initial_focus = self
@@ -76,13 +73,8 @@ class Dialog(Toplevel):
             self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
                                       parent.winfo_rooty()+50))
 
-        self.deiconify() # become visibile now
-
         self.initial_focus.focus_set()
 
-        # wait for window to appear on screen before calling grab_set
-        self.wait_visibility()
-        self.grab_set()
         self.wait_window(self)
 
     def destroy(self):
@@ -132,10 +124,9 @@ class Dialog(Toplevel):
         self.withdraw()
         self.update_idletasks()
 
-        try:
-            self.apply()
-        finally:
-            self.cancel()
+        self.apply()
+
+        self.cancel()
 
     def cancel(self, event=None):
 
@@ -200,7 +191,7 @@ class _QueryDialog(Dialog):
         self.entry = Entry(master, name="entry")
         self.entry.grid(row=1, padx=5, sticky=W+E)
 
-        if self.initialvalue is not None:
+        if self.initialvalue:
             self.entry.insert(0, self.initialvalue)
             self.entry.select_range(0, END)
 
@@ -283,7 +274,7 @@ def askfloat(title, prompt, **kw):
 
 class _QueryString(_QueryDialog):
     def __init__(self, *args, **kw):
-        if "show" in kw:
+        if kw.has_key("show"):
             self.__show = kw["show"]
             del kw["show"]
         else:

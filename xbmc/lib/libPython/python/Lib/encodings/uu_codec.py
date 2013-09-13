@@ -25,8 +25,7 @@ def uu_encode(input,errors='strict',filename='<data>',mode=0666):
     assert errors == 'strict'
     from cStringIO import StringIO
     from binascii import b2a_uu
-    # using str() because of cStringIO's Unicode undesired Unicode behavior.
-    infile = StringIO(str(input))
+    infile = StringIO(input)
     outfile = StringIO()
     read = infile.read
     write = outfile.write
@@ -61,7 +60,7 @@ def uu_decode(input,errors='strict'):
     assert errors == 'strict'
     from cStringIO import StringIO
     from binascii import a2b_uu
-    infile = StringIO(str(input))
+    infile = StringIO(input)
     outfile = StringIO()
     readline = infile.readline
     write = outfile.write
@@ -97,17 +96,8 @@ class Codec(codecs.Codec):
 
     def encode(self,input,errors='strict'):
         return uu_encode(input,errors)
-
     def decode(self,input,errors='strict'):
         return uu_decode(input,errors)
-
-class IncrementalEncoder(codecs.IncrementalEncoder):
-    def encode(self, input, final=False):
-        return uu_encode(input, self.errors)[0]
-
-class IncrementalDecoder(codecs.IncrementalDecoder):
-    def decode(self, input, final=False):
-        return uu_decode(input, self.errors)[0]
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
@@ -118,12 +108,5 @@ class StreamReader(Codec,codecs.StreamReader):
 ### encodings module API
 
 def getregentry():
-    return codecs.CodecInfo(
-        name='uu',
-        encode=uu_encode,
-        decode=uu_decode,
-        incrementalencoder=IncrementalEncoder,
-        incrementaldecoder=IncrementalDecoder,
-        streamreader=StreamReader,
-        streamwriter=StreamWriter,
-    )
+
+    return (uu_encode,uu_decode,StreamReader,StreamWriter)

@@ -42,7 +42,14 @@ struct Bios
  char Name[50];
  char Signature[33];
 };
+class CBackgroundSystemInfoLoader : public CBackgroundLoader
+{
+public:
+  CBackgroundSystemInfoLoader(CInfoLoader *pCallback) : CBackgroundLoader(pCallback) {};
 
+protected:
+  virtual void GetInformation();
+};
 class CSysInfo : public CInfoLoader
 {
   public:
@@ -134,6 +141,7 @@ class CSysInfo : public CInfoLoader
     #define DEBUG_KEYBOARD
     #define DEBUG_MOUSE
 
+    CStdString m_temp;
     XKEEPROM* m_XKEEPROM;
     XBOX_VERSION  m_XBOXVersion;
 
@@ -154,8 +162,8 @@ class CSysInfo : public CInfoLoader
     void Reset();
 
 protected:
-  virtual bool DoWork();
-  virtual CStdString TranslateInfo(int info) const;
+    virtual const char *TranslateInfo(int info);
+    virtual DWORD TimeToNextRefreshInMs();
 };
 
 extern CSysInfo g_sysinfo;

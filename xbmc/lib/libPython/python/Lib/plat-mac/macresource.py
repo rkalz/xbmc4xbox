@@ -1,8 +1,5 @@
 """macresource - Locate and open the resources needed for a script."""
 
-from warnings import warnpy3k
-warnpy3k("In 3.x, the macresource module is removed.", stacklevel=2)
-
 from Carbon import Res
 import os
 import sys
@@ -51,7 +48,7 @@ def need(restype, resid, filename=None, modname=None):
     if modname == '__main__':
         # If we're main we look in the current directory
         searchdirs = [os.curdir]
-    if modname in sys.modules:
+    if sys.modules.has_key(modname):
         mod = sys.modules[modname]
         if hasattr(mod, '__file__'):
             searchdirs = [os.path.dirname(mod.__file__)]
@@ -77,38 +74,52 @@ def need(restype, resid, filename=None, modname=None):
 def open_pathname(pathname, verbose=0):
     """Open a resource file given by pathname, possibly decoding an
     AppleSingle file"""
-    # No resource fork. We may be on OSX, and this may be either
-    # a data-fork based resource file or a AppleSingle file
-    # from the CVS repository.
     try:
-        refno = Res.FSOpenResourceFile(pathname, u'', 1)
+        refno = Res.FSpOpenResFile(pathname, 1)
     except Res.Error, arg:
-        if arg[0] != -199:
-            # -199 is "bad resource map"
+        if arg[0] in (-37, -39):
+            # No resource fork. We may be on OSX, and this may be either
+            # a data-fork based resource file or a AppleSingle file
+            # from the CVS repository.
+            try:
+                refno = Res.FSOpenResourceFile(pathname, u'', 1)
+            except Res.Error, arg:
+                if arg[0] != -199:
+                    # -199 is "bad resource map"
+                    raise
+            else:
+                return refno
+            # Finally try decoding an AppleSingle file
+            pathname = _decode(pathname, verbose=verbose)
+            refno = Res.FSOpenResourceFile(pathname, u'', 1)
+        else:
             raise
-    else:
-        return refno
-    # Finally try decoding an AppleSingle file
-    pathname = _decode(pathname, verbose=verbose)
-    refno = Res.FSOpenResourceFile(pathname, u'', 1)
+    return refno
 
 def resource_pathname(pathname, verbose=0):
     """Return the pathname for a resource file (either DF or RF based).
     If the pathname given already refers to such a file simply return it,
     otherwise first decode it."""
-    # No resource fork. We may be on OSX, and this may be either
-    # a data-fork based resource file or a AppleSingle file
-    # from the CVS repository.
     try:
-        refno = Res.FSOpenResourceFile(pathname, u'', 1)
+        refno = Res.FSpOpenResFile(pathname, 1)
+        Res.CloseResFile(refno)
     except Res.Error, arg:
-        if arg[0] != -199:
-            # -199 is "bad resource map"
+        if arg[0] in (-37, -39):
+            # No resource fork. We may be on OSX, and this may be either
+            # a data-fork based resource file or a AppleSingle file
+            # from the CVS repository.
+            try:
+                refno = Res.FSOpenResourceFile(pathname, u'', 1)
+            except Res.Error, arg:
+                if arg[0] != -199:
+                    # -199 is "bad resource map"
+                    raise
+            else:
+                return refno
+            # Finally try decoding an AppleSingle file
+            pathname = _decode(pathname, verbose=verbose)
+        else:
             raise
-    else:
-        return refno
-    # Finally try decoding an AppleSingle file
-    pathname = _decode(pathname, verbose=verbose)
     return pathname
 
 def open_error_resource():

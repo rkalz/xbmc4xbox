@@ -7,7 +7,7 @@ to a sane state so you can read the resulting traceback.
 
 """
 
-import curses
+import sys, curses
 
 def wrapper(func, *args, **kwds):
     """Wrapper function that initializes curses and calls another function,
@@ -17,9 +17,10 @@ def wrapper(func, *args, **kwds):
     wrapper().
     """
 
+    res = None
     try:
         # Initialize curses
-        stdscr = curses.initscr()
+        stdscr=curses.initscr()
 
         # Turn off echoing of keys, and enter cbreak mode,
         # where no buffering is performed on keyboard input
@@ -43,8 +44,7 @@ def wrapper(func, *args, **kwds):
         return func(stdscr, *args, **kwds)
     finally:
         # Set everything back to normal
-        if 'stdscr' in locals():
-            stdscr.keypad(0)
-            curses.echo()
-            curses.nocbreak()
-            curses.endwin()
+        stdscr.keypad(0)
+        curses.echo()
+        curses.nocbreak()
+        curses.endwin()

@@ -4,9 +4,6 @@
 
 # XXX It appears that compressing grayscale images doesn't work right;
 # XXX the resulting file causes weirdness.
-from warnings import warnpy3k
-warnpy3k("the jpeg module has been removed in Python 3.0", stacklevel=2)
-del warnpy3k
 
 class error(Exception):
     pass

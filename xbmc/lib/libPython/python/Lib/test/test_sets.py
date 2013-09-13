@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
 import unittest, operator, copy, pickle, random
-from test import test_support
-
-test_support.import_module("sets", deprecated=True)
 from sets import Set, ImmutableSet
+from test import test_support
 
 empty_set = Set()
 
@@ -74,7 +72,7 @@ class TestBasicOps(unittest.TestCase):
 
     def test_iteration(self):
         for v in self.set:
-            self.assertIn(v, self.values)
+            self.assert_(v in self.values)
 
     def test_pickling(self):
         p = pickle.dumps(self.set)
@@ -105,10 +103,10 @@ class TestBasicOpsSingleton(TestBasicOps):
         self.repr   = "Set([3])"
 
     def test_in(self):
-        self.assertTrue(3 in self.set)
+        self.failUnless(3 in self.set)
 
     def test_not_in(self):
-        self.assertTrue(2 not in self.set)
+        self.failUnless(2 not in self.set)
 
 #------------------------------------------------------------------------------
 
@@ -122,10 +120,10 @@ class TestBasicOpsTuple(TestBasicOps):
         self.repr   = "Set([(0, 'zero')])"
 
     def test_in(self):
-        self.assertTrue((0, "zero") in self.set)
+        self.failUnless((0, "zero") in self.set)
 
     def test_not_in(self):
-        self.assertTrue(9 not in self.set)
+        self.failUnless(9 not in self.set)
 
 #------------------------------------------------------------------------------
 
@@ -404,7 +402,7 @@ class TestMutate(unittest.TestCase):
             popped[self.set.pop()] = None
         self.assertEqual(len(popped), len(self.values))
         for v in self.values:
-            self.assertIn(v, popped)
+            self.failUnless(v in popped)
 
     def test_update_empty_tuple(self):
         self.set.union_update(())
@@ -636,10 +634,6 @@ class TestOnlySetsOperator(TestOnlySetsInBinaryOps):
         self.other = operator.add
         self.otherIsIterable = False
 
-    def test_ge_gt_le_lt(self):
-        with test_support.check_py3k_warnings():
-            super(TestOnlySetsOperator, self).test_ge_gt_le_lt()
-
 #------------------------------------------------------------------------------
 
 class TestOnlySetsTuple(TestOnlySetsInBinaryOps):
@@ -681,16 +675,20 @@ class TestCopying(unittest.TestCase):
 
     def test_copy(self):
         dup = self.set.copy()
-        self.assertEqual(len(dup), len(self.set))
-        dup_list = sorted(dup)
-        set_list = sorted(self.set)
+        dup_list = list(dup); dup_list.sort()
+        set_list = list(self.set); set_list.sort()
         self.assertEqual(len(dup_list), len(set_list))
-        for i, el in enumerate(dup_list):
-            self.assertIs(el, set_list[i])
+        for i in range(len(dup_list)):
+            self.failUnless(dup_list[i] is set_list[i])
 
     def test_deep_copy(self):
         dup = copy.deepcopy(self.set)
-        self.assertSetEqual(dup, self.set)
+        ##print type(dup), repr(dup)
+        dup_list = list(dup); dup_list.sort()
+        set_list = list(self.set); set_list.sort()
+        self.assertEqual(len(dup_list), len(set_list))
+        for i in range(len(dup_list)):
+            self.assertEqual(dup_list[i], set_list[i])
 
 #------------------------------------------------------------------------------
 
@@ -709,10 +707,6 @@ class TestCopyingSingleton(TestCopying):
 class TestCopyingTriple(TestCopying):
     def setUp(self):
         self.set = Set(["zero", 0, None])
-
-    def test_copy(self):
-        with test_support.check_py3k_warnings():
-            super(TestCopyingTriple, self).test_copy()
 
 #------------------------------------------------------------------------------
 
@@ -735,13 +729,13 @@ class TestIdentities(unittest.TestCase):
 
     def test_binopsVsSubsets(self):
         a, b = self.a, self.b
-        self.assertTrue(a - b <= a)
-        self.assertTrue(b - a <= b)
-        self.assertTrue(a & b <= a)
-        self.assertTrue(a & b <= b)
-        self.assertTrue(a | b >= a)
-        self.assertTrue(a | b >= b)
-        self.assertTrue(a ^ b <= a | b)
+        self.assert_(a - b <= a)
+        self.assert_(b - a <= b)
+        self.assert_(a & b <= a)
+        self.assert_(a & b <= b)
+        self.assert_(a | b >= a)
+        self.assert_(a | b >= b)
+        self.assert_(a ^ b <= a | b)
 
     def test_commutativity(self):
         a, b = self.a, self.b
@@ -757,9 +751,9 @@ class TestIdentities(unittest.TestCase):
         self.assertEqual(a - a, zero)
         self.assertEqual(a | a, a)
         self.assertEqual(a & a, a)
-        self.assertTrue(a <= a)
-        self.assertTrue(a >= a)
-        self.assertTrue(a == a)
+        self.assert_(a <= a)
+        self.assert_(a >= a)
+        self.assert_(a == a)
 
     def test_summations(self):
         # check that sums of parts equal the whole
@@ -825,8 +819,7 @@ Set(['Jack', 'Jane', 'Janice', 'John', 'Marvin', 'Sam', 'Zack'])
 __test__ = {'libreftest' : libreftest}
 
 def test_main(verbose=None):
-    import doctest
-    from test import test_sets
+    import test_sets, doctest
     test_support.run_unittest(
         TestSetOfSets,
         TestExceptionPropagation,

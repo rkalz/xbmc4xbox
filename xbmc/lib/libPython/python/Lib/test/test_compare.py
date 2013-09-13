@@ -1,5 +1,4 @@
-import unittest
-from test import test_support
+import sys
 
 class Empty:
     def __repr__(self):
@@ -28,31 +27,28 @@ class Cmp:
     def __cmp__(self, other):
         return cmp(self.arg, other)
 
-class ComparisonTest(unittest.TestCase):
-    set1 = [2, 2.0, 2L, 2+0j, Coerce(2), Cmp(2.0)]
-    set2 = [[1], (3,), None, Empty()]
-    candidates = set1 + set2
 
-    def test_comparisons(self):
-        for a in self.candidates:
-            for b in self.candidates:
-                if ((a in self.set1) and (b in self.set1)) or a is b:
-                    self.assertEqual(a, b)
+candidates = [2, 2.0, 2L, 2+0j, [1], (3,), None, Empty(), Coerce(2), Cmp(2.0)]
+
+def test():
+    for a in candidates:
+        for b in candidates:
+            try:
+                x = a == b
+            except:
+                print 'cmp(%s, %s) => %s' % (a, b, sys.exc_info()[0])
+            else:
+                if x:
+                    print "%s == %s" % (a, b)
                 else:
-                    self.assertNotEqual(a, b)
+                    print "%s != %s" % (a, b)
+    # Ensure default comparison compares id() of args
+    L = []
+    for i in range(10):
+        L.insert(len(L)//2, Empty())
+    for a in L:
+        for b in L:
+            if cmp(a, b) != cmp(id(a), id(b)):
+                print "ERROR:", cmp(a, b), cmp(id(a), id(b)), id(a), id(b)
 
-    def test_id_comparisons(self):
-        # Ensure default comparison compares id() of args
-        L = []
-        for i in range(10):
-            L.insert(len(L)//2, Empty())
-        for a in L:
-            for b in L:
-                self.assertEqual(cmp(a, b), cmp(id(a), id(b)),
-                                 'a=%r, b=%r' % (a, b))
-
-def test_main():
-    test_support.run_unittest(ComparisonTest)
-
-if __name__ == '__main__':
-    test_main()
+test()

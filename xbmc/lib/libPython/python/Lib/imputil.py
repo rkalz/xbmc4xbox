@@ -9,12 +9,9 @@ Exported classes:
 
     DynLoadSuffixImporter
 """
-from warnings import warnpy3k
-warnpy3k("the imputil module has been removed in Python 3.0", stacklevel=2)
-del warnpy3k
 
 # note: avoid importing non-builtin modules
-import imp                      ### not available in Jython?
+import imp                      ### not available in JPython?
 import sys
 import __builtin__
 
@@ -25,7 +22,7 @@ import marshal
 __all__ = ["ImportManager","Importer","BuiltinImporter"]
 
 _StringType = type('')
-_ModuleType = type(sys)         ### doesn't work in Jython...
+_ModuleType = type(sys)         ### doesn't work in JPython...
 
 class ImportManager:
     "Manage the import process."
@@ -51,7 +48,7 @@ class ImportManager:
         self.namespace['__import__'] = self.previous_importer
 
     def add_suffix(self, suffix, importFunc):
-        assert hasattr(importFunc, '__call__')
+        assert callable(importFunc)
         self.fs_imp.add_suffix(suffix, importFunc)
 
     ######################################################################
@@ -281,8 +278,7 @@ class Importer:
             setattr(parent, modname, module)
         return module
 
-    def _process_result(self, result, fqname):
-        ispkg, code, values = result
+    def _process_result(self, (ispkg, code, values), fqname):
         # did get_code() return an actual module? (rather than a code object)
         is_module = isinstance(code, _ModuleType)
 
@@ -462,6 +458,16 @@ def _os_bootstrap():
     elif 'os2' in names:
         sep = '\\'
         from os2 import stat
+    elif 'mac' in names:
+        from mac import stat
+        def join(a, b):
+            if a == '':
+                return b
+            if ':' not in a:
+                a = ':' + a
+            if a[-1:] != ':':
+                a = a + ':'
+            return a + b
     else:
         raise ImportError, 'no os specific module found'
 
@@ -530,7 +536,7 @@ class _FilesystemImporter(Importer):
         self.suffixes = [ ]
 
     def add_suffix(self, suffix, importFunc):
-        assert hasattr(importFunc, '__call__')
+        assert callable(importFunc)
         self.suffixes.append((suffix, importFunc))
 
     def import_from_dir(self, dir, fqname):
@@ -546,10 +552,6 @@ class _FilesystemImporter(Importer):
         # This method is only used when we look for a module within a package.
         assert parent
 
-        for submodule_path in parent.__path__:
-            code = self._import_pathname(_os_path_join(submodule_path, modname), fqname)
-            if code is not None:
-                return code
         return self._import_pathname(_os_path_join(parent.__pkgdir__, modname),
                                      fqname)
 
@@ -630,8 +632,8 @@ def _test_revamp():
 # TODO
 #
 # from Finn Bock:
-#   type(sys) is not a module in Jython. what to use instead?
-#   imp.C_EXTENSION is not in Jython. same for get_suffixes and new_module
+#   type(sys) is not a module in JPython. what to use instead?
+#   imp.C_EXTENSION is not in JPython. same for get_suffixes and new_module
 #
 #   given foo.py of:
 #      import sys

@@ -133,9 +133,9 @@
 #include "music/windows/GUIWindowMusicNav.h"
 #include "music/windows/GUIWindowMusicPlaylistEditor.h"
 #include "video/windows/GUIWindowVideoPlaylist.h"
-#include "music/dialogs/GUIDialogMusicInfo.h"
-#include "video/dialogs/GUIDialogVideoInfo.h"
-#include "video/windows/GUIWindowVideoFiles.h"
+#include "GUIWindowMusicInfo.h"
+#include "GUIWindowVideoInfo.h"
+#include "GUIWindowVideoFiles.h"
 #include "video/windows/GUIWindowVideoNav.h"
 #include "settings/GUIWindowSettingsProfile.h"
 #include "settings/GUIWindowSettingsScreenCalibration.h"
@@ -195,7 +195,6 @@
 #include "video/dialogs/GUIDialogFullScreenInfo.h"
 #include "dialogs/GUIDialogSlider.h"
 #include "cores/dlgcache.h"
-#include "guilib/GUIControlFactory.h"
 
 #ifdef _LINUX
 #include "XHandle.h"
@@ -2075,6 +2074,15 @@ bool CApplication::LoadUserWindows()
         if (pType && pType->FirstChild())
           strType = pType->FirstChild()->Value();
       }
+      if (strType.Equals("dialog"))
+        pWindow = new CGUIDialog(0, "");
+      else if (strType.Equals("submenu"))
+        pWindow = new CGUIDialogSubMenu();
+      else if (strType.Equals("buttonmenu"))
+        pWindow = new CGUIDialogButtonMenu();
+      else
+        pWindow = new CGUIStandardWindow();
+
       int id = WINDOW_INVALID;
       if (!pRootElement->Attribute("id", &id))
       {
@@ -2082,30 +2090,20 @@ bool CApplication::LoadUserWindows()
         if (pType && pType->FirstChild())
           id = atol(pType->FirstChild()->Value());
       }
-      int visibleCondition = 0;
-      CGUIControlFactory::GetConditionalVisibility(pRootElement, visibleCondition);
-
-      if (strType.Equals("dialog"))
-        pWindow = new CGUIDialog(id + WINDOW_HOME, FindFileData.cFileName);
-      else if (strType.Equals("submenu"))
-        pWindow = new CGUIDialogSubMenu(id + WINDOW_HOME, FindFileData.cFileName);
-      else if (strType.Equals("buttonmenu"))
-        pWindow = new CGUIDialogButtonMenu(id + WINDOW_HOME, FindFileData.cFileName);
-      else
-        pWindow = new CGUIStandardWindow(id + WINDOW_HOME, FindFileData.cFileName);
-
       // Check to make sure the pointer isn't still null
-      if (pWindow == NULL)
+      if (pWindow == NULL || id == WINDOW_INVALID)
       {
         CLog::Log(LOGERROR, "Out of memory / Failed to create new object in LoadUserWindows");
         return false;
       }
-      if (id == WINDOW_INVALID || g_windowManager.GetWindow(WINDOW_HOME + id))
+      if (g_windowManager.GetWindow(WINDOW_HOME + id))
       {
         delete pWindow;
         continue;
       }
-      pWindow->SetVisibleCondition(visibleCondition, false);
+      // set the window's xml file, and add it to the window manager.
+      pWindow->SetProperty("xmlfile", FindFileData.cFileName);
+      pWindow->SetID(WINDOW_HOME + id);
       g_windowManager.AddCustomWindow(pWindow);
     }
     CloseHandle(hFind);

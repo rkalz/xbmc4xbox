@@ -315,18 +315,18 @@ class MyGlobalObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
         Output("%s itself;", self.itselftype)
         Output("char *kw[] = {\"itself\", 0};")
         Output()
-        Output("if (PyArg_ParseTupleAndKeywords(_args, _kwds, \"O&\", kw, %s_Convert, &itself))",
+        Output("if (PyArg_ParseTupleAndKeywords(args, kwds, \"O&\", kw, %s_Convert, &itself))",
                 self.prefix)
         OutLbrace()
-        Output("((%s *)_self)->ob_itself = itself;", self.objecttype)
+        Output("((%s *)self)->ob_itself = itself;", self.objecttype)
         Output("return 0;")
         OutRbrace()
         if self.prefix != 'CFTypeRefObj':
             Output()
             Output("/* Any CFTypeRef descendent is allowed as initializer too */")
-            Output("if (PyArg_ParseTupleAndKeywords(_args, _kwds, \"O&\", kw, CFTypeRefObj_Convert, &itself))")
+            Output("if (PyArg_ParseTupleAndKeywords(args, kwds, \"O&\", kw, CFTypeRefObj_Convert, &itself))")
             OutLbrace()
-            Output("((%s *)_self)->ob_itself = itself;", self.objecttype)
+            Output("((%s *)self)->ob_itself = itself;", self.objecttype)
             Output("return 0;")
             OutRbrace()
         Output("return -1;")
@@ -427,9 +427,8 @@ class CFStringRefObjectDefinition(MyGlobalObjectDefinition):
         if (PyString_Check(v)) {
             char *cStr;
             if (!PyArg_Parse(v, "es", "ascii", &cStr))
-                return NULL;
+                return 0;
                 *p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, kCFStringEncodingASCII);
-                PyMem_Free(cStr);
                 return 1;
         }
         if (PyUnicode_Check(v)) {

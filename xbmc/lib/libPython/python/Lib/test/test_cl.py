@@ -2,9 +2,8 @@
 """Whimpy test script for the cl module
    Roger E. Masse
 """
-from test.test_support import verbose, import_module
-
-cl = import_module('cl')
+import cl
+from test.test_support import verbose
 
 clattrs = ['ADDED_ALGORITHM_ERROR', 'ALAW', 'ALGORITHM_ID',
 'ALGORITHM_VERSION', 'AUDIO', 'AWARE_ERROR', 'AWARE_MPEG_AUDIO',
@@ -67,7 +66,7 @@ clattrs = ['ADDED_ALGORITHM_ERROR', 'ALAW', 'ALGORITHM_ID',
 # This is a very inobtrusive test for the existence of the cl
 # module and all its attributes.
 
-def test_main():
+def main():
     # touch all the attributes of al without doing anything
     if verbose:
         print 'Touching cl module attributes...'
@@ -76,7 +75,4 @@ def test_main():
             print 'touching: ', attr
         getattr(cl, attr)
 
-
-
-if __name__ == '__main__':
-    test_main()
+main()

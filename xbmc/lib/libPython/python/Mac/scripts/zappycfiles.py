@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/local/bin/python
 """Recursively zap all .pyc and .pyo files"""
 import os
 import sys
@@ -9,8 +9,15 @@ doit = 1
 
 def main():
     if not sys.argv[1:]:
-        print 'Usage: zappyc dir ...'
-        sys.exit(1)
+        if os.name == 'mac':
+            import EasyDialogs
+            dir = EasyDialogs.AskFolder(message='Directory to zap pyc files in')
+            if not dir:
+                sys.exit(0)
+            zappyc(dir)
+        else:
+            print 'Usage: zappyc dir ...'
+            sys.exit(1)
     for dir in sys.argv[1:]:
         zappyc(dir)
 

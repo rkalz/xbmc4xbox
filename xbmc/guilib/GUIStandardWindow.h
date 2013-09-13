@@ -32,6 +32,6 @@ class CGUIStandardWindow :
       public CGUIWindow
 {
 public:
-  CGUIStandardWindow(int id, const CStdString &xmlFile);
+  CGUIStandardWindow(void);
   virtual ~CGUIStandardWindow(void);
 };

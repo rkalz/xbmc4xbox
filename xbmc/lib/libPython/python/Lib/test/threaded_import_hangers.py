@@ -38,5 +38,5 @@ for name, func, args in [
     t = Worker(func, args)
     t.start()
     t.join(TIMEOUT)
-    if t.is_alive():
+    if t.isAlive():
         errors.append("%s appeared to hang" % name)
