@@ -14,10 +14,10 @@ import os
 import sys
 import pyclbr
 
-from idlelib import PyShell
-from idlelib.WindowList import ListedToplevel
-from idlelib.TreeWidget import TreeNode, TreeItem, ScrolledCanvas
-from idlelib.configHandler import idleConf
+import PyShell
+from WindowList import ListedToplevel
+from TreeWidget import TreeNode, TreeItem, ScrolledCanvas
+from configHandler import idleConf
 
 class ClassBrowser:
 

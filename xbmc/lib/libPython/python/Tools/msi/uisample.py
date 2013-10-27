@@ -1,4 +1,3 @@
-
 import msilib,os;dirname=os.path.dirname(__file__)
 AdminExecuteSequence = [
 (u'InstallValidate', None, 1400),

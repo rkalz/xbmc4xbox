@@ -18,7 +18,6 @@ typedef struct {
     PyObject	*cl_getattr;
     PyObject	*cl_setattr;
     PyObject	*cl_delattr;
-    PyObject    *cl_weakreflist; /* List of weak references */
 } PyClassObject;
 
 typedef struct {
@@ -75,7 +74,6 @@ PyAPI_FUNC(PyObject *) _PyInstance_Lookup(PyObject *pinst, PyObject *name);
 
 PyAPI_FUNC(int) PyClass_IsSubclass(PyObject *, PyObject *);
 
-PyAPI_FUNC(int) PyMethod_ClearFreeList(void);
 
 #ifdef __cplusplus
 }

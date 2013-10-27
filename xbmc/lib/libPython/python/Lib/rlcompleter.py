@@ -1,11 +1,13 @@
-"""Word completion for GNU readline.
+"""Word completion for GNU readline 2.0.
 
-The completer completes keywords, built-ins and globals in a selectable
-namespace (which defaults to __main__); when completing NAME.NAME..., it
-evaluates (!) the expression up to the last dot and completes its attributes.
+This requires the latest extension to the readline module. The completer
+completes keywords, built-ins and globals in a selectable namespace (which
+defaults to __main__); when completing NAME.NAME..., it evaluates (!) the
+expression up to the last dot and completes its attributes.
 
-It's very cool to do "import sys" type "sys.", hit the completion key (twice),
-and see the list of names defined by the sys module!
+It's very cool to do "import sys" type "sys.", hit the
+completion key (twice), and see the list of names defined by the
+sys module!
 
 Tip: to use the tab key as the completion key, call
 
@@ -13,16 +15,18 @@ Tip: to use the tab key as the completion key, call
 
 Notes:
 
-- Exceptions raised by the completer function are *ignored* (and generally cause
-  the completion to fail).  This is a feature -- since readline sets the tty
-  device in raw (or cbreak) mode, printing a traceback wouldn't work well
-  without some complicated hoopla to save, reset and restore the tty state.
+- Exceptions raised by the completer function are *ignored* (and
+generally cause the completion to fail).  This is a feature -- since
+readline sets the tty device in raw (or cbreak) mode, printing a
+traceback wouldn't work well without some complicated hoopla to save,
+reset and restore the tty state.
 
-- The evaluation of the NAME.NAME... form may cause arbitrary application
-  defined code to be executed if an object with a __getattr__ hook is found.
-  Since it is the responsibility of the application (or the user) to enable this
-  feature, I consider this an acceptable risk.  More complicated expressions
-  (e.g. function calls or indexing operations) are *not* evaluated.
+- The evaluation of the NAME.NAME... form may cause arbitrary
+application defined code to be executed if an object with a
+__getattr__ hook is found.  Since it is the responsibility of the
+application (or the user) to enable this feature, I consider this an
+acceptable risk.  More complicated expressions (e.g. function calls or
+indexing operations) are *not* evaluated.
 
 - GNU readline is also used by the built-in functions input() and
 raw_input(), and thus these also benefit/suffer from the completer
@@ -31,10 +35,11 @@ specifying its own completer function and using raw_input() for all
 its input.
 
 - When the original stdin is not a tty device, GNU readline is never
-  used, and this module (and the readline module) are silently inactive.
+used, and this module (and the readline module) are silently inactive.
 
 """
 
+import readline
 import __builtin__
 import __main__
 
@@ -88,11 +93,6 @@ class Completer:
         except IndexError:
             return None
 
-    def _callable_postfix(self, val, word):
-        if hasattr(val, '__call__'):
-            word = word + "("
-        return word
-
     def global_matches(self, text):
         """Compute matches when text is a simple name.
 
@@ -103,13 +103,12 @@ class Completer:
         import keyword
         matches = []
         n = len(text)
-        for word in keyword.kwlist:
-            if word[:n] == text:
-                matches.append(word)
-        for nspace in [__builtin__.__dict__, self.namespace]:
-            for word, val in nspace.items():
+        for list in [keyword.kwlist,
+                     __builtin__.__dict__,
+                     self.namespace]:
+            for word in list:
                 if word[:n] == text and word != "__builtins__":
-                    matches.append(self._callable_postfix(val, word))
+                    matches.append(word)
         return matches
 
     def attr_matches(self, text):
@@ -127,28 +126,18 @@ class Completer:
         import re
         m = re.match(r"(\w+(\.\w+)*)\.(\w*)", text)
         if not m:
-            return []
+            return
         expr, attr = m.group(1, 3)
-        try:
-            thisobject = eval(expr, self.namespace)
-        except Exception:
-            return []
-
-        # get the content of the object, except __builtins__
-        words = dir(thisobject)
-        if "__builtins__" in words:
-            words.remove("__builtins__")
-
-        if hasattr(thisobject, '__class__'):
+        object = eval(expr, self.namespace)
+        words = dir(object)
+        if hasattr(object,'__class__'):
             words.append('__class__')
-            words.extend(get_class_members(thisobject.__class__))
+            words = words + get_class_members(object.__class__)
         matches = []
         n = len(attr)
         for word in words:
-            if word[:n] == attr and hasattr(thisobject, word):
-                val = getattr(thisobject, word)
-                word = self._callable_postfix(val, "%s.%s" % (expr, word))
-                matches.append(word)
+            if word[:n] == attr and word != "__builtins__":
+                matches.append("%s.%s" % (expr, word))
         return matches
 
 def get_class_members(klass):
@@ -158,9 +147,4 @@ def get_class_members(klass):
             ret = ret + get_class_members(base)
     return ret
 
-try:
-    import readline
-except ImportError:
-    pass
-else:
-    readline.set_completer(Completer().complete)
+readline.set_completer(Completer().complete)

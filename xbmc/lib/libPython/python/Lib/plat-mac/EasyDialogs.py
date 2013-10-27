@@ -18,9 +18,6 @@ This module uses DLOG resources 260 and on.
 Based upon STDWIN dialogs with the same names and functions.
 """
 
-from warnings import warnpy3k
-warnpy3k("In 3.x, the EasyDialogs module is removed.", stacklevel=2)
-
 from Carbon.Dlg import GetNewDialog, SetDialogItemText, GetDialogItemText, ModalDialog
 from Carbon import Qd
 from Carbon import QuickDraw
@@ -82,7 +79,7 @@ def Message(msg, id=260, ok=None):
         return
     h = d.GetDialogItemAsControl(2)
     SetDialogItemText(h, lf2cr(msg))
-    if ok is not None:
+    if ok != None:
         h = d.GetDialogItemAsControl(1)
         h.SetControlTitle(ok)
     d.SetDialogDefaultItem(1)
@@ -119,10 +116,10 @@ def AskString(prompt, default = "", id=261, ok=None, cancel=None):
     SetDialogItemText(h, lf2cr(default))
     d.SelectDialogItemText(4, 0, 999)
 #       d.SetDialogItem(4, 0, 255)
-    if ok is not None:
+    if ok != None:
         h = d.GetDialogItemAsControl(1)
         h.SetControlTitle(ok)
-    if cancel is not None:
+    if cancel != None:
         h = d.GetDialogItemAsControl(2)
         h.SetControlTitle(cancel)
     d.SetDialogDefaultItem(1)
@@ -163,10 +160,10 @@ def AskPassword(prompt,  default='', id=264, ok=None, cancel=None):
     SetControlData(pwd, kControlEditTextPart, kControlEditTextPasswordTag, default)
     d.SelectDialogItemText(4, 0, 999)
     Ctl.SetKeyboardFocus(d.GetDialogWindow(), pwd, kControlEditTextPart)
-    if ok is not None:
+    if ok != None:
         h = d.GetDialogItemAsControl(1)
         h.SetControlTitle(ok)
-    if cancel is not None:
+    if cancel != None:
         h = d.GetDialogItemAsControl(2)
         h.SetControlTitle(cancel)
     d.SetDialogDefaultItem(Dialogs.ok)
@@ -207,19 +204,19 @@ def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=262
     # The question string is item 5
     h = d.GetDialogItemAsControl(5)
     SetDialogItemText(h, lf2cr(question))
-    if yes is not None:
+    if yes != None:
         if yes == '':
             d.HideDialogItem(2)
         else:
             h = d.GetDialogItemAsControl(2)
             h.SetControlTitle(yes)
-    if no is not None:
+    if no != None:
         if no == '':
             d.HideDialogItem(3)
         else:
             h = d.GetDialogItemAsControl(3)
             h.SetControlTitle(no)
-    if cancel is not None:
+    if cancel != None:
         if cancel == '':
             d.HideDialogItem(4)
         else:
@@ -265,7 +262,7 @@ class ProgressBar:
         self.w.ShowWindow()
         self.d.DrawDialog()
 
-    def __del__(self):
+    def __del__( self ):
         if self.w:
             self.w.BringToFront()
             self.w.HideWindow()
@@ -277,7 +274,7 @@ class ProgressBar:
         self.w.BringToFront()
         self.w.SetWTitle(newstr)
 
-    def label(self, *newstr):
+    def label( self, *newstr ):
         """label(text) - Set text in progress box"""
         self.w.BringToFront()
         if newstr:
@@ -320,7 +317,7 @@ class ProgressBar:
 
     def set(self, value, max=None):
         """set(value) - Set progress bar position"""
-        if max is not None:
+        if max != None:
             self.maxval = max
             bar = self.d.GetDialogItemAsControl(3)
             if max <= 0:    # indeterminate bar
@@ -573,27 +570,24 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
         del d
 
 def _process_Nav_args(dftflags, **args):
-    import Carbon.AppleEvents
+    import aepack
     import Carbon.AE
     import Carbon.File
     for k in args.keys():
         if args[k] is None:
             del args[k]
     # Set some defaults, and modify some arguments
-    if 'dialogOptionFlags' not in args:
+    if not args.has_key('dialogOptionFlags'):
         args['dialogOptionFlags'] = dftflags
-    if 'defaultLocation' in args and \
+    if args.has_key('defaultLocation') and \
             not isinstance(args['defaultLocation'], Carbon.AE.AEDesc):
         defaultLocation = args['defaultLocation']
-        if isinstance(defaultLocation, Carbon.File.FSSpec):
-            args['defaultLocation'] = Carbon.AE.AECreateDesc(
-                    Carbon.AppleEvents.typeFSS, defaultLocation.data)
+        if isinstance(defaultLocation, (Carbon.File.FSSpec, Carbon.File.FSRef)):
+            args['defaultLocation'] = aepack.pack(defaultLocation)
         else:
-            if not isinstance(defaultLocation, Carbon.File.FSRef):
-                defaultLocation = Carbon.File.FSRef(defaultLocation)
-            args['defaultLocation'] = Carbon.AE.AECreateDesc(
-                    Carbon.AppleEvents.typeFSRef, defaultLocation.data)
-    if 'typeList' in args and not isinstance(args['typeList'], Carbon.Res.ResourceType):
+            defaultLocation = Carbon.File.FSRef(defaultLocation)
+            args['defaultLocation'] = aepack.pack(defaultLocation)
+    if args.has_key('typeList') and not isinstance(args['typeList'], Carbon.Res.ResourceType):
         typeList = args['typeList'][:]
         # Workaround for OSX typeless files:
         if 'TEXT' in typeList and not '\0\0\0\0' in typeList:
@@ -603,7 +597,7 @@ def _process_Nav_args(dftflags, **args):
             data = data+type
         args['typeList'] = Carbon.Res.Handle(data)
     tpwanted = str
-    if 'wanted' in args:
+    if args.has_key('wanted'):
         tpwanted = args['wanted']
         del args['wanted']
     return args, tpwanted
@@ -721,13 +715,16 @@ def AskFileForSave(
     if issubclass(tpwanted, Carbon.File.FSSpec):
         return tpwanted(rr.selection[0])
     if issubclass(tpwanted, (str, unicode)):
-        # This is gross, and probably incorrect too
-        vrefnum, dirid, name = rr.selection[0].as_tuple()
-        pardir_fss = Carbon.File.FSSpec((vrefnum, dirid, ''))
-        pardir_fsr = Carbon.File.FSRef(pardir_fss)
-        pardir_path = pardir_fsr.FSRefMakePath()  # This is utf-8
-        name_utf8 = unicode(name, 'macroman').encode('utf8')
-        fullpath = os.path.join(pardir_path, name_utf8)
+        if sys.platform == 'mac':
+            fullpath = rr.selection[0].as_pathname()
+        else:
+            # This is gross, and probably incorrect too
+            vrefnum, dirid, name = rr.selection[0].as_tuple()
+            pardir_fss = Carbon.File.FSSpec((vrefnum, dirid, ''))
+            pardir_fsr = Carbon.File.FSRef(pardir_fss)
+            pardir_path = pardir_fsr.FSRefMakePath()  # This is utf-8
+            name_utf8 = unicode(name, 'macroman').encode('utf8')
+            fullpath = os.path.join(pardir_path, name_utf8)
         if issubclass(tpwanted, unicode):
             return unicode(fullpath, 'utf8')
         return tpwanted(fullpath)

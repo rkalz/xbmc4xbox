@@ -2,9 +2,8 @@
 """Whimpy test script for the cd module
    Roger E. Masse
 """
-from test.test_support import verbose, import_module
-
-cd = import_module('cd')
+import cd
+from test.test_support import verbose
 
 cdattrs = ['BLOCKSIZE', 'CDROM', 'DATASIZE', 'ERROR', 'NODISC', 'PAUSED', 'PLAYING', 'READY',
            'STILL', '__doc__', '__name__', 'atime', 'audio', 'catalog', 'control', 'createparser', 'error',
@@ -15,7 +14,7 @@ cdattrs = ['BLOCKSIZE', 'CDROM', 'DATASIZE', 'ERROR', 'NODISC', 'PAUSED', 'PLAYI
 # attributes.  More comprehensive examples can be found in Demo/cd and
 # require that you have a CD and a CD ROM drive
 
-def test_main():
+def main():
     # touch all the attributes of cd without doing anything
     if verbose:
         print 'Touching cd module attributes...'
@@ -24,7 +23,4 @@ def test_main():
             print 'touching: ', attr
         getattr(cd, attr)
 
-
-
-if __name__ == '__main__':
-    test_main()
+main()

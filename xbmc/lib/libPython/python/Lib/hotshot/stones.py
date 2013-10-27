@@ -1,6 +1,7 @@
 import errno
 import hotshot
 import hotshot.stats
+import os
 import sys
 import test.pystone
 

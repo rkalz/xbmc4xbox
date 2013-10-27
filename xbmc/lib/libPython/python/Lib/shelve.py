@@ -69,18 +69,9 @@ except ImportError:
     from StringIO import StringIO
 
 import UserDict
+import warnings
 
 __all__ = ["Shelf","BsdDbShelf","DbfilenameShelf","open"]
-
-class _ClosedDict(UserDict.DictMixin):
-    'Marker for a closed dict.  Access attempts raise a ValueError.'
-
-    def closed(self, *args):
-        raise ValueError('invalid operation on closed shelf')
-    __getitem__ = __setitem__ = __delitem__ = keys = closed
-
-    def __repr__(self):
-        return '<Closed Dictionary>'
 
 class Shelf(UserDict.DictMixin):
     """Base class for shelf implementations.
@@ -89,8 +80,14 @@ class Shelf(UserDict.DictMixin):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, dict, protocol=None, writeback=False):
+    def __init__(self, dict, protocol=None, writeback=False, binary=None):
         self.dict = dict
+        if protocol is not None and binary is not None:
+            raise ValueError, "can't specify both 'protocol' and 'binary'"
+        if binary is not None:
+            warnings.warn("The 'binary' argument to Shelf() is deprecated",
+                          PendingDeprecationWarning)
+            protocol = int(binary)
         if protocol is None:
             protocol = 0
         self._protocol = protocol
@@ -104,13 +101,13 @@ class Shelf(UserDict.DictMixin):
         return len(self.dict)
 
     def has_key(self, key):
-        return key in self.dict
+        return self.dict.has_key(key)
 
     def __contains__(self, key):
-        return key in self.dict
+        return self.dict.has_key(key)
 
     def get(self, key, default=None):
-        if key in self.dict:
+        if self.dict.has_key(key):
             return self[key]
         return default
 
@@ -145,12 +142,7 @@ class Shelf(UserDict.DictMixin):
             self.dict.close()
         except AttributeError:
             pass
-        # Catch errors that may happen when close is called from __del__
-        # because CPython is in interpreter shutdown.
-        try:
-            self.dict = _ClosedDict()
-        except (NameError, TypeError):
-            self.dict = None
+        self.dict = 0
 
     def __del__(self):
         if not hasattr(self, 'writeback'):
@@ -182,8 +174,8 @@ class BsdDbShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, dict, protocol=None, writeback=False):
-        Shelf.__init__(self, dict, protocol, writeback)
+    def __init__(self, dict, protocol=None, writeback=False, binary=None):
+        Shelf.__init__(self, dict, protocol, writeback, binary)
 
     def set_location(self, key):
         (key, value) = self.dict.set_location(key)
@@ -218,12 +210,12 @@ class DbfilenameShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, filename, flag='c', protocol=None, writeback=False):
+    def __init__(self, filename, flag='c', protocol=None, writeback=False, binary=None):
         import anydbm
-        Shelf.__init__(self, anydbm.open(filename, flag), protocol, writeback)
+        Shelf.__init__(self, anydbm.open(filename, flag), protocol, writeback, binary)
 
 
-def open(filename, flag='c', protocol=None, writeback=False):
+def open(filename, flag='c', protocol=None, writeback=False, binary=None):
     """Open a persistent dictionary for reading and writing.
 
     The filename parameter is the base filename for the underlying
@@ -233,7 +225,10 @@ def open(filename, flag='c', protocol=None, writeback=False):
     anydbm.open(). The optional protocol parameter specifies the
     version of the pickle protocol (0, 1, or 2).
 
+    The optional binary parameter is deprecated and may be set to True
+    to force the use of binary pickles for serializing data values.
+
     See the module's __doc__ string for an overview of the interface.
     """
 
-    return DbfilenameShelf(filename, flag, protocol, writeback)
+    return DbfilenameShelf(filename, flag, protocol, writeback, binary)

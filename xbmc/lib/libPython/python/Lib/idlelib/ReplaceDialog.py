@@ -1,9 +1,6 @@
 from Tkinter import *
-
-from idlelib import SearchEngine
-from idlelib.SearchDialogBase import SearchDialogBase
-import re
-
+import SearchEngine
+from SearchDialogBase import SearchDialogBase
 
 def replace(text):
     root = text._root()
@@ -12,7 +9,6 @@ def replace(text):
         engine._replacedialog = ReplaceDialog(root, engine)
     dialog = engine._replacedialog
     dialog.open(text)
-
 
 class ReplaceDialog(SearchDialogBase):
 
@@ -58,22 +54,8 @@ class ReplaceDialog(SearchDialogBase):
 
     def default_command(self, event=None):
         if self.do_find(self.ok):
-            if self.do_replace():   # Only find next match if replace succeeded.
-                                    # A bad re can cause a it to fail.
-                self.do_find(0)
-
-    def _replace_expand(self, m, repl):
-        """ Helper function for expanding a regular expression
-            in the replace field, if needed. """
-        if self.engine.isre():
-            try:
-                new = m.expand(repl)
-            except re.error:
-                self.engine.report_error(repl, 'Invalid Replace Expression')
-                new = None
-        else:
-            new = repl
-        return new
+            self.do_replace()
+            self.do_find(0)
 
     def replace_all(self, event=None):
         prog = self.engine.getprog()
@@ -103,9 +85,7 @@ class ReplaceDialog(SearchDialogBase):
             line, m = res
             chars = text.get("%d.0" % line, "%d.0" % (line+1))
             orig = m.group()
-            new = self._replace_expand(m, repl)
-            if new is None:
-                break
+            new = m.expand(repl)
             i, j = m.span()
             first = "%d.%d" % (line, i)
             last = "%d.%d" % (line, j)
@@ -157,9 +137,7 @@ class ReplaceDialog(SearchDialogBase):
         m = prog.match(chars, col)
         if not prog:
             return False
-        new = self._replace_expand(m, self.replvar.get())
-        if new is None:
-            return False
+        new = m.expand(self.replvar.get())
         text.mark_set("insert", first)
         text.undo_block_start()
         if m.group():

@@ -176,6 +176,8 @@ class AbstractFormatter:
 
     def add_flowing_data(self, data):
         if not data: return
+        # The following looks a bit convoluted but is a great improvement over
+        # data = regsub.gsub('[' + string.whitespace + ']+', ' ', data)
         prespace = data[:1].isspace()
         postspace = data[-1:].isspace()
         data = " ".join(data.split())
@@ -228,8 +230,7 @@ class AbstractFormatter:
             self.align = None
             self.writer.new_alignment(None)
 
-    def push_font(self, font):
-        size, i, b, tt = font
+    def push_font(self, (size, i, b, tt)):
         if self.softspace:
             self.hard_break = self.para_end = self.softspace = 0
             self.nospace = 1
@@ -433,7 +434,10 @@ def test(file = None):
         fp = open(sys.argv[1])
     else:
         fp = sys.stdin
-    for line in fp:
+    while 1:
+        line = fp.readline()
+        if not line:
+            break
         if line == '\n':
             f.end_paragraph(1)
         else:

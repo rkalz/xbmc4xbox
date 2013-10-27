@@ -1,4 +1,4 @@
-import sys, math
+import sys, math, audiodev
 
 DOT = 30
 DAH = 80

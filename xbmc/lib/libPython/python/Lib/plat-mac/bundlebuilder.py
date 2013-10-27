@@ -28,9 +28,6 @@ this model:
 __all__ = ["BundleBuilder", "BundleBuilderError", "AppBuilder", "buildapp"]
 
 
-from warnings import warnpy3k
-warnpy3k("In 3.x, the bundlebuilder module is removed.", stacklevel=2)
-
 import sys
 import os, errno, shutil
 import imp, marshal
@@ -148,24 +145,11 @@ class BundleBuilder(Defaults):
         self.message("Building %s" % repr(self.bundlepath), 1)
         if os.path.exists(self.bundlepath):
             shutil.rmtree(self.bundlepath)
-        if os.path.exists(self.bundlepath + '~'):
-            shutil.rmtree(self.bundlepath + '~')
-        bp = self.bundlepath
-
-        # Create the app bundle in a temporary location and then
-        # rename the completed bundle. This way the Finder will
-        # never see an incomplete bundle (where it might pick up
-        # and cache the wrong meta data)
-        self.bundlepath = bp + '~'
-        try:
-            os.mkdir(self.bundlepath)
-            self.preProcess()
-            self._copyFiles()
-            self._addMetaFiles()
-            self.postProcess()
-            os.rename(self.bundlepath, bp)
-        finally:
-            self.bundlepath = bp
+        os.mkdir(self.bundlepath)
+        self.preProcess()
+        self._copyFiles()
+        self._addMetaFiles()
+        self.postProcess()
         self.message("Done.", 1)
 
     def preProcess(self):
@@ -245,14 +229,14 @@ if not %(semi_standalone)s:
     del sys.path[1:]  # sys.path[0] is Contents/Resources/
 """
 
-ZIP_ARCHIVE = "Modules.zip"
-SITE_PY_ZIP = SITE_PY + ("sys.path.append(sys.path[0] + '/%s')\n" % ZIP_ARCHIVE)
-
-def getPycData(fullname, code, ispkg):
-    if ispkg:
-        fullname += ".__init__"
-    path = fullname.replace(".", os.sep) + PYC_EXT
-    return path, MAGIC + '\0\0\0\0' + marshal.dumps(code)
+if USE_ZIPIMPORT:
+    ZIP_ARCHIVE = "Modules.zip"
+    SITE_PY += "sys.path.append(sys.path[0] + '/%s')\n" % ZIP_ARCHIVE
+    def getPycData(fullname, code, ispkg):
+        if ispkg:
+            fullname += ".__init__"
+        path = fullname.replace(".", os.sep) + PYC_EXT
+        return path, MAGIC + '\0\0\0\0' + marshal.dumps(code)
 
 #
 # Extension modules can't be in the modules zip archive, so a placeholder
@@ -273,7 +257,7 @@ __load()
 del __load
 """
 
-MAYMISS_MODULES = ['os2', 'nt', 'ntpath', 'dos', 'dospath',
+MAYMISS_MODULES = ['mac', 'os2', 'nt', 'ntpath', 'dos', 'dospath',
     'win32api', 'ce', '_winreg', 'nturl2path', 'sitecustomize',
     'org.python.core', 'riscos', 'riscosenviron', 'riscospath'
 ]
@@ -301,9 +285,6 @@ resdir = os.path.join(os.path.dirname(execdir), "Resources")
 libdir = os.path.join(os.path.dirname(execdir), "Frameworks")
 mainprogram = os.path.join(resdir, "%(mainprogram)s")
 
-if %(optimize)s:
-    sys.argv.insert(1, '-O')
-
 sys.argv.insert(1, mainprogram)
 if %(standalone)s or %(semi_standalone)s:
     os.environ["PYTHONPATH"] = resdir
@@ -314,7 +295,6 @@ else:
     if pypath:
         pypath = ":" + pypath
     os.environ["PYTHONPATH"] = resdir + pypath
-
 os.environ["PYTHONEXECUTABLE"] = executable
 os.environ["DYLD_LIBRARY_PATH"] = libdir
 os.environ["DYLD_FRAMEWORK_PATH"] = libdir
@@ -341,6 +321,7 @@ PYTHONFRAMEWORKGOODIES = [
     "Python",  # the Python core library
     "Resources/English.lproj",
     "Resources/Info.plist",
+    "Resources/version.plist",
 ]
 
 def isFramework():
@@ -352,8 +333,6 @@ SITE_PACKAGES = os.path.join(LIB, "site-packages")
 
 
 class AppBuilder(BundleBuilder):
-
-    use_zipimport = USE_ZIPIMPORT
 
     # Override type of the bundle.
     type = "APPL"
@@ -432,7 +411,7 @@ class AppBuilder(BundleBuilder):
             pass
         elif self.mainprogram is not None:
             self.name = os.path.splitext(os.path.basename(self.mainprogram))[0]
-        elif self.executable is not None:
+        elif executable is not None:
             self.name = os.path.splitext(os.path.basename(self.executable))[0]
         if self.name[-4:] != ".app":
             self.name += ".app"
@@ -489,7 +468,7 @@ class AppBuilder(BundleBuilder):
                 if self.standalone or self.semi_standalone:
                     self.includeModules.append("argvemulator")
                     self.includeModules.append("os")
-                if "CFBundleDocumentTypes" not in self.plist:
+                if not self.plist.has_key("CFBundleDocumentTypes"):
                     self.plist["CFBundleDocumentTypes"] = [
                         { "CFBundleTypeOSTypes" : [
                             "****",
@@ -511,7 +490,6 @@ class AppBuilder(BundleBuilder):
                 hashbang = os.path.realpath(sys.executable)
             standalone = self.standalone
             semi_standalone = self.semi_standalone
-            optimize = sys.flags.optimize
             open(bootstrappath, "w").write(BOOTSTRAP_SCRIPT % locals())
             os.chmod(bootstrappath, 0775)
 
@@ -558,14 +536,13 @@ class AppBuilder(BundleBuilder):
             self.files.append((src, dst))
 
     def _getSiteCode(self):
-        if self.use_zipimport:
-            return compile(SITE_PY % {"semi_standalone": self.semi_standalone},
+        return compile(SITE_PY % {"semi_standalone": self.semi_standalone},
                      "<-bundlebuilder.py->", "exec")
 
     def addPythonModules(self):
         self.message("Adding Python modules", 1)
 
-        if self.use_zipimport:
+        if USE_ZIPIMPORT:
             # Create a zip file containing all modules as pyc.
             import zipfile
             relpath = pathjoin("Contents", "Resources", ZIP_ARCHIVE)
@@ -631,7 +608,7 @@ class AppBuilder(BundleBuilder):
         self.message("Finding module dependencies", 1)
         import modulefinder
         mf = modulefinder.ModuleFinder(excludes=self.excludeModules)
-        if self.use_zipimport:
+        if USE_ZIPIMPORT:
             # zipimport imports zlib, must add it manually
             mf.import_hook("zlib")
         # manually add our own site.py
@@ -665,10 +642,10 @@ class AppBuilder(BundleBuilder):
                 filename = os.path.basename(path)
                 pathitems = name.split(".")[:-1] + [filename]
                 dstpath = pathjoin(*pathitems)
-                if self.use_zipimport:
+                if USE_ZIPIMPORT:
                     if name != "zlib":
                         # neatly pack all extension modules in a subdirectory,
-                        # except zlib, since it's necessary for bootstrapping.
+                        # except zlib, since it's neccesary for bootstrapping.
                         dstpath = pathjoin("ExtensionModules", dstpath)
                     # Python modules are stored in a Zip archive, but put
                     # extensions in Contents/Resources/. Add a tiny "loader"
@@ -679,9 +656,9 @@ class AppBuilder(BundleBuilder):
                 self.files.append((path, pathjoin("Contents", "Resources", dstpath)))
             if mod.__code__ is not None:
                 ispkg = mod.__path__ is not None
-                if not self.use_zipimport or name != "site":
+                if not USE_ZIPIMPORT or name != "site":
                     # Our site.py is doing the bootstrapping, so we must
-                    # include a real .pyc file if self.use_zipimport is True.
+                    # include a real .pyc file if USE_ZIPIMPORT is True.
                     self.pymodules.append((name, mod.__code__, ispkg))
 
         if hasattr(mf, "any_missing_maybe"):
@@ -827,7 +804,6 @@ Options:
       --semi-standalone  build a standalone application, which depends on
                          an installed Python, yet includes all third-party
                          modules.
-      --no-zipimport     Do not copy code into a zip file
       --python=FILE      Python to use in #! line in stead of current Python
       --lib=FILE         shared library or framework to be copied into
                          the bundle
@@ -855,9 +831,7 @@ def main(builder=None):
         "mainprogram=", "creator=", "nib=", "plist=", "link",
         "link-exec", "help", "verbose", "quiet", "argv", "standalone",
         "exclude=", "include=", "package=", "strip", "iconfile=",
-        "lib=", "python=", "semi-standalone", "bundle-id=", "destroot="
-        "no-zipimport"
-        )
+        "lib=", "python=", "semi-standalone", "bundle-id=", "destroot=")
 
     try:
         options, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -921,8 +895,6 @@ def main(builder=None):
             builder.strip = 1
         elif opt == '--destroot':
             builder.destroot = arg
-        elif opt == '--no-zipimport':
-            builder.use_zipimport = False
 
     if len(args) != 1:
         usage("Must specify one command ('build', 'report' or 'help')")

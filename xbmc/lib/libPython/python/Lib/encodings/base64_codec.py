@@ -49,16 +49,6 @@ class Codec(codecs.Codec):
     def decode(self, input,errors='strict'):
         return base64_decode(input,errors)
 
-class IncrementalEncoder(codecs.IncrementalEncoder):
-    def encode(self, input, final=False):
-        assert self.errors == 'strict'
-        return base64.encodestring(input)
-
-class IncrementalDecoder(codecs.IncrementalDecoder):
-    def decode(self, input, final=False):
-        assert self.errors == 'strict'
-        return base64.decodestring(input)
-
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
 
@@ -68,12 +58,5 @@ class StreamReader(Codec,codecs.StreamReader):
 ### encodings module API
 
 def getregentry():
-    return codecs.CodecInfo(
-        name='base64',
-        encode=base64_encode,
-        decode=base64_decode,
-        incrementalencoder=IncrementalEncoder,
-        incrementaldecoder=IncrementalDecoder,
-        streamwriter=StreamWriter,
-        streamreader=StreamReader,
-    )
+
+    return (base64_encode,base64_decode,StreamReader,StreamWriter)

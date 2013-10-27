@@ -1,9 +1,5 @@
 r"""Routines to decode AppleSingle files
 """
-
-from warnings import warnpy3k
-warnpy3k("In 3.x, the applesingle module is removed.", stacklevel=2)
-
 import struct
 import sys
 try:
@@ -119,17 +115,12 @@ def decode(infile, outpath, resonly=False, verbose=False):
     if not hasattr(infile, 'read'):
         if isinstance(infile, Carbon.File.Alias):
             infile = infile.ResolveAlias()[0]
-
-        if hasattr(Carbon.File, "FSSpec"):
-            if isinstance(infile, (Carbon.File.FSSpec, Carbon.File.FSRef)):
-                infile = infile.as_pathname()
-        else:
-            if isinstance(infile, Carbon.File.FSRef):
-                infile = infile.as_pathname()
+        if isinstance(infile, (Carbon.File.FSSpec, Carbon.File.FSRef)):
+            infile = infile.as_pathname()
         infile = open(infile, 'rb')
 
-    asfile = AppleSingle(infile, verbose=verbose)
-    asfile.tofile(outpath, resonly=resonly)
+    as = AppleSingle(infile, verbose=verbose)
+    as.tofile(outpath, resonly=resonly)
 
 def _test():
     if len(sys.argv) < 3 or sys.argv[1] == '-r' and len(sys.argv) != 4:

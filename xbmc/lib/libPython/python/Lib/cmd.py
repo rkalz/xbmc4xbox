@@ -137,7 +137,7 @@ class Cmd:
                         if not len(line):
                             line = 'EOF'
                         else:
-                            line = line.rstrip('\r\n')
+                            line = line[:-1] # chop \n
                 line = self.precmd(line)
                 stop = self.onecmd(line)
                 stop = self.postcmd(stop, line)
@@ -209,8 +209,6 @@ class Cmd:
         if cmd is None:
             return self.default(line)
         self.lastcmd = line
-        if line == 'EOF' :
-            self.lastcmd = ''
         if cmd == '':
             return self.default(line)
         else:
@@ -283,18 +281,21 @@ class Cmd:
             return None
 
     def get_names(self):
-        # This method used to pull in base class attributes
-        # at a time dir() didn't do it yet.
-        return dir(self.__class__)
+        # Inheritance says we have to look in class and
+        # base classes; order is not important.
+        names = []
+        classes = [self.__class__]
+        while classes:
+            aclass = classes.pop(0)
+            if aclass.__bases__:
+                classes = classes + list(aclass.__bases__)
+            names = names + dir(aclass)
+        return names
 
     def complete_help(self, *args):
-        commands = set(self.completenames(*args))
-        topics = set(a[5:] for a in self.get_names()
-                     if a.startswith('help_' + args[0]))
-        return list(commands | topics)
+        return self.completenames(*args)
 
     def do_help(self, arg):
-        'List available commands with "help" or detailed help with "help cmd".'
         if arg:
             # XXX check arg syntax
             try:

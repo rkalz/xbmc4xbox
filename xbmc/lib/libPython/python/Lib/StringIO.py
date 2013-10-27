@@ -72,7 +72,8 @@ class StringIO:
         method is called repeatedly. This method returns the next input line,
         or raises StopIteration when EOF is hit.
         """
-        _complain_ifclosed(self.closed)
+        if self.closed:
+            raise StopIteration
         r = self.readline()
         if not r:
             raise StopIteration
@@ -128,7 +129,7 @@ class StringIO:
         if self.buflist:
             self.buf += ''.join(self.buflist)
             self.buflist = []
-        if n is None or n < 0:
+        if n < 0:
             newpos = self.len
         else:
             newpos = min(self.pos+n, self.len)
@@ -137,7 +138,7 @@ class StringIO:
         return r
 
     def readline(self, length=None):
-        r"""Read one entire line from the file.
+        """Read one entire line from the file.
 
         A trailing newline character is kept in the string (but may be absent
         when a file ends with an incomplete line). If the size argument is
@@ -158,7 +159,7 @@ class StringIO:
             newpos = self.len
         else:
             newpos = i+1
-        if length is not None and length >= 0:
+        if length is not None:
             if self.pos + length < newpos:
                 newpos = self.pos + length
         r = self.buf[self.pos:newpos]
@@ -266,7 +267,6 @@ class StringIO:
         8th bit) will cause a UnicodeError to be raised when getvalue()
         is called.
         """
-        _complain_ifclosed(self.closed)
         if self.buflist:
             self.buf += ''.join(self.buflist)
             self.buflist = []

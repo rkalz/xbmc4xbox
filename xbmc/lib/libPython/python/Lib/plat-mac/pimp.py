@@ -12,20 +12,16 @@ dependencies and installing packages.
 There is a minimal main program that works as a command line tool, but the
 intention is that the end user will use this through a GUI.
 """
-
-from warnings import warnpy3k
-warnpy3k("In 3.x, the pimp module is removed.", stacklevel=2)
-
 import sys
 import os
-import subprocess
+import popen2
 import urllib
 import urllib2
 import urlparse
 import plistlib
 import distutils.util
 import distutils.sysconfig
-import hashlib
+import md5
 import tarfile
 import tempfile
 import shutil
@@ -105,11 +101,10 @@ def _cmd(output, dir, *cmditems):
         output.write("+ %s\n" % cmd)
     if NO_EXECUTE:
         return 0
-    child = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    child.stdin.close()
+    child = popen2.Popen4(cmd)
+    child.tochild.close()
     while 1:
-        line = child.stdout.readline()
+        line = child.fromchild.readline()
         if not line:
             break
         if output:
@@ -152,7 +147,7 @@ class PimpUrllibDownloader(PimpDownloader):
         self.update("Downloading %s: opening connection" % url)
         keepgoing = True
         download = urllib2.urlopen(url)
-        if 'content-length' in download.headers:
+        if download.headers.has_key("content-length"):
             length = long(download.headers['content-length'])
         else:
             length = -1
@@ -420,7 +415,7 @@ class PimpDatabase:
 
         for p in packages:
             p = dict(p)
-            if 'Download-URL' in p:
+            if p.has_key('Download-URL'):
                 p['Download-URL'] = urllib.basejoin(url, p['Download-URL'])
             flavor = p.get('Flavor')
             if flavor == 'source':
@@ -552,9 +547,9 @@ class PimpPackage:
         installed through pimp, return the name in (parentheses)."""
 
         rv = self._dict['Name']
-        if 'Version' in self._dict:
+        if self._dict.has_key('Version'):
             rv = rv + '-%s' % self._dict['Version']
-        if 'Flavor' in self._dict:
+        if self._dict.has_key('Flavor'):
             rv = rv + '-%s' % self._dict['Flavor']
         if self._dict.get('Flavor') == 'hidden':
             # Pseudo-package, show in parentheses
@@ -647,9 +642,9 @@ class PimpPackage:
                 descr = str(item)
             else:
                 name = item['Name']
-                if 'Version' in item:
+                if item.has_key('Version'):
                     name = name + '-' + item['Version']
-                if 'Flavor' in item:
+                if item.has_key('Flavor'):
                     name = name + '-' + item['Flavor']
                 pkg = self._db.find(name)
                 if not pkg:
@@ -698,7 +693,7 @@ class PimpPackage:
             sys.stderr.write("Warning: no MD5Sum for %s\n" % self.fullname())
             return 1
         data = open(self.archiveFilename, 'rb').read()
-        checksum = hashlib.md5(data).hexdigest()
+        checksum = md5.new(data).hexdigest()
         return checksum == self._dict['MD5Sum']
 
     def unpackPackageOnly(self, output=None):
@@ -800,10 +795,10 @@ class PimpPackage_binary(PimpPackage):
         If output is given it should be a file-like object and it
         will receive a log of what happened."""
 
-        if 'Install-command' in self._dict:
+        if self._dict.has_key('Install-command'):
             return "%s: Binary package cannot have Install-command" % self.fullname()
 
-        if 'Pre-install-command' in self._dict:
+        if self._dict.has_key('Pre-install-command'):
             if _cmd(output, '/tmp', self._dict['Pre-install-command']):
                 return "pre-install %s: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Pre-install-command'])
@@ -836,7 +831,7 @@ class PimpPackage_binary(PimpPackage):
 
         self.afterInstall()
 
-        if 'Post-install-command' in self._dict:
+        if self._dict.has_key('Post-install-command'):
             if _cmd(output, '/tmp', self._dict['Post-install-command']):
                 return "%s: post-install: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Post-install-command'])
@@ -861,7 +856,7 @@ class PimpPackage_source(PimpPackage):
         If output is given it should be a file-like object and it
         will receive a log of what happened."""
 
-        if 'Pre-install-command' in self._dict:
+        if self._dict.has_key('Pre-install-command'):
             if _cmd(output, self._buildDirname, self._dict['Pre-install-command']):
                 return "pre-install %s: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Pre-install-command'])
@@ -898,7 +893,7 @@ class PimpPackage_source(PimpPackage):
 
         self.afterInstall()
 
-        if 'Post-install-command' in self._dict:
+        if self._dict.has_key('Post-install-command'):
             if _cmd(output, self._buildDirname, self._dict['Post-install-command']):
                 return "post-install %s: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Post-install-command'])
@@ -916,10 +911,10 @@ class PimpPackage_installer(PimpPackage):
         If output is given it should be a file-like object and it
         will receive a log of what happened."""
 
-        if 'Post-install-command' in self._dict:
+        if self._dict.has_key('Post-install-command'):
             return "%s: Installer package cannot have Post-install-command" % self.fullname()
 
-        if 'Pre-install-command' in self._dict:
+        if self._dict.has_key('Pre-install-command'):
             if _cmd(output, '/tmp', self._dict['Pre-install-command']):
                 return "pre-install %s: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Pre-install-command'])

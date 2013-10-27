@@ -37,9 +37,6 @@ The next time you launch PythonInterpreter or Python IDE, the patch will take
 effect.
 """
 
-from warnings import warnpy3k
-warnpy3k("In 3.x, the icopen module is removed.", stacklevel=2)
-
 import __builtin__
 
 _builtin_open = globals().get('_builtin_open', __builtin__.open)

@@ -198,9 +198,6 @@ void XBPyThread::Process()
     {
       PyObject* module = PyImport_AddModule((char*)"__main__");
       PyObject* moduleDict = PyModule_GetDict(module);
-      PyObject *f = PyString_FromString(_P(source).c_str());
-      PyDict_SetItemString(moduleDict, "__file__", f);
-      Py_DECREF(f);
       PyRun_File(fp, _P(source).c_str(), m_Py_file_input, moduleDict, moduleDict);
       fclose(fp);
     }
@@ -231,7 +228,7 @@ void XBPyThread::Process()
     {
       if (exc_type != NULL && (pystring = PyObject_Str(exc_type)) != NULL && (PyString_Check(pystring)))
       {
-        if (strncmp(PyString_AsString(pystring), "<type 'exceptions.KeyboardInterrupt'>", 37) == 0)
+        if (strncmp(PyString_AsString(pystring), "exceptions.KeyboardInterrupt", 28) == 0)
           CLog::Log(LOGINFO, "Scriptresult: Interrupted by user");
         else
         {
@@ -267,7 +264,7 @@ void XBPyThread::Process()
         CLog::Log(LOGINFO, "<unknown exception type>");
       }
     }
-    if (pystring != NULL && strncmp(PyString_AsString(pystring), "<type 'exceptions.KeyboardInterrupt'>", 37) != 0)
+    if (pystring != NULL && strncmp(PyString_AsString(pystring), "exceptions.KeyboardInterrupt", 28) != 0)
     {
       CGUIDialogKaiToast *pDlgToast = (CGUIDialogKaiToast*)g_windowManager.GetWindow(WINDOW_DIALOG_KAI_TOAST);
       if (pDlgToast)

@@ -14,11 +14,6 @@ import mimetools
 
 __all__ = ["MimeWriter"]
 
-import warnings
-
-warnings.warn("the MimeWriter module is deprecated; use the email package instead",
-                DeprecationWarning, 2)
-
 class MimeWriter:
 
     """Generic MIME writer.

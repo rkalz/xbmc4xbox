@@ -2,26 +2,37 @@
 #
 # Class for profiling python code. rev 1.0  6/2/94
 #
-# Written by James Roskind
 # Based on prior profile module by Sjoerd Mullender...
 #   which was hacked somewhat by: Guido van Rossum
+#
+# See profile.doc for more information
 
 """Class for profiling Python code."""
 
-# Copyright Disney Enterprises, Inc.  All Rights Reserved.
-# Licensed to PSF under a Contributor Agreement
+# Copyright 1994, by InfoSeek Corporation, all rights reserved.
+# Written by James Roskind
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Permission to use, copy, modify, and distribute this Python software
+# and its associated documentation for any purpose (subject to the
+# restriction in the following sentence) without fee is hereby granted,
+# provided that the above copyright notice appears in all copies, and
+# that both that copyright notice and this permission notice appear in
+# supporting documentation, and that the name of InfoSeek not be used in
+# advertising or publicity pertaining to distribution of the software
+# without specific, written prior permission.  This permission is
+# explicitly restricted to the copying and modification of the software
+# to remain in Python, compiled Python, or other languages (such as C)
+# wherein the modified or derived code is exclusively imported into a
+# Python module.
 #
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-# either express or implied.  See the License for the specific language
-# governing permissions and limitations under the License.
+# INFOSEEK CORPORATION DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS
+# SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+# FITNESS. IN NO EVENT SHALL INFOSEEK CORPORATION BE LIABLE FOR ANY
+# SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER
+# RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
+# CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+# CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
 
 
 import sys
@@ -66,7 +77,7 @@ def run(statement, filename=None, sort=-1):
     else:
         return prof.print_stats(sort)
 
-def runctx(statement, globals, locals, filename=None, sort=-1):
+def runctx(statement, globals, locals, filename=None):
     """Run statement under profiler, supplying your own globals and locals,
     optionally saving results in filename.
 
@@ -81,32 +92,31 @@ def runctx(statement, globals, locals, filename=None, sort=-1):
     if filename is not None:
         prof.dump_stats(filename)
     else:
-        return prof.print_stats(sort)
+        return prof.print_stats()
 
-# Backwards compatibility.
+# print help
 def help():
-    print "Documentation for the profile module can be found "
-    print "in the Python Library Reference, section 'The Python Profiler'."
+    for dirname in sys.path:
+        fullname = os.path.join(dirname, 'profile.doc')
+        if os.path.exists(fullname):
+            sts = os.system('${PAGER-more} ' + fullname)
+            if sts: print '*** Pager exit status:', sts
+            break
+    else:
+        print 'Sorry, can\'t find the help file "profile.doc"',
+        print 'along the Python search path.'
+
+
+if os.name == "mac":
+    import MacOS
+    def _get_time_mac(timer=MacOS.GetTicks):
+        return timer() / 60.0
 
 if hasattr(os, "times"):
     def _get_time_times(timer=os.times):
         t = timer()
         return t[0] + t[1]
 
-# Using getrusage(3) is better than clock(3) if available:
-# on some systems (e.g. FreeBSD), getrusage has a higher resolution
-# Furthermore, on a POSIX system, returns microseconds, which
-# wrap around after 36min.
-_has_res = 0
-try:
-    import resource
-    resgetrusage = lambda: resource.getrusage(resource.RUSAGE_SELF)
-    def _get_time_resource(timer=resgetrusage):
-        t = timer()
-        return t[0] + t[1]
-    _has_res = 1
-except ImportError:
-    pass
 
 class Profile:
     """Profiler class.
@@ -159,11 +169,11 @@ class Profile:
             bias = self.bias
         self.bias = bias     # Materialize in local dict for lookup speed.
 
-        if not timer:
-            if _has_res:
-                self.timer = resgetrusage
-                self.dispatcher = self.trace_dispatch
-                self.get_time = _get_time_resource
+        if timer is None:
+            if os.name == 'mac':
+                self.timer = MacOS.GetTicks
+                self.dispatcher = self.trace_dispatch_mac
+                self.get_time = _get_time_mac
             elif hasattr(time, 'clock'):
                 self.timer = self.get_time = time.clock
                 self.dispatcher = self.trace_dispatch_i
@@ -300,7 +310,7 @@ class Profile:
         fn = ("", 0, self.c_func_name)
         self.cur = (t, 0, 0, fn, frame, self.cur)
         timings = self.timings
-        if fn in timings:
+        if timings.has_key(fn):
             cc, ns, tt, ct, callers = timings[fn]
             timings[fn] = cc, ns+1, tt, ct, callers
         else:
@@ -573,38 +583,31 @@ class Profile:
 def Stats(*args):
     print 'Report generating functions are in the "pstats" module\a'
 
-def main():
+
+# When invoked as main program, invoke the profiler on a script
+if __name__ == '__main__':
     usage = "profile.py [-o output_file_path] [-s sort] scriptfile [arg] ..."
-    parser = OptionParser(usage=usage)
+    if not sys.argv[1:]:
+        print "Usage: ", usage
+        sys.exit(2)
+
+    class ProfileParser(OptionParser):
+        def __init__(self, usage):
+            OptionParser.__init__(self)
+            self.usage = usage
+
+    parser = ProfileParser(usage)
     parser.allow_interspersed_args = False
     parser.add_option('-o', '--outfile', dest="outfile",
         help="Save stats to <outfile>", default=None)
     parser.add_option('-s', '--sort', dest="sort",
-        help="Sort order when printing to stdout, based on pstats.Stats class",
-        default=-1)
-
-    if not sys.argv[1:]:
-        parser.print_usage()
-        sys.exit(2)
+        help="Sort order when printing to stdout, based on pstats.Stats class", default=-1)
 
     (options, args) = parser.parse_args()
     sys.argv[:] = args
 
-    if len(args) > 0:
-        progname = args[0]
-        sys.path.insert(0, os.path.dirname(progname))
-        with open(progname, 'rb') as fp:
-            code = compile(fp.read(), progname, 'exec')
-        globs = {
-            '__file__': progname,
-            '__name__': '__main__',
-            '__package__': None,
-        }
-        runctx(code, globs, None, options.outfile, options.sort)
+    if (len(sys.argv) > 0):
+        sys.path.insert(0, os.path.dirname(sys.argv[0]))
+        run('execfile(%r)' % (sys.argv[0],), options.outfile, options.sort)
     else:
-        parser.print_usage()
-    return parser
-
-# When invoked as main program, invoke the profiler on a script
-if __name__ == '__main__':
-    main()
+        print "Usage: ", usage

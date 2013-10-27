@@ -92,7 +92,7 @@ Verify that parenthesis are required when used as a keyword argument value
 Verify that parenthesis are required when used as a keyword argument value
 
     >>> dict(a = (i for i in xrange(10))) #doctest: +ELLIPSIS
-    {'a': <generator object <genexpr> at ...>}
+    {'a': <generator object at ...>}
 
 Verify early binding for the outermost for-expression
 
@@ -109,7 +109,7 @@ for iterability
     Traceback (most recent call last):
       File "<pyshell#4>", line 1, in -toplevel-
         (i for i in 6)
-    TypeError: 'int' object is not iterable
+    TypeError: iteration over non-sequence
 
 Verify late binding for the outermost if-expression
 
@@ -129,7 +129,7 @@ Verify late binding for the innermost for-expression
 Verify re-use of tuples (a side benefit of using genexps over listcomps)
 
     >>> tupleids = map(id, ((i,i) for i in xrange(10)))
-    >>> int(max(tupleids) - min(tupleids))
+    >>> max(tupleids) - min(tupleids)
     0
 
 Verify that syntax error's are raised for genexps used as lvalues
@@ -137,14 +137,13 @@ Verify that syntax error's are raised for genexps used as lvalues
     >>> (y for y in (1,2)) = 10
     Traceback (most recent call last):
        ...
-      File "<doctest test.test_genexps.__test__.doctests[40]>", line 1
-    SyntaxError: can't assign to generator expression
+    SyntaxError: assign to generator expression not possible
 
     >>> (y for y in (1,2)) += 10
     Traceback (most recent call last):
        ...
-      File "<doctest test.test_genexps.__test__.doctests[41]>", line 1
-    SyntaxError: can't assign to generator expression
+    SyntaxError: augmented assign to tuple literal or generator expression not possible
+
 
 
 ########### Tests borrowed from or inspired by test_generators.py ############
@@ -223,8 +222,7 @@ Check that generator attributes are present
     >>> set(attr for attr in dir(g) if not attr.startswith('__')) >= expected
     True
 
-    >>> from test.test_support import HAVE_DOCSTRINGS
-    >>> print(g.next.__doc__ if HAVE_DOCSTRINGS else 'x.next() -> the next value, or raise StopIteration')
+    >>> print g.next.__doc__
     x.next() -> the next value, or raise StopIteration
     >>> import types
     >>> isinstance(g, types.GeneratorType)

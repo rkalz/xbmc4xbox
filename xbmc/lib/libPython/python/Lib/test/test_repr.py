@@ -5,12 +5,10 @@
 
 import sys
 import os
-import shutil
 import unittest
 
-from test.test_support import run_unittest, check_py3k_warnings
+from test.test_support import run_unittest
 from repr import repr as r # Don't shadow builtin repr
-from repr import Repr
 
 
 def nestedTuple(nesting):
@@ -22,7 +20,7 @@ def nestedTuple(nesting):
 class ReprTests(unittest.TestCase):
 
     def test_string(self):
-        eq = self.assertEqual
+        eq = self.assertEquals
         eq(r("abc"), "'abc'")
         eq(r("abcdefghijklmnop"),"'abcdefghijklmnop'")
 
@@ -35,23 +33,11 @@ class ReprTests(unittest.TestCase):
         expected = repr(s)[:13] + "..." + repr(s)[-14:]
         eq(r(s), expected)
 
-    def test_tuple(self):
-        eq = self.assertEqual
-        eq(r((1,)), "(1,)")
-
-        t3 = (1, 2, 3)
-        eq(r(t3), "(1, 2, 3)")
-
-        r2 = Repr()
-        r2.maxtuple = 2
-        expected = repr(t3)[:-2] + "...)"
-        eq(r2.repr(t3), expected)
-
     def test_container(self):
         from array import array
         from collections import deque
 
-        eq = self.assertEqual
+        eq = self.assertEquals
         # Tuples give up after 6 elements
         eq(r(()), "()")
         eq(r((1,)), "(1,)")
@@ -101,7 +87,7 @@ class ReprTests(unittest.TestCase):
                    "array('i', [1, 2, 3, 4, 5, ...])")
 
     def test_numbers(self):
-        eq = self.assertEqual
+        eq = self.assertEquals
         eq(r(123), repr(123))
         eq(r(123L), repr(123L))
         eq(r(1.0/3), repr(1.0/3))
@@ -111,7 +97,7 @@ class ReprTests(unittest.TestCase):
         eq(r(n), expected)
 
     def test_instance(self):
-        eq = self.assertEqual
+        eq = self.assertEquals
         i1 = ClassWithRepr("a")
         eq(r(i1), repr(i1))
 
@@ -123,39 +109,40 @@ class ReprTests(unittest.TestCase):
         eq(r(i3), ("<ClassWithFailingRepr instance at %x>"%id(i3)))
 
         s = r(ClassWithFailingRepr)
-        self.assertTrue(s.startswith("<class "))
-        self.assertTrue(s.endswith(">"))
-        self.assertTrue(s.find("...") == 8)
+        self.failUnless(s.startswith("<class "))
+        self.failUnless(s.endswith(">"))
+        self.failUnless(s.find("...") == 8)
 
     def test_file(self):
         fp = open(unittest.__file__)
-        self.assertTrue(repr(fp).startswith(
-            "<open file %r, mode 'r' at 0x" % unittest.__file__))
+        self.failUnless(repr(fp).startswith(
+            "<open file '%s', mode 'r' at 0x" % unittest.__file__))
         fp.close()
-        self.assertTrue(repr(fp).startswith(
-            "<closed file %r, mode 'r' at 0x" % unittest.__file__))
+        self.failUnless(repr(fp).startswith(
+            "<closed file '%s', mode 'r' at 0x" % unittest.__file__))
 
     def test_lambda(self):
-        self.assertTrue(repr(lambda x: x).startswith(
+        self.failUnless(repr(lambda x: x).startswith(
             "<function <lambda"))
         # XXX anonymous functions?  see func_repr
 
     def test_builtin_function(self):
-        eq = self.assertEqual
+        eq = self.assertEquals
         # Functions
         eq(repr(hash), '<built-in function hash>')
         # Methods
-        self.assertTrue(repr(''.split).startswith(
+        self.failUnless(repr(''.split).startswith(
             '<built-in method split of str object at 0x'))
 
     def test_xrange(self):
-        eq = self.assertEqual
+        import warnings
+        eq = self.assertEquals
         eq(repr(xrange(1)), 'xrange(1)')
         eq(repr(xrange(1, 2)), 'xrange(1, 2)')
         eq(repr(xrange(1, 2, 3)), 'xrange(1, 4, 3)')
 
     def test_nesting(self):
-        eq = self.assertEqual
+        eq = self.assertEquals
         # everything is meant to give up after 6 levels.
         eq(r([[[[[[[]]]]]]]), "[[[[[[[]]]]]]]")
         eq(r([[[[[[[[]]]]]]]]), "[[[[[[[...]]]]]]]")
@@ -174,16 +161,15 @@ class ReprTests(unittest.TestCase):
     def test_buffer(self):
         # XXX doesn't test buffers with no b_base or read-write buffers (see
         # bufferobject.c).  The test is fairly incomplete too.  Sigh.
-        with check_py3k_warnings():
-            x = buffer('foo')
-        self.assertTrue(repr(x).startswith('<read-only buffer for 0x'))
+        x = buffer('foo')
+        self.failUnless(repr(x).startswith('<read-only buffer for 0x'))
 
     def test_cell(self):
         # XXX Hmm? How to get at a cell object?
         pass
 
     def test_descriptors(self):
-        eq = self.assertEqual
+        eq = self.assertEquals
         # method descriptors
         eq(repr(dict.items), "<method 'items' of 'dict' objects>")
         # XXX member descriptors
@@ -193,24 +179,18 @@ class ReprTests(unittest.TestCase):
         class C:
             def foo(cls): pass
         x = staticmethod(C.foo)
-        self.assertTrue(repr(x).startswith('<staticmethod object at 0x'))
+        self.failUnless(repr(x).startswith('<staticmethod object at 0x'))
         x = classmethod(C.foo)
-        self.assertTrue(repr(x).startswith('<classmethod object at 0x'))
-
-    def test_unsortable(self):
-        # Repr.repr() used to call sorted() on sets, frozensets and dicts
-        # without taking into account that not all objects are comparable
-        x = set([1j, 2j, 3j])
-        y = frozenset(x)
-        z = {1j: 1, 2j: 2}
-        r(x)
-        r(y)
-        r(z)
+        self.failUnless(repr(x).startswith('<classmethod object at 0x'))
 
 def touch(path, text=''):
     fp = open(path, 'w')
     fp.write(text)
     fp.close()
+
+def zap(actions, dirname, names):
+    for name in names:
+        actions.append(os.path.join(dirname, name))
 
 class LongReprTest(unittest.TestCase):
     def setUp(self):
@@ -218,10 +198,8 @@ class LongReprTest(unittest.TestCase):
         self.pkgname = os.path.join(longname)
         self.subpkgname = os.path.join(longname, longname)
         # Make the package and subpackage
-        shutil.rmtree(self.pkgname, ignore_errors=True)
         os.mkdir(self.pkgname)
         touch(os.path.join(self.pkgname, '__init__'+os.extsep+'py'))
-        shutil.rmtree(self.subpkgname, ignore_errors=True)
         os.mkdir(self.subpkgname)
         touch(os.path.join(self.subpkgname, '__init__'+os.extsep+'py'))
         # Remember where we are
@@ -230,9 +208,7 @@ class LongReprTest(unittest.TestCase):
 
     def tearDown(self):
         actions = []
-        for dirpath, dirnames, filenames in os.walk(self.pkgname):
-            for name in dirnames + filenames:
-                actions.append(os.path.join(dirpath, name))
+        os.path.walk(self.pkgname, zap, actions)
         actions.append(self.pkgname)
         actions.sort()
         actions.reverse()
@@ -244,7 +220,7 @@ class LongReprTest(unittest.TestCase):
         del sys.path[0]
 
     def test_module(self):
-        eq = self.assertEqual
+        eq = self.assertEquals
         touch(os.path.join(self.subpkgname, self.pkgname + os.extsep + 'py'))
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import areallylongpackageandmodulenametotestreprtruncation
         eq(repr(areallylongpackageandmodulenametotestreprtruncation),
@@ -252,7 +228,7 @@ class LongReprTest(unittest.TestCase):
         eq(repr(sys), "<module 'sys' (built-in)>")
 
     def test_type(self):
-        eq = self.assertEqual
+        eq = self.assertEquals
         touch(os.path.join(self.subpkgname, 'foo'+os.extsep+'py'), '''\
 class foo(object):
     pass
@@ -273,7 +249,7 @@ class bar:
 ''')
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import bar
         # Module name may be prefixed with "test.", depending on how run.
-        self.assertTrue(repr(bar.bar).startswith(
+        self.failUnless(repr(bar.bar).startswith(
             "<class %s.bar at 0x" % bar.__name__))
 
     def test_instance(self):
@@ -283,11 +259,11 @@ class baz:
 ''')
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import baz
         ibaz = baz.baz()
-        self.assertTrue(repr(ibaz).startswith(
+        self.failUnless(repr(ibaz).startswith(
             "<%s.baz instance at 0x" % baz.__name__))
 
     def test_method(self):
-        eq = self.assertEqual
+        eq = self.assertEquals
         touch(os.path.join(self.subpkgname, 'qux'+os.extsep+'py'), '''\
 class aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:
     def amethod(self): pass
@@ -298,7 +274,7 @@ class aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         '<unbound method aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod>')
         # Bound method next
         iqux = qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa()
-        self.assertTrue(repr(iqux.amethod).startswith(
+        self.failUnless(repr(iqux.amethod).startswith(
             '<bound method aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod of <%s.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa instance at 0x' \
             % (qux.__name__,) ))
 
@@ -320,7 +296,8 @@ class ClassWithFailingRepr:
 
 def test_main():
     run_unittest(ReprTests)
-    run_unittest(LongReprTest)
+    if os.name != 'mac':
+        run_unittest(LongReprTest)
 
 
 if __name__ == "__main__":
