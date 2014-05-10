@@ -73,7 +73,6 @@ xbmc_all ()
 {
   xbmc_clean
   xbmc_configure "\
-    --disable-parsers \
     --disable-decoders \
     --enable-decoder=mpeg4,msmpeg4v1,msmpeg4v2,msmpeg4v3 \
     --enable-decoder=vp6,vp6f,vp8 \
@@ -81,11 +80,13 @@ xbmc_all ()
     --enable-decoder=mjpeg,mjpegb \
     --enable-decoder=wmav1,wmav2,wmapro,wmv1,wmv2,wmv3 \
     --enable-decoder=aac,ac3,dca,dvbsub,dvdsub,flv,h263,h264,rtp,vorbis \
+    --enable-decoder=ape,flac,wavpack \
     \
     --disable-demuxers \
     --enable-demuxer=mp1,mp2,mp3,mpegps,mpegts,mpegtsraw,mpegvideo \
     --enable-demuxer=aac,ac3,dts,asf,avi,flv,h263,h264,ogg,matroska,mov \
-    --enable-demuxer=nuv,sdp,rtsp,applehttp,xmv \
+    --enable-demuxer=hls,nuv,sdp,rtsp,applehttp,xmv \
+    --enable-demuxer=aiff,ape,spdif,flac,wav,wv \
   "
   xbmc_make ../../../../../system/players/dvdplayer/
   xbmc_clean

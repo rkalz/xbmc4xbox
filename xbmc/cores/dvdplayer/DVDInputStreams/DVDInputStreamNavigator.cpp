@@ -64,7 +64,6 @@ CDVDInputStreamNavigator::~CDVDInputStreamNavigator()
 bool CDVDInputStreamNavigator::Open(const char* strFile, const std::string& content)
 {
   char* strDVDFile;
-  m_icurrentGroupId = 0;
   if (!CDVDInputStream::Open(strFile, "video/x-dvd-mpeg")) 
     return false;
   
@@ -179,8 +178,14 @@ bool CDVDInputStreamNavigator::Open(const char* strFile, const std::string& cont
     m_dll.dvdnav_get_next_cache_block(m_dvdnav,&buf_ptr,&event,&len);
     m_dll.dvdnav_sector_search(m_dvdnav, 0, SEEK_SET);
 
+    // first try title menu
     if(m_dll.dvdnav_menu_call(m_dvdnav, DVD_MENU_Title) != DVDNAV_STATUS_OK)
+    {
       CLog::Log(LOGERROR,"Error on dvdnav_menu_call(Title): %s\n", m_dll.dvdnav_err_to_string(m_dvdnav));
+      // next try root menu
+      if(m_dll.dvdnav_menu_call(m_dvdnav, DVD_MENU_Root) != DVDNAV_STATUS_OK )
+        CLog::Log(LOGERROR,"Error on dvdnav_menu_call(Root): %s\n", m_dll.dvdnav_err_to_string(m_dvdnav));
+    }
   }
 
   m_bEOF = false;
@@ -226,11 +231,23 @@ int CDVDInputStreamNavigator::Read(BYTE* buf, int buf_size)
   int navresult;
   int iBytesRead;
 
+  int NOPcount = 0;
   while(true) {
     navresult = ProcessBlock(buf, &iBytesRead);
     if (navresult == NAVRESULT_HOLD)       return 0; // return 0 bytes read;
     else if (navresult == NAVRESULT_ERROR) return -1;
     else if (navresult == NAVRESULT_DATA)  return iBytesRead;
+    else if (navresult == NAVRESULT_NOP)
+    {
+      NOPcount++;
+      if (NOPcount == 1000) 
+      {
+        m_bEOF = true;
+        CLog::Log(LOGERROR,"CDVDInputStreamNavigator: Stopping playback due to infinite loop, caused by badly authored DVD navigation structure. Try enabling 'Attempt to skip introduction before DVD menu'.");
+        m_pDVDPlayer->OnDVDNavResult(NULL, DVDNAV_STOP);
+        return -1; // fail and stop playback.
+      }
+    }
   }
 
   return iBytesRead;
@@ -461,7 +478,6 @@ int CDVDInputStreamNavigator::ProcessBlock(BYTE* dest_buffer, int* read)
         m_iCellStart = cell_change_event->cell_start; // store cell time as we need that for time later
         m_iTime      = (int) (m_iCellStart / 90);
         m_iTotalTime = (int) (cell_change_event->pgc_length / 90);
-        m_icurrentGroupId = cell_change_event->pgN * 1000 + cell_change_event->cellN;
         
         iNavresult = m_pDVDPlayer->OnDVDNavResult(buf, DVDNAV_CELL_CHANGE);
       }

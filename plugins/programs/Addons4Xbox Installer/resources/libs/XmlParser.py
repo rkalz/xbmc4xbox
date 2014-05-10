@@ -16,7 +16,7 @@ import sys
 
 from traceback import print_exc
 
-import elementtree.ElementTree as ET
+import xml.etree.cElementTree as ET
 
 # Modules custom
 try:
@@ -131,12 +131,8 @@ def parseAddonElt( addonElt, itemInfo ):
     status = 'OK'
     try:
         if ( addonElt ):
-            #print "parseAddonElt"
-            #print ET.tostring(addonElt)
-            #print "--"
             libPoint = None
             itemInfo [ "id" ]      = addonElt.attrib.get( "id" )
-            #itemInfo [ "name" ]    = addonElt.attrib.get( "name" ).encode( "utf8" )
             itemInfo [ "name" ]    = addonElt.attrib.get( "name" )
             itemInfo [ "version" ] = addonElt.attrib.get( "version" )
             itemInfo [ "author" ]  = addonElt.attrib.get( "provider-name" )
@@ -166,7 +162,6 @@ def parseAddonElt( addonElt, itemInfo ):
                             datadir = extension.find( "datadir" )
                             itemInfo [ "repo_datadir" ] = datadir.text
                             zip = datadir.attrib.get( "zip" )
-                            print "Repo format zip attribute: %s"%zip
                             if zip == "true":
                                 itemInfo [ "repo_format" ] = "zip"
                             else:
@@ -197,7 +192,6 @@ def parseAddonElt( addonElt, itemInfo ):
 
 
             if itemInfo [ "type" ] == TYPE_ADDON:
-                print "Not supported type of Addon"
                 status = 'NOT_SUPPORTED'
         else:
             print "addonElt not defined"
@@ -214,36 +208,22 @@ def _getType(id, extension):
     Determine the Type of the addon
     """
     type = TYPE_ADDON # Unsupported type of addon
-    #print "id: __%s__ / extension: __%s__"%(id, extension)
-    #print "TYPE_EXT_REPO = __%s__"%TYPE_EXT_REPO
-    #print "TYPE_ADDON_REPO = __%s__"%TYPE_ADDON_REPO
     if  extension == TYPE_EXT_PLUGINSOURCE:
         # Plugin: we need to check the addons id
-        print "_getType - This is a Plugin"
         if TYPE_ADDON_MUSIC in id:
             type = TYPE_ADDON_MUSIC
-            print "_getType - This is a MUSIC Plugin"
         elif TYPE_ADDON_PICTURES in id:
             type = TYPE_ADDON_PICTURES
-            print "_getType - This is a PICTURES Plugin"
         elif TYPE_ADDON_PROGRAMS in id:
             type = TYPE_ADDON_PROGRAMS
-            print "_getType - This is a PROGRAMS Plugin"
         elif TYPE_ADDON_VIDEO in id:
-            print "_getType - This is a VIDEO Plugin"
             type = TYPE_ADDON_VIDEO
     elif extension == TYPE_EXT_SCRIPT_MODULE:
-        print "_getType - This is a LIB script"
         type = TYPE_ADDON_MODULE
     elif extension == TYPE_EXT_REPO:
-        print "_getType - This is a REPOSITORY"
         type = TYPE_ADDON_REPO
     elif extension in scriptExtList:
-        print "_getType - This is a SCRIPT"
         type = TYPE_ADDON_SCRIPT
-    else:
-        print "_getType - unsupported type: %s"%type
-    #print "_getType - Type is: %s"%type
     return type
 
 
@@ -279,13 +259,10 @@ class ListItemFromXML:
     def __init__( self, xmlData ):
         try:
             if ( xmlData ):
-                #print xmlData
                 rootXmlElt = ET.parse( xmlData ).getroot() # root: <addons>
 
                 if ( rootXmlElt ):
                     self.addons = rootXmlElt.findall("addon")
-                    #for i in range(len(self.addons)):
-                    #    print ET.tostring(self.addons[i])
         except:
             status = 'ItemList::__init__: ERROR'
             print_exc()

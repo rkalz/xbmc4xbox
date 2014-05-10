@@ -41,17 +41,22 @@ class ListItemFromWiki:
     def _parseRepoElement(self, repoElt, repoInfo):
         status = 'OK'
         try:
-            tdList = repoElt.findAll("td")
+            tdList = repoElt.findAll( ["th", "td"] )
             if tdList:
-                repoInfo[ "name" ]        = tdList[0].a.string.strip()
-                repoInfo[ "description" ] = tdList[1].string.strip()
-                repoInfo[ "author" ]      = tdList[2].string.strip()
+                try:
+                    repoInfo[ "name" ]        = tdList[0].a.string.strip()
+                    repoInfo[ "description" ] = tdList[1].string.strip()
+                    repoInfo[ "author" ]      = tdList[2].string.strip()
 
+                except:
+                    repoInfo[ "name" ]        = None
+                    repoInfo[ "description" ] = None
+                    repoInfo[ "author" ]      = None
+                
                 try:
                     repoInfo[ "repo_url" ] = tdList[3].a["href"]
                 except:
                     repoInfo[ "repo_url" ] = None
-                    print "Invalid URL for the repository %s"%(repoInfo["name"])
 
                 repoInfo[ "version" ]     = None
                 repoInfo[ "type" ]        = TYPE_ADDON_REPO
@@ -61,7 +66,7 @@ class ListItemFromWiki:
                 except:
                     repoInfo[ "ImageUrl" ] = None
         except:
-            print "_parseRepoElement - error parsing html - impossible to retrieve Repos info"
+            xbmc.log("_parseRepoElement - error parsing html - impossible to retrieve Repos info", xbmc.LOGNOTICE)
             print_exc()
             result = "ERROR"
 

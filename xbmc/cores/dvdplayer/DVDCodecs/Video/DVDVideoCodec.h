@@ -47,7 +47,6 @@ struct DVDVideoPicture
   unsigned int iFrameType         : 4; // see defines above // 1->I, 2->P, 3->B, 0->Undef
   unsigned int color_matrix       : 4;
   unsigned int color_range        : 1; // 1 indicate if we have a full range of color
-  int iGroupId;
 
   int8_t* qscale_table; // Quantization parameters, primarily used by filters
   int qscale_stride;
@@ -154,6 +153,12 @@ public:
    * should return codecs name
    */
   virtual const char* GetName() = 0;
+
+  /*
+   * will be called by video player indicating the playback speed. see DVD_PLAYSPEED_NORMAL,
+   * DVD_PLAYSPEED_PAUSE and friends.
+   */
+  virtual void SetSpeed(int iSpeed) {};
 
   /*
    * returns the number of demuxer bytes in any internal buffers
