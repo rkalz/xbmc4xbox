@@ -369,11 +369,24 @@ void CDVDPlayerVideo::Process()
       m_speed = static_cast<CDVDMsgInt*>(pMsg)->m_value;
       if(m_speed == DVD_PLAYSPEED_PAUSE)
         m_iNrOfPicturesNotToSkip = 0;
+      if (m_pVideoCodec)
+        m_pVideoCodec->SetSpeed(m_speed);
     }
     else if (pMsg->IsType(CDVDMsg::PLAYER_STARTED))
     {
       if(m_started)
         m_messageParent.Put(new CDVDMsgInt(CDVDMsg::PLAYER_STARTED, DVDPLAYER_VIDEO));
+    }
+    else if (pMsg->IsType(CDVDMsg::PLAYER_DISPLAYTIME))
+    {
+      CDVDPlayer::SPlayerState& state = ((CDVDMsgType<CDVDPlayer::SPlayerState>*)pMsg)->m_value;
+
+      if(state.time_src == CDVDPlayer::ETIMESOURCE_CLOCK)
+        state.time      = DVD_TIME_TO_MSEC(m_pClock->GetClock(state.timestamp) + state.time_offset);
+      else
+        state.timestamp = CDVDClock::GetAbsoluteClock();
+      state.player    = DVDPLAYER_VIDEO;
+      m_messageParent.Put(pMsg->Acquire());
     }
     else if (pMsg->IsType(CDVDMsg::GENERAL_STREAMCHANGE))
     {
@@ -470,8 +483,6 @@ void CDVDPlayerVideo::Process()
           if (m_pVideoCodec->GetPicture(&picture))
           {
             sPostProcessType.clear();
-
-            picture.iGroupId = pPacket->iGroupId;
 
             if(picture.iDuration < 1.0 / DVD_TIME_BASE)
               picture.iDuration = frametime;
@@ -664,7 +675,6 @@ void CDVDPlayerVideo::ProcessVideoUserData(DVDVideoUserData* pVideoUserData, dou
         CDVDOverlay* overlay;
         while((overlay = m_pOverlayCodecCC->GetOverlay()) != NULL)
         {
-          overlay->iGroupId = 0;
           overlay->iPTSStartTime += pts;
           if(overlay->iPTSStopTime != 0.0)
             overlay->iPTSStopTime += pts;
@@ -783,9 +793,6 @@ void CDVDPlayerVideo::ProcessOverlays(DVDVideoPicture* pSource, YV12Image* pDest
     if(!pOverlay->bForced && !m_bRenderSubs)
       continue;
 
-    if(pOverlay->iGroupId != pSource->iGroupId)
-      continue;
-
     double pts2 = pOverlay->bForced ? pts : pts - m_iSubtitleDelay;
 
     if((pOverlay->iPTSStartTime <= pts2 && (pOverlay->iPTSStopTime > pts2 || pOverlay->iPTSStopTime == 0LL)) || pts == 0)
@@ -880,10 +887,10 @@ int CDVDPlayerVideo::OutputPicture(DVDVideoPicture* pPicture, double pts)
   pts += m_iVideoDelay;
 
   // calculate the time we need to delay this picture before displaying
-  double iSleepTime, iClockSleep, iFrameSleep, iCurrentClock, iFrameDuration;
+  double iSleepTime, iClockSleep, iFrameSleep, iPlayingClock, iCurrentClock, iFrameDuration;
   
-  iCurrentClock = m_pClock->GetAbsoluteClock(); // snapshot current clock  
-  iClockSleep = pts - m_pClock->GetClock();  //sleep calculated by pts to clock comparison
+  iPlayingClock = m_pClock->GetClock(iCurrentClock); // snapshot current clock
+  iClockSleep = pts - iPlayingClock; //sleep calculated by pts to clock comparison
   iFrameSleep = m_FlipTimeStamp - iCurrentClock; // sleep calculated by duration of frame
   iFrameDuration = pPicture->iDuration;
 

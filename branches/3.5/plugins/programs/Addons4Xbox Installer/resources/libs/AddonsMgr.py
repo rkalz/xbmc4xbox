@@ -70,7 +70,7 @@ def getInstalledAddonInfo( addonpath ):
     itemInfo = {}
 
     # Open addon.xml
-    print "getInstalledAddonInfo: Addon path: %s"%addonpath
+    xbmc.log("getInstalledAddonInfo: Addon path: %s"%addonpath, xbmc.LOGDEBUG)
     xmlInfofPath = os.path.join( addonpath, "addon.xml")
     if os.path.exists( xmlInfofPath ):
         try:
@@ -89,20 +89,20 @@ def getInstalledAddonInfo( addonpath ):
     return itemInfo
 
 
-def isLibInstalled(id):
+def isLibInstalled(id, type = TYPE_ADDON_MODULE, name = ""):
     """
     Check if a lib/module is already install and return the version of the current installed version
     """
     libVersion = None
-    installPath = get_install_path( TYPE_ADDON_MODULE )
-    libpath = os.path.join( installPath, os.path.basename( id ) )
-    #TODO: add check on version,  for now we just check a module with the right id is installed or not
+    installPath = get_install_path( type )
+    if type == TYPE_ADDON_MODULE:
+        name = id
+    libpath = os.path.join( installPath, name )
     if os.path.exists( libpath ):
         # Get version
         libInfo = getInstalledAddonInfo( os.path.join( libpath ) )
         libVersion = libInfo[ "version" ]
 
-    print "isLibInstalled: %s installed version: %s"%( id, libVersion )
     return libVersion
 
 
@@ -189,7 +189,6 @@ def saveLocalAddonInfo( repoId, destination, addonInstaller ):
     else:
         addonInfo['repository'] = repoId
     addonInfo['installer_version'] = __version__
-    print addonInfo
     PersistentDataCreator( addonInfo, os.path.join( destination, "a4x.psdt" ) )
 
 
@@ -209,7 +208,7 @@ class AddonsMgr:
         itemInfo = {}
 
         # Open addon.xml
-        print "Addon path: %s"%addonpath
+        xbmc.log("Addon path: %s"%addonpath, xbmc.LOGDEBUG)
         xmlInfofPath = os.path.join( addonpath, "addon.xml")
         if os.path.exists( xmlInfofPath ):
             try:
@@ -230,9 +229,7 @@ class AddonsMgr:
     def _run_addon( self, type, addon_basename ):
         """
         """
-        print "_run_addon"
-        print type
-        print addon_basename
+        xbmc.log("_run_addon %s", xbmc.LOGDEBUG)
         result = True
         if ( type == TYPE_ADDON_VIDEO ):
             #command = "XBMC.ActivateWindow(10025,plugin://addons/%s/)" % ( addon_basename, )
@@ -264,7 +261,6 @@ class AddonsMgr:
         @param message2: Message part 2
         @param message3: Message part 3
         """
-        #print("message_cb with %s STARTS"%msgType)
         result = None
 
         # Display the correct dialogBox according the type

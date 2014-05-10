@@ -22,6 +22,8 @@
  */
 
 #include "utils/SharedSection.h"
+#include "utils/CriticalSection.h"
+
 #define DVD_TIME_BASE 1000000
 #define DVD_NOPTS_VALUE    (-1LL<<52) // should be possible to represent in both double and int64_t
 
@@ -40,6 +42,7 @@ public:
   ~CDVDClock();
 
   double GetClock();
+  double GetClock(double& absolute);
 
   void Discontinuity(double currentPts = 0LL);
  
@@ -51,6 +54,10 @@ public:
   static double GetAbsoluteClock();
   static double GetFrequency() { return (double)m_systemFrequency.QuadPart ; }
 protected:
+  static void CheckSystemClock();
+  static double SystemToAbsolute(LARGE_INTEGER system);
+  double SystemToPlaying(LARGE_INTEGER system);
+
   CSharedSection m_critSection;
   LARGE_INTEGER m_systemUsed;  
   LARGE_INTEGER m_startClock;
@@ -59,4 +66,5 @@ protected:
   bool m_bReset;
   
   static LARGE_INTEGER m_systemFrequency;
+  static CCriticalSection m_systemsection;
 };

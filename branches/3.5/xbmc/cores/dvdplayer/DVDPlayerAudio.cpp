@@ -243,7 +243,7 @@ int CDVDPlayerAudio::DecodeFrame(DVDAudioFrame &audioframe, bool bDropPacket)
         CLog::Log(LOGERROR, "CDVDPlayerAudio:DecodeFrame - Codec tried to consume more data than available. Potential memory corruption");
         m_decode.Release();
         m_pAudioCodec->Reset();
-        assert(0);
+        return DECODE_FLAG_ERROR;
       }
 
       m_decode.data += len;
@@ -361,6 +361,17 @@ int CDVDPlayerAudio::DecodeFrame(DVDAudioFrame &audioframe, bool bDropPacket)
     {
       if(m_started)
         m_messageParent.Put(new CDVDMsgInt(CDVDMsg::PLAYER_STARTED, DVDPLAYER_AUDIO));
+    }
+    else if (pMsg->IsType(CDVDMsg::PLAYER_DISPLAYTIME))
+    {
+      CDVDPlayer::SPlayerState& state = ((CDVDMsgType<CDVDPlayer::SPlayerState>*)pMsg)->m_value;
+
+      if(state.time_src == CDVDPlayer::ETIMESOURCE_CLOCK)
+        state.time      = DVD_TIME_TO_MSEC(m_pClock->GetClock(state.timestamp) + state.time_offset);
+      else
+        state.timestamp = CDVDClock::GetAbsoluteClock();
+      state.player    = DVDPLAYER_AUDIO;
+      m_messageParent.Put(pMsg->Acquire());
     }
     else if (pMsg->IsType(CDVDMsg::GENERAL_EOF))
     {
