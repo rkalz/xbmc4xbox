@@ -978,6 +978,7 @@ int CGUIInfoManager::TranslateListItem(const CStdString &info)
   else if (info.Equals("originaltitle")) return LISTITEM_ORIGINALTITLE;
   else if (info.Equals("lastplayed")) return LISTITEM_LASTPLAYED;
   else if (info.Equals("playcount")) return LISTITEM_PLAYCOUNT;
+  else if (info.Equals("lastplayed")) return MUSICPLAYER_LASTPLAYED;
   else if (info.Equals("discnumber")) return LISTITEM_DISC_NUMBER;
   else if (info.Equals("isresumable")) return LISTITEM_IS_RESUMABLE;
   else if (info.Left(9).Equals("property(")) return AddListItemProp(info.Mid(9, info.GetLength() - 10));
@@ -1011,7 +1012,7 @@ int CGUIInfoManager::TranslateMusicPlayerString(const CStdString &info) const
   else if (info.Equals("hasprevious")) return MUSICPLAYER_HASPREVIOUS;
   else if (info.Equals("hasnext")) return MUSICPLAYER_HASNEXT;
   else if (info.Equals("playcount")) return MUSICPLAYER_PLAYCOUNT;
-  else if (info.Equals("filename")) return MUSICPLAYER_FILENAME;
+  else if (info.Equals("lastplayed")) return MUSICPLAYER_LASTPLAYED;
   return 0;
 }
 
@@ -1170,7 +1171,7 @@ CStdString CGUIInfoManager::GetLabel(int info, int contextWindow)
   case MUSICPLAYER_COMMENT:
   case MUSICPLAYER_LYRICS:
   case MUSICPLAYER_PLAYCOUNT:
-  case MUSICPLAYER_FILENAME:
+  case MUSICPLAYER_LASTPLAYED:
     strLabel = GetMusicLabel(info);
   break;
   case VIDEOPLAYER_TITLE:
@@ -2724,7 +2725,7 @@ CStdString CGUIInfoManager::GetMultiInfoLabel(const GUIInfo &info, int contextWi
         return ((CGUITextBox *)control)->GetLabel(info.m_info);
     }
   }
-  else if (info.m_info >= MUSICPLAYER_TITLE && info.m_info <= MUSICPLAYER_FILENAME)
+  else if (info.m_info >= MUSICPLAYER_TITLE && info.m_info <= MUSICPLAYER_ALBUM_ARTIST)
     return GetMusicPlaylistInfo(info);
   else if (info.m_info == CONTAINER_PROPERTY)
   {
@@ -3179,9 +3180,6 @@ CStdString CGUIInfoManager::GetMusicTagLabel(int info, const CFileItem *item)
   case MUSICPLAYER_TITLE:
     if (tag.GetTitle().size()) { return tag.GetTitle(); }
     break;
-  case MUSICPLAYER_FILENAME:
-    if (tag.GetURL().size()) { return tag.GetURL(); }
-    break;
   case MUSICPLAYER_LYRICS:
     if (tag.GetLyrics().size()) { return tag.GetLyrics(); }
     break;
@@ -3220,6 +3218,8 @@ CStdString CGUIInfoManager::GetMusicTagLabel(int info, const CFileItem *item)
     return GetItemLabel(item, LISTITEM_DURATION);
   case MUSICPLAYER_PLAYCOUNT:
     return GetItemLabel(item, LISTITEM_PLAYCOUNT);
+  case MUSICPLAYER_LASTPLAYED:
+    return GetItemLabel(item, LISTITEM_LASTPLAYED);
   }
   return "";
 }
@@ -3847,7 +3847,14 @@ CStdString CGUIInfoManager::GetItemLabel(const CFileItem *item, int info)
       return strPlayCount;
     }
   case LISTITEM_LASTPLAYED:
-    return item->GetVideoInfoTag()->m_lastPlayed;
+    {
+      CStdString strLastPlayed;
+      if (item->HasVideoInfoTag())
+        return item->GetVideoInfoTag()->m_lastPlayed;
+      if (item->HasMusicInfoTag())
+        return item->GetMusicInfoTag()->GetLastPlayed();
+      break;
+    }
   case LISTITEM_TRACKNUMBER:
     {
       CStdString track;

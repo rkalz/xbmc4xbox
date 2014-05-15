@@ -383,6 +383,12 @@ void CPluginDirectory::AddSortMethod(int handle, SORT_METHOD sortMethod, const C
         dir->m_listItems->AddSortMethod(SORT_METHOD_PRODUCTIONCODE,20368,LABEL_MASKS("%H. %T","%P", "%H. %T","%P"));
         break;
       }
+    case SORT_METHOD_LISTENERS:
+      {
+       dir->m_listItems->AddSortMethod(SORT_METHOD_LISTENERS,20455,LABEL_MASKS("%T","%W"));
+       break;
+      }
+   
     default:  
       break;
   }
@@ -665,16 +671,12 @@ void CPluginDirectory::LoadPluginStrings(const CURL &url)
 
   // Path where the language strings reside
   CStdString pathToLanguageFile = pathToPlugin;
-  CStdString pathToFallbackLanguageFile = pathToPlugin;
   URIUtils::AddFileToFolder(pathToLanguageFile, "resources", pathToLanguageFile);
-  URIUtils::AddFileToFolder(pathToFallbackLanguageFile, "resources", pathToFallbackLanguageFile);
   URIUtils::AddFileToFolder(pathToLanguageFile, "language", pathToLanguageFile);
-  URIUtils::AddFileToFolder(pathToFallbackLanguageFile, "language", pathToFallbackLanguageFile);
-  URIUtils::AddFileToFolder(pathToLanguageFile, g_guiSettings.GetString("locale.language"), pathToLanguageFile);
-  URIUtils::AddFileToFolder(pathToFallbackLanguageFile, "english", pathToFallbackLanguageFile);
+  URIUtils::AddSlashAtEnd(pathToLanguageFile);
 
   // Load language strings temporarily
-  g_localizeStringsTemp.Load(pathToLanguageFile, pathToFallbackLanguageFile);
+  g_localizeStringsTemp.Load(pathToLanguageFile, g_guiSettings.GetString("locale.language"));
 }
 
 void CPluginDirectory::ClearPluginStrings()
