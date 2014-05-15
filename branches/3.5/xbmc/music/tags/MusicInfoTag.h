@@ -60,7 +60,9 @@ public:
   const CStdString& GetMusicBrainzTRMID() const;
   const CStdString& GetComment() const;
   const CStdString& GetLyrics() const;
+  const CStdString& GetLastPlayed() const;
   char  GetRating() const;
+  int  GetListeners() const;
   int  GetPlayCount() const;
 
   void SetURL(const CStdString& strURL);
@@ -87,7 +89,9 @@ public:
   void SetComment(const CStdString& comment);
   void SetLyrics(const CStdString& lyrics);
   void SetRating(char rating);
+  void SetListeners(int listeners);
   void SetPlayCount(int playcount);
+  void SetLastPlayed(const CStdString& strLastPlayed);
 
   /*! \brief Append a unique artist to the artist list
    Checks if we have this artist already added, and if not adds it to the songs artist list.
@@ -131,11 +135,13 @@ protected:
   CStdString m_strMusicBrainzTRMID;
   CStdString m_strComment;
   CStdString m_strLyrics;
+  CStdString m_strLastPlayed;
   int m_iDuration;
   int m_iTrack;     // consists of the disk number in the high 16 bits, the track number in the low 16bits
   long m_iDbId;
   bool m_bLoaded;
   char m_rating;
+  int m_listeners;
   int m_iTimesPlayed;
   SYSTEMTIME m_dwReleaseDate;
 };

@@ -313,8 +313,8 @@ namespace PYXBMC
   PyDoc_STRVAR(setInfo__doc__,
     "setInfo(type, infoLabels) -- Sets the listitem's infoLabels.\n"
     "\n"
-    "type           : string - type of media(video/music/pictures).\n"
-    "infoLabels     : dictionary - pairs of { label: value }.\n"
+    "type              : string - type of media(video/music/pictures).\n"
+    "infoLabels        : dictionary - pairs of { label: value }.\n"
     "\n"
     "*Note, To set pictures exif info, prepend 'exif:' to the label. Exif values must be passed\n"
     "       as strings, separate value pairs with a comma. (eg. {'exif:resolution': '720,480'}\n"
@@ -324,58 +324,61 @@ namespace PYXBMC
     "       Once you use a keyword, all following arguments require the keyword.\n"
     "\n"
     "General Values that apply to all types:\n"
-    "    count       : integer (12) - can be used to store an id for later, or for sorting purposes\n"
-    "    size        : long (1024) - size in bytes\n"
-    "    date        : string (%d.%m.%Y / 01.01.2009) - file date\n"
+    "    count         : integer (12) - can be used to store an id for later, or for sorting purposes\n"
+    "    size          : long (1024) - size in bytes\n"
+    "    date          : string (%d.%m.%Y / 01.01.2009) - file date\n"
     "\n"
     "Video Values:\n"
-    "    genre       : string (Comedy)\n"
-    "    year        : integer (2009)\n"
-    "    episode     : integer (4)\n"
-    "    season      : integer (1)\n"
-    "    top250      : integer (192)\n"
-    "    tracknumber : integer (3)\n"
-    "    rating      : float (6.4) - range is 0..10\n"
-    "    watched     : depreciated - use playcount instead\n"
-    "    playcount   : integer (2) - number of times this item has been played\n"
-    "    overlay     : integer (2) - range is 0..8.  See GUIListItem.h for values\n"
-    "    cast        : list (Michal C. Hall)\n"
-    "    castandrole : list (Michael C. Hall|Dexter)\n"
-    "    director    : string (Dagur Kari)\n"
-    "    mpaa        : string (PG-13)\n"
-    "    plot        : string (Long Description)\n"
-    "    plotoutline : string (Short Description)\n"
-    "    title       : string (Big Fan)\n"
-    "    duration    : string (3:18)\n"
-    "    studio      : string (Warner Bros.)\n"
-    "    tagline     : string (An awesome movie) - short description of movie\n"
-    "    writer      : string (Robert D. Siegel)\n"
-    "    tvshowtitle : string (Heroes)\n"
-    "    premiered   : string (2005-03-04)\n"
-    "    status      : string (Continuing) - status of a TVshow\n"
-    "    code        : string (tt0110293) - IMDb code\n"
-    "    aired       : string (2008-12-07)\n"
-    "    credits     : string (Andy Kaufman) - writing credits\n"
-    "    lastplayed  : string (%Y-%m-%d %h:%m:%s = 2009-04-05 23:16:04)\n"
-    "    album       : string (The Joshua Tree)\n"
-    "    votes       : string (12345 votes)\n"
-    "    trailer     : string (/home/user/trailer.avi)\n"
+    "    genre         : string (Comedy)\n"
+    "    year          : integer (2009)\n"
+    "    episode       : integer (4)\n"
+    "    season        : integer (1)\n"
+    "    top250        : integer (192)\n"
+    "    tracknumber   : integer (3)\n"
+    "    rating        : float (6.4) - range is 0..10\n"
+    "    watched       : depreciated - use playcount instead\n"
+    "    playcount     : integer (2) - number of times this item has been played\n"
+    "    overlay       : integer (2) - range is 0..8.  See GUIListItem.h for values\n"
+    "    cast          : list (Michal C. Hall)\n"
+    "    castandrole   : list (Michael C. Hall|Dexter)\n"
+    "    director      : string (Dagur Kari)\n"
+    "    mpaa          : string (PG-13)\n"
+    "    plot          : string (Long Description)\n"
+    "    plotoutline   : string (Short Description)\n"
+    "    title         : string (Big Fan)\n"
+    "    originaltitle : string (Big Fan)\n"
+    "    duration      : string (3:18)\n"
+    "    studio        : string (Warner Bros.)\n"
+    "    tagline       : string (An awesome movie) - short description of movie\n"
+    "    writer        : string (Robert D. Siegel)\n"
+    "    tvshowtitle   : string (Heroes)\n"
+    "    premiered     : string (2005-03-04)\n"
+    "    status        : string (Continuing) - status of a TVshow\n"
+    "    code          : string (tt0110293) - IMDb code\n"
+    "    aired         : string (2008-12-07)\n"
+    "    credits       : string (Andy Kaufman) - writing credits\n"
+    "    lastplayed    : string (%Y-%m-%d %h:%m:%s = 2009-04-05 23:16:04)\n"
+    "    album         : string (The Joshua Tree)\n"
+    "    votes         : string (12345 votes)\n"
+    "    trailer       : string (/home/user/trailer.avi)\n"
     "\n"
     "Music Values:\n"
-    "    tracknumber : integer (8)\n"
-    "    duration    : integer (245) - duration in seconds\n"
-    "    year        : integer (1998)\n"
-    "    genre       : string (Rock)\n"
-    "    album       : string (Pulse)\n"
-    "    artist      : string (Muse)\n"
-    "    title       : string (American Pie)\n"
-    "    rating      : string (3) - single character between 0 and 5\n"
-    "    lyrics      : string (On a dark desert highway...)\n"
+    "    tracknumber   : integer (8)\n"
+    "    duration      : integer (245) - duration in seconds\n"
+    "    year          : integer (1998)\n"
+    "    genre         : string (Rock)\n"
+    "    album         : string (Pulse)\n"
+    "    artist        : string (Muse)\n"
+    "    title         : string (American Pie)\n"
+    "    rating        : string (3) - single character between 0 and 5\n"
+    "    lyrics        : string (On a dark desert highway...)\n"
+    "    playcount     : integer (2) - number of times this item has been played\n"
+    "    lastplayed    : string (%Y-%m-%d %h:%m:%s = 2009-04-05 23:16:04)\n"
     "\n"
     "Picture Values:\n"
-    "    title       : string (In the last summer-1)\n"
-    "    picturepath : string (/home/username/pictures/img001.jpg)\n"
-    "    exif*       : string (See CPictureInfoTag::TranslateString in PictureInfoTag.cpp for valid strings)\n"
+    "    title         : string (In the last summer-1)\n"
+    "    picturepath   : string (/home/username/pictures/img001.jpg)\n"
+    "    exif*         : string (See CPictureInfoTag::TranslateString in PictureInfoTag.cpp for valid strings)\n"
     "\n"
     "example:\n"
     "  - self.list.getSelectedItem().setInfo('video', { 'Genre': 'Comedy' })\n");
@@ -416,28 +419,28 @@ namespace PYXBMC
       if (strcmpi(cType, "video") == 0)
       {
         if (strcmpi(PyString_AsString(key), "year") == 0)
-          self->item->GetVideoInfoTag()->m_iYear = PyInt_AsLong(value);
+          self->item->GetVideoInfoTag()->m_iYear = PyXBMCLongAsStringOrLong(value);
         else if (strcmpi(PyString_AsString(key), "episode") == 0)
-          self->item->GetVideoInfoTag()->m_iEpisode = PyInt_AsLong(value);
+          self->item->GetVideoInfoTag()->m_iEpisode = PyXBMCLongAsStringOrLong(value);
         else if (strcmpi(PyString_AsString(key), "season") == 0)
-          self->item->GetVideoInfoTag()->m_iSeason = PyInt_AsLong(value);
+          self->item->GetVideoInfoTag()->m_iSeason = PyXBMCLongAsStringOrLong(value);
         else if (strcmpi(PyString_AsString(key), "top250") == 0)
-          self->item->GetVideoInfoTag()->m_iTop250 = PyInt_AsLong(value);
+          self->item->GetVideoInfoTag()->m_iTop250 = PyXBMCLongAsStringOrLong(value);
         else if (strcmpi(PyString_AsString(key), "tracknumber") == 0)
-          self->item->GetVideoInfoTag()->m_iTrack = PyInt_AsLong(value);
+          self->item->GetVideoInfoTag()->m_iTrack = PyXBMCLongAsStringOrLong(value);
         else if (strcmpi(PyString_AsString(key), "count") == 0)
-          self->item->m_iprogramCount = PyInt_AsLong(value);
+          self->item->m_iprogramCount = PyXBMCLongAsStringOrLong(value);
         else if (strcmpi(PyString_AsString(key), "rating") == 0)
           self->item->GetVideoInfoTag()->m_fRating = (float)PyFloat_AsDouble(value);
         else if (strcmpi(PyString_AsString(key), "size") == 0)
           self->item->m_dwSize = (int64_t)PyLong_AsLongLong(value);
         else if (strcmpi(PyString_AsString(key), "watched") == 0) // backward compat - do we need it?
-          self->item->GetVideoInfoTag()->m_playCount = PyInt_AsLong(value);
+          self->item->GetVideoInfoTag()->m_playCount = PyXBMCLongAsStringOrLong(value);
         else if (strcmpi(PyString_AsString(key), "playcount") == 0)
-          self->item->GetVideoInfoTag()->m_playCount = PyInt_AsLong(value);
+          self->item->GetVideoInfoTag()->m_playCount = PyXBMCLongAsStringOrLong(value);
         else if (strcmpi(PyString_AsString(key), "overlay") == 0)
         {
-          long overlay = PyInt_AsLong(value);
+          long overlay = PyXBMCLongAsStringOrLong(value);
           if (overlay >= 0 && overlay <= 8)
             self->item->SetOverlayImage((CGUIListItem::GUIIconOverlay)overlay);
         }
@@ -480,6 +483,8 @@ namespace PYXBMC
             self->item->GetVideoInfoTag()->m_strPlotOutline = tmp;
           else if (strcmpi(PyString_AsString(key), "title") == 0)
             self->item->GetVideoInfoTag()->m_strTitle = tmp;
+          else if (strcmpi(PyString_AsString(key), "originaltitle") == 0)
+            self->item->GetVideoInfoTag()->m_strOriginalTitle = tmp;
           else if (strcmpi(PyString_AsString(key), "duration") == 0)
             self->item->GetVideoInfoTag()->m_strRuntime = tmp;
           else if (strcmpi(PyString_AsString(key), "studio") == 0)
@@ -517,17 +522,20 @@ namespace PYXBMC
       }
       else if (strcmpi(cType, "music") == 0)
       {
-        // TODO: add the rest of the infolabels
         if (strcmpi(PyString_AsString(key), "tracknumber") == 0)
-          self->item->GetMusicInfoTag()->SetTrackNumber(PyInt_AsLong(value));
+          self->item->GetMusicInfoTag()->SetTrackNumber(PyXBMCLongAsStringOrLong(value));
         else if (strcmpi(PyString_AsString(key), "count") == 0)
-          self->item->m_iprogramCount = PyInt_AsLong(value);
+          self->item->m_iprogramCount = PyXBMCLongAsStringOrLong(value);
         else if (strcmpi(PyString_AsString(key), "size") == 0)
           self->item->m_dwSize = (int64_t)PyLong_AsLongLong(value);
         else if (strcmpi(PyString_AsString(key), "duration") == 0)
-          self->item->GetMusicInfoTag()->SetDuration(PyInt_AsLong(value));
+          self->item->GetMusicInfoTag()->SetDuration(PyXBMCLongAsStringOrLong(value));
         else if (strcmpi(PyString_AsString(key), "year") == 0)
-          self->item->GetMusicInfoTag()->SetYear(PyInt_AsLong(value));
+          self->item->GetMusicInfoTag()->SetYear(PyXBMCLongAsStringOrLong(value));
+        else if (strcmpi(PyString_AsString(key), "listeners") == 0)
+          self->item->GetMusicInfoTag()->SetListeners(PyXBMCLongAsStringOrLong(value));
+        else if (strcmpi(PyString_AsString(key), "playcount") == 0)
+          self->item->GetMusicInfoTag()->SetPlayCount(PyXBMCLongAsStringOrLong(value));
         else
         {
           if (!PyXBMCGetUnicodeString(tmp, value, 1)) continue;
@@ -542,7 +550,21 @@ namespace PYXBMC
           else if (strcmpi(PyString_AsString(key), "rating") == 0)
             self->item->GetMusicInfoTag()->SetRating(*tmp);
           else if (strcmpi(PyString_AsString(key), "lyrics") == 0)
-            self->item->SetProperty("lyrics", tmp);
+            self->item->GetMusicInfoTag()->SetLyrics(tmp);
+          else if (strcmpi(PyString_AsString(key), "lastplayed") == 0)
+            self->item->GetMusicInfoTag()->SetLastPlayed(tmp);
+          else if (strcmpi(PyString_AsString(key), "musicbrainztrackid") == 0)
+            self->item->GetMusicInfoTag()->SetMusicBrainzTrackID(tmp);
+          else if (strcmpi(PyString_AsString(key), "musicbrainzartistid") == 0)
+            self->item->GetMusicInfoTag()->SetMusicBrainzArtistID(tmp);
+          else if (strcmpi(PyString_AsString(key), "musicbrainzalbumid") == 0)
+            self->item->GetMusicInfoTag()->SetMusicBrainzAlbumID(tmp);
+          else if (strcmpi(PyString_AsString(key), "musicbrainzalbumartistid") == 0)
+            self->item->GetMusicInfoTag()->SetMusicBrainzAlbumArtistID(tmp);
+          else if (strcmpi(PyString_AsString(key), "musicbrainztrmid") == 0)
+            self->item->GetMusicInfoTag()->SetMusicBrainzTRMID(tmp);
+          else if (strcmpi(PyString_AsString(key), "comment") == 0)
+            self->item->GetMusicInfoTag()->SetComment(tmp);
           else if (strcmpi(PyString_AsString(key), "date") == 0)
           {
             if (strlen(tmp) == 10)
@@ -554,7 +576,7 @@ namespace PYXBMC
       else if (strcmpi(cType, "pictures") == 0)
       {
         if (strcmpi(PyString_AsString(key), "count") == 0)
-          self->item->m_iprogramCount = PyInt_AsLong(value);
+          self->item->m_iprogramCount = PyXBMCLongAsStringOrLong(value);
         else if (strcmpi(PyString_AsString(key), "size") == 0)
           self->item->m_dwSize = (int64_t)PyLong_AsLongLong(value);
         else
@@ -655,11 +677,11 @@ namespace PYXBMC
         else if (strcmpi(PyString_AsString(key), "aspect") == 0)
           video->m_fAspect = (float)PyFloat_AsDouble(value);
         else if (strcmpi(PyString_AsString(key), "width") == 0)
-          video->m_iWidth = PyInt_AsLong(value);
+          video->m_iWidth = PyXBMCLongAsStringOrLong(value);
         else if (strcmpi(PyString_AsString(key), "height") == 0)
-          video->m_iHeight = PyInt_AsLong(value);
+          video->m_iHeight = PyXBMCLongAsStringOrLong(value);
         else if (strcmpi(PyString_AsString(key), "duration") == 0)
-          video->m_iDuration = PyInt_AsLong(value);
+          video->m_iDuration = PyXBMCLongAsStringOrLong(value);
       }
       self->item->GetVideoInfoTag()->m_streamDetails.AddStream(video);
     }
@@ -679,7 +701,7 @@ namespace PYXBMC
             continue;
         }
         else if (strcmpi(PyString_AsString(key), "channels") == 0)
-          audio ->m_iChannels = PyInt_AsLong(value);
+          audio ->m_iChannels = PyXBMCLongAsStringOrLong(value);
       }
       self->item->GetVideoInfoTag()->m_streamDetails.AddStream(audio);
     }
