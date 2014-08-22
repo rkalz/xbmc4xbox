@@ -14,9 +14,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -52,9 +51,6 @@ class CAdvancedSettings
     static void GetCustomRegexpReplacers(TiXmlElement *pRootElement, CStdStringArray& settings);
     static void GetCustomExtensions(TiXmlElement *pRootElement, CStdString& extensions);
 
-    // multipath testing
-   // multipath testing
-    bool m_useMultipaths;
     bool m_DisableModChipDetection;
 
     int m_audioHeadRoom;
@@ -115,6 +111,7 @@ class CAdvancedSettings
     int m_songInfoDuration;
     int m_busyDialogDelay;
     int m_logLevel;
+    int m_logLevelHint;
     CStdString m_cddbAddress;
     bool m_usePCDVDROM;
     bool m_fullScreenOnMovieStart;
@@ -218,6 +215,8 @@ class CAdvancedSettings
     
     bool m_bPythonVerbose;
     int m_bgInfoLoaderMaxThreads;
+    
+    void SetDebugMode(bool debug);
 };
 
 extern CAdvancedSettings g_advancedSettings;

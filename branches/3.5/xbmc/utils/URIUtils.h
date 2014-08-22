@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 #pragma once
@@ -39,6 +38,7 @@ public:
   static const CStdString GetFileName(const CStdString& strFileNameAndPath);
   static void Split(const CStdString& strFileNameAndPath, 
                     CStdString& strPath, CStdString& strFileName);
+  static CStdStringArray SplitPath(const CStdString& strPath);
 
   static void GetCommonPath(CStdString& strPath, const CStdString& strPath2);
   static CStdString GetParentPath(const CStdString& strPath);
@@ -81,7 +81,6 @@ public:
   static bool IsURL(const CStdString& strFile);
   static bool IsXBMS(const CStdString& strFile);
   static bool IsVideoDb(const CStdString& strFile);
-  static bool IsVirtualPath(const CStdString& strFile);
   static bool IsVTP(const CStdString& strFile);
   static bool IsZIP(const CStdString& strFile);
 

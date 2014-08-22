@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
  
@@ -103,9 +102,16 @@ CDVDPlayerAudio::CDVDPlayerAudio(CDVDClock* pClock, CDVDMessageQueue& parent)
   m_speed = DVD_PLAYSPEED_NORMAL;
   m_stalled = true;
   m_started = false;
+  m_silence = false;
   m_duration = 0.0;
+  m_error = 0;
+  m_errorbuff = 0;
+  m_errorcount = 0;
+  m_syncclock = true;
 
   m_freq = CurrentHostFrequency();
+
+  m_decode.msg = NULL;
   m_messageQueue.SetMaxDataSize(g_guiSettings.GetInt("dvdplayercache.audio") * 1024);
   m_messageQueue.SetMaxTimeSize(g_guiSettings.GetInt("dvdplayercache.audiotime"));
   g_dvdPerformanceCounter.EnableAudioQueue(&m_messageQueue);

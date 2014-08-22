@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -196,7 +195,7 @@ bool CSMBDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items
           rooturl.SetHostName("");
           path = smb.URLEncode(rooturl);
         }
-        path += aDir.name;
+        path = URIUtils::AddFileToFolder(path,aDir.name);
         URIUtils::AddSlashAtEnd(path);
         pItem->SetPath(path);
         pItem->m_bIsFolder = true;
@@ -338,14 +337,13 @@ int CSMBDirectory::OpenDir(const CURL& url, CStdString& strAuth)
     CLog::Log(LOGERROR, "SMBDirectory->GetDirectory: Unable to open directory : '%s'\nunix_err:'%x' error : '%s'", strPath.c_str(), errno, strerror(errno));
 #endif
   }
-  else if (strPath != strAuth) // we succeeded so, if path was changed, return the correct one and cache it
-    strAuth = strPath;
 
   return fd;
 }
 
 bool CSMBDirectory::Create(const char* strPath)
 {
+  bool success = true;
   CSingleLock lock(smb);
   smb.Init();
 
@@ -354,15 +352,15 @@ bool CSMBDirectory::Create(const char* strPath)
   CStdString strFileName = smb.URLEncode(url);
 
   int result = smbc_mkdir(strFileName.c_str(), 0);
-
-  if(result != 0)
+  success = (result == 0 || EEXIST == errno);
+  if(!success)
 #ifndef _LINUX
     CLog::Log(LOGERROR, "%s - Error( %s )", __FUNCTION__, get_friendly_nt_error_msg(smb.ConvertUnixToNT(errno)));
 #else
     CLog::Log(LOGERROR, "%s - Error( %s )", __FUNCTION__, strerror(errno));
 #endif
 
-  return (result == 0 || EEXIST == result);
+  return success;
 }
 
 bool CSMBDirectory::Remove(const char* strPath)

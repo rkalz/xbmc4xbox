@@ -2,7 +2,7 @@
 
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,9 +15,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -44,6 +43,7 @@
 class CLog
 {
   static FILE* fd;
+  static int        m_logLevel;
   static int        m_repeatCount;
   static int        m_repeatLogLevel;
   static CStdString m_repeatLine;
@@ -54,5 +54,6 @@ public:
   static void Log(int loglevel, const char *format, ... );
   static void DebugLog(const char *format, ...);
   static void MemDump(BYTE *pData, int length);
-  static void DebugLogMemory();
+  static void SetLogLevel(int level);
+  static int  GetLogLevel();
 };

@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -74,8 +73,7 @@ id3_ucs4_t* CID3Tag::StringCharsetToUcs4(const CStdString& str) const
 
 bool CID3Tag::Read(const CStdString& strFile)
 {
-  if (!m_dll.IsLoaded())
-    m_dll.Load();
+  m_dll.Load();
 
   CTag::Read(strFile);
 
@@ -85,7 +83,10 @@ bool CID3Tag::Read(const CStdString& strFile)
 
   m_tag = m_dll.id3_file_tag(id3file);
   if (!m_tag)
+  {
+    m_dll.id3_file_close(id3file);
     return false;
+  }
 
   m_musicInfoTag.SetURL(strFile);
 
@@ -200,8 +201,7 @@ bool CID3Tag::Parse()
 
 bool CID3Tag::Write(const CStdString& strFile)
 {
-  if (!m_dll.IsLoaded())
-    m_dll.Load();
+  m_dll.Load();
 
   CTag::Read(strFile);
 
@@ -211,7 +211,10 @@ bool CID3Tag::Write(const CStdString& strFile)
 
   m_tag = m_dll.id3_file_tag(id3file);
   if (!m_tag)
+  {
+    m_dll.id3_file_close(id3file);
     return false;
+  }
 
   SetTitle(m_musicInfoTag.GetTitle());
   SetArtist(m_musicInfoTag.GetArtist());
@@ -477,8 +480,7 @@ void CID3Tag::SetCompilation(bool compilation)
 
 CStdString CID3Tag::ParseMP3Genre(const CStdString& str) const
 {
-  if (!m_dll.IsLoaded())
-    m_dll.Load();
+  m_dll.Load();
 
   CStdString strTemp = str;
   set<CStdString> setGenres;
@@ -486,23 +488,23 @@ CStdString CID3Tag::ParseMP3Genre(const CStdString& str) const
   while (!strTemp.IsEmpty())
   {
     // remove any leading spaces
-    int i = strTemp.find_first_not_of(" ");
-    if (i > 0) strTemp.erase(0, i);
+    strTemp.TrimLeft();
 
-    // pull off the first character
-    char p = strTemp[0];
+    if (strTemp.IsEmpty())
+      break;
 
     // start off looking for (something)
-    if (p == '(')
+    if (strTemp[0] == '(')
     {
       strTemp.erase(0, 1);
+      if (strTemp.empty())
+        break;
 
       // now look for ((something))
-      p = strTemp[0];
-      if (p == '(')
+      if (strTemp[0] == '(')
       {
         // remove ((something))
-        i = strTemp.find_first_of("))");
+        int i = strTemp.find_first_of(')');
         strTemp.erase(0, i + 2);
       }
     }
@@ -513,20 +515,20 @@ CStdString CID3Tag::ParseMP3Genre(const CStdString& str) const
     else
     {
       CStdString t;
-      while ((!strTemp.IsEmpty()) && (p != ')') && (p != ',') && (p != ';'))
+      size_t i = strTemp.find_first_of("),;");
+      if (i != std::string::npos)
       {
-        strTemp.erase(0, 1);
-        t.push_back(p);
-        p = strTemp[0];
+        t = strTemp.Left(i);
+        strTemp.erase(0, i + 1);
+      } else {
+        t = strTemp;
+        strTemp.clear();
       }
-      // loop exits when terminator is found
-      // be sure to remove the terminator
-      strTemp.erase(0, 1);
-
+      
       // remove any leading or trailing white space
       // from temp string
       t.Trim();
-      if (!t.size()) continue;
+      if (!t.length()) continue;
 
       // if the temp string is natural number try to convert it to a genre string
       if (StringUtils::IsNaturalNumber(t))
