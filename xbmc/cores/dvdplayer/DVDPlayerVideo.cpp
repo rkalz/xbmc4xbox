@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
  
@@ -78,6 +77,9 @@ CDVDPlayerVideo::CDVDPlayerVideo( CDVDClock* pClock
   m_started = false;
   m_iVideoDelay = 0;
   m_iSubtitleDelay = 0;
+  m_FlipTimeStamp = 0.0;
+  m_iLateFrames = 0;
+  m_iDroppedRequest = 0;
   m_fForcedAspectRatio = 0;
   m_iNrOfPicturesNotToSkip = 0;
   m_messageQueue.SetMaxDataSize(g_guiSettings.GetInt("dvdplayercache.video") * 1024);
@@ -87,7 +89,8 @@ CDVDPlayerVideo::CDVDPlayerVideo( CDVDClock* pClock
   m_iCurrentPts = DVD_NOPTS_VALUE;
   m_iDroppedFrames = 0;
   m_fFrameRate = 25;
-  m_bAllowFullscreen = false;
+  m_droptime = 0.0;
+  m_dropbase = 0.0;
   memset(&m_output, 0, sizeof(m_output));
 }
 
@@ -145,27 +148,17 @@ void CDVDPlayerVideo::OpenStream(CDVDStreamInfo &hint, CDVDVideoCodec* codec)
 {
   //reported fps is usually not completely correct
   if (hint.fpsrate && hint.fpsscale)
-  {
-    m_fFrameRate = (float)hint.fpsrate / hint.fpsscale;
-    m_autosync = 10;
-  }
+    m_fFrameRate = DVD_TIME_BASE / CDVDCodecUtils::NormalizeFrameduration((double)DVD_TIME_BASE * hint.fpsscale / hint.fpsrate);
   else
-  {
     m_fFrameRate = 25;
-    m_autosync = 1; // avoid using frame time as we don't know it accurate
-  }
 
   m_iDroppedRequest = 0;
   m_iLateFrames = 0;
-
-  if (hint.vfr)
-    m_autosync = 1;
 
   if( m_fFrameRate > 100 || m_fFrameRate < 5 )
   {
     CLog::Log(LOGERROR, "CDVDPlayerVideo::OpenStream - Invalid framerate %d, using forced 25fps and just trust timestamps", (int)m_fFrameRate);
     m_fFrameRate = 25;
-    m_autosync = 1; // avoid using frame time as we don't know it accurate
   }
 
   // use aspect in stream if available
@@ -531,12 +524,6 @@ void CDVDPlayerVideo::Process()
               mPostProcess.SetType(sPostProcessType);
               if (mPostProcess.Process(&picture))
                 mPostProcess.GetPicture(&picture);
-            }
-            else if( mInt == VS_INTERLACEMETHOD_RENDER_WEAVE || mInt == VS_INTERLACEMETHOD_RENDER_WEAVE_INVERTED )
-            {
-              /* if we are syncing frames, dvdplayer will be forced to play at a given framerate */
-              /* unless we directly sync to the correct pts, we won't get a/v sync as video can never catch up */
-              picture.iFlags |= DVP_FLAG_NOAUTOSYNC;
             }
 
             /* if frame has a pts (usually originiating from demux packet), use that */
@@ -912,17 +899,9 @@ int CDVDPlayerVideo::OutputPicture(DVDVideoPicture* pPicture, double pts)
   iFrameSleep = min(iFrameSleep, DVD_MSEC_TO_TIME(500));
 
   if( m_stalled )
-  { // when we render a still, we can't sync to clock anyway
     iSleepTime = iFrameSleep;
-  }
   else
-  {
-    // try to decide on how to sync framerate
-    if( pPicture->iFlags & DVP_FLAG_NOAUTOSYNC )
-      iSleepTime = iClockSleep;
-    else
-      iSleepTime = iFrameSleep + (iClockSleep - iFrameSleep) / m_autosync;
-  }
+    iSleepTime = iClockSleep;
 
 #ifdef PROFILE /* during profiling, try to play as fast as possible */
   iSleepTime = 0;
@@ -999,8 +978,8 @@ int CDVDPlayerVideo::OutputPicture(DVDVideoPicture* pPicture, double pts)
   } 
   else
   {
-    m_droptime = 0.0f;
-    m_dropbase = 0.0f;
+    m_droptime = 0.0;
+    m_dropbase = 0.0;
   }
 
   // set fieldsync if picture is interlaced

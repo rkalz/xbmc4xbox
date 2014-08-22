@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -54,6 +53,10 @@ CDVDInputStreamNavigator::CDVDInputStreamNavigator(IDVDPlayer* player) : CDVDInp
   m_iTitle = m_iTitleCount = 0;
   m_iPart = m_iPartCount = 0;
   m_iTime = m_iTotalTime = 0;
+  m_bEOF = false;
+  m_lastevent = DVDNAV_NOP;
+
+  memset(m_lastblock, 0, sizeof(m_lastblock));
 }
 
 CDVDInputStreamNavigator::~CDVDInputStreamNavigator()
@@ -1166,7 +1169,7 @@ bool CDVDInputStreamNavigator::IsSubtitleStreamEnabled()
     return false;
 }
 
-bool CDVDInputStreamNavigator::GetNavigatorState(std::string &xmlstate)
+bool CDVDInputStreamNavigator::GetState(std::string &xmlstate)
 {
   if( !m_dvdnav ) 
     return false;
@@ -1187,7 +1190,7 @@ bool CDVDInputStreamNavigator::GetNavigatorState(std::string &xmlstate)
   return true;
 }
 
-bool CDVDInputStreamNavigator::SetNavigatorState(std::string &xmlstate)
+bool CDVDInputStreamNavigator::SetState(const std::string &xmlstate)
 {
   if( !m_dvdnav ) 
     return false;
@@ -1287,9 +1290,6 @@ int CDVDInputStreamNavigator::ConvertAudioStreamId_ExternalToXBMC(int id)
     // non VTS_DOMAIN, only one stream is available
     return 0;
   }
-  
-  CLog::Log(LOGWARNING, "%s - no stream found %d", __FUNCTION__, id);
-  return -1;
 }
 
 int CDVDInputStreamNavigator::ConvertSubtitleStreamId_XBMCToExternal(int id)
@@ -1361,7 +1361,4 @@ int CDVDInputStreamNavigator::ConvertSubtitleStreamId_ExternalToXBMC(int id)
     // non VTS_DOMAIN, only one stream is available
     return 0;
   }
-  
-  CLog::Log(LOGWARNING, "%s - no stream found %d", __FUNCTION__, id);
-  return -1;
 }

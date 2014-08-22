@@ -1,7 +1,7 @@
 #pragma once
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,9 +14,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 #include "system.h"
@@ -183,7 +182,20 @@ public:
   static double AlbumRelevance(const CStdString& strAlbumTemp1, const CStdString& strAlbum1, const CStdString& strArtistTemp1, const CStdString& strArtist1);
   static bool MakeShortenPath(CStdString StrInput, CStdString& StrOutput, int iTextMaxLength);
   static float CurrentCpuUsage();
-  static bool SupportsFileOperations(const CStdString& strPath);
+  /*! \brief Checks wether the supplied path supports Write file operations (e.g. Rename, Delete, ...)
+
+   \param strPath the path to be checked
+
+   \return true if Write file operations are supported, false otherwise
+   */
+  static bool SupportsWriteFileOperations(const CStdString& strPath);
+  /*! \brief Checks wether the supplied path supports Read file operations (e.g. Copy, ...)
+
+   \param strPath the path to be checked
+
+   \return true if Read file operations are supported, false otherwise
+   */
+  static bool SupportsReadFileOperations(const CStdString& strPath);
 
   static CStdString GetCachedMusicThumb(const CStdString &path);
   static CStdString GetCachedAlbumThumb(const CStdString &album, const CStdString &artist);

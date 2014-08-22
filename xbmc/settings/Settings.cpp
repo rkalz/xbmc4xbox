@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -392,7 +391,7 @@ bool CSettings::GetSource(const CStdString &category, const TiXmlNode *source, C
       strPath = CSpecialProtocol::ReplaceOldPath(strPath, pathVersion);
       // make sure there are no virtualpaths or stack paths defined in xboxmediacenter.xml
       //CLog::Log(LOGDEBUG,"    Found path: %s", strPath.c_str());
-      if (!URIUtils::IsVirtualPath(strPath) && !URIUtils::IsStack(strPath))
+      if (!URIUtils::IsStack(strPath))
       {
         // translate special tags
         if (!strPath.IsEmpty() && strPath.at(0) == '$')
@@ -470,16 +469,6 @@ bool CSettings::GetSource(const CStdString &category, const TiXmlNode *source, C
 
     share.FromNameAndPaths(category, strName, verifiedPaths);
 
-/*    CLog::Log(LOGDEBUG,"      Adding source:");
-    CLog::Log(LOGDEBUG,"        Name: %s", share.strName.c_str());
-    if (URIUtils::IsVirtualPath(share.strPath) || URIUtils::IsMultiPath(share.strPath))
-    {
-      for (int i = 0; i < (int)share.vecPaths.size(); ++i)
-        CLog::Log(LOGDEBUG,"        Path (%02i): %s", i+1, share.vecPaths.at(i).c_str());
-    }
-    else
-      CLog::Log(LOGDEBUG,"        Path: %s", share.strPath.c_str());
-*/
     share.m_iBadPwdCount = 0;
     if (pLockMode)
     {
@@ -834,10 +823,11 @@ bool CSettings::LoadSettings(const CStdString& strSettingsFile)
   CLog::Log(LOGNOTICE, "Default Audio Player: %s", GetDefaultAudioPlayerName().c_str());
 
   // setup logging...
-  if (g_guiSettings.GetBool("debug.showloginfo") && g_advancedSettings.m_logLevel < LOG_LEVEL_DEBUG_FREEMEM)
+  if (g_guiSettings.GetBool("debug.showloginfo"))
   {
-    g_advancedSettings.m_logLevel = LOG_LEVEL_DEBUG_FREEMEM;
-    CLog::Log(LOGNOTICE, "Enabled debug logging due to GUI setting");
+    g_advancedSettings.m_logLevel = std::max(g_advancedSettings.m_logLevelHint, LOG_LEVEL_DEBUG_FREEMEM);
+    CLog::SetLogLevel(g_advancedSettings.m_logLevel);
+    CLog::Log(LOGNOTICE, "Enabled debug logging due to GUI setting (%d)", g_advancedSettings.m_logLevel);
   }
   
   // Override settings with avpack settings
@@ -1465,10 +1455,6 @@ bool CSettings::UpdateSource(const CStdString &strType, const CStdString strOldN
   VECSOURCES *pShares = GetSourcesFromType(strType);
 
   if (!pShares) return false;
-
-  // disallow virtual paths
-  if (strUpdateElement.Equals("path") && URIUtils::IsVirtualPath(strUpdateText))
-    return false;
 
   for (IVECSOURCES it = pShares->begin(); it != pShares->end(); it++)
   {

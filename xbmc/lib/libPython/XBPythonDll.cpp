@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -187,6 +186,8 @@ extern "C"
   FUNCTION8(Py_AddPendingCall)
   FUNCTION8(PyList_GetItem)
   FUNCTION4(PyList_Size)
+  FUNCTION4(PyList_New)
+  FUNCTION8(PyList_Append)
   FUNCTION4(_PyObject_New)
   FUNCTION4(PyLong_AsLong)
   FUNCTION4(PyLong_AsLongLong)
@@ -310,7 +311,9 @@ extern "C"
       dll.ResolveExport(DLL_VA_FUNCTION(PyObject_CallMethod)) &&
       dll.ResolveExport(DLL_FUNCTION(PyList_GetItem)) &&
       dll.ResolveExport(DLL_FUNCTION(PyList_Size)) &&
-      dll.ResolveExport(DLL_FUNCTION(_PyObject_New)) &&
+      dll.ResolveExport(DLL_FUNCTION(PyList_New)) &&
+      dll.ResolveExport(DLL_FUNCTION(PyList_Append)) &&
+      dll.ResolveExport(DLL_FUNCTION(_PyObject_New)) &&               
       dll.ResolveExport(DLL_FUNCTION(PyLong_AsLong)) &&
       dll.ResolveExport(DLL_FUNCTION(PyLong_AsLongLong)) &&
       dll.ResolveExport(DLL_VA_FUNCTION(PyErr_Format)) &&

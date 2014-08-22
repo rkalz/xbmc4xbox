@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -25,13 +24,13 @@
 #include "CriticalSection.h"
 #include "SingleLock.h"
 #include "settings/Settings.h"
-#include "settings/AdvancedSettings.h"
 #include "utils/URIUtils.h"
 
 FILE* CLog::fd = NULL;
 int         CLog::m_repeatCount     = 0;
 int         CLog::m_repeatLogLevel  = -1;
 CStdString  CLog::m_repeatLine      = "";
+int         CLog::m_logLevel        = LOG_LEVEL_DEBUG;
 
 static CCriticalSection critSec;
 
@@ -59,14 +58,14 @@ void CLog::Close()
 
 void CLog::Log(int loglevel, const char *format, ... )
 {
-  if (g_advancedSettings.m_logLevel > LOG_LEVEL_NORMAL ||
-     (g_advancedSettings.m_logLevel > LOG_LEVEL_NONE && loglevel >= LOGNOTICE))
+  CSingleLock waitLock(critSec);
+  if (m_logLevel > LOG_LEVEL_NORMAL ||
+     (m_logLevel > LOG_LEVEL_NONE && loglevel >= LOGNOTICE))
   {
-    CSingleLock waitLock(critSec);
     if (!fd)
     {
-	  // We should only continue when the logfolder is set
-	  if (g_settings.m_logFolder.IsEmpty()) return;
+      // We should only continue when the logfolder is set
+      if (g_settings.m_logFolder.IsEmpty()) return;
 
       // g_settings.m_logFolder is initialized in the CSettings constructor to Q:\\
       // and if we are running from DVD, it's changed to T:\\ in CApplication::Create()
@@ -181,17 +180,6 @@ void CLog::DebugLog(const char *format, ... )
 #endif
 }
 
-void CLog::DebugLogMemory()
-{
-  CSingleLock waitLock(critSec);
-  MEMORYSTATUS stat;
-  CStdString strData;
-
-  GlobalMemoryStatus(&stat);
-  strData.Format("%i bytes free\n", stat.dwAvailPhys);
-  OutputDebugString(strData.c_str());
-}
-
 void CLog::MemDump(BYTE *pData, int length)
 {
   Log(LOGDEBUG, "MEM_DUMP: Dumping from %x", (unsigned int)pData);
@@ -224,5 +212,17 @@ void CLog::MemDump(BYTE *pData, int length)
     }
     Log(LOGDEBUG, "%s", strLine.c_str());
   }
+}
+
+void CLog::SetLogLevel(int level)
+{
+  CSingleLock waitLock(critSec);
+  m_logLevel = level;
+  CLog::Log(LOGNOTICE, "Log level changed to %d", m_logLevel);
+}
+
+int CLog::GetLogLevel()
+{
+  return m_logLevel;
 }
 

@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -37,7 +36,6 @@ CAdvancedSettings g_advancedSettings;
 
 CAdvancedSettings::CAdvancedSettings()
 {
-  m_useMultipaths = true;
   m_DisableModChipDetection = true;
 
   m_audioHeadRoom = 0;
@@ -96,7 +94,8 @@ CAdvancedSettings::CAdvancedSettings()
 
   m_songInfoDuration = 10;
   m_busyDialogDelay = 2000;
-  m_logLevel = LOG_LEVEL_NORMAL;
+  m_logLevel     = LOG_LEVEL_NORMAL;
+  m_logLevelHint = LOG_LEVEL_NORMAL;
   m_cddbAddress = "freedb.freedb.org";
   m_usePCDVDROM = false;
   m_fullScreenOnMovieStart = true;
@@ -420,12 +419,20 @@ bool CAdvancedSettings::Load()
     XMLUtils::GetBoolean(pElement, "remotethumbs", m_bFTPThumbs);
   }
 
-  if (XMLUtils::GetInt(pRootElement, "loglevel", m_logLevel, LOG_LEVEL_NONE, LOG_LEVEL_MAX))
+  pElement = pRootElement->FirstChildElement("loglevel");
+  if (pElement)
   { // read the loglevel setting, so set the setting advanced to hide it in GUI
     // as altering it will do nothing - we don't write to advancedsettings.xml
-    CSetting *setting = g_guiSettings.GetSetting("debug.showloginfo");
+    XMLUtils::GetInt(pRootElement, "loglevel", m_logLevelHint, LOG_LEVEL_NONE, LOG_LEVEL_MAX);
+    CSettingBool *setting = (CSettingBool *)g_guiSettings.GetSetting("debug.showloginfo");
     if (setting)
-      setting->SetAdvanced();
+    {
+      const char* hide;
+      if (!((hide = pElement->Attribute("hide")) && strnicmp("false", hide, 4) == 0))
+        setting->SetAdvanced();
+    }
+    g_advancedSettings.m_logLevel = std::max(g_advancedSettings.m_logLevel, g_advancedSettings.m_logLevelHint);
+    CLog::SetLogLevel(g_advancedSettings.m_logLevel);
   }
 
   pElement = pRootElement->FirstChildElement("python");
@@ -438,7 +445,6 @@ bool CAdvancedSettings::Load()
 
   XMLUtils::GetBoolean(pRootElement, "usepcdvdrom", m_usePCDVDROM);
   XMLUtils::GetBoolean(pRootElement, "nodvdrom", m_noDVDROM);
-  XMLUtils::GetBoolean(pRootElement, "usemultipaths", m_useMultipaths);
   XMLUtils::GetBoolean(pRootElement, "disablemodchipdetection", m_DisableModChipDetection);
 
   XMLUtils::GetInt(pRootElement, "songinfoduration", m_songInfoDuration, 0, INT_MAX);
@@ -814,3 +820,20 @@ void CAdvancedSettings::GetCustomExtensions(TiXmlElement *pRootElement, CStdStri
   }
 }
 
+void CAdvancedSettings::SetDebugMode(bool debug)
+{
+  if (debug)
+  {
+    int level = std::max(m_logLevelHint, LOG_LEVEL_DEBUG_FREEMEM);
+    m_logLevel = level;
+    CLog::SetLogLevel(level);
+    CLog::Log(LOGNOTICE, "Enabled debug logging due to GUI setting. Level %d.", level);
+  }
+  else
+  {
+    int level = std::min(m_logLevelHint, LOG_LEVEL_DEBUG/*LOG_LEVEL_NORMAL*/);
+    CLog::Log(LOGNOTICE, "Disabled debug logging due to GUI setting. Level %d.", level);
+    m_logLevel = level;
+    CLog::SetLogLevel(level);
+  }
+}

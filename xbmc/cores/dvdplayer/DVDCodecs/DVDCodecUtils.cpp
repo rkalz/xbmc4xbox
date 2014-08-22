@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,14 +13,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
  
 #include "utils/log.h"
 #include "DVDCodecUtils.h"
+#include "DVDClock.h"
 #include "cores/VideoRenderers/RenderManager.h"
 
 // allocate a new picture (PIX_FMT_YUV420P)
@@ -135,3 +135,29 @@ bool CDVDCodecUtils::CopyPicture(YV12Image* pImage, DVDVideoPicture *pSrc)
   }
   return true;
 }
+
+double CDVDCodecUtils::NormalizeFrameduration(double frameduration)
+{
+  //if the duration is within 20 microseconds of a common duration, use that
+  const double durations[] = {DVD_TIME_BASE * 1.001 / 24.0, DVD_TIME_BASE / 24.0, DVD_TIME_BASE / 25.0,
+                              DVD_TIME_BASE * 1.001 / 30.0, DVD_TIME_BASE / 30.0, DVD_TIME_BASE / 50.0,
+                              DVD_TIME_BASE * 1.001 / 60.0, DVD_TIME_BASE / 60.0};
+
+  double lowestdiff = DVD_TIME_BASE;
+  int    selected     = -1;
+  for (size_t i = 0; i < sizeof(durations) / sizeof(durations[0]); i++)
+  {
+    double diff = fabs(frameduration - durations[i]);
+    if (diff < DVD_MSEC_TO_TIME(0.02) && diff < lowestdiff)
+    {
+      selected = i;
+      lowestdiff = diff;
+    }
+  }
+
+  if (selected != -1)
+    return durations[selected];
+  else
+    return frameduration;
+}
+
