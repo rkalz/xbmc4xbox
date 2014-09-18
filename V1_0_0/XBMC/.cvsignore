@@ -1,0 +1,6 @@
+*.suo
+*.obj
+*.idb
+*.pdb
+*.ncb
+BuildLog.htm
