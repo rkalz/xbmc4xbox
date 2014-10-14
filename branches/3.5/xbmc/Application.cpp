@@ -1727,7 +1727,13 @@ void CApplication::DimLCDOnPlayback(bool dim)
 void CApplication::StartServices()
 {
 #ifdef HAS_XBOX_HARDWARE
-  StartIdleThread();
+  if (g_advancedSettings.m_bPowerSave)
+  {
+    CLog::Log(LOGNOTICE, "Using idle thread with HLT (power saving)");
+    StartIdleThread();
+  }
+  else
+    CLog::Log(LOGNOTICE, "Not using idle thread with HLT (no power saving)");
 #endif
 
   CheckDate();
@@ -1829,7 +1835,8 @@ void CApplication::StopServices()
   CLog::Log(LOGNOTICE, "stop fancontroller");
   CFanController::Instance()->Stop();
   CFanController::RemoveInstance();
-  StopIdleThread();
+  if (g_advancedSettings.m_bPowerSave)
+    StopIdleThread();
 #endif  
 }
 
@@ -2418,10 +2425,23 @@ bool CApplication::OnKey(CKey& key)
   if (!key.IsAnalogButton())
     CLog::Log(LOGDEBUG, "%s: %i pressed, action is %s", __FUNCTION__, (int) key.GetButtonCode(), action.GetName().c_str());
 
-  //  Play a sound based on the action
-  g_audioManager.PlayActionSound(action);
+  bool bResult = false;
 
-  return OnAction(action);
+  // play sound before the action unless the button is held, 
+  // where we execute after the action as held actions aren't fired every time.
+  if(action.GetHoldTime())
+  {
+    bResult = OnAction(action);
+    if(bResult)
+      g_audioManager.PlayActionSound(action);
+  }
+  else
+  {
+    g_audioManager.PlayActionSound(action);
+    bResult = OnAction(action);
+  }
+
+  return bResult;
 }
 
 bool CApplication::OnAction(CAction &action)
@@ -3266,7 +3286,7 @@ bool CApplication::ProcessEventServer(float frameTime)
   return false;
 }
 
-bool CApplication::ProcessJoystickEvent(const std::string& joystickName, int wKeyID, bool isAxis, float fAmount)
+bool CApplication::ProcessJoystickEvent(const std::string& joystickName, int wKeyID, bool isAxis, float fAmount, unsigned int holdTime /*=0*/)
 {
 #ifdef HAS_EVENT_SERVER
   m_idleTimer.StartZero();
@@ -3302,9 +3322,24 @@ bool CApplication::ProcessJoystickEvent(const std::string& joystickName, int wKe
    // Translate using regular joystick translator.
    if (CButtonTranslator::GetInstance().TranslateJoystickString(iWin, joystickName.c_str(), wKeyID, isAxis, actionID, actionName, fullRange))
    {
-     CAction action(actionID, fAmount, 0.0f, actionName);
-     g_audioManager.PlayActionSound(action);
-     return OnAction(action);
+     CAction action(actionID, fAmount, 0.0f, actionName, holdTime);
+     bool bResult = false;
+
+     // play sound before the action unless the button is held, 
+     // where we execute after the action as held actions aren't fired every time.
+     if(action.GetHoldTime())
+     {
+       bResult = OnAction(action);
+       if(bResult)
+         g_audioManager.PlayActionSound(action);
+     }
+     else
+     {
+       g_audioManager.PlayActionSound(action);
+       bResult = OnAction(action);
+     }
+
+     return bResult;
    }
    else
    {

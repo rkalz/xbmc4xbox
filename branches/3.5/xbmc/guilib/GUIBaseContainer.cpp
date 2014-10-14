@@ -56,6 +56,8 @@ CGUIBaseContainer::CGUIBaseContainer(int parentID, int controlID, float posX, fl
   m_layout = NULL;
   m_focusedLayout = NULL;
   m_cacheItems = preloadItems;
+  m_scrollItemsPerFrame = 0.0f;
+  m_type = VIEW_TYPE_NONE;
 }
 
 CGUIBaseContainer::~CGUIBaseContainer(void)
@@ -202,6 +204,8 @@ bool CGUIBaseContainer::OnAction(const CAction &action)
     OnJumpLetter((char)(action.GetID() & 0xff));
     return true;
   }
+  // stop the timer on any other action
+  m_matchTimer.Stop();
 
   switch (action.GetID())
   {
@@ -210,6 +214,7 @@ bool CGUIBaseContainer::OnAction(const CAction &action)
   case ACTION_MOVE_DOWN:
   case ACTION_MOVE_UP:
   case ACTION_NAV_BACK:
+  case ACTION_PREVIOUS_MENU:
     {
       if (!HasFocus()) return false;
       if (action.GetHoldTime() > HOLD_TIME_START &&
@@ -217,19 +222,36 @@ bool CGUIBaseContainer::OnAction(const CAction &action)
          (m_orientation == HORIZONTAL && (action.GetID() == ACTION_MOVE_LEFT || action.GetID() == ACTION_MOVE_RIGHT))))
       { // action is held down - repeat a number of times
         float speed = min(1.0f, (float)(action.GetHoldTime() - HOLD_TIME_START) / (HOLD_TIME_END - HOLD_TIME_START));
-        unsigned int itemsPerFrame = 1;
-          itemsPerFrame = max((unsigned int)1, (unsigned int)(speed * 0.0001f * GetRows() * (CTimeUtils::GetFrameTime() - m_lastHoldTime)));
+        unsigned int frameDuration = min(CTimeUtils::GetFrameTime() - m_lastHoldTime, 50u); // max 20fps
+
+        // maximal scroll rate is at least 30 items per second, and at most (item_rows/7) items per second
+        //  i.e. timed to take 7 seconds to traverse the list at full speed.
+        // minimal scroll rate is at least 10 items per second
+        float maxSpeed = max(frameDuration * 0.001f * 30, frameDuration * 0.001f * GetRows() / 7);
+        float minSpeed = frameDuration * 0.001f * 10;
+        m_scrollItemsPerFrame += max(minSpeed, speed*maxSpeed); // accelerate to max speed
+
         m_lastHoldTime = CTimeUtils::GetFrameTime();
-        m_lastHoldTime = timeGetTime();
-        if (action.GetID() == ACTION_MOVE_LEFT || action.GetID() == ACTION_MOVE_UP)
-          while (itemsPerFrame--) MoveUp(false);
-        else
-          while (itemsPerFrame--) MoveDown(false);
+
+        if(m_scrollItemsPerFrame < 1.0f)//not enough hold time accumulated for one step
+          return false;
+
+        while (m_scrollItemsPerFrame >= 1)
+        {
+          if (action.GetID() == ACTION_MOVE_LEFT || action.GetID() == ACTION_MOVE_UP)
+            MoveUp(false);
+          else
+            MoveDown(false);
+          m_scrollItemsPerFrame--;
+        }
         return true;
       }
       else
       {
-        m_lastHoldTime = 0;
+        //if HOLD_TIME_START is reached we need
+        //a sane initial value for calculating m_scrollItemsPerPage
+        m_lastHoldTime = CTimeUtils::GetFrameTime();
+        m_scrollItemsPerFrame = 0.0f;
         return CGUIControl::OnAction(action);
       }
     }
@@ -421,7 +443,7 @@ void CGUIBaseContainer::OnPrevLetter()
   }
 }
 
-void CGUIBaseContainer::OnJumpLetter(char letter)
+void CGUIBaseContainer::OnJumpLetter(char letter, bool skip /*=false*/)
 {
   if (m_matchTimer.GetElapsedMilliseconds() < letter_match_timeout)
     m_match.push_back(letter);
@@ -436,7 +458,8 @@ void CGUIBaseContainer::OnJumpLetter(char letter)
 
   // find the current letter we're focused on
   unsigned int offset = CorrectOffset(m_offset, m_cursor);
-  for (unsigned int i = (offset + 1) % m_items.size(); i != offset; i = (i+1) % m_items.size())
+  unsigned int i      = (offset + ((skip) ? 1 : 0)) % m_items.size();
+  do
   {
     CGUIListItemPtr item = m_items[i];
     if (0 == strnicmp(SSortFileItem::RemoveArticles(item->GetLabel()).c_str(), m_match.c_str(), m_match.size()))
@@ -444,12 +467,13 @@ void CGUIBaseContainer::OnJumpLetter(char letter)
       SelectItem(i);
       return;
     }
-  }
+    i = (i+1) % m_items.size();
+  } while (i != offset);
   // no match found - repeat with a single letter
   if (m_match.size() > 1)
   {
     m_match.clear();
-    OnJumpLetter(letter);
+    OnJumpLetter(letter, true);
   }
 }
 
