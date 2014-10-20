@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -24,6 +23,8 @@
 #include "FileFactory.h"
 #include "HDFile.h"
 #include "CurlFile.h"
+#include "HTTPFile.h"
+#include "DAVFile.h"
 #include "ShoutcastFile.h"
 #include "LastFMFile.h"
 #include "FileReaderFile.h"
@@ -39,6 +40,7 @@
 #endif
 #include "ZipFile.h"
 #include "RarFile.h"
+#include "UPnPFile.h"
 #include "MusicDatabaseFile.h"
 #include "SpecialProtocolFile.h"
 #include "MultiPathFile.h"
@@ -72,41 +74,40 @@ IFile* CFileFactory::CreateLoader(const CURL& url)
   strProtocol.MakeLower();
 
   if (strProtocol == "zip") return new CZipFile();
-  else if (strProtocol == "rar") return new CFileRar();
-  else if (strProtocol == "musicdb") return new CFileMusicDatabase();
+  else if (strProtocol == "rar") return new CRarFile();
+  else if (strProtocol == "musicdb") return new CMusicDatabaseFile();
   else if (strProtocol == "videodb") return NULL;
   else if (strProtocol == "special") return new CSpecialProtocolFile();
   else if (strProtocol == "multipath") return new CMultiPathFile();
   else if (strProtocol == "file" || strProtocol.IsEmpty()) return new CFileHD();
   else if (strProtocol == "filereader") return new CFileFileReader();
 #ifdef HAS_FILESYSTEM
-  else if (strProtocol == "iso9660") return new CFileISO();
-  else if (strProtocol == "soundtrack") return new CFileSndtrk();
-  else if (strProtocol == "cdda") return new CFileCDDA();
-  else if (strProtocol.Left(3) == "mem") return new CFileMemUnit();
+  else if (strProtocol == "iso9660") return new CISOFile();
+  else if (strProtocol == "soundtrack") return new CSndtrkFile();
+  else if (strProtocol == "cdda") return new CCDDAFile();
+  else if (strProtocol.Left(3) == "mem") return new CMemUnitFile();
 #endif
   if( g_application.getNetwork().IsAvailable() )
   {
-    if (strProtocol == "http"
-    ||  strProtocol == "https"
-    ||  strProtocol == "dav"
-    ||  strProtocol == "davs"
-    ||  strProtocol == "ftp"
+    if (strProtocol == "ftp"
     ||  strProtocol == "ftpx"
     ||  strProtocol == "ftps"
     ||  strProtocol == "rss") return new CCurlFile();
-    else if (strProtocol == "shout") return new CFileShoutcast();
-    else if (strProtocol == "lastfm") return new CFileLastFM();
-    else if (strProtocol == "tuxbox") return new CFileTuxBox();
+    else if (strProtocol == "http" ||  strProtocol == "https") return new CHTTPFile();
+    else if (strProtocol == "dav" || strProtocol == "davs") return new CDAVFile();
+    else if (strProtocol == "shout") return new CShoutcastFile();
+    else if (strProtocol == "lastfm") return new CLastFMFile();
+    else if (strProtocol == "tuxbox") return new CTuxBoxFile();
     else if (strProtocol == "hdhomerun") return new CHomeRunFile();
     else if (strProtocol == "sling") return new CSlingboxFile();
     else if (strProtocol == "myth") return new CMythFile();
     else if (strProtocol == "cmyth") return new CMythFile();
 #ifdef HAS_FILESYSTEM
     else if (strProtocol == "smb") return new CSmbFile();
-    else if (strProtocol == "xbms") return new CFileXBMSP();
-    else if (strProtocol == "rtv") return new CFileRTV();
-    else if (strProtocol == "daap") return new CFileDAAP();
+    else if (strProtocol == "xbms") return new CXBMSPFile();
+    else if (strProtocol == "rtv") return new CRTVFile();
+    else if (strProtocol == "daap") return new CDAAPFile();
+    else if (strProtocol == "upnp") return new CUPnPFile();
 #endif
   }
 

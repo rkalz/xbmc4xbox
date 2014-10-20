@@ -503,7 +503,7 @@ expect a function argument.
      ``(b.name, b.date)``.
 
    * After ``f = attrgetter('name.first', 'name.last')``, the call ``f(b)``
-     returns ``(r.name.first, r.name.last)``.
+     returns ``(b.name.first, b.name.last)``.
 
    Equivalent to::
 
@@ -514,7 +514,7 @@ expect a function argument.
                   return resolve_attr(obj, attr)
           else:
               def g(obj):
-                  return tuple(resolve_att(obj, attr) for attr in items)
+                  return tuple(resolve_attr(obj, attr) for attr in items)
           return g
 
       def resolve_attr(obj, attr):

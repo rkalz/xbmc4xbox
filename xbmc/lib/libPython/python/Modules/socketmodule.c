@@ -2671,7 +2671,6 @@ sock_recvfrom_into(PySocketSockObject *s, PyObject *args, PyObject* kwds)
                                      &recvlen, &flags))
         return NULL;
     buflen = buf.len;
-    assert(buf.buf != 0 && buflen > 0);
 
     if (recvlen < 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -2681,6 +2680,10 @@ sock_recvfrom_into(PySocketSockObject *s, PyObject *args, PyObject* kwds)
     if (recvlen == 0) {
         /* If nbytes was not specified, use the buffer's length */
         recvlen = buflen;
+    } else if (recvlen > buflen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "nbytes is greater than the length of the buffer");
+        goto error;
     }
 
     readlen = sock_recvfrom_guts(s, buf.buf, recvlen, flags, &addr);
@@ -4107,6 +4110,15 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
         PyErr_SetString(socket_error, "Int or String expected");
         goto err;
     }
+#if defined(__APPLE__) && defined(AI_NUMERICSERV)
+    if ((flags & AI_NUMERICSERV) && (pptr == NULL || (pptr[0] == '0' && pptr[1] == 0))) {
+        /* On OSX upto at least OSX 10.8 getaddrinfo crashes
+	 * if AI_NUMERICSERV is set and the servname is NULL or "0".
+	 * This workaround avoids a segfault in libsystem.
+	 */
+        pptr = "00";
+    }
+#endif
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = family;
     hints.ai_socktype = socktype;

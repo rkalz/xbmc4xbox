@@ -38,6 +38,23 @@ int ffio_init_context(AVIOContext *s,
 
 
 /**
+ * Read size bytes from AVIOContext, returning a pointer.
+ * Note that the data pointed at by the returned pointer is only
+ * valid until the next call that references the same IO context.
+ * @param s IO context
+ * @param buf pointer to buffer into which to assemble the requested
+ *    data if it is not available in contiguous addresses in the
+ *    underlying buffer
+ * @param size number of bytes requested
+ * @param data address at which to store pointer: this will be a
+ *    a direct pointer into the underlying buffer if the requested
+ *    number of bytes are available at contiguous addresses, otherwise
+ *    will be a copy of buf
+ * @return number of bytes read or AVERROR
+ */
+int ffio_read_indirect(AVIOContext *s, unsigned char *buf, int size, unsigned char **data);
+
+/**
  * Read size bytes from AVIOContext into buf.
  * This reads at most 1 packet. If that is not enough fewer bytes will be
  * returned.
@@ -64,7 +81,7 @@ static av_always_inline void ffio_wfourcc(AVIOContext *pb, const uint8_t *s)
  * @return 0 in case of success, a negative value corresponding to an
  * AVERROR code in case of failure
  */
-int ffio_rewind_with_probe_data(AVIOContext *s, unsigned char *buf, int buf_size);
+int ffio_rewind_with_probe_data(AVIOContext *s, unsigned char **buf, int buf_size);
 
 uint64_t ffio_read_varlen(AVIOContext *bc);
 
@@ -83,7 +100,7 @@ unsigned long ff_crc04C11DB7_update(unsigned long checksum, const uint8_t *buf,
 /**
  * Open a write only packetized memory stream with a maximum packet
  * size of 'max_packet_size'.  The stream is stored in a memory buffer
- * with a big endian 4 byte header giving the packet size in bytes.
+ * with a big-endian 4 byte header giving the packet size in bytes.
  *
  * @param s new IO context
  * @param max_packet_size maximum packet size (must be > 0)

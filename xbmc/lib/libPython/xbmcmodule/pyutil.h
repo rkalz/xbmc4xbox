@@ -2,7 +2,7 @@
 
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,9 +15,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -31,9 +30,9 @@ extern "C" {
 #endif
 
 // credits and version information
-#define PY_XBMC_AUTHOR		"J. Mulder <darkie@xbmc.org>"
-#define PY_XBMC_CREDITS		"XBMC TEAM."
-#define PY_XBMC_PLATFORM	"XBOX"
+#define PY_XBMC_AUTHOR    "J. Mulder <darkie@xbmc.org>"
+#define PY_XBMC_CREDITS   "XBMC TEAM."
+#define PY_XBMC_PLATFORM  "XBOX"
 
 namespace PYXBMC
 {
@@ -44,6 +43,7 @@ namespace PYXBMC
   bool  PyXBMCWindowIsNull(void* pWindow);
 
   void  PyXBMCInitializeTypeObject(PyTypeObject* type_object);
+  long PyXBMCLongAsStringOrLong(PyObject *value);
   void  PyXBMCWaitForThreadMessage(int message, int param1, int param2);
 }
 

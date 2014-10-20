@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -289,32 +288,38 @@ void CDVDDemuxHTSP::SubscriptionStart (htsmsg_t *m)
 
     if(!strcmp(type, "AC3")) {
       st.a = new CDemuxStreamAudioHTSP(this, type);
-      st.a->codec = CODEC_ID_AC3;
+      st.a->codec = AV_CODEC_ID_AC3;
     } else if(!strcmp(type, "EAC3")) {
       st.a = new CDemuxStreamAudioHTSP(this, type);
-      st.a->codec = CODEC_ID_EAC3;
+      st.a->codec = AV_CODEC_ID_EAC3;
     } else if(!strcmp(type, "MPEG2AUDIO")) {
       st.a = new CDemuxStreamAudioHTSP(this, type);
-      st.a->codec = CODEC_ID_MP2;
+      st.a->codec = AV_CODEC_ID_MP2;
     } else if(!strcmp(type, "AAC")) {
       st.a = new CDemuxStreamAudioHTSP(this, type);
-      st.a->codec = CODEC_ID_AAC;
+      st.a->codec = AV_CODEC_ID_AAC;
     } else if(!strcmp(type, "MPEG2VIDEO")) {
       st.v = new CDemuxStreamVideoHTSP(this, type);
-      st.v->codec = CODEC_ID_MPEG2VIDEO;
+      st.v->codec = AV_CODEC_ID_MPEG2VIDEO;
     } else if(!strcmp(type, "H264")) {
       st.v = new CDemuxStreamVideoHTSP(this, type);
-      st.v->codec = CODEC_ID_H264;
+      st.v->codec = AV_CODEC_ID_H264;
     } else if(!strcmp(type, "DVBSUB")) {
       st.s = new CDemuxStreamSubtitle();
-      st.s->codec = CODEC_ID_DVB_SUBTITLE;
+      st.s->codec = AV_CODEC_ID_DVB_SUBTITLE;
       uint32_t composition_id = 0, ancillary_id = 0;
       htsmsg_get_u32(sub, "composition_id", &composition_id);
       htsmsg_get_u32(sub, "ancillary_id"  , &ancillary_id);
-      st.s->identifier = (composition_id & 0xffff) | ((ancillary_id & 0xffff) << 16);
+      if(composition_id || ancillary_id)
+      {
+        st.s->ExtraData = new uint8_t[4];
+        st.s->ExtraSize = 4;
+        ((uint16_t*)st.s->ExtraData)[0] = composition_id;
+        ((uint16_t*)st.s->ExtraData)[1] = ancillary_id;
+      }
     } else if(!strcmp(type, "TEXTSUB")) {
       st.s = new CDemuxStreamSubtitle();
-      st.s->codec = CODEC_ID_TEXT;
+      st.s->codec = AV_CODEC_ID_TEXT;
     } else {
       continue;
     }

@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -198,6 +197,7 @@ bool CPicture::CacheImage(const CStdString& sourceUrl, const CStdString& destFil
 
     CJpegIO jpegImage;
     DllImageLib dll;
+    bool ret;
 
     CStdString tempFile(sourceUrl);
     bool isTemp(false);
@@ -212,20 +212,21 @@ bool CPicture::CacheImage(const CStdString& sourceUrl, const CStdString& destFil
       isTemp = true;
     }
 
+    ret = false;
     if (URIUtils::GetExtension(sourceUrl).Equals(".jpg") || URIUtils::GetExtension(sourceUrl).Equals(".tbn"))
+      ret = jpegImage.CreateThumbnail(tempFile, destFile, width, height);
+
+    if (!ret)
     {
-      if (!jpegImage.CreateThumbnail(tempFile, destFile, width, height))
+      if (!dll.Load()) return false;
+      if (!dll.CreateThumbnail(tempFile.c_str(), destFile.c_str(), width, height, g_guiSettings.GetBool("pictures.useexifrotation")))
       {
-        if (!dll.Load()) return false;
-        if (!dll.CreateThumbnail(tempFile.c_str(), destFile.c_str(), width, height, g_guiSettings.GetBool("pictures.useexifrotation")))
-        {
-          CLog::Log(LOGERROR, "%s Unable to create new image %s from image %s", __FUNCTION__, destFile.c_str(), sourceUrl.c_str());
-          return false;
-        }
+        CLog::Log(LOGERROR, "%s Unable to create new image %s from image %s", __FUNCTION__, destFile.c_str(), sourceUrl.c_str());
+        return false;
       }
-      if (isTemp)
-        CFile::Delete(tempFile);
     }
+    if (isTemp)
+      CFile::Delete(tempFile);
   }
   else
   {

@@ -1,7 +1,7 @@
 #pragma once
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,9 +14,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -24,7 +23,6 @@
   #include "config.h"
 #endif
 #include "DynamicDll.h"
-#include "DllAvUtil.h"
 
 extern "C" {
 #ifndef HAVE_MMX
@@ -42,9 +40,9 @@ extern "C" {
 #endif
 
 #include "libavutil/avutil.h"
+#include "libavutil/channel_layout.h"
 #include "libavutil/crc.h"
 #include "libavutil/opt.h"
-#include "libavutil/mem.h"
 #include "libavutil/fifo.h"
 #include "libavutil/samplefmt.h"
 
@@ -74,6 +72,8 @@ public:
   virtual AVDictionaryEntry *av_dict_get(AVDictionary *m, const char *key, const AVDictionaryEntry *prev, int flags) = 0;
   virtual int av_dict_set(AVDictionary **pm, const char *key, const char *value, int flags)=0;
   virtual int av_samples_get_buffer_size (int *linesize, int nb_channels, int nb_samples, enum AVSampleFormat sample_fmt, int align) = 0;
+  virtual int64_t av_get_default_channel_layout(int nb_channels)=0;
+  virtual void av_force_cpu_flags(int mask)=0;
 };
 
 #if (defined USE_EXTERNAL_FFMPEG)
@@ -100,6 +100,7 @@ public:
   virtual int av_dict_set(AVDictionary **pm, const char *key, const char *value, int flags) { return ::av_dict_set(pm, key, value, flags); }
   virtual int av_samples_get_buffer_size (int *linesize, int nb_channels, int nb_samples, enum AVSampleFormat sample_fmt, int align)
     { return ::av_samples_get_buffer_size(linesize, nb_channels, nb_samples, sample_fmt, align); }
+  virtual int64_t av_get_default_channel_layout(int nb_channels) { return ::av_get_default_channel_layout(nb_channels); }
 
    // DLL faking.
    virtual bool ResolveExports() { return true; }
@@ -115,7 +116,7 @@ public:
 class DllAvUtilBase : public DllDynamic, DllAvUtilInterface
 {
 public:
-  DllAvUtilBase() : DllDynamic( g_settings.GetFFmpegDllFolder() + "avutil-51.dll") {}
+  DllAvUtilBase() : DllDynamic( g_settings.GetFFmpegDllFolder() + "avutil-52.dll") {}
 
   LOAD_SYMBOLS()
 
@@ -134,6 +135,8 @@ public:
   DEFINE_METHOD4(AVDictionaryEntry *, av_dict_get, (AVDictionary *p1, const char *p2, const AVDictionaryEntry *p3, int p4))
   DEFINE_METHOD4(int, av_dict_set, (AVDictionary **p1, const char *p2, const char *p3, int p4));
   DEFINE_METHOD5(int, av_samples_get_buffer_size, (int *p1, int p2, int p3, enum AVSampleFormat p4, int p5))
+  DEFINE_METHOD1(int64_t, av_get_default_channel_layout, (int p1))
+  DEFINE_METHOD1(void, av_force_cpu_flags, (int p1)) 
 
   public:
   BEGIN_METHOD_RESOLVE()
@@ -152,6 +155,8 @@ public:
     RESOLVE_METHOD(av_dict_get)
     RESOLVE_METHOD(av_dict_set)
     RESOLVE_METHOD(av_samples_get_buffer_size)
+    RESOLVE_METHOD(av_get_default_channel_layout)
+    RESOLVE_METHOD(av_force_cpu_flags)
   END_METHOD_RESOLVE()
 };
 

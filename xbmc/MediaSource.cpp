@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -32,7 +31,7 @@ using namespace XFILE;
 
 bool CMediaSource::IsWritable() const
 {
-  return CUtil::IsWritable(strPath);
+  return CUtil::SupportsWriteFileOperations(strPath);
 }
 
 void CMediaSource::FromNameAndPaths(const CStdString &category, const CStdString &name, const vector<CStdString> &paths)
@@ -48,10 +47,7 @@ void CMediaSource::FromNameAndPaths(const CStdString &category, const CStdString
   }
   else
   { // multiple valid paths?
-    if (g_advancedSettings.m_useMultipaths) // use new multipath:// protocol
-      strPath = CMultiPathDirectory::ConstructMultiPath(vecPaths);
-    else // use older virtualpath:// protocol
-      strPath.Format("virtualpath://%s/%s/", category.c_str(), name.c_str());
+    strPath = CMultiPathDirectory::ConstructMultiPath(vecPaths);
   }
 
   strName = name;
@@ -60,7 +56,7 @@ void CMediaSource::FromNameAndPaths(const CStdString &category, const CStdString
   m_iBadPwdCount = 0;
   m_iHasLock = 0;
 
-  if (URIUtils::IsVirtualPath(strPath) || URIUtils::IsMultiPath(strPath))
+  if (URIUtils::IsMultiPath(strPath))
     m_iDriveType = SOURCE_TYPE_VPATH;
   else if (strPath.Left(4).Equals("udf:"))
   {

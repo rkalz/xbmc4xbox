@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -31,6 +30,7 @@
 #include "infotagmusic.h"
 #include "listitem.h"
 #include "FileItem.h"
+#include "LangCodeExpander.h"
 #include "settings/Settings.h"
 #include "utils/log.h"
 
@@ -495,11 +495,11 @@ namespace PYXBMC
     return Py_None;
   }
 
-	
+  
   // Player_GetSubtitles
   PyDoc_STRVAR(getSubtitles__doc__,
     "getSubtitles() -- get subtitle stream name\n");
-	
+  
   PyObject* Player_GetSubtitles(PyObject *self)
   {
     if (g_application.m_pPlayer)
@@ -512,28 +512,156 @@ namespace PYXBMC
         strName = "";
       return Py_BuildValue((char*)"s", strName.c_str());
     }
-	  
+    
     Py_INCREF(Py_None);
     return Py_None;
   }
 
-  // Player_DisableSubtitles
-  PyDoc_STRVAR(DisableSubtitles__doc__,
-    "DisableSubtitles() -- disable subtitles\n");
-	
-  PyObject* Player_DisableSubtitles(PyObject *self)
+  // Player_ShowSubtitles
+  PyDoc_STRVAR(showSubtitles__doc__,
+    "showSubtitles(visible) -- enable/disable subtitles\n"
+    "\n"
+    "visible        : boolean - True for visible subtitles.\n"
+    "example:\n"
+    "  - xbmc.Player().showSubtitles(True)");
+
+  PyObject* Player_ShowSubtitles(PyObject *self, PyObject *args)
   {
+    char bVisible;
+    if (!PyArg_ParseTuple(args, (char*)"b", &bVisible)) return NULL;
     if (g_application.m_pPlayer)
     {
-      g_settings.m_currentVideoSettings.m_SubtitleOn = false;
-      g_application.m_pPlayer->SetSubtitleVisible(false);
-		
+      g_settings.m_currentVideoSettings.m_SubtitleOn = (bVisible != 0);
+      g_application.m_pPlayer->SetSubtitleVisible(bVisible != 0);
+
       Py_INCREF(Py_None);
       return Py_None;
     }
     return NULL;
   }
-	
+
+  // Player_DisableSubtitles
+  PyDoc_STRVAR(DisableSubtitles__doc__,
+    "DisableSubtitles() -- disable subtitles\n");
+  
+  PyObject* Player_DisableSubtitles(PyObject *self)
+  {
+    CLog::Log(LOGWARNING,"'xbmc.Player().disableSubtitles()' is deprecated and will be removed in future releases, please use 'xbmc.Player().showSubtitles(false)' instead");
+    if (g_application.m_pPlayer)
+    {
+      g_settings.m_currentVideoSettings.m_SubtitleOn = false;
+      g_application.m_pPlayer->SetSubtitleVisible(false);
+    
+      Py_INCREF(Py_None);
+      return Py_None;
+    }
+    return NULL;
+  }
+
+  // Player_getAvailableAudioStreams
+  PyDoc_STRVAR(getAvailableAudioStreams__doc__,
+    "getAvailableAudioStreams() -- get Audio stream names\n");
+  
+  PyObject* Player_getAvailableAudioStreams(PyObject *self)
+  {
+    if (g_application.m_pPlayer)
+    {
+      PyObject *list = PyList_New(0);
+      for (int iStream=0; iStream < g_application.m_pPlayer->GetAudioStreamCount(); iStream++)
+      {  
+        CStdString strName;
+        CStdString FullLang;
+        g_application.m_pPlayer->GetAudioStreamLanguage(iStream, strName);
+        g_LangCodeExpander.Lookup(FullLang, strName);
+        if (FullLang.IsEmpty())
+          g_application.m_pPlayer->GetAudioStreamName(iStream, FullLang);
+        PyList_Append(list, Py_BuildValue((char*)"s", FullLang.c_str()));
+      }
+      return list;
+    }
+    
+    Py_INCREF(Py_None);
+    return Py_None;
+  }  
+
+  // Player_setAudioStream
+  PyDoc_STRVAR(setAudioStream__doc__,
+    "setAudioStream(stream) -- set Audio Stream \n"
+    "\n"
+    "stream           : int\n"
+    "\n"
+    "example:\n"
+    "  - setAudioStream(1)\n");
+  
+  PyObject* Player_setAudioStream(PyObject *self, PyObject *args)
+  {
+    int iStream;
+    if (!PyArg_ParseTuple(args, (char*)"i", &iStream)) return NULL;
+    
+    if (g_application.m_pPlayer)
+    {
+      int streamCount = g_application.m_pPlayer->GetAudioStreamCount();
+      if(iStream < streamCount)
+        g_application.m_pPlayer->SetAudioStream(iStream);
+    }
+    
+    Py_INCREF(Py_None);
+    return Py_None;
+  }  
+
+  // Player_getAvailableSubtitleStreams
+  PyDoc_STRVAR(getAvailableSubtitleStreams__doc__,
+    "getAvailableSubtitleStreams() -- get Subtitle stream names\n");
+
+  PyObject* Player_getAvailableSubtitleStreams(PyObject *self)
+  {
+    if (g_application.m_pPlayer)
+    {
+      PyObject *list = PyList_New(0);
+      for (int iStream=0; iStream < g_application.m_pPlayer->GetSubtitleCount(); iStream++)
+      {
+        CStdString strName;
+        CStdString FullLang;
+        g_application.m_pPlayer->GetSubtitleName(iStream, strName);
+        if (!g_LangCodeExpander.Lookup(FullLang, strName))
+          FullLang = strName;
+        PyList_Append(list, Py_BuildValue((char*)"s", FullLang.c_str()));
+      }
+      return list;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
+
+  // Player_setSubtitleStream
+  PyDoc_STRVAR(setSubtitleStream__doc__,
+    "setSubtitleStream(stream) -- set Subtitle Stream \n"
+    "\n"
+    "stream           : int\n"
+    "\n"
+    "example:\n"
+    "  - setSubtitleStream(1)\n");
+
+  PyObject* Player_setSubtitleStream(PyObject *self, PyObject *args)
+  {
+    int iStream;
+    if (!PyArg_ParseTuple(args, (char*)"i", &iStream)) return NULL;
+   
+    if (g_application.m_pPlayer)
+    {
+      int streamCount = g_application.m_pPlayer->GetSubtitleCount();
+      if(iStream < streamCount)
+      {
+        g_application.m_pPlayer->SetSubtitle(iStream);
+        g_application.m_pPlayer->SetSubtitleVisible(true);
+      }
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
+
   PyMethodDef Player_methods[] = {
     {(char*)"play", (PyCFunction)Player_Play, METH_VARARGS|METH_KEYWORDS, play__doc__},
     {(char*)"stop", (PyCFunction)pyPlayer_Stop, METH_VARARGS, stop__doc__},
@@ -557,7 +685,12 @@ namespace PYXBMC
     {(char*)"seekTime", (PyCFunction)Player_SeekTime, METH_VARARGS, seekTime__doc__},
     {(char*)"setSubtitles", (PyCFunction)Player_SetSubtitles, METH_VARARGS, setSubtitles__doc__},
     {(char*)"getSubtitles", (PyCFunction)Player_GetSubtitles, METH_NOARGS, getSubtitles__doc__},
+    {(char*)"showSubtitles", (PyCFunction)Player_ShowSubtitles, METH_VARARGS, showSubtitles__doc__},
     {(char*)"disableSubtitles", (PyCFunction)Player_DisableSubtitles, METH_NOARGS, DisableSubtitles__doc__},
+    {(char*)"getAvailableAudioStreams", (PyCFunction)Player_getAvailableAudioStreams, METH_NOARGS, getAvailableAudioStreams__doc__},
+    {(char*)"setAudioStream", (PyCFunction)Player_setAudioStream, METH_VARARGS, setAudioStream__doc__},
+    {(char*)"getAvailableSubtitleStreams", (PyCFunction)Player_getAvailableSubtitleStreams, METH_NOARGS, getAvailableSubtitleStreams__doc__},
+    {(char*)"setSubtitleStream", (PyCFunction)Player_setSubtitleStream, METH_VARARGS, setSubtitleStream__doc__},
     {NULL, NULL, 0, NULL}
   };
 

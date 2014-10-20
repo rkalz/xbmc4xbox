@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,16 +13,16 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
 #pragma once
 
-enum StreamType;
-enum CodecID;
+#include "DVDDemuxers/DVDDemux.h"
+#include "Codecs/DllAvCodec.h"
+
 class CDemuxStream;
 
 class CDVDStreamInfo
@@ -41,7 +41,7 @@ public:
   void Assign(const CDVDStreamInfo &right, bool withextradata);
   void Assign(const CDemuxStream &right, bool withextradata);
 
-  CodecID codec;
+  AVCodecID codec;
   StreamType type;
 
   // VIDEO
@@ -63,7 +63,6 @@ public:
   int bitspersample;
 
   // SUBTITLE
-  int identifier;
 
   // CODEC EXTRADATA
   void*        extradata; // extra data for codec to use

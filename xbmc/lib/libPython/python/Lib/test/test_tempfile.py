@@ -8,6 +8,7 @@ import shutil
 import sys
 import re
 import warnings
+import contextlib
 
 import unittest
 from test import test_support as support
@@ -270,6 +271,22 @@ class test__get_candidate_names(TC):
 test_classes.append(test__get_candidate_names)
 
 
+@contextlib.contextmanager
+def _inside_empty_temp_dir():
+    dir = tempfile.mkdtemp()
+    try:
+        with support.swap_attr(tempfile, 'tempdir', dir):
+            yield
+    finally:
+        support.rmtree(dir)
+
+
+def _mock_candidate_names(*names):
+    return support.swap_attr(tempfile,
+                             '_get_candidate_names',
+                             lambda: iter(names))
+
+
 class test__mkstemp_inner(TC):
     """Test the internal function _mkstemp_inner."""
 
@@ -325,10 +342,9 @@ class test__mkstemp_inner(TC):
         finally:
             os.rmdir(dir)
 
+    @unittest.skipUnless(has_stat, 'os.stat not available')
     def test_file_mode(self):
         # _mkstemp_inner creates files with the proper mode
-        if not has_stat:
-            return            # ugh, can't use SkipTest.
 
         file = self.do_create()
         mode = stat.S_IMODE(os.stat(file.name).st_mode)
@@ -340,10 +356,9 @@ class test__mkstemp_inner(TC):
             expected = user * (1 + 8 + 64)
         self.assertEqual(mode, expected)
 
+    @unittest.skipUnless(has_spawnl, 'os.spawnl not available')
     def test_noinherit(self):
         # _mkstemp_inner file handles are not inherited by child processes
-        if not has_spawnl:
-            return            # ugh, can't use SkipTest.
 
         if support.verbose:
             v="v"
@@ -378,13 +393,43 @@ class test__mkstemp_inner(TC):
                     "child process caught fatal signal %d" % -retval)
         self.assertFalse(retval > 0, "child process reports failure %d"%retval)
 
+    @unittest.skipUnless(has_textmode, "text mode not available")
     def test_textmode(self):
         # _mkstemp_inner can create files in text mode
-        if not has_textmode:
-            return            # ugh, can't use SkipTest.
 
         self.do_create(bin=0).write("blat\n")
         # XXX should test that the file really is a text file
+
+    def default_mkstemp_inner(self):
+        return tempfile._mkstemp_inner(tempfile.gettempdir(),
+                                       tempfile.template,
+                                       '',
+                                       tempfile._bin_openflags)
+
+    def test_collision_with_existing_file(self):
+        # _mkstemp_inner tries another name when a file with
+        # the chosen name already exists
+        with _inside_empty_temp_dir(), \
+             _mock_candidate_names('aaa', 'aaa', 'bbb'):
+            (fd1, name1) = self.default_mkstemp_inner()
+            os.close(fd1)
+            self.assertTrue(name1.endswith('aaa'))
+
+            (fd2, name2) = self.default_mkstemp_inner()
+            os.close(fd2)
+            self.assertTrue(name2.endswith('bbb'))
+
+    def test_collision_with_existing_directory(self):
+        # _mkstemp_inner tries another name when a directory with
+        # the chosen name already exists
+        with _inside_empty_temp_dir(), \
+             _mock_candidate_names('aaa', 'aaa', 'bbb'):
+            dir = tempfile.mkdtemp()
+            self.assertTrue(dir.endswith('aaa'))
+
+            (fd, name) = self.default_mkstemp_inner()
+            os.close(fd)
+            self.assertTrue(name.endswith('bbb'))
 
 test_classes.append(test__mkstemp_inner)
 
@@ -542,10 +587,9 @@ class test_mkdtemp(TC):
         finally:
             os.rmdir(dir)
 
+    @unittest.skipUnless(has_stat, 'os.stat not available')
     def test_mode(self):
         # mkdtemp creates directories with the proper mode
-        if not has_stat:
-            return            # ugh, can't use SkipTest.
 
         dir = self.do_create()
         try:
@@ -560,6 +604,27 @@ class test_mkdtemp(TC):
             self.assertEqual(mode, expected)
         finally:
             os.rmdir(dir)
+
+    def test_collision_with_existing_file(self):
+        # mkdtemp tries another name when a file with
+        # the chosen name already exists
+        with _inside_empty_temp_dir(), \
+             _mock_candidate_names('aaa', 'aaa', 'bbb'):
+            file = tempfile.NamedTemporaryFile(delete=False)
+            file.close()
+            self.assertTrue(file.name.endswith('aaa'))
+            dir = tempfile.mkdtemp()
+            self.assertTrue(dir.endswith('bbb'))
+
+    def test_collision_with_existing_directory(self):
+        # mkdtemp tries another name when a directory with
+        # the chosen name already exists
+        with _inside_empty_temp_dir(), \
+             _mock_candidate_names('aaa', 'aaa', 'bbb'):
+            dir1 = tempfile.mkdtemp()
+            self.assertTrue(dir1.endswith('aaa'))
+            dir2 = tempfile.mkdtemp()
+            self.assertTrue(dir2.endswith('bbb'))
 
 test_classes.append(test_mkdtemp)
 
@@ -705,6 +770,24 @@ class test_NamedTemporaryFile(TC):
             with f:
                 pass
         self.assertRaises(ValueError, use_closed)
+
+    def test_no_leak_fd(self):
+        # Issue #21058: don't leak file descriptor when fdopen() fails
+        old_close = os.close
+        old_fdopen = os.fdopen
+        closed = []
+        def close(fd):
+            closed.append(fd)
+        def fdopen(*args):
+            raise ValueError()
+        os.close = close
+        os.fdopen = fdopen
+        try:
+            self.assertRaises(ValueError, tempfile.NamedTemporaryFile)
+            self.assertEqual(len(closed), 1)
+        finally:
+            os.close = old_close
+            os.fdopen = old_fdopen
 
     # How to test the mode and bufsize parameters?
 

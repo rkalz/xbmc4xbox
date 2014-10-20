@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -40,7 +39,7 @@ CDVDStreamInfo::~CDVDStreamInfo()
 
 void CDVDStreamInfo::Clear()
 {
-  codec = CODEC_ID_NONE;
+  codec = AV_CODEC_ID_NONE;
   type = STREAM_NONE;
   codec_tag  = 0;
 
@@ -64,8 +63,6 @@ void CDVDStreamInfo::Clear()
   blockalign = 0;
   bitrate    = 0;
   bitspersample = 0;
-
-  identifier = 0;
 }
 
 bool CDVDStreamInfo::Equal(const CDVDStreamInfo& right, bool withextradata)
@@ -102,7 +99,6 @@ bool CDVDStreamInfo::Equal(const CDVDStreamInfo& right, bool withextradata)
   ||  bitspersample != right.bitspersample ) return false;
 
   // SUBTITLE
-  if( identifier != right.identifier ) return false;
 
   return true;
 }
@@ -154,7 +150,6 @@ void CDVDStreamInfo::Assign(const CDVDStreamInfo& right, bool withextradata)
   bitspersample = right.bitspersample;
 
   // SUBTITLE
-  identifier = right.identifier;
 }
 
 void CDVDStreamInfo::Assign(const CDemuxStream& right, bool withextradata)
@@ -195,7 +190,5 @@ void CDVDStreamInfo::Assign(const CDemuxStream& right, bool withextradata)
   }
   else if(  right.type == STREAM_SUBTITLE )
   {
-    const CDemuxStreamSubtitle *stream = static_cast<const CDemuxStreamSubtitle*>(&right);
-    identifier = stream->identifier;
   }
 }

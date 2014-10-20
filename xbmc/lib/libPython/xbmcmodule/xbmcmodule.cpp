@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -75,53 +74,6 @@ namespace PYXBMC
  * start of xbmc methods
  *****************************************************************/
 
-  // output() method
-  PyDoc_STRVAR(output__doc__,
-    "output(msg[, level]) -- Write a string to XBMC's log file and the debug window.\n"
-    "\n"
-    "msg            : string - text to output.\n"
-    "level          : [opt] integer - log level to ouput at. (default=LOGNOTICE)\n"
-    "\n"
-    "*Note, You can use the above as keywords for arguments and skip certain optional arguments.\n"
-    "       Once you use a keyword, all following arguments require the keyword.\n"
-    "\n"
-    "       Text is written to the log for the following conditions.\n"
-    "         XBMC loglevel == -1 (NONE, nothing at all is logged)"
-    "         XBMC loglevel == 0 (NORMAL, shows LOGNOTICE, LOGERROR, LOGSEVERE and LOGFATAL)"
-    "         XBMC loglevel == 1 (DEBUG, shows all)"
-    "       See pydocs for valid values for level.\n"
-    "\n"
-    "example:\n"
-    "  - xbmc.output(msg='This is a test string.', level=xbmc.LOGDEBUG)\n");
-
-  PyObject* XBMC_Output(PyObject *self, PyObject *args, PyObject *kwds)
-  {
-    static const char *keywords[] = {
-      "msg",
-      "level",
-      NULL};
-
-    char *s_line = NULL;
-    int iLevel = LOGNOTICE;
-    if (!PyArg_ParseTupleAndKeywords(
-      args,
-      kwds,
-      (char*)"s|i",
-      (char**)keywords,
-      &s_line,
-      &iLevel))
-    {
-      return NULL;
-    }
-    // check for a valid loglevel
-    if (iLevel < LOGDEBUG || iLevel > LOGNONE)
-      iLevel = LOGNOTICE;
-    CLog::Log(iLevel, "%s", s_line);
-
-    Py_INCREF(Py_None);
-    return Py_None;
-  }
-
   // log() method
   PyDoc_STRVAR(log__doc__,
     "log(msg[, level]) -- Write a string to XBMC's log file.\n"
@@ -170,6 +122,17 @@ namespace PYXBMC
     return Py_None;
   }
 
+  // output() method
+  PyDoc_STRVAR(output__doc__,
+    "'xbmc.output()' is depreciated and will be removed in future releases,\n"
+    "please use 'xbmc.log()' instead");
+  
+  PyObject* XBMC_Output(PyObject *self, PyObject *args, PyObject *kwds)
+  {
+    CLog::Log(LOGWARNING,"'xbmc.output()' is depreciated and will be removed in future releases, please use 'xbmc.log()' instead");
+    return XBMC_Log(self, args, kwds);
+  }
+  
   // shutdown() method
   PyDoc_STRVAR(shutdown__doc__,
     "shutdown() -- Shutdown the xbox.\n"

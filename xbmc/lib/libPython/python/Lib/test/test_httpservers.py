@@ -114,7 +114,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
 
     def verify_http_server_response(self, response):
         match = self.HTTPResponseMatch.search(response)
-        self.assertTrue(match is not None)
+        self.assertIsNotNone(match)
 
     def test_http_1_1(self):
         result = self.send_typical_request('GET / HTTP/1.1\r\n\r\n')
@@ -189,7 +189,7 @@ class BaseHTTPServerTestCase(BaseTestCase):
 
     def test_request_line_trimming(self):
         self.con._http_vsn_str = 'HTTP/1.1\n'
-        self.con.putrequest('GET', '/')
+        self.con.putrequest('XYZBOGUS', '/')
         self.con.endheaders()
         res = self.con.getresponse()
         self.assertEqual(res.status, 501)
@@ -216,8 +216,9 @@ class BaseHTTPServerTestCase(BaseTestCase):
         self.assertEqual(res.status, 501)
 
     def test_version_none(self):
+        # Test that a valid method is rejected when not HTTP/1.x
         self.con._http_vsn_str = ''
-        self.con.putrequest('PUT', '/')
+        self.con.putrequest('CUSTOM', '/')
         self.con.endheaders()
         res = self.con.getresponse()
         self.assertEqual(res.status, 400)
@@ -313,6 +314,9 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         #constructs the path relative to the root directory of the HTTPServer
         response = self.request(self.tempdir_name + '/test')
         self.check_status_and_reason(response, 200, data=self.data)
+        # check for trailing "/" which should return 404. See Issue17324
+        response = self.request(self.tempdir_name + '/test/')
+        self.check_status_and_reason(response, 404)
         response = self.request(self.tempdir_name + '/')
         self.check_status_and_reason(response, 200)
         response = self.request(self.tempdir_name)
@@ -321,17 +325,16 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, 404)
         response = self.request('/' + 'ThisDoesNotExist' + '/')
         self.check_status_and_reason(response, 404)
-        f = open(os.path.join(self.tempdir_name, 'index.html'), 'w')
-        response = self.request('/' + self.tempdir_name + '/')
-        self.check_status_and_reason(response, 200)
-
-        # chmod() doesn't work as expected on Windows, and filesystem
-        # permissions are ignored by root on Unix.
-        if os.name == 'posix' and os.geteuid() != 0:
-            os.chmod(self.tempdir, 0)
-            response = self.request(self.tempdir_name + '/')
-            self.check_status_and_reason(response, 404)
-            os.chmod(self.tempdir, 0755)
+        with open(os.path.join(self.tempdir_name, 'index.html'), 'w') as fp:
+            response = self.request('/' + self.tempdir_name + '/')
+            self.check_status_and_reason(response, 200)
+            # chmod() doesn't work as expected on Windows, and filesystem
+            # permissions are ignored by root on Unix.
+            if os.name == 'posix' and os.geteuid() != 0:
+                os.chmod(self.tempdir, 0)
+                response = self.request(self.tempdir_name + '/')
+                self.check_status_and_reason(response, 404)
+                os.chmod(self.tempdir, 0755)
 
     def test_head(self):
         response = self.request(
@@ -393,6 +396,11 @@ class CGIHTTPServerTestCase(BaseTestCase):
         else:
             self.pythonexe = sys.executable
 
+        self.nocgi_path = os.path.join(self.parent_dir, 'nocgi.py')
+        with open(self.nocgi_path, 'w') as fp:
+            fp.write(cgi_file1 % self.pythonexe)
+        os.chmod(self.nocgi_path, 0777)
+
         self.file1_path = os.path.join(self.cgi_dir, 'file1.py')
         with open(self.file1_path, 'w') as file1:
             file1.write(cgi_file1 % self.pythonexe)
@@ -411,6 +419,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
             os.chdir(self.cwd)
             if self.pythonexe != sys.executable:
                 os.remove(self.pythonexe)
+            os.remove(self.nocgi_path)
             os.remove(self.file1_path)
             os.remove(self.file2_path)
             os.rmdir(self.cgi_dir)
@@ -465,6 +474,10 @@ class CGIHTTPServerTestCase(BaseTestCase):
         self.assertEqual(('Hello World\n', 'text/html', 200),
             (res.read(), res.getheader('Content-type'), res.status))
 
+    def test_issue19435(self):
+        res = self.request('///////////nocgi.py/../cgi-bin/nothere.sh')
+        self.assertEqual(res.status, 404)
+
     def test_post(self):
         params = urllib.urlencode({'spam' : 1, 'eggs' : 'python', 'bacon' : 123456})
         headers = {'Content-type' : 'application/x-www-form-urlencoded'}
@@ -497,6 +510,11 @@ class CGIHTTPServerTestCase(BaseTestCase):
         self.assertEqual((b'Hello World\n', 'text/html', 200),
                 (res.read(), res.getheader('Content-type'), res.status))
         self.assertEqual(os.environ['SERVER_SOFTWARE'], signature)
+
+    def test_urlquote_decoding_in_cgi_check(self):
+        res = self.request('/cgi-bin%2ffile1.py')
+        self.assertEqual((b'Hello World\n', 'text/html', 200),
+                (res.read(), res.getheader('Content-type'), res.status))
 
 
 class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):

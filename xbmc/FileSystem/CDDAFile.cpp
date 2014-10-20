@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -30,7 +29,7 @@
 using namespace MEDIA_DETECT;
 using namespace XFILE;
 
-CFileCDDA::CFileCDDA(void)
+CCDDAFile::CCDDAFile(void)
 {
   m_pCdIo = NULL;
   m_lsnStart = CDIO_INVALID_LSN;
@@ -39,12 +38,12 @@ CFileCDDA::CFileCDDA(void)
   m_cdio = CLibcdio::GetInstance();
 }
 
-CFileCDDA::~CFileCDDA(void)
+CCDDAFile::~CCDDAFile(void)
 {
   Close();
 }
 
-bool CFileCDDA::Open(const CURL& url)
+bool CCDDAFile::Open(const CURL& url)
 {
   if (!CDetectDVDMedia::IsDiscInDrive() || !IsValidFile(url))
     return false;
@@ -73,7 +72,7 @@ bool CFileCDDA::Open(const CURL& url)
   return true;
 }
 
-bool CFileCDDA::Exists(const CURL& url)
+bool CCDDAFile::Exists(const CURL& url)
 {
   if (!IsValidFile(url))
     return false;
@@ -90,7 +89,7 @@ bool CFileCDDA::Exists(const CURL& url)
   return (iTrack > 0 && iTrack <= iLastTrack);
 }
 
-int CFileCDDA::Stat(const CURL& url, struct __stat64* buffer)
+int CCDDAFile::Stat(const CURL& url, struct __stat64* buffer)
 {
   if (Open(url))
   {
@@ -104,7 +103,7 @@ int CFileCDDA::Stat(const CURL& url, struct __stat64* buffer)
   return -1;
 }
 
-unsigned int CFileCDDA::Read(void* lpBuf, int64_t uiBufSize)
+unsigned int CCDDAFile::Read(void* lpBuf, int64_t uiBufSize)
 {
   if (!m_pCdIo || !CDetectDVDMedia::IsDiscInDrive())
     return 0;
@@ -129,7 +128,7 @@ unsigned int CFileCDDA::Read(void* lpBuf, int64_t uiBufSize)
   return iSectorCount*CDIO_CD_FRAMESIZE_RAW;
 }
 
-int64_t CFileCDDA::Seek(int64_t iFilePosition, int iWhence /*=SEEK_SET*/)
+int64_t CCDDAFile::Seek(int64_t iFilePosition, int iWhence /*=SEEK_SET*/)
 {
   if (!m_pCdIo)
     return -1;
@@ -157,7 +156,7 @@ int64_t CFileCDDA::Seek(int64_t iFilePosition, int iWhence /*=SEEK_SET*/)
   return ((m_lsnCurrent -m_lsnStart)*CDIO_CD_FRAMESIZE_RAW);
 }
 
-void CFileCDDA::Close()
+void CCDDAFile::Close()
 {
   if (m_pCdIo)
   {
@@ -166,7 +165,7 @@ void CFileCDDA::Close()
   }
 }
 
-int64_t CFileCDDA::GetPosition()
+int64_t CCDDAFile::GetPosition()
 {
   if (!m_pCdIo)
     return 0;
@@ -174,7 +173,7 @@ int64_t CFileCDDA::GetPosition()
   return ((m_lsnCurrent -m_lsnStart)*CDIO_CD_FRAMESIZE_RAW);
 }
 
-int64_t CFileCDDA::GetLength()
+int64_t CCDDAFile::GetLength()
 {
   if (!m_pCdIo)
     return 0;
@@ -182,7 +181,7 @@ int64_t CFileCDDA::GetLength()
   return ((m_lsnEnd -m_lsnStart)*CDIO_CD_FRAMESIZE_RAW);
 }
 
-bool CFileCDDA::IsValidFile(const CURL& url)
+bool CCDDAFile::IsValidFile(const CURL& url)
 {
   // Only .cdda files are supported
   CStdString strExtension;
@@ -192,7 +191,7 @@ bool CFileCDDA::IsValidFile(const CURL& url)
   return (strExtension == ".cdda");
 }
 
-int CFileCDDA::GetTrackNum(const CURL& url)
+int CCDDAFile::GetTrackNum(const CURL& url)
 {
   CStdString strFileName = url.Get();
 
@@ -201,7 +200,7 @@ int CFileCDDA::GetTrackNum(const CURL& url)
 }
 
 #define SECTOR_COUNT 55 // max. sectors that can be read at once
-int CFileCDDA::GetChunkSize()
+int CCDDAFile::GetChunkSize()
 {
   return SECTOR_COUNT*CDIO_CD_FRAMESIZE_RAW;
 }

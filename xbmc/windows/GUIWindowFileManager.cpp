@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -51,6 +50,7 @@
 #include "utils/AsyncFileCopy.h"
 #include "settings/AdvancedSettings.h"
 #include "LocalizeStrings.h"
+#include "storage/MediaManager.h"
 
 using namespace std;
 using namespace XFILE;
@@ -543,7 +543,7 @@ void CGUIWindowFileManager::OnClick(int iList, int iItem)
   {
     if (CGUIDialogMediaSource::ShowAndAddMediaSource("files"))
     {
-      m_rootDir.SetSources(g_settings.m_fileSources);
+      SetSourcesWithLocal(*g_settings.GetSourcesFromType("files"));
       Update(0,m_Directory[0]->GetPath());
       Update(1,m_Directory[1]->GetPath());
     }
@@ -1159,6 +1159,8 @@ bool CGUIWindowFileManager::CanCopy(int iList)
   // can't copy if the destination is not writeable, or if the source is a share!
   // TODO: Perhaps if the source is removeable media (DVD/CD etc.) we could
   // put ripping/backup in here.
+  if (!CUtil::SupportsReadFileOperations(m_Directory[iList]->GetPath())) return false;
+  if (m_Directory[iList]->IsVirtualDirectoryRoot()) return false;
   if (m_Directory[1 - iList]->IsVirtualDirectoryRoot()) return false;
   if (m_Directory[iList]->IsVirtualDirectoryRoot()) return false;
   if (m_Directory[1 -iList]->IsReadOnly()) return false;
@@ -1230,7 +1232,7 @@ void CGUIWindowFileManager::OnPopupMenu(int list, int item, bool bContextDriven 
     // and do the popup menu
     if (CGUIDialogContextMenu::SourcesMenu("files", pItem, posX, posY))
     {
-      m_rootDir.SetSources(g_settings.m_fileSources);
+      SetSourcesWithLocal(*g_settings.GetSourcesFromType("files"));
       if (m_Directory[1 - list]->IsVirtualDirectoryRoot())
         Refresh();
       else
@@ -1538,7 +1540,7 @@ void CGUIWindowFileManager::SetInitialPath(const CStdString &path)
 {
   // check for a passed destination path
   CStdString strDestination = path;
-  m_rootDir.SetSources(*g_settings.GetSourcesFromType("files"));
+  SetSourcesWithLocal(*g_settings.GetSourcesFromType("files"));
   if (!strDestination.IsEmpty())
   {
     CLog::Log(LOGINFO, "Attempting to quickpath to: %s", strDestination.c_str());
@@ -1657,4 +1659,10 @@ bool CGUIWindowFileManager::MoveItem(const CFileItem *pItem, const CStdString& s
 const CFileItem& CGUIWindowFileManager::CurrentDirectory(int indx) const
 {
   return *m_Directory[indx];
+}
+
+void CGUIWindowFileManager::SetSourcesWithLocal(VECSOURCES sources)
+{
+  g_mediaManager.GetLocalDrives(sources);
+  m_rootDir.SetSources(sources);
 }

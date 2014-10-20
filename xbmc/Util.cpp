@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -34,13 +33,13 @@
 #include "Autorun.h"
 #include "FileSystem/HDDirectory.h"
 #include "FileSystem/StackDirectory.h"
-#include "FileSystem/VirtualPathDirectory.h"
 #include "FileSystem/MultiPathDirectory.h"
 #include "FileSystem/DirectoryCache.h"
 #include "FileSystem/SpecialProtocol.h"
 #include "ThumbnailCache.h"
 #include "FileSystem/ZipManager.h"
 #include "FileSystem/RarManager.h"
+#include "FileSystem/MythDirectory.h"
 #include "FileSystem/VideoDatabaseDirectory.h"
 #ifdef HAS_UPNP
 #include "FileSystem/UPnPDirectory.h"
@@ -2138,11 +2137,11 @@ void CUtil::FlashScreen(bool bImmediate, bool bOn)
   g_graphicsContext.Unlock();
 }
 
-void CUtil::TakeScreenshot(const char* fn, bool flashScreen)
+void CUtil::TakeScreenshot(const CStdString& strFileName, bool flashScreen)
 {
     LPDIRECT3DSURFACE8 lpSurface = NULL;
-
     g_graphicsContext.Lock();
+    CStdString strFileNameTranslated = CSpecialProtocol::TranslatePath(strFileName);
     if (g_application.IsPlayingVideo())
     {
 #ifdef HAS_VIDEO_PLAYBACK
@@ -2168,13 +2167,18 @@ void CUtil::TakeScreenshot(const char* fn, bool flashScreen)
     if (SUCCEEDED(g_graphicsContext.Get3DDevice()->GetBackBuffer( 0, D3DBACKBUFFER_TYPE_MONO, &lpSurface)))
 #endif
     {
-      if (FAILED(XGWriteSurfaceToFile(lpSurface, _P(fn).c_str())))
+      if (FAILED(XGWriteSurfaceToFile(lpSurface, strFileNameTranslated.c_str())))
       {
         CLog::Log(LOGERROR, "Failed to Generate Screenshot");
       }
       else
       {
-        CLog::Log(LOGINFO, "Screen shot saved as %s", fn);
+        // hack - need to add it manually to the directory cache for both the special:// and the mapped
+        // folder due to CFile::Open on a special:// path being checked against both. Ideally we would use
+        // the XBMC Fileystem for writing the file. TODO.
+        g_directoryCache.AddFile(strFileName);
+        g_directoryCache.AddFile(strFileNameTranslated);
+        CLog::Log(LOGINFO, "Screen shot saved as %s", strFileNameTranslated.c_str());
       }
       lpSurface->Release();
     }
@@ -2350,27 +2354,12 @@ bool CUtil::CreateDirectoryEx(const CStdString& strPath)
     return false;
   }
   
-  CURL url(strPath);
-  // silly CStdString can't take a char in the constructor
-  CStdString sep(1, url.GetDirectorySeparator());
-  
-  // split the filename portion of the URL up into separate dirs
-  CStdStringArray dirs;
-  StringUtils::SplitString(url.GetFileName(), sep, dirs);
-  
-  // we start with the root path
-  CStdString dir = url.GetWithoutFilename();
-  unsigned int i = 0;
-  if (dir.IsEmpty())
-  { // local directory - start with the first dirs member so that
-    // we ensure URIUtils::AddFileToFolder() below has something to work with
-    dir = dirs[i++] + sep;
-  }
-  // and append the rest of the directories successively, creating each dir
-  // as we go
-  for (; i < dirs.size(); i++)
+  CStdStringArray dirs = URIUtils::SplitPath(strPath);
+  CStdString dir(dirs.front());
+  URIUtils::AddSlashAtEnd(dir);
+  for (CStdStringArray::iterator it = dirs.begin() + 1; it != dirs.end(); it ++)
   {
-    dir = URIUtils::AddFileToFolder(dir, dirs[i]);
+    dir = URIUtils::AddFileToFolder(dir, *it);
     CDirectory::Create(dir);
   }
   
@@ -2426,14 +2415,27 @@ CStdString CUtil::MakeLegalFileName(const CStdString &strFile, int LegalType)
   return result;
 }
 
-// same as MakeLegalFileName, but we assume that we're passed a complete path,
-// and just legalize the filename
+// legalize entire path
 CStdString CUtil::MakeLegalPath(const CStdString &strPathAndFile, int LegalType)
 {
-  CStdString strPath;
-  URIUtils::GetDirectory(strPathAndFile,strPath);
-  CStdString strFileName = URIUtils::GetFileName(strPathAndFile);
-  return strPath + MakeLegalFileName(strFileName, LegalType);
+  if (URIUtils::IsStack(strPathAndFile))
+    return MakeLegalPath(CStackDirectory::GetFirstStackedFile(strPathAndFile));
+  if (URIUtils::IsMultiPath(strPathAndFile))
+    return MakeLegalPath(CMultiPathDirectory::GetFirstPath(strPathAndFile));
+  if (!URIUtils::IsHD(strPathAndFile) && !URIUtils::IsSmb(strPathAndFile))
+    return strPathAndFile; // we don't support writing anywhere except HD, SMB and NFS - no need to legalize path
+
+  bool trailingSlash = URIUtils::HasSlashAtEnd(strPathAndFile);
+  CStdStringArray dirs = URIUtils::SplitPath(strPathAndFile);
+  // we just add first token to path and don't legalize it - possible values: 
+  // "X:" (local win32), "" (local unix - empty string before '/') or
+  // "protocol://domain"
+  CStdString dir(dirs.front());
+  URIUtils::AddSlashAtEnd(dir);
+  for (CStdStringArray::iterator it = dirs.begin() + 1; it != dirs.end(); it ++)
+    dir = URIUtils::AddFileToFolder(dir, MakeLegalFileName(*it, LegalType));
+  if (trailingSlash) URIUtils::AddSlashAtEnd(dir);
+  return dir;
 }
 
 CStdString CUtil::ValidatePath(const CStdString &path, bool bFixDoubleSlashes /* = false */)
@@ -3538,30 +3540,41 @@ float CUtil::CurrentCpuUsage()
   return (1.0f - g_application.m_idleThread.GetRelativeUsage())*100;
 }
 
-bool CUtil::SupportsFileOperations(const CStdString& strPath)
+bool CUtil::SupportsWriteFileOperations(const CStdString& strPath)
 {
-  // currently only hd and smb support delete and rename
+  // currently only hd,smb and dav support delete and rename
   if (URIUtils::IsHD(strPath))
     return true;
   if (URIUtils::IsSmb(strPath))
     return true;
+  if (URIUtils::IsDAV(strPath))
+    return true;
   if (URIUtils::IsMythTV(strPath))
   {
-    CURL url(strPath);
-    return url.GetFileName().Left(11).Equals("recordings/") && url.GetFileName().length() > 11;
+    /*
+     * Can't use CFile::Exists() to check whether the myth:// path supports file operations because
+     * it hits the directory cache on the way through, which has the Live Channels and Guide
+     * items cached.
+     */
+    return CMythDirectory::SupportsWriteFileOperations(strPath);
   }
   if (URIUtils::IsStack(strPath))
-  {
-    CStackDirectory dir;
-    return SupportsFileOperations(dir.GetFirstStackedFile(strPath));
-  }
+    return SupportsWriteFileOperations(CStackDirectory::GetFirstStackedFile(strPath));
   if (URIUtils::IsMultiPath(strPath))
-    return CMultiPathDirectory::SupportsFileOperations(strPath);
+    return CMultiPathDirectory::SupportsWriteFileOperations(strPath);
 #ifdef HAS_XBOX_HARDWARE
   if (URIUtils::IsMemCard(strPath) && g_memoryUnitManager.IsDriveWriteable(strPath))
     return true;
 #endif
   return false;
+}
+
+bool CUtil::SupportsReadFileOperations(const CStdString& strPath)
+{
+  if (URIUtils::IsVideoDb(strPath))
+    return false;
+
+  return true;
 }
 
 CStdString CUtil::GetCachedAlbumThumb(const CStdString& album, const CStdString& artist)
@@ -3943,7 +3956,7 @@ void CUtil::RunXBE(const char* szPath1, char* szParameters, F_VIDEO ForceVideo, 
       wsprintf(szXbePath, "d:\\%s", szXbe);
 
 #ifdef HAS_XBOX_HARDWARE
-      g_application.Stop();
+      g_application.Stop(false);
 
       CUtil::LaunchXbe(szDevicePath, szXbePath, szParameters, ForceVideo, ForceCountry, pData);
 #endif

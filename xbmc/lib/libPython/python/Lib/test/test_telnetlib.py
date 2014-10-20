@@ -92,6 +92,14 @@ class GeneralTests(TestCase):
         self.assertEqual(telnet.sock.gettimeout(), 30)
         telnet.sock.close()
 
+    def testGetters(self):
+        # Test telnet getter methods
+        telnet = telnetlib.Telnet(HOST, self.port, timeout=30)
+        t_sock = telnet.sock
+        self.assertEqual(telnet.get_socket(), t_sock)
+        self.assertEqual(telnet.fileno(), t_sock.fileno())
+        telnet.sock.close()
+
 def _read_setUp(self):
     self.evt = threading.Event()
     self.dataq = Queue.Queue()
@@ -169,7 +177,6 @@ class ReadTests(TestCase):
         self.dataq.join()
         data = telnet.read_all()
         self.assertEqual(data, ''.join(want[:-1]))
-        return
 
     def _test_blocking(self, func):
         self.dataq.put([self.block_long, EOF_sigil])

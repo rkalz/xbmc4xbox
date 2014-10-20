@@ -112,6 +112,7 @@ public:
 
 //  static bool Check(const CStdString& strSkinDir); // checks if everything is present and accounted for without loading the skin
   static double GetMinVersion();
+  const INFO::CSkinVariableString* CreateSkinVariable(const CStdString& name, int context);
 protected:
   /*! \brief grab a resolution tag from a skin's configuration data
    \param props passed addoninfo structure to check for resolution

@@ -41,8 +41,8 @@ There are several useful utilities provided in the :mod:`email.utils` module:
 
    This method returns a list of 2-tuples of the form returned by ``parseaddr()``.
    *fieldvalues* is a sequence of header field values as might be returned by
-   :meth:`Message.get_all`.  Here's a simple example that gets all the recipients
-   of a message::
+   :meth:`Message.get_all <email.message.Message.get_all>`.  Here's a simple
+   example that gets all the recipients of a message::
 
       from email.utils import getaddresses
 
@@ -76,12 +76,9 @@ There are several useful utilities provided in the :mod:`email.utils` module:
 
 .. function:: mktime_tz(tuple)
 
-   Turn a 10-tuple as returned by :func:`parsedate_tz` into a UTC timestamp.  It
-   the timezone item in the tuple is ``None``, assume local time.  Minor
-   deficiency: :func:`mktime_tz` interprets the first 8 elements of *tuple* as a
-   local time and then compensates for the timezone difference.  This may yield a
-   slight error around changes in daylight savings time, though not worth worrying
-   about for common use.
+   Turn a 10-tuple as returned by :func:`parsedate_tz` into a UTC
+   timestamp (seconds since the Epoch).  If the timezone item in the
+   tuple is ``None``, assume local time.
 
 
 .. function:: formatdate([timeval[, localtime][, usegmt]])
@@ -130,7 +127,8 @@ There are several useful utilities provided in the :mod:`email.utils` module:
 .. function:: collapse_rfc2231_value(value[, errors[, fallback_charset]])
 
    When a header parameter is encoded in :rfc:`2231` format,
-   :meth:`Message.get_param` may return a 3-tuple containing the character set,
+   :meth:`Message.get_param <email.message.Message.get_param>` may return a
+   3-tuple containing the character set,
    language, and value.  :func:`collapse_rfc2231_value` turns this into a unicode
    string.  Optional *errors* is passed to the *errors* argument of the built-in
    :func:`unicode` function; it defaults to ``replace``.  Optional
@@ -152,15 +150,15 @@ There are several useful utilities provided in the :mod:`email.utils` module:
 
 .. versionchanged:: 2.4
    The :func:`decode` function has been removed; use the
-   :meth:`Header.decode_header` method instead.
+   :meth:`Header.decode_header <email.header.Header.decode_header>` method
+   instead.
 
 .. versionchanged:: 2.4
-   The :func:`encode` function has been removed; use the :meth:`Header.encode`
-   method instead.
+   The :func:`encode` function has been removed; use the :meth:`Header.encode
+   <email.header.Header.encode>` method instead.
 
 .. rubric:: Footnotes
 
 .. [#] Note that the sign of the timezone offset is the opposite of the sign of the
    ``time.timezone`` variable for the same timezone; the latter variable follows
    the POSIX standard while this module follows :rfc:`2822`.
-

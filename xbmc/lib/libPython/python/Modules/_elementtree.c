@@ -2338,7 +2338,10 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix,
     PyObject* sprefix = NULL;
     PyObject* suri = NULL;
 
-    suri = makestring(uri, strlen(uri));
+    if (uri)
+        suri = makestring(uri, strlen(uri));
+    else
+        suri = PyString_FromStringAndSize("", 0);
     if (!suri)
         return;
 
@@ -2427,6 +2430,8 @@ expat_unknown_encoding_handler(XMLParserObject *self, const XML_Char *name,
 
     if (PyUnicode_GET_SIZE(u) != 256) {
         Py_DECREF(u);
+        PyErr_SetString(PyExc_ValueError,
+                        "multi-byte encodings are not supported");
         return XML_STATUS_ERROR;
     }
 
@@ -2734,10 +2739,10 @@ xmlparser_setevents(XMLParserObject* self, PyObject* args)
     target->events = events;
 
     /* clear out existing events */
-    Py_XDECREF(target->start_event_obj); target->start_event_obj = NULL;
-    Py_XDECREF(target->end_event_obj); target->end_event_obj = NULL;
-    Py_XDECREF(target->start_ns_event_obj); target->start_ns_event_obj = NULL;
-    Py_XDECREF(target->end_ns_event_obj); target->end_ns_event_obj = NULL;
+    Py_CLEAR(target->start_event_obj);
+    Py_CLEAR(target->end_event_obj);
+    Py_CLEAR(target->start_ns_event_obj);
+    Py_CLEAR(target->end_ns_event_obj);
 
     if (event_set == Py_None) {
         /* default is "end" only */

@@ -1,6 +1,6 @@
 /*
 *      Copyright (C) 2005-2013 Team XBMC
-*      http://www.xbmc.org
+*      http://xbmc.org
 *
 *  This Program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
 *  GNU General Public License for more details.
 *
 *  You should have received a copy of the GNU General Public License
-*  along with XBMC; see the file COPYING.  If not, write to
-*  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
-*  http://www.gnu.org/copyleft/gpl.html
+*  along with XBMC; see the file COPYING.  If not, see
+*  <http://www.gnu.org/licenses/>.
 *
 *  Parts of this code taken from Guido Vollbeding <http://sylvana.net/jpegcrop/exif_orientation.html>
 *
@@ -60,23 +59,65 @@ CJpegIO::~CJpegIO()
 
 void CJpegIO::Close()
 {
-  delete [] m_inputBuff;
+  free(m_inputBuff);
+  m_inputBuff = NULL;
+  m_inputBuffSize = 0;
 }
 
 bool CJpegIO::Open(const CStdString &texturePath, unsigned int minx, unsigned int miny, bool read)
 {
+  Close();
+
   m_texturePath = texturePath;
-  unsigned int imgsize = 0;
 
   XFILE::CFile file;
-  if (file.Open(m_texturePath.c_str(), 0))
+  if (file.Open(m_texturePath.c_str(), READ_TRUNCATED))
   {
-    imgsize = (unsigned int)file.GetLength();
-    m_inputBuff = new unsigned char[imgsize];
-    m_inputBuffSize = file.Read(m_inputBuff, imgsize);
+    /*
+     GetLength() will typically return values that fall into three cases:
+       1. The real filesize. This is the typical case.
+       2. Zero. This is the case for some http:// streams for example.
+       3. Some value smaller than the real filesize. This is the case for an expanding file.
+
+     In order to handle all three cases, we read the file in chunks, relying on Read()
+     returning 0 at EOF.  To minimize (re)allocation of the buffer, the chunksize in
+     cases 1 and 3 is set to one byte larger** than the value returned by GetLength().
+     The chunksize in case 2 is set to the larger of 64k and GetChunkSize().
+
+     We fill the buffer entirely before reallocation.  Thus, reallocation never occurs in case 1
+     as the buffer is larger than the file, so we hit EOF before we hit the end of buffer.
+
+     To minimize reallocation, we double the chunksize each time up to a maxchunksize of 2MB.
+     */
+    unsigned int filesize = (unsigned int)file.GetLength();
+    unsigned int chunksize = filesize ? (filesize + 1) : std::max(65536U, (unsigned int)file.GetChunkSize());
+    unsigned int maxchunksize = 2048*1024U; /* max 2MB chunksize */
+
+    unsigned int total_read = 0, free_space = 0;
+    while (true)
+    {
+      if (!free_space)
+      { // (re)alloc
+        m_inputBuffSize += chunksize;
+        m_inputBuff = (unsigned char *)realloc(m_inputBuff, m_inputBuffSize);
+        if (!m_inputBuff)
+        {
+          CLog::Log(LOGERROR, "%s unable to allocate buffer of size %u", __FUNCTION__, m_inputBuffSize);
+          return false;
+        }
+        free_space = chunksize;
+        chunksize = std::min(chunksize*2, maxchunksize);
+      }
+      unsigned int read = file.Read(m_inputBuff + total_read, free_space);
+      free_space -= read;
+      total_read += read;
+      if (!read)
+        break;
+    }
+    m_inputBuffSize = total_read;
     file.Close();
 
-    if ((imgsize != m_inputBuffSize) || (m_inputBuffSize == 0))
+    if (m_inputBuffSize == 0)
       return false;
   }
   else
@@ -151,8 +192,9 @@ bool CJpegIO::Read(unsigned char* buffer, unsigned int bufSize, unsigned int min
     m_cinfo.scale_denom = 8;
     m_cinfo.out_color_space = JCS_RGB;
     unsigned int maxtexsize = 4096;
-    for (m_cinfo.scale_num = 1; m_cinfo.scale_num <= 8; m_cinfo.scale_num++)
+    for (unsigned int scale = 1; scale <= 8; scale++)
     {
+      m_cinfo.scale_num = scale;
       tb_jpeg_calc_output_dimensions(&m_cinfo);
       if ((m_cinfo.output_width > maxtexsize) || (m_cinfo.output_height > maxtexsize))
       {

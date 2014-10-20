@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -25,39 +24,39 @@
 
 using namespace XFILE;
 
-CFileTuxBox::CFileTuxBox()
+CTuxBoxFile::CTuxBoxFile()
 {}
 
-CFileTuxBox::~CFileTuxBox()
+CTuxBoxFile::~CTuxBoxFile()
 {
 }
 
-int64_t CFileTuxBox::GetPosition()
-{
-  return 0;
-}
-
-int64_t CFileTuxBox::GetLength()
+int64_t CTuxBoxFile::GetPosition()
 {
   return 0;
 }
 
-bool CFileTuxBox::Open(const CURL& url)
+int64_t CTuxBoxFile::GetLength()
+{
+  return 0;
+}
+
+bool CTuxBoxFile::Open(const CURL& url)
 {
   return true;
 }
 
-unsigned int CFileTuxBox::Read(void* lpBuf, int64_t uiBufSize)
+unsigned int CTuxBoxFile::Read(void* lpBuf, int64_t uiBufSize)
 {
   return 0;
 }
 
-int64_t CFileTuxBox::Seek(int64_t iFilePosition, int iWhence)
+int64_t CTuxBoxFile::Seek(int64_t iFilePosition, int iWhence)
 {
   return 0;
 }
 
-void CFileTuxBox::Close()
+void CTuxBoxFile::Close()
 {
 }
 

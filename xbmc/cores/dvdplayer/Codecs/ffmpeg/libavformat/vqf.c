@@ -86,7 +86,7 @@ static const AVMetadataConv vqf_metadata_conv[] = {
     { 0 },
 };
 
-static int vqf_read_header(AVFormatContext *s, AVFormatParameters *ap)
+static int vqf_read_header(AVFormatContext *s)
 {
     VqfContext *c = s->priv_data;
     AVStream *st  = avformat_new_stream(s, NULL);
@@ -105,7 +105,7 @@ static int vqf_read_header(AVFormatContext *s, AVFormatParameters *ap)
     header_size = avio_rb32(s->pb);
 
     st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-    st->codec->codec_id   = CODEC_ID_TWINVQ;
+    st->codec->codec_id   = AV_CODEC_ID_TWINVQ;
     st->start_time = 0;
 
     do {
@@ -131,6 +131,11 @@ static int vqf_read_header(AVFormatContext *s, AVFormatParameters *ap)
             read_bitrate        = AV_RB32(comm_chunk + 4);
             rate_flag           = AV_RB32(comm_chunk + 8);
             avio_skip(s->pb, len-12);
+
+            if (st->codec->channels <= 0) {
+                av_log(s, AV_LOG_ERROR, "Invalid number of channels\n");
+                return AVERROR_INVALIDDATA;
+            }
 
             st->codec->bit_rate              = read_bitrate*1000;
             break;
@@ -175,6 +180,10 @@ static int vqf_read_header(AVFormatContext *s, AVFormatParameters *ap)
         break;
     default:
         st->codec->sample_rate = rate_flag*1000;
+        if (st->codec->sample_rate <= 0) {
+            av_log(s, AV_LOG_ERROR, "sample rate %d is invalid\n", st->codec->sample_rate);
+            return -1;
+        }
         break;
     }
 
@@ -201,7 +210,7 @@ static int vqf_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return -1;
     }
     c->frame_bit_len = st->codec->bit_rate*size/st->codec->sample_rate;
-    avpriv_set_pts_info(st, 64, 1, st->codec->sample_rate);
+    avpriv_set_pts_info(st, 64, size, st->codec->sample_rate);
 
     /* put first 12 bytes of COMM chunk in extradata */
     if (!(st->codec->extradata = av_malloc(12 + FF_INPUT_BUFFER_PADDING_SIZE)))
@@ -220,11 +229,12 @@ static int vqf_read_packet(AVFormatContext *s, AVPacket *pkt)
     int ret;
     int size = (c->frame_bit_len - c->remaining_bits + 7)>>3;
 
-    pkt->pos          = avio_tell(s->pb);
-    pkt->stream_index = 0;
-
     if (av_new_packet(pkt, size+2) < 0)
         return AVERROR(EIO);
+
+    pkt->pos          = avio_tell(s->pb);
+    pkt->stream_index = 0;
+    pkt->duration     = 1;
 
     pkt->data[0] = 8 - c->remaining_bits; // Number of bits to skip
     pkt->data[1] = c->last_frame_bits;

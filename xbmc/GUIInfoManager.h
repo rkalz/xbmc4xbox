@@ -8,7 +8,7 @@
 
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,9 +21,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -32,6 +31,7 @@
 #include "utils/CriticalSection.h"
 #include "IMsgTargetCallback.h"
 #include "inttypes.h"
+#include "interfaces/info/SkinVariable.h"
 
 #include <list>
 #include <map>
@@ -218,7 +218,7 @@ namespace INFO
 #define MUSICPLAYER_PLAYLISTPLAYING 225
 #define MUSICPLAYER_ALBUM_ARTIST    226
 #define MUSICPLAYER_PLAYCOUNT       227
-#define MUSICPLAYER_FILENAME        228
+#define MUSICPLAYER_LASTPLAYED      228
 
 #define VIDEOPLAYER_TITLE             250
 #define VIDEOPLAYER_GENRE             251
@@ -454,9 +454,9 @@ namespace INFO
 
 // NOTE: Version string MUST NOT contain spaces.  It is used in the HTTP request user agent.
 #ifdef SVN_REV
-#define VERSION_STRING "3.4-DEV-r"SVN_REV
+#define VERSION_STRING "3.6-DEV-r"SVN_REV
 #else
-#define VERSION_STRING "3.4-DEV"
+#define VERSION_STRING "3.6-DEV"
 #endif
 
 #define LISTITEM_START              35000
@@ -528,6 +528,9 @@ namespace INFO
 #define LISTITEM_END                (LISTITEM_PROPERTY_END)
 
 #define MUSICPLAYER_PROPERTY_OFFSET 900 // last 100 id's reserved for musicplayer props.
+
+#define CONDITIONAL_LABEL_START       LISTITEM_END + 1 // 36001
+#define CONDITIONAL_LABEL_END         37000
 
 // the multiple information vector
 #define MULTI_INFO_START              40000
@@ -641,12 +644,12 @@ public:
   const CVideoInfoTag* GetCurrentMovieTag() const;
 
   CStdString GetMusicLabel(int item);
-  CStdString GetMusicTagLabel(int info, const CFileItem *item) const;
+  CStdString GetMusicTagLabel(int info, const CFileItem *item);
   CStdString GetVideoLabel(int item);
   CStdString GetPlaylistLabel(int item) const;
   CStdString GetMusicPartyModeLabel(int item);
-  const CStdString GetMusicPlaylistInfo(const GUIInfo& info) const;
-  CStdString GetPictureLabel(int item) const;
+  const CStdString GetMusicPlaylistInfo(const GUIInfo& info);
+  CStdString GetPictureLabel(int item);
 
   __int64 GetPlayTime() const;  // in ms
   CStdString GetCurrentPlayTime(TIME_FORMAT format = TIME_FORMAT_GUESS) const;
@@ -677,8 +680,8 @@ public:
   void ResetCache();
   void ResetPersistentCache();
 
-  CStdString GetItemLabel(const CFileItem *item, int info) const;
-  CStdString GetItemImage(const CFileItem *item, int info) const;
+  CStdString GetItemLabel(const CFileItem *item, int info);
+  CStdString GetItemImage(const CFileItem *item, int info);
 
   // Called from tuxbox service thread to update current status
   void UpdateFromTuxBox();
@@ -702,13 +705,16 @@ public:
 
   int TranslateSingleString(const CStdString &strCondition);
 
+  int RegisterSkinVariableString(const INFO::CSkinVariableString* info);
+  int TranslateSkinVariableString(const CStdString& name, int context);
+  CStdString GetSkinVariableString(int info, bool preferImage = false, const CGUIListItem *item=NULL);
 protected:
   // routines for window retrieval
   bool CheckWindowCondition(CGUIWindow *window, int condition) const;
   CGUIWindow *GetWindowWithCondition(int contextWindow, int condition) const;
 
   bool GetMultiInfoBool(const GUIInfo &info, int contextWindow = 0, const CGUIListItem *item = NULL);
-  CStdString GetMultiInfoLabel(const GUIInfo &info, int contextWindow = 0) const;
+  CStdString GetMultiInfoLabel(const GUIInfo &info, int contextWindow = 0);
   int TranslateListItem(const CStdString &info);
   int TranslateMusicPlayerString(const CStdString &info) const;
   TIME_FORMAT TranslateTimeFormat(const CStdString &format);
@@ -786,6 +792,7 @@ protected:
   void CacheBool(int condition, int contextWindow, bool result, bool persistent=false);
   std::map<int, bool> m_boolCache;
   std::vector<INFO::InfoBool*> m_bools;
+  std::vector<INFO::CSkinVariableString> m_skinVariableStrings;
   unsigned int m_updateTime;
 
   // persistent cache

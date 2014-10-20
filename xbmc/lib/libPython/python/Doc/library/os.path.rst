@@ -127,7 +127,7 @@ the :mod:`glob` module.)
    .. versionadded:: 1.5.2
 
    .. versionchanged:: 2.3
-      If :func:`os.stat_float_times` returns True, the result is a floating point
+      If :func:`os.stat_float_times` returns ``True``, the result is a floating point
       number.
 
 
@@ -140,14 +140,14 @@ the :mod:`glob` module.)
    .. versionadded:: 1.5.2
 
    .. versionchanged:: 2.3
-      If :func:`os.stat_float_times` returns True, the result is a floating point
+      If :func:`os.stat_float_times` returns ``True``, the result is a floating point
       number.
 
 
 .. function:: getctime(path)
 
    Return the system's ctime which, on some systems (like Unix) is the time of the
-   last change, and, on others (like Windows), is the creation time for *path*.
+   last metadata change, and, on others (like Windows), is the creation time for *path*.
    The return value is a number giving the number of seconds since the epoch (see
    the  :mod:`time` module).  Raise :exc:`os.error` if the file does not exist or
    is inaccessible.
@@ -185,7 +185,7 @@ the :mod:`glob` module.)
 .. function:: islink(path)
 
    Return ``True`` if *path* refers to a directory entry that is a symbolic link.
-   Always ``False`` if symbolic links are not supported.
+   Always ``False`` if symbolic links are not supported by the python runtime.
 
 
 .. function:: ismount(path)
@@ -236,8 +236,10 @@ the :mod:`glob` module.)
 
 .. function:: relpath(path[, start])
 
-   Return a relative filepath to *path* either from the current directory or from
-   an optional *start* point.
+   Return a relative filepath to *path* either from the current directory or
+   from an optional *start* directory.  This is a path computation:  the
+   filesystem is not accessed to confirm the existence or nature of *path* or
+   *start*.
 
    *start* defaults to :attr:`os.curdir`.
 
@@ -265,9 +267,9 @@ the :mod:`glob` module.)
 .. function:: samestat(stat1, stat2)
 
    Return ``True`` if the stat tuples *stat1* and *stat2* refer to the same file.
-   These structures may have been returned by :func:`fstat`, :func:`lstat`, or
-   :func:`stat`.  This function implements the underlying comparison used by
-   :func:`samefile` and :func:`sameopenfile`.
+   These structures may have been returned by :func:`os.fstat`,
+   :func:`os.lstat`, or :func:`os.stat`.  This function implements the
+   underlying comparison used by :func:`samefile` and :func:`sameopenfile`.
 
    Availability: Unix.
 
@@ -343,7 +345,7 @@ the :mod:`glob` module.)
 
 .. data:: supports_unicode_filenames
 
-   True if arbitrary Unicode strings can be used as file names (within limitations
+   ``True`` if arbitrary Unicode strings can be used as file names (within limitations
    imposed by the file system).
 
    .. versionadded:: 2.3

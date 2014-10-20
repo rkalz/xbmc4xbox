@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
  
@@ -41,7 +40,7 @@ CPTSOutputQueue::CPTSOutputQueue()
   Flush();
 }
 
-void CPTSOutputQueue::Add(double pts, double delay, double duration)
+void CPTSOutputQueue::Add(double pts, double delay, double duration, double timestamp)
 {
   CSingleLock lock(m_sync);
 
@@ -52,7 +51,7 @@ void CPTSOutputQueue::Add(double pts, double delay, double duration)
 
   TPTSItem item;
   item.pts = pts;
-  item.timestamp = CDVDClock::GetAbsoluteClock() + delay;
+  item.timestamp = timestamp + delay;
   item.duration = duration;
 
   // first one is applied directly
@@ -63,7 +62,7 @@ void CPTSOutputQueue::Add(double pts, double delay, double duration)
 
   // call function to make sure the queue
   // doesn't grow should nobody call it
-  Current();
+  Current(timestamp);
 }
 void CPTSOutputQueue::Flush()
 {
@@ -75,7 +74,7 @@ void CPTSOutputQueue::Flush()
   m_current.duration = 0.0;
 }
 
-double CPTSOutputQueue::Current()
+double CPTSOutputQueue::Current(double timestamp)
 {
   CSingleLock lock(m_sync);
 
@@ -85,7 +84,7 @@ double CPTSOutputQueue::Current()
     m_queue.pop();
   }
 
-  while( !m_queue.empty() && CDVDClock::GetAbsoluteClock() >= m_queue.front().timestamp )
+  while( !m_queue.empty() && timestamp >= m_queue.front().timestamp )
   {
     m_current = m_queue.front();
     m_queue.pop();
@@ -93,7 +92,7 @@ double CPTSOutputQueue::Current()
 
   if( m_current.timestamp == 0 ) return m_current.pts;
 
-  return m_current.pts + min(m_current.duration, (CDVDClock::GetAbsoluteClock() - m_current.timestamp));
+  return m_current.pts + min(m_current.duration, (timestamp - m_current.timestamp));
 }
 
 
@@ -138,7 +137,7 @@ void CDVDAudio::UnRegisterAudioCallback()
   if (m_pAudioDecoder) m_pAudioDecoder->UnRegisterAudioCallback();
 }
 
-bool CDVDAudio::Create(const DVDAudioFrame &audioframe, CodecID codec)
+bool CDVDAudio::Create(const DVDAudioFrame &audioframe, AVCodecID codec)
 {
   CLog::Log(LOGNOTICE, "Creating audio device with codec id: %i, channels: %i, sample rate: %i, %s", codec, audioframe.channels, audioframe.sample_rate, audioframe.passthrough ? "pass-through" : "no pass-through");
 
@@ -147,15 +146,15 @@ bool CDVDAudio::Create(const DVDAudioFrame &audioframe, CodecID codec)
 
   const char* codecstring="";
 
-  if(codec == CODEC_ID_AAC)
+  if(codec == AV_CODEC_ID_AAC)
 #ifdef USE_LIBFAAD
     codecstring = "AAC";
 #else
     codecstring = "FF-AAC"; // ffmpeg decodes aac with a different channel order so we need to differentiate
 #endif
-  else if (codec == CODEC_ID_VORBIS)
+  else if (codec == AV_CODEC_ID_VORBIS)
     codecstring = "Vorbis";
-  else if(codec == CODEC_ID_AC3 || codec == CODEC_ID_DTS)
+  else if(codec == AV_CODEC_ID_AC3 || codec == AV_CODEC_ID_DTS)
     codecstring = ""; // TODO, fix ac3 and dts decoder to output standard windows mapping
   else
     codecstring = "PCM";
@@ -315,7 +314,9 @@ DWORD CDVDAudio::AddPackets(const DVDAudioFrame &audioframe)
   }
 
   double time_added = DVD_SEC_TO_TIME(m_SecondsPerByte * (data - audioframe.data));
-  m_time.Add(audioframe.pts, GetDelay() - time_added, audioframe.duration);
+  double delay      = GetDelay();
+  double timestamp  = CDVDClock::GetAbsoluteClock();
+  m_time.Add(audioframe.pts, delay - time_added, audioframe.duration, timestamp);
 
   return total;
 }
@@ -446,5 +447,12 @@ void CDVDAudio::SetPlayingPts(double pts)
 {
   CSingleLock lock (m_critSection);
   m_time.Flush();
-  m_time.Add(pts, GetDelay(), 0);
+  double delay     = GetDelay();
+  double timestamp = CDVDClock::GetAbsoluteClock();
+  m_time.Add(pts, delay, 0, timestamp);
+}
+
+double CDVDAudio::GetPlayingPts()
+{
+  return m_time.Current(CDVDClock::GetAbsoluteClock());
 }

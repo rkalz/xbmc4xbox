@@ -10,10 +10,9 @@ from array import array
 from weakref import proxy
 from functools import wraps
 from UserList import UserList
-import _testcapi
 
 from test.test_support import TESTFN, check_warnings, run_unittest, make_bad_fd
-from test.test_support import py3k_bytes as bytes
+from test.test_support import py3k_bytes as bytes, cpython_only
 from test.script_helper import run_python
 
 from _io import FileIO as _FileIO
@@ -283,29 +282,30 @@ class OtherFileTests(unittest.TestCase):
             self.assertEqual(f.seekable(), True)
             self.assertEqual(f.isatty(), False)
             f.close()
-
-            if sys.platform != "win32":
-                try:
-                    f = _FileIO("/dev/tty", "a")
-                except EnvironmentError:
-                    # When run in a cron job there just aren't any
-                    # ttys, so skip the test.  This also handles other
-                    # OS'es that don't support /dev/tty.
-                    pass
-                else:
-                    self.assertEqual(f.readable(), False)
-                    self.assertEqual(f.writable(), True)
-                    if sys.platform != "darwin" and \
-                       'bsd' not in sys.platform and \
-                       not sys.platform.startswith('sunos'):
-                        # Somehow /dev/tty appears seekable on some BSDs
-                        self.assertEqual(f.seekable(), False)
-                    self.assertEqual(f.isatty(), True)
-                    f.close()
         finally:
             os.unlink(TESTFN)
 
-    def testModeStrings(self):
+    @unittest.skipIf(sys.platform == 'win32', 'no ttys on Windows')
+    def testAblesOnTTY(self):
+        try:
+            f = _FileIO("/dev/tty", "a")
+        except EnvironmentError:
+            # When run in a cron job there just aren't any
+            # ttys, so skip the test.  This also handles other
+            # OS'es that don't support /dev/tty.
+            self.skipTest('need /dev/tty')
+        else:
+            self.assertEqual(f.readable(), False)
+            self.assertEqual(f.writable(), True)
+            if sys.platform != "darwin" and \
+               'bsd' not in sys.platform and \
+               not sys.platform.startswith('sunos'):
+                # Somehow /dev/tty appears seekable on some BSDs
+                self.assertEqual(f.seekable(), False)
+            self.assertEqual(f.isatty(), True)
+            f.close()
+
+    def testInvalidModeStrings(self):
         # check invalid mode strings
         for mode in ("", "aU", "wU+", "rw", "rt"):
             try:
@@ -315,6 +315,21 @@ class OtherFileTests(unittest.TestCase):
             else:
                 f.close()
                 self.fail('%r is an invalid file mode' % mode)
+
+    def testModeStrings(self):
+        # test that the mode attribute is correct for various mode strings
+        # given as init args
+        try:
+            for modes in [('w', 'wb'), ('wb', 'wb'), ('wb+', 'rb+'),
+                          ('w+b', 'rb+'), ('a', 'ab'), ('ab', 'ab'),
+                          ('ab+', 'ab+'), ('a+b', 'ab+'), ('r', 'rb'),
+                          ('rb', 'rb'), ('rb+', 'rb+'), ('r+b', 'rb+')]:
+                # read modes are last so that TESTFN will exist first
+                with _FileIO(TESTFN, modes[0]) as f:
+                    self.assertEqual(f.mode, modes[1])
+        finally:
+            if os.path.exists(TESTFN):
+                os.unlink(TESTFN)
 
     def testUnicodeOpen(self):
         # verify repr works for unicode too
@@ -327,8 +342,7 @@ class OtherFileTests(unittest.TestCase):
         try:
             fn = TESTFN.encode("ascii")
         except UnicodeEncodeError:
-            # Skip test
-            return
+            self.skipTest('could not encode %r to ascii' % TESTFN)
         f = _FileIO(fn, "w")
         try:
             f.write(b"abc")
@@ -344,7 +358,11 @@ class OtherFileTests(unittest.TestCase):
         if sys.platform == 'win32':
             import msvcrt
             self.assertRaises(IOError, msvcrt.get_osfhandle, make_bad_fd())
+
+    @cpython_only
+    def testInvalidFd_overflow(self):
         # Issue 15989
+        import _testcapi
         self.assertRaises(TypeError, _FileIO, _testcapi.INT_MAX + 1)
         self.assertRaises(TypeError, _FileIO, _testcapi.INT_MIN - 1)
 

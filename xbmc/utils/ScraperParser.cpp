@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -454,6 +453,7 @@ void CScraperParser::Clean(CStdString& strDirty)
       HTML::CHTMLUtil::ConvertHTMLToW(wbuffer,wConverted);
       g_charsetConverter.fromW(wConverted,strBuffer,GetSearchStringEncoding());
       RemoveWhiteSpace(strBuffer);
+      ConvertJSON(strBuffer);
       strDirty.erase(i,i2-i+14);
       strDirty.Insert(i,strBuffer);
       i += strBuffer.size();
@@ -482,6 +482,40 @@ void CScraperParser::RemoveWhiteSpace(CStdString &string)
 {
   string.TrimLeft(" \t\r\n");
   string.TrimRight(" \t\r\n");
+}
+
+void CScraperParser::ConvertJSON(CStdString &string)
+{
+  CRegExp reg;
+  reg.RegComp("\\\\u([0-f]{4})");
+  while (reg.RegFind(string.c_str()) > -1)
+  {
+    int pos = reg.GetSubStart(1);
+    char* szReplace = reg.GetReplaceString("\\1");
+
+    CStdString replace;
+    replace.Format("&#x%s;", szReplace);
+    string.replace(string.begin()+pos-2, string.begin()+pos+4, replace);
+
+    free(szReplace);
+  }
+
+  CRegExp reg2;
+  reg2.RegComp("\\\\x([0-9]{2})([^\\\\]+;)");
+  while (reg2.RegFind(string.c_str()) > -1)
+  {
+    int pos1 = reg2.GetSubStart(1);
+    int pos2 = reg2.GetSubStart(2);
+    char* szHexValue = reg2.GetReplaceString("\\1");
+
+    CStdString replace;
+    replace.Format("%c", strtol(szHexValue, NULL, 16));
+    string.replace(string.begin()+pos1-2, string.begin()+pos2+reg2.GetSubLength(2), replace);
+
+    free(szHexValue);
+  }
+
+  string.Replace("\\\"","\"");
 }
 
 void CScraperParser::ClearBuffers()

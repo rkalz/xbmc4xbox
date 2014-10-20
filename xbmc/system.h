@@ -2,7 +2,7 @@
 
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,9 +15,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -37,10 +36,6 @@
 #define HAS_XBOX_HARDWARE
 #define HAS_XBOX_NETWORK
 #define HAS_VIDEO_PLAYBACK
-#define HAS_AC3_CODEC
-#define HAS_DTS_CODEC
-#define HAS_AC3_CDDA_CODEC
-#define HAS_DTS_CDDA_CODEC
 #define HAS_XBOX_AUDIO
 #define HAS_AUDIO_PASS_THROUGH
 #define HAS_FTP_SERVER
@@ -75,10 +70,6 @@
 #undef HAS_XBOX_HARDWARE
 #undef HAS_XBOX_NETWORK
 #define HAS_VIDEO_PLAYBACK
-#undef HAS_AC3_CODEC
-#undef HAS_DTS_CODEC
-#undef HAS_AC3_CDDA_CODEC
-#undef HAS_DTS_CDDA_CODEC
 #undef HAS_XBOX_AUDIO
 #undef HAS_AUDIO_PASS_THROUGH
 #undef HAS_FTP_SERVER
@@ -115,11 +106,6 @@
 #undef GetFreeSpace
 
 #endif
-
-#undef USE_LIBMAD
-#undef USE_LIBFAAD
-#undef USE_LIBDTS_DECODER
-#undef USE_LIBA52_DECODER
 
 #define XBMC_MAX_PATH 1024 // normal max path is 260, but smb shares and the like can be longer
 

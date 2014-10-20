@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
  
@@ -204,6 +203,10 @@ CDVDDemuxFFmpeg::CDVDDemuxFFmpeg() : CDVDDemux()
   InitializeCriticalSection(&m_critSection);
   for (int i = 0; i < MAX_STREAMS; i++) m_streams[i] = NULL;
   m_iCurrentPts = DVD_NOPTS_VALUE;
+  m_bMatroska = false;
+  m_bAVI = false;
+  m_speed = DVD_PLAYSPEED_NORMAL;
+  m_program = UINT_MAX;
 }
 
 CDVDDemuxFFmpeg::~CDVDDemuxFFmpeg()
@@ -240,6 +243,8 @@ bool CDVDDemuxFFmpeg::Open(CDVDInputStream* pInput)
     CLog::Log(LOGERROR,"CDVDDemuxFFmpeg::Open - failed to load ffmpeg libraries");
     return false;
   }
+
+  m_dllAvUtil.av_force_cpu_flags(AV_CPU_FLAG_MMX | AV_CPU_FLAG_MMXEXT | AV_CPU_FLAG_SSE);
 
   // register codecs
   m_dllAvFormat.av_register_all();
@@ -442,7 +447,7 @@ bool CDVDDemuxFFmpeg::Open(CDVDInputStream* pInput)
     if (iErr < 0)
     {
       CLog::Log(LOGWARNING,"could not find codec parameters for %s", strFile.c_str());
-      if (m_pInput->IsStreamType(DVDSTREAM_TYPE_DVD) || (m_pFormatContext->nb_streams == 1 && m_pFormatContext->streams[0]->codec->codec_id == CODEC_ID_AC3))
+      if (m_pInput->IsStreamType(DVDSTREAM_TYPE_DVD) || (m_pFormatContext->nb_streams == 1 && m_pFormatContext->streams[0]->codec->codec_id == AV_CODEC_ID_AC3))
       {
         // special case, our codecs can still handle it.
       }
@@ -724,7 +729,7 @@ DemuxPacket* CDVDDemuxFFmpeg::Read()
         }
 
         // we need to get duration slightly different for matroska embedded text subtitels
-        if(m_bMatroska && stream->codec->codec_id == CODEC_ID_TEXT && pkt.convergence_duration != 0)
+        if(m_bMatroska && stream->codec->codec_id == AV_CODEC_ID_TEXT && pkt.convergence_duration != 0)
           pkt.duration = pkt.convergence_duration;
 
         if(m_bAVI && stream->codec && stream->codec->codec_type == AVMEDIA_TYPE_VIDEO)
@@ -958,7 +963,7 @@ void CDVDDemuxFFmpeg::AddStream(int iId)
           st->bVFR = false;
 
         // never trust pts in avi files with h264.
-        if (m_bAVI && pStream->codec->codec_id == CODEC_ID_H264)
+        if (m_bAVI && pStream->codec->codec_id == AV_CODEC_ID_H264)
           st->bPTSInvalid = true;
 
         //average fps is more accurate for mkv files
@@ -997,15 +1002,15 @@ void CDVDDemuxFFmpeg::AddStream(int iId)
 
         if ( m_pInput->IsStreamType(DVDSTREAM_TYPE_DVD) )
         {
-          if (pStream->codec->codec_id == CODEC_ID_PROBE)
+          if (pStream->codec->codec_id == AV_CODEC_ID_PROBE)
           {
-            // fix MPEG-1/MPEG-2 video stream probe returning CODEC_ID_PROBE for still frames.
+            // fix MPEG-1/MPEG-2 video stream probe returning AV_CODEC_ID_PROBE for still frames.
             // ffmpeg issue 1871, regression from ffmpeg r22831.
             if ((pStream->id & 0xF0) == 0xE0)
             {
-              pStream->codec->codec_id = CODEC_ID_MPEG2VIDEO;
+              pStream->codec->codec_id = AV_CODEC_ID_MPEG2VIDEO;
               pStream->codec->codec_tag = MKTAG('M','P','2','V');
-              CLog::Log(LOGERROR, "%s - CODEC_ID_PROBE detected, forcing CODEC_ID_MPEG2VIDEO", __FUNCTION__);
+              CLog::Log(LOGERROR, "%s - AV_CODEC_ID_PROBE detected, forcing AV_CODEC_ID_MPEG2VIDEO", __FUNCTION__);
             }
           }
         }
@@ -1022,7 +1027,6 @@ void CDVDDemuxFFmpeg::AddStream(int iId)
         {
           CDemuxStreamSubtitleFFmpeg* st = new CDemuxStreamSubtitleFFmpeg(this, pStream);
           m_streams[iId] = st;
-          st->identifier = pStream->codec->sub_id;
 	    
           if(m_dllAvUtil.av_dict_get(pStream->metadata, "title", NULL, 0))
             st->m_description = m_dllAvUtil.av_dict_get(pStream->metadata, "title", NULL, 0)->value;
@@ -1032,7 +1036,7 @@ void CDVDDemuxFFmpeg::AddStream(int iId)
       }
     case AVMEDIA_TYPE_ATTACHMENT:
       { //mkv attachments. Only bothering with fonts for now.
-        if(pStream->codec->codec_id == CODEC_ID_TTF)
+        if(pStream->codec->codec_id == AV_CODEC_ID_TTF)
         {
           std::string fileName = "special://temp/fonts/";
           XFILE::CDirectory::Create(fileName);
@@ -1080,16 +1084,9 @@ void CDVDDemuxFFmpeg::AddStream(int iId)
     m_streams[iId]->pPrivate = pStream;
     m_streams[iId]->flags = (CDemuxStream::EFlags)pStream->disposition;
 
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(52,83,0)
-    // API added on: 2010-10-15
-    // (Note that while the function was available earlier, the generic
-    // metadata tags were not populated by default)
     AVDictionaryEntry *langTag = m_dllAvUtil.av_dict_get(pStream->metadata, "language", NULL, 0);
     if (langTag)
       strncpy(m_streams[iId]->language, langTag->value, 3);
-#else
-    strcpy( m_streams[iId]->language, pStream->language );
-#endif
 
     if( pStream->codec->extradata && pStream->codec->extradata_size > 0 )
     {
@@ -1106,19 +1103,19 @@ void CDVDDemuxFFmpeg::AddStream(int iId)
       // id's reported from libdvdnav
       switch(m_streams[iId]->codec)
       {
-        case CODEC_ID_AC3:
+        case AV_CODEC_ID_AC3:
           m_streams[iId]->iPhysicalId = pStream->id - 128;
           break;
-        case CODEC_ID_DTS:
+        case AV_CODEC_ID_DTS:
           m_streams[iId]->iPhysicalId = pStream->id - 136;
           break;
-        case CODEC_ID_MP2:
+        case AV_CODEC_ID_MP2:
           m_streams[iId]->iPhysicalId = pStream->id - 448;
           break;
-        case CODEC_ID_PCM_S16BE:
+        case AV_CODEC_ID_PCM_S16BE:
           m_streams[iId]->iPhysicalId = pStream->id - 160;
           break;
-        case CODEC_ID_DVD_SUBTITLE:
+        case AV_CODEC_ID_DVD_SUBTITLE:
           m_streams[iId]->iPhysicalId = pStream->id - 0x20;
           break;
         default:
@@ -1147,11 +1144,8 @@ int CDVDDemuxFFmpeg::GetChapterCount()
 
   if(m_pFormatContext == NULL)
     return 0;
-  #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(52,14,0)
-    return m_pFormatContext->nb_chapters;
-  #else
-    return 0;
-  #endif
+
+  return m_pFormatContext->nb_chapters;
 }
 
 int CDVDDemuxFFmpeg::GetChapter()
@@ -1164,15 +1158,13 @@ int CDVDDemuxFFmpeg::GetChapter()
   || m_iCurrentPts == DVD_NOPTS_VALUE)
     return 0;
 
-  #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(52,14,0)
-    for(unsigned i = 0; i < m_pFormatContext->nb_chapters; i++)
-    {
-      AVChapter *chapter = m_pFormatContext->chapters[i];
-      if(m_iCurrentPts >= ConvertTimestamp(chapter->start, chapter->time_base.den, chapter->time_base.num)
-      && m_iCurrentPts <  ConvertTimestamp(chapter->end,   chapter->time_base.den, chapter->time_base.num))
-        return i + 1;
-    }
-  #endif
+  for(unsigned i = 0; i < m_pFormatContext->nb_chapters; i++)
+  {
+    AVChapter *chapter = m_pFormatContext->chapters[i];
+    if(m_iCurrentPts >= ConvertTimestamp(chapter->start, chapter->time_base.den, chapter->time_base.num)
+    && m_iCurrentPts <  ConvertTimestamp(chapter->end,   chapter->time_base.den, chapter->time_base.num))
+      return i + 1;
+  }
   return 0;
 }
 
@@ -1183,23 +1175,14 @@ void CDVDDemuxFFmpeg::GetChapterName(std::string& strChapterName)
     ich->GetChapterName(strChapterName);
   else
   {
-    #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(52,14,0)
-      int chapterIdx = GetChapter();
-      if(chapterIdx <= 0)
-        return;
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(52,83,0)
-      // API added on: 2010-10-15
-      // (Note that while the function was available earlier, the generic
-      // metadata tags were not populated by default)
-      AVDictionaryEntry *titleTag = m_dllAvUtil.av_dict_get(m_pFormatContext->chapters[chapterIdx-1]->metadata,
-                                                              "title", NULL, 0);
-      if (titleTag)
-        strChapterName = titleTag->value;
-#else
-      if (m_pFormatContext->chapters[chapterIdx-1]->title)
-        strChapterName = m_pFormatContext->chapters[chapterIdx-1]->title;
-#endif
-    #endif
+    int chapterIdx = GetChapter();
+    if(chapterIdx <= 0)
+      return;
+
+    AVDictionaryEntry *titleTag = m_dllAvUtil.av_dict_get(m_pFormatContext->chapters[chapterIdx-1]->metadata,
+                                                            "title", NULL, 0);
+    if (titleTag)
+      strChapterName = titleTag->value;
   }
 }
 
@@ -1225,16 +1208,12 @@ bool CDVDDemuxFFmpeg::SeekChapter(int chapter, double* startpts)
   if(m_pFormatContext == NULL)
     return false;
 
-    #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(52,14,0)
-        if(chapter < 1 || chapter > (int)m_pFormatContext->nb_chapters)
-            return false;
+  if(chapter < 1 || chapter > (int)m_pFormatContext->nb_chapters)
+      return false;
 
-        AVChapter *ch = m_pFormatContext->chapters[chapter-1];
-        double dts = ConvertTimestamp(ch->start, ch->time_base.den, ch->time_base.num);
-        return SeekTime(DVD_TIME_TO_MSEC(dts), true, startpts);
-    #else
-        return false;
-    #endif
+  AVChapter *ch = m_pFormatContext->chapters[chapter-1];
+  double dts = ConvertTimestamp(ch->start, ch->time_base.den, ch->time_base.num);
+  return SeekTime(DVD_TIME_TO_MSEC(dts), true, startpts);
 }
 
 void CDVDDemuxFFmpeg::GetStreamCodecName(int iStreamId, CStdString &strName)

@@ -26,15 +26,15 @@
 
 typedef struct ThpDemuxContext {
     int              version;
-    int              first_frame;
-    int              first_framesz;
-    int              last_frame;
+    unsigned         first_frame;
+    unsigned         first_framesz;
+    unsigned         last_frame;
     int              compoff;
-    int              framecnt;
+    unsigned         framecnt;
     AVRational       fps;
-    int              frame;
-    int              next_frame;
-    int              next_framesz;
+    unsigned         frame;
+    int64_t          next_frame;
+    unsigned         next_framesz;
     int              video_stream_index;
     int              audio_stream_index;
     int              compcount;
@@ -54,8 +54,7 @@ static int thp_probe(AVProbeData *p)
         return 0;
 }
 
-static int thp_read_header(AVFormatContext *s,
-                           AVFormatParameters *ap)
+static int thp_read_header(AVFormatContext *s)
 {
     ThpDemuxContext *thp = s->priv_data;
     AVStream *st;
@@ -106,11 +105,13 @@ static int thp_read_header(AVFormatContext *s,
                is required.  */
             avpriv_set_pts_info(st, 64, thp->fps.den, thp->fps.num);
             st->codec->codec_type = AVMEDIA_TYPE_VIDEO;
-            st->codec->codec_id = CODEC_ID_THP;
+            st->codec->codec_id = AV_CODEC_ID_THP;
             st->codec->codec_tag = 0;  /* no fourcc */
             st->codec->width = avio_rb32(pb);
             st->codec->height = avio_rb32(pb);
             st->codec->sample_rate = av_q2d(thp->fps);
+            st->nb_frames =
+            st->duration = thp->framecnt;
             thp->vst = st;
             thp->video_stream_index = st->index;
 
@@ -126,7 +127,7 @@ static int thp_read_header(AVFormatContext *s,
                 return AVERROR(ENOMEM);
 
             st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
-            st->codec->codec_id = CODEC_ID_ADPCM_THP;
+            st->codec->codec_id = AV_CODEC_ID_ADPCM_THP;
             st->codec->codec_tag = 0;  /* no fourcc */
             st->codec->channels    = avio_rb32(pb); /* numChannels.  */
             st->codec->sample_rate = avio_rb32(pb); /* Frequency.  */
@@ -152,12 +153,12 @@ static int thp_read_packet(AVFormatContext *s,
     if (thp->audiosize == 0) {
         /* Terminate when last frame is reached.  */
         if (thp->frame >= thp->framecnt)
-            return AVERROR(EIO);
+            return AVERROR_EOF;
 
         avio_seek(pb, thp->next_frame, SEEK_SET);
 
         /* Locate the next frame and read out its size.  */
-        thp->next_frame += thp->next_framesz;
+        thp->next_frame += FFMAX(thp->next_framesz, 1);
         thp->next_framesz = avio_rb32(pb);
 
                         avio_rb32(pb); /* Previous total size.  */
@@ -185,6 +186,9 @@ static int thp_read_packet(AVFormatContext *s,
         }
 
         pkt->stream_index = thp->audio_stream_index;
+        if (thp->audiosize >= 8)
+            pkt->duration = AV_RB32(&pkt->data[4]);
+
         thp->audiosize = 0;
         thp->frame++;
     }

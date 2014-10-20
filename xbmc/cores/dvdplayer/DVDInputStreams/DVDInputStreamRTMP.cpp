@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -80,6 +79,10 @@ CDVDInputStreamRTMP::CDVDInputStreamRTMP() : CDVDInputStream(DVDSTREAM_TYPE_RTMP
     m_rtmp = m_libRTMP.Alloc();
     m_libRTMP.Init(m_rtmp);
   }
+  else
+  {
+    m_rtmp = NULL;
+  }
 
   m_eof = true;
   m_bPaused = false;
@@ -93,7 +96,8 @@ CDVDInputStreamRTMP::~CDVDInputStreamRTMP()
   m_sStreamPlaying = NULL;
 
   Close();
-  m_libRTMP.Free(m_rtmp);
+  if (m_rtmp)
+    m_libRTMP.Free(m_rtmp);
   m_rtmp = NULL;
   m_bPaused = false;
 }
@@ -128,7 +132,7 @@ bool CDVDInputStreamRTMP::Open(const char* strFile, const std::string& content)
     m_sStreamPlaying = NULL;
   }
 
-  if (!CDVDInputStream::Open(strFile, "video/x-flv"))
+  if (!m_rtmp || !CDVDInputStream::Open(strFile, "video/x-flv"))
     return false;
 
   CSingleLock lock(m_RTMPSection);
@@ -174,7 +178,8 @@ void CDVDInputStreamRTMP::Close()
   CSingleLock lock(m_RTMPSection);
   CDVDInputStream::Close();
 
-  m_libRTMP.Close(m_rtmp);
+  if (m_rtmp)
+    m_libRTMP.Close(m_rtmp);
 
   m_optionvalues.clear();
   m_eof = true;
@@ -183,6 +188,9 @@ void CDVDInputStreamRTMP::Close()
 
 int CDVDInputStreamRTMP::Read(BYTE* buf, int buf_size)
 {
+  if (!m_rtmp)
+    return -1;
+
   int i = m_libRTMP.Read(m_rtmp, (char *)buf, buf_size);
   if (i < 0)
     m_eof = true;
@@ -207,7 +215,7 @@ bool CDVDInputStreamRTMP::SeekTime(int iTimeInMsec)
   if (m_bLive)
     return false;
 
-  if (m_libRTMP.SendSeek(m_rtmp, iTimeInMsec))
+  if (m_rtmp && m_libRTMP.SendSeek(m_rtmp, iTimeInMsec))
     return true;
 
   return false;
@@ -223,8 +231,11 @@ bool CDVDInputStreamRTMP::Pause(double dTime)
   CSingleLock lock(m_RTMPSection);
 
   m_bPaused = !m_bPaused;
-  // currently this causes freeze on XBMC4XBOX when pausing/unpausing/pausing again. Have also seen similar issues on mainline xbmc when pausing/unpausing multiple times.
-  //m_libRTMP.Pause(m_rtmp, m_bPaused);
+
+  CLog::Log(LOGNOTICE, "RTMP Pause %s requested", m_bPaused ? "TRUE" : "FALSE");
+
+  if (m_rtmp)
+    m_libRTMP.Pause(m_rtmp, m_bPaused);
 
   return true;
 }

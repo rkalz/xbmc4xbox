@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -718,18 +717,36 @@ extern "C" void __stdcall update_emu_environ();
 
 HRESULT CApplication::Create(HWND hWnd)
 {
+
 #ifdef HAS_XBOX_HARDWARE
   // better 128mb ram support
   // set MTRRDefType memory type to write-back as done in other XBox apps - seems a bit of a hack as really the def type
   // should be uncachable and the mtrr/mask for ram instead set up for 128MB with writeback as is done in cromwell.
-  __asm
+  m_128MBHack = false;
+  MEMORYSTATUS status;
+  GlobalMemoryStatus( &status );
+  // if we have more than 64MB free
+  if( status.dwTotalPhys > 67108864 )
   {
-    mov ecx, 0x2ff
-    rdmsr
-    mov al, 0x06
-    wrmsr
+    __asm
+    {
+      mov ecx, 0x2ff
+      rdmsr
+      mov al, 0x06
+      wrmsr
+    }
+    m_128MBHack = true;
   }
 #endif
+
+#ifdef _DEBUG
+  g_advancedSettings.m_logLevel     = LOG_LEVEL_DEBUG;
+  g_advancedSettings.m_logLevelHint = LOG_LEVEL_DEBUG;
+#else
+  g_advancedSettings.m_logLevel     = LOG_LEVEL_NORMAL;
+  g_advancedSettings.m_logLevelHint = LOG_LEVEL_NORMAL;
+#endif
+  CLog::SetLogLevel(g_advancedSettings.m_logLevel);
 
   g_guiSettings.Initialize();  // Initialize default Settings
   g_settings.Initialize(); //Initialize default AdvancedSettings
@@ -762,7 +779,7 @@ HRESULT CApplication::Create(HWND hWnd)
   InitDirectoriesXbox();
   
   CLog::Log(LOGNOTICE, "-----------------------------------------------------------------------");
-  CLog::Log(LOGNOTICE, "Starting XBMC4Xbox.  Built on %s (SVN:%s, compiler %i)", __DATE__, SVN_REV, _MSC_VER);
+  CLog::Log(LOGNOTICE, "Starting XBMC4Xbox %s (SVN:%s, compiler %i). Built on %s ", VERSION_STRING, SVN_REV, _MSC_VER, __DATE__);
   CSpecialProtocol::LogPaths();
 
   char szXBEFileName[1024];
@@ -797,6 +814,9 @@ HRESULT CApplication::Create(HWND hWnd)
     strcat(szDevicePath, &strMnt.c_str()[2]);
     CIoSupport::RemapDriveLetter('T', szDevicePath);
   }
+
+  if (m_128MBHack)
+    CLog::Log(LOGNOTICE, "128MB hack enabled");
 
   CLog::Log(LOGNOTICE, "Setup DirectX");
   // Create the Direct3D object
@@ -1079,11 +1099,10 @@ HRESULT CApplication::Create(HWND hWnd)
   CLog::Log(LOGINFO, "load keyboard layout configuration info file: %s", strKeyboardLayoutConfigurationPath.c_str());
   g_keyboardLayoutConfiguration.Load(strKeyboardLayoutConfigurationPath);
 
-  CStdString strLanguagePath;
-  strLanguagePath.Format("special://xbmc/language/%s/strings.xml", strLanguage.c_str());
+  CStdString strLanguagePath = "special://xbmc/language/";
 
-  CLog::Log(LOGINFO, "load language file:%s", strLanguagePath.c_str());
-  if (!g_localizeStrings.Load(strLanguagePath))
+  CLog::Log(LOGINFO, "load %s language file, from path: %s", strLanguage.c_str(), strLanguagePath.c_str());
+  if (!g_localizeStrings.Load(strLanguagePath, strLanguage))
     FatalErrorHandler(true, false, true);
 
   CLog::Log(LOGINFO, "load keymapping");
@@ -1706,7 +1725,13 @@ void CApplication::DimLCDOnPlayback(bool dim)
 void CApplication::StartServices()
 {
 #ifdef HAS_XBOX_HARDWARE
-  StartIdleThread();
+  if (g_advancedSettings.m_bPowerSave)
+  {
+    CLog::Log(LOGNOTICE, "Using idle thread with HLT (power saving)");
+    StartIdleThread();
+  }
+  else
+    CLog::Log(LOGNOTICE, "Not using idle thread with HLT (no power saving)");
 #endif
 
   CheckDate();
@@ -1808,7 +1833,8 @@ void CApplication::StopServices()
   CLog::Log(LOGNOTICE, "stop fancontroller");
   CFanController::Instance()->Stop();
   CFanController::RemoveInstance();
-  StopIdleThread();
+  if (g_advancedSettings.m_bPowerSave)
+    StopIdleThread();
 #endif  
 }
 
@@ -1919,16 +1945,11 @@ void CApplication::LoadSkin(const SkinPtr& skin)
   g_fontManager.LoadFonts(g_guiSettings.GetString("lookandfeel.font"));
 
   // load in the skin strings
-  CStdString langPath, skinEnglishPath;
+  CStdString langPath;
   URIUtils::AddFileToFolder(skin->Path(), "language", langPath);
-  URIUtils::AddFileToFolder(langPath, g_guiSettings.GetString("locale.language"), langPath);
-  URIUtils::AddFileToFolder(langPath, "strings.xml", langPath);
+  URIUtils::AddSlashAtEnd(langPath);
 
-  URIUtils::AddFileToFolder(skin->Path(), "language", skinEnglishPath);
-  URIUtils::AddFileToFolder(skinEnglishPath, "English", skinEnglishPath);
-  URIUtils::AddFileToFolder(skinEnglishPath, "strings.xml", skinEnglishPath);
-
-  g_localizeStrings.LoadSkinStrings(langPath, skinEnglishPath);
+  g_localizeStrings.LoadSkinStrings(langPath, g_guiSettings.GetString("locale.language"));
 
   LARGE_INTEGER start;
   QueryPerformanceCounter(&start);
@@ -2463,10 +2484,23 @@ bool CApplication::OnKey(CKey& key)
   if (!key.IsAnalogButton())
     CLog::Log(LOGDEBUG, "%s: %i pressed, action is %s", __FUNCTION__, (int) key.GetButtonCode(), action.GetName().c_str());
 
-  //  Play a sound based on the action
-  g_audioManager.PlayActionSound(action);
+  bool bResult = false;
 
-  return OnAction(action);
+  // play sound before the action unless the button is held, 
+  // where we execute after the action as held actions aren't fired every time.
+  if(action.GetHoldTime())
+  {
+    bResult = OnAction(action);
+    if(bResult)
+      g_audioManager.PlayActionSound(action);
+  }
+  else
+  {
+    g_audioManager.PlayActionSound(action);
+    bResult = OnAction(action);
+  }
+
+  return bResult;
 }
 
 bool CApplication::OnAction(CAction &action)
@@ -3311,7 +3345,7 @@ bool CApplication::ProcessEventServer(float frameTime)
   return false;
 }
 
-bool CApplication::ProcessJoystickEvent(const std::string& joystickName, int wKeyID, bool isAxis, float fAmount)
+bool CApplication::ProcessJoystickEvent(const std::string& joystickName, int wKeyID, bool isAxis, float fAmount, unsigned int holdTime /*=0*/)
 {
 #ifdef HAS_EVENT_SERVER
   m_idleTimer.StartZero();
@@ -3347,9 +3381,24 @@ bool CApplication::ProcessJoystickEvent(const std::string& joystickName, int wKe
    // Translate using regular joystick translator.
    if (CButtonTranslator::GetInstance().TranslateJoystickString(iWin, joystickName.c_str(), wKeyID, isAxis, actionID, actionName, fullRange))
    {
-     CAction action(actionID, fAmount, 0.0f, actionName);
-     g_audioManager.PlayActionSound(action);
-     return OnAction(action);
+     CAction action(actionID, fAmount, 0.0f, actionName, holdTime);
+     bool bResult = false;
+
+     // play sound before the action unless the button is held, 
+     // where we execute after the action as held actions aren't fired every time.
+     if(action.GetHoldTime())
+     {
+       bResult = OnAction(action);
+       if(bResult)
+         g_audioManager.PlayActionSound(action);
+     }
+     else
+     {
+       g_audioManager.PlayActionSound(action);
+       bResult = OnAction(action);
+     }
+
+     return bResult;
    }
    else
    {
@@ -3553,7 +3602,7 @@ HRESULT CApplication::Cleanup()
   }
 }
 
-void CApplication::Stop()
+void CApplication::Stop(bool bLCDStop)
 {
   try
   {
@@ -3621,7 +3670,7 @@ void CApplication::Stop()
     g_pythonParser.FreeResources();
 
 #ifdef HAS_LCD
-    if (g_lcd)
+    if (g_lcd && bLCDStop)
     {
       g_lcd->Stop();
       delete g_lcd;
@@ -5663,6 +5712,7 @@ void CApplication::CheckForDebugButtonCombo()
   if (m_DefaultGamepad.bAnalogButtons[XINPUT_GAMEPAD_X] && m_DefaultGamepad.bAnalogButtons[XINPUT_GAMEPAD_Y])
   {
     g_advancedSettings.m_logLevel = LOG_LEVEL_DEBUG_FREEMEM;
+    CLog::SetLogLevel(g_advancedSettings.m_logLevel);
     CLog::Log(LOGINFO, "Key combination detected for full debug logging (X+Y)");
   }
 #ifdef _DEBUG

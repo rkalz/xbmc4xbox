@@ -72,6 +72,7 @@ Assignment statements
 =====================
 
 .. index::
+   single: =; assignment statement
    pair: assignment; statement
    pair: binding; name
    pair: rebinding; name
@@ -241,6 +242,18 @@ Augmented assignment statements
 .. index::
    pair: augmented; assignment
    single: statement; assignment, augmented
+   single: +=; augmented assignment
+   single: -=; augmented assignment
+   single: *=; augmented assignment
+   single: /=; augmented assignment
+   single: %=; augmented assignment
+   single: &=; augmented assignment
+   single: ^=; augmented assignment
+   single: |=; augmented assignment
+   single: **=; augmented assignment
+   single: //=; augmented assignment
+   single: >>=; augmented assignment
+   single: <<=; augmented assignment
 
 Augmented assignment is the combination, in a single statement, of a binary
 operation and an assignment statement:
@@ -653,6 +666,7 @@ The :keyword:`import` statement
    single: module; importing
    pair: name; binding
    keyword: from
+   single: as; import statement
 
 .. productionlist::
    import_stmt: "import" `module` ["as" `name`] ( "," `module` ["as" `name`] )*
@@ -981,15 +995,16 @@ The :keyword:`exec` statement
    exec_stmt: "exec" `or_expr` ["in" `expression` ["," `expression`]]
 
 This statement supports dynamic execution of Python code.  The first expression
-should evaluate to either a string, an open file object, a code object, or a
-tuple.  If it is a string, the string is parsed as a suite of Python statements
-which is then executed (unless a syntax error occurs). [#]_ If it is an open
-file, the file is parsed until EOF and executed.  If it is a code object, it is
-simply executed.  For the interpretation of a tuple, see below.  In all cases,
-the code that's executed is expected to be valid as file input (see section
-:ref:`file-input`).  Be aware that the :keyword:`return` and :keyword:`yield`
-statements may not be used outside of function definitions even within the
-context of code passed to the :keyword:`exec` statement.
+should evaluate to either a Unicode string, a *Latin-1* encoded string, an open
+file object, a code object, or a tuple.  If it is a string, the string is parsed
+as a suite of Python statements which is then executed (unless a syntax error
+occurs). [#]_ If it is an open file, the file is parsed until EOF and executed.
+If it is a code object, it is simply executed.  For the interpretation of a
+tuple, see below.  In all cases, the code that's executed is expected to be
+valid as file input (see section :ref:`file-input`).  Be aware that the
+:keyword:`return` and :keyword:`yield` statements may not be used outside of
+function definitions even within the context of code passed to the
+:keyword:`exec` statement.
 
 In all cases, if the optional parts are omitted, the code is executed in the
 current scope.  If only the first expression after ``in`` is specified,

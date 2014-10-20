@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -35,6 +34,7 @@ CDVDAudioCodecFFmpeg::CDVDAudioCodecFFmpeg() : CDVDAudioCodec()
   m_pConvert = NULL;
   m_bOpenedCodec = false;
   m_pFrame1 = NULL;
+  m_iSampleFormat = AV_SAMPLE_FMT_NONE;
 }
 
 CDVDAudioCodecFFmpeg::~CDVDAudioCodecFFmpeg()
@@ -48,7 +48,8 @@ bool CDVDAudioCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
   AVCodec* pCodec;
   m_bOpenedCodec = false;
 
-  if (!m_dllAvUtil.Load() || !m_dllAvCodec.Load()) return false;
+  if (!m_dllAvUtil.Load() || !m_dllAvCodec.Load() || !m_dllSwResample.Load())
+    return false;
 
   m_dllAvCodec.avcodec_register_all();
 
@@ -79,19 +80,21 @@ bool CDVDAudioCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
   /* if we need to downmix, do it in ffmpeg as codecs are smarter then we can ever be */
   if(g_guiSettings.GetBool("audiooutput.downmixmultichannel"))
   {
-    m_pCodecContext->request_channel_layout = CH_LAYOUT_STEREO;
+    m_pCodecContext->request_channel_layout = AV_CH_LAYOUT_STEREO;
     m_pCodecContext->request_channels       = 2;
   }
 
   if( hints.extradata && hints.extrasize > 0 )
   {
-    m_pCodecContext->extradata_size = hints.extrasize;
     m_pCodecContext->extradata = (uint8_t*)m_dllAvUtil.av_mallocz(hints.extrasize + FF_INPUT_BUFFER_PADDING_SIZE);
-    memcpy(m_pCodecContext->extradata, hints.extradata, hints.extrasize);
+    if(m_pCodecContext->extradata)
+    {
+      m_pCodecContext->extradata_size = hints.extrasize;
+      memcpy(m_pCodecContext->extradata, hints.extradata, hints.extrasize);
+    }
   }
-  
-  // set acceleration
-  m_pCodecContext->dsp_mask = AV_CPU_FLAG_FORCE | AV_CPU_FLAG_MMX | AV_CPU_FLAG_MMX2 | AV_CPU_FLAG_SSE;
+
+  m_pCodecContext->request_sample_fmt = AV_SAMPLE_FMT_S16;
 
   if (m_dllAvCodec.avcodec_open2(m_pCodecContext, pCodec, NULL) < 0)
   {
@@ -112,10 +115,7 @@ void CDVDAudioCodecFFmpeg::Dispose()
   m_pFrame1 = NULL;
 
   if (m_pConvert)
-  {
-    m_dllAvCodec.av_audio_convert_free(m_pConvert);
-    m_pConvert = NULL;
-  }
+    m_dllSwResample.swr_free(&m_pConvert);
 
   if (m_pCodecContext)
   {
@@ -127,6 +127,7 @@ void CDVDAudioCodecFFmpeg::Dispose()
 
   m_dllAvCodec.Unload();
   m_dllAvUtil.Unload();
+  m_dllSwResample.Unload();
 
   m_iBufferSize1 = 0;
   m_iBufferSize2 = 0;
@@ -172,31 +173,26 @@ int CDVDAudioCodecFFmpeg::Decode(BYTE* pData, int iSize)
   if(m_pCodecContext->sample_fmt != AV_SAMPLE_FMT_S16 && m_iBufferSize1 > 0)
   {
     if(m_pConvert && m_pCodecContext->sample_fmt != m_iSampleFormat)
-    {
-      m_dllAvCodec.av_audio_convert_free(m_pConvert);
-      m_pConvert = NULL;
-    }
+      m_dllSwResample.swr_free(&m_pConvert);
 
     if(!m_pConvert)
     {
       m_iSampleFormat = m_pCodecContext->sample_fmt;
-      m_pConvert = m_dllAvCodec.av_audio_convert_alloc(SAMPLE_FMT_S16, 1, m_pCodecContext->sample_fmt, 1, NULL, 0);
+      m_pConvert = m_dllSwResample.swr_alloc_set_opts(NULL,
+                      m_dllAvUtil.av_get_default_channel_layout(m_pCodecContext->channels), AV_SAMPLE_FMT_S16, m_pCodecContext->sample_rate,
+                      m_dllAvUtil.av_get_default_channel_layout(m_pCodecContext->channels), m_pCodecContext->sample_fmt, m_pCodecContext->sample_rate,
+                      0, NULL);
+      if(!m_pConvert || m_dllSwResample.swr_init(m_pConvert) < 0)
+      {
+        CLog::Log(LOGERROR, "CDVDAudioCodecFFmpeg::Decode - Unable to convert %d to AV_SAMPLE_FMT_S16", m_pCodecContext->sample_fmt);
+        m_iBufferSize1 = 0;
+        m_iBufferSize2 = 0;
+        return iBytesUsed;
+      }
     }
 
-    if(!m_pConvert)
-    {
-      CLog::Log(LOGERROR, "CDVDAudioCodecFFmpeg::Decode - Unable to convert %d to AV_SAMPLE_FMT_S16", m_pCodecContext->sample_fmt);
-      m_iBufferSize1 = 0;
-      m_iBufferSize2 = 0;
-      return iBytesUsed;
-    }
-
-    const void *ibuf[6] = { m_pFrame1->data[0] };
-    void       *obuf[6] = { m_pBuffer2 };
-    int         istr[6] = { m_dllAvUtil.av_get_bytes_per_sample(m_pCodecContext->sample_fmt) };
-    int         ostr[6] = { 2 };
-    int         len     = m_iBufferSize1 / istr[0];
-    if(m_dllAvCodec.av_audio_convert(m_pConvert, obuf, ostr, ibuf, istr, len) < 0)
+    int len = m_iBufferSize1 / m_dllAvUtil.av_get_bytes_per_sample(m_pCodecContext->sample_fmt);
+    if(m_dllSwResample.swr_convert(m_pConvert, &m_pBuffer2, len, (const uint8_t**)m_pFrame1->data, m_pFrame1->nb_samples) < 0)
     {
       CLog::Log(LOGERROR, "CDVDAudioCodecFFmpeg::Decode - Unable to convert %d to AV_SAMPLE_FMT_S16", (int)m_pCodecContext->sample_fmt);
       m_iBufferSize1 = 0;
@@ -205,7 +201,7 @@ int CDVDAudioCodecFFmpeg::Decode(BYTE* pData, int iSize)
     }
 
     m_iBufferSize1 = 0;
-    m_iBufferSize2 = len * ostr[0];
+    m_iBufferSize2 = len * m_dllAvUtil.av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
   }
 
   return iBytesUsed;

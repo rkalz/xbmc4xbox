@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -24,7 +23,6 @@
 #include "FileItem.h"
 #include "FileSystem/HDDirectory.h"
 #include "FileSystem/StackDirectory.h"
-#include "FileSystem/VirtualPathDirectory.h"
 #include "FileSystem/MultiPathDirectory.h"
 #include "FileSystem/DirectoryCache.h"
 #include "FileSystem/SpecialProtocol.h"
@@ -168,6 +166,30 @@ void URIUtils::Split(const CStdString& strFileNameAndPath, CStdString& strPath, 
 
   strPath = strFileNameAndPath.Left(i + 1);
   strFileName = strFileNameAndPath.Right(strFileNameAndPath.size() - i - 1);
+}
+
+CStdStringArray URIUtils::SplitPath(const CStdString& strPath)
+{
+  CURL url(strPath);
+
+  // silly CStdString can't take a char in the constructor
+  CStdString sep(1, url.GetDirectorySeparator());
+
+  // split the filename portion of the URL up into separate dirs
+  CStdStringArray dirs;
+  StringUtils::SplitString(url.GetFileName(), sep, dirs);
+  
+  // we start with the root path
+  CStdString dir = url.GetWithoutFilename();
+  
+  if (!dir.IsEmpty())
+    dirs.insert(dirs.begin(), dir);
+
+  // we don't need empty token on the end
+  if (dirs.size() > 1 && dirs.back().IsEmpty())
+    dirs.erase(dirs.end() - 1);
+
+  return dirs;
 }
 
 void URIUtils::GetCommonPath(CStdString& strParent, const CStdString& strPath)
@@ -343,7 +365,7 @@ CStdString URIUtils::SubstitutePath(const CStdString& strFileName)
 
 bool URIUtils::IsRemote(const CStdString& strFile)
 {
-  if (IsMemCard(strFile) || IsCDDA(strFile) || IsISO9660(strFile))
+  if (IsMemCard(strFile) || IsCDDA(strFile) || IsISO9660(strFile) || IsPlugin(strFile) || IsMusicDb(strFile) || IsVideoDb(strFile))
     return false;
 
   if (IsSpecial(strFile))
@@ -351,18 +373,6 @@ bool URIUtils::IsRemote(const CStdString& strFile)
 
   if(IsStack(strFile))
     return IsRemote(CStackDirectory::GetFirstStackedFile(strFile));
-
-  if (IsVirtualPath(strFile))
-  { // virtual paths need to be checked separately
-    CVirtualPathDirectory dir;
-    vector<CStdString> paths;
-    if (dir.GetPathes(strFile, paths))
-    {
-      for (unsigned int i = 0; i < paths.size(); i++)
-        if (IsRemote(paths[i])) return true;
-    }
-    return false;
-  }
 
   if(IsMultiPath(strFile))
   { // virtual paths need to be checked separately
@@ -504,11 +514,6 @@ bool URIUtils::IsStack(const CStdString& strFile)
   return strFile.Left(6).Equals("stack:");
 }
 
-bool URIUtils::IsVirtualPath(const CStdString& strFile)
-{
-  return strFile.Left(12).Equals("virtualpath:");
-}
-
 bool URIUtils::IsRAR(const CStdString& strFile)
 {
   CStdString strExtension;
@@ -630,6 +635,17 @@ bool URIUtils::IsFTP(const CStdString& strFile)
 }
 
 
+bool URIUtils::IsDAV(const CStdString& strFile)
+{
+  CStdString strFile2(strFile);
+
+  if (IsStack(strFile))
+    strFile2 = CStackDirectory::GetFirstStackedFile(strFile);
+
+  return strFile2.Left(4).Equals("dav:")  ||
+         strFile2.Left(5).Equals("davs:");
+}
+
 bool URIUtils::IsInternetStream(const CURL& url, bool bStrictCheck /* = false */)
 {
   CStdString strProtocol = url.GetProtocol();
@@ -748,8 +764,8 @@ void URIUtils::AddSlashAtEnd(CStdString& strFolder)
       AddSlashAtEnd(file);
       url.SetFileName(file);
       strFolder = url.Get();
-      return;
     }
+    return;
   }
 
   if (!HasSlashAtEnd(strFolder))

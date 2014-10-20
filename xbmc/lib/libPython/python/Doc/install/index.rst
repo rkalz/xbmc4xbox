@@ -20,12 +20,20 @@
    Finally, it might be useful to include all the material from my "Care
    and Feeding of a Python Installation" talk in here somewhere.  Yow!
 
-.. topic:: Abstract
+This document describes the Python Distribution Utilities ("Distutils") from the
+end-user's point-of-view, describing how to extend the capabilities of a
+standard Python installation by building and installing third-party Python
+modules and extensions.
 
-   This document describes the Python Distribution Utilities ("Distutils") from the
-   end-user's point-of-view, describing how to extend the capabilities of a
-   standard Python installation by building and installing third-party Python
-   modules and extensions.
+
+.. note::
+
+   This guide only covers the basic tools for installing extensions that are
+   provided as part of this version of Python. Third party tools offer easier
+   to use and more secure alternatives. Refer to the
+   `quick recommendations section
+   <https://python-packaging-user-guide.readthedocs.org/en/latest/current.html>`__
+   in the Python Packaging User Guide for more information.
 
 
 .. _inst-intro:
@@ -50,7 +58,9 @@ new goodies to their toolbox.  You don't need to know Python to read this
 document; there will be some brief forays into using Python's interactive mode
 to explore your installation, but that's it.  If you're looking for information
 on how to distribute your own Python modules so that others may use them, see
-the :ref:`distutils-index` manual.
+the :ref:`distutils-index` manual.  :ref:`debug-setup-script` may also be of
+interest.
+
 
 
 .. _inst-trivial-install:
@@ -1042,7 +1052,7 @@ These compilers require some special libraries.  This task is more complex than
 for Borland's C++, because there is no program to convert the library.  First
 you have to create a list of symbols which the Python DLL exports. (You can find
 a good program for this task at
-http://www.emmestech.com/software/pexports-0.43/download_pexports.html).
+http://sourceforge.net/projects/mingw/files/MinGW/Extension/pexports/).
 
 .. I don't understand what the next line means. --amk
 .. (inclusive the references on data structures.)

@@ -1323,7 +1323,7 @@ builtin_len(PyObject *self, PyObject *v)
 PyDoc_STRVAR(len_doc,
 "len(object) -> integer\n\
 \n\
-Return the number of items of a sequence or mapping.");
+Return the number of items of a sequence or collection.");
 
 
 static PyObject *
@@ -2434,9 +2434,9 @@ builtin_sum(PyObject *self, PyObject *args)
 PyDoc_STRVAR(sum_doc,
 "sum(sequence[, start]) -> value\n\
 \n\
-Returns the sum of a sequence of numbers (NOT strings) plus the value\n\
+Return the sum of a sequence of numbers (NOT strings) plus the value\n\
 of parameter 'start' (which defaults to 0).  When the sequence is\n\
-empty, returns start.");
+empty, return start.");
 
 
 static PyObject *
