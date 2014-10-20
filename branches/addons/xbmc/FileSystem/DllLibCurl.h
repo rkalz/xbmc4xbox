@@ -1,7 +1,7 @@
 #pragma once
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,9 +14,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -39,6 +38,7 @@ namespace XCURL
     virtual CURL_HANDLE * easy_init(void)=0;
     //virtual CURLcode easy_setopt(CURL_HANDLE *handle, CURLoption option, ...)=0;
     virtual CURLcode easy_perform(CURL_HANDLE * handle )=0;
+    virtual CURLcode easy_pause(CURL_HANDLE * handle, int bitmask )=0;
     virtual void easy_reset(CURL_HANDLE * handle)=0;
     //virtual CURLcode easy_getinfo(CURL_HANDLE *curl, CURLINFO info, ... )=0;
     virtual void easy_cleanup(CURL_HANDLE * handle )=0;
@@ -63,6 +63,7 @@ namespace XCURL
     DEFINE_METHOD0(CURL_HANDLE *, easy_init)
     DEFINE_METHOD_FP(CURLcode, easy_setopt, (CURL_HANDLE *p1, CURLoption p2, ...))
     DEFINE_METHOD1(CURLcode, easy_perform, (CURL_HANDLE * p1 ))
+    DEFINE_METHOD2(CURLcode, easy_pause, (CURL_HANDLE * p1, int p2 ))
     DEFINE_METHOD1(void, easy_reset, (CURL_HANDLE * p1 ))
     DEFINE_METHOD_FP(CURLcode, easy_getinfo, (CURL_HANDLE *p1, CURLINFO p2, ... ))
     DEFINE_METHOD1(void, easy_cleanup, (CURL_HANDLE * p1))
@@ -77,12 +78,15 @@ namespace XCURL
     DEFINE_METHOD1(void, multi_cleanup, (CURLM *p1))
     DEFINE_METHOD2(struct curl_slist*, slist_append, (struct curl_slist * p1, const char * p2))
     DEFINE_METHOD1(void, slist_free_all, (struct curl_slist * p1))
+    DEFINE_METHOD1(const char *, easy_strerror, (CURLcode p1))
     BEGIN_METHOD_RESOLVE()
       RESOLVE_METHOD_RENAME(curl_global_init, global_init)
       RESOLVE_METHOD_RENAME(curl_global_cleanup, global_cleanup)
       RESOLVE_METHOD_RENAME(curl_easy_init, easy_init)
+      RESOLVE_METHOD_RENAME(curl_easy_strerror, easy_strerror)
       RESOLVE_METHOD_RENAME_FP(curl_easy_setopt, easy_setopt)
       RESOLVE_METHOD_RENAME(curl_easy_perform, easy_perform)
+      RESOLVE_METHOD_RENAME(curl_easy_pause, easy_pause)
       RESOLVE_METHOD_RENAME(curl_easy_reset, easy_reset)
       RESOLVE_METHOD_RENAME_FP(curl_easy_getinfo, easy_getinfo)
       RESOLVE_METHOD_RENAME(curl_easy_cleanup, easy_cleanup)

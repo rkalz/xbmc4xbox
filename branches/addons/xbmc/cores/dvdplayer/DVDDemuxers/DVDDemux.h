@@ -2,7 +2,7 @@
 
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,9 +15,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -25,7 +24,9 @@
 #include "system.h"
 
 class CDVDInputStream;
-enum CodecID;
+
+#include "Codecs/DllAvCodec.h"
+
 enum AVDiscard;
 
 enum StreamType
@@ -58,7 +59,7 @@ public:
   {
     iId = 0;
     iPhysicalId = 0;
-    codec = (CodecID)0; // CODEC_ID_NONE
+    codec = (AVCodecID)0; // AV_CODEC_ID_NONE
     codec_fourcc = 0;
     type = STREAM_NONE;
     source = STREAM_SOURCE_NONE;
@@ -86,7 +87,7 @@ public:
 
   int iId;         // most of the time starting from 0
   int iPhysicalId; // id
-  CodecID codec;
+  AVCodecID codec;
   unsigned int codec_fourcc; // if available
   StreamType type;
   int source;
@@ -169,11 +170,8 @@ class CDemuxStreamSubtitle : public CDemuxStream
 public:
   CDemuxStreamSubtitle() : CDemuxStream()
   {
-    identifier = 0;
     type = STREAM_SUBTITLE;
   }
-
-  int identifier;
 };
 
 typedef struct DemuxPacket

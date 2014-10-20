@@ -157,7 +157,9 @@ process and user.
 
    Availability: Unix.
 
-   .. note:: On Mac OS X, :func:`getgroups` behavior differs somewhat from
+   .. note::
+
+      On Mac OS X, :func:`getgroups` behavior differs somewhat from
       other Unix platforms. If the Python interpreter was built with a
       deployment target of :const:`10.5` or earlier, :func:`getgroups` returns
       the list of effective group ids associated with the current user process;
@@ -255,7 +257,7 @@ process and user.
 
    .. index:: single: user; id
 
-   Return the current process's user id.
+   Return the current process's real user id.
 
    Availability: Unix.
 
@@ -461,8 +463,9 @@ These functions create new file objects. (See also :func:`open`.)
    .. index:: single: I/O control; buffering
 
    Return an open file object connected to the file descriptor *fd*.  The *mode*
-   and *bufsize* arguments have the same meaning as the corresponding arguments to
-   the built-in :func:`open` function.
+   and *bufsize* arguments have the same meaning as the corresponding arguments
+   to the built-in :func:`open` function.  If :func:`fdopen` raises an
+   exception, it leaves *fd* untouched (unclosed).
 
    Availability: Unix, Windows.
 
@@ -615,7 +618,7 @@ as internal buffering of data.
       This function is intended for low-level I/O and must be applied to a file
       descriptor as returned by :func:`os.open` or :func:`pipe`.  To close a "file
       object" returned by the built-in function :func:`open` or by :func:`popen` or
-      :func:`fdopen`, use its :meth:`~file.close` method.
+      :func:`fdopen`, use its :meth:`~io.IOBase.close` method.
 
 
 .. function:: closerange(fd_low, fd_high)
@@ -737,16 +740,14 @@ as internal buffering of data.
    Return ``True`` if the file descriptor *fd* is open and connected to a
    tty(-like) device, else ``False``.
 
-   Availability: Unix.
-
 
 .. function:: lseek(fd, pos, how)
 
    Set the current position of file descriptor *fd* to position *pos*, modified
    by *how*: :const:`SEEK_SET` or ``0`` to set the position relative to the
    beginning of the file; :const:`SEEK_CUR` or ``1`` to set it relative to the
-   current position; :const:`os.SEEK_END` or ``2`` to set it relative to the end of
-   the file.
+   current position; :const:`SEEK_END` or ``2`` to set it relative to the end of
+   the file. Return the new cursor position in bytes, starting from the beginning.
 
    Availability: Unix, Windows.
 
@@ -1381,15 +1382,14 @@ Files and Directories
 
    .. versionchanged:: 2.3
       If :func:`stat_float_times` returns ``True``, the time values are floats, measuring
-      seconds. Fractions of a second may be reported if the system supports that. On
-      Mac OS, the times are always floats. See :func:`stat_float_times` for further
-      discussion.
+      seconds. Fractions of a second may be reported if the system supports that.
+      See :func:`stat_float_times` for further discussion.
 
    On some Unix systems (such as Linux), the following attributes may also be
    available:
 
-   * :attr:`st_blocks` - number of blocks allocated for file
-   * :attr:`st_blksize` - filesystem blocksize
+   * :attr:`st_blocks` - number of 512-byte blocks allocated for file
+   * :attr:`st_blksize` - filesystem blocksize for efficient file system I/O
    * :attr:`st_rdev` - type of device if an inode device
    * :attr:`st_flags` - user defined flags for file
 
@@ -1398,12 +1398,6 @@ Files and Directories
 
    * :attr:`st_gen` - file generation number
    * :attr:`st_birthtime` - time of file creation
-
-   On Mac OS systems, the following attributes may also be available:
-
-   * :attr:`st_rsize`
-   * :attr:`st_creator`
-   * :attr:`st_type`
 
    On RISCOS systems, the following attributes are also available:
 
@@ -1603,9 +1597,11 @@ Files and Directories
 
    If optional argument *topdown* is ``True`` or not specified, the triple for a
    directory is generated before the triples for any of its subdirectories
-   (directories are generated top-down).  If *topdown* is ``False``, the triple for a
-   directory is generated after the triples for all of its subdirectories
-   (directories are generated bottom-up).
+   (directories are generated top-down).  If *topdown* is ``False``, the triple
+   for a directory is generated after the triples for all of its subdirectories
+   (directories are generated bottom-up). No matter the value of *topdown*, the
+   list of subdirectories is retrieved before the tuples for the directory and
+   its subdirectories are generated.
 
    When *topdown* is ``True``, the caller can modify the *dirnames* list in-place
    (perhaps using :keyword:`del` or slice assignment), and :func:`walk` will only
@@ -1678,7 +1674,7 @@ Process Management
 
 These functions may be used to create and manage processes.
 
-The various :func:`exec\*` functions take a list of arguments for the new
+The various :func:`exec\* <execl>` functions take a list of arguments for the new
 program loaded into the process.  In each case, the first of these arguments is
 passed to the new program as its own name rather than as an argument a user may
 have typed on a command line.  For the C programmer, this is the ``argv[0]``
@@ -1716,9 +1712,9 @@ to be ignored.
    descriptors are not flushed, so if there may be data buffered
    on these open files, you should flush them using
    :func:`sys.stdout.flush` or :func:`os.fsync` before calling an
-   :func:`exec\*` function.
+   :func:`exec\* <execl>` function.
 
-   The "l" and "v" variants of the :func:`exec\*` functions differ in how
+   The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
    individual parameters simply become additional parameters to the :func:`execl\*`
@@ -1730,7 +1726,7 @@ to be ignored.
    The variants which include a "p" near the end (:func:`execlp`,
    :func:`execlpe`, :func:`execvp`, and :func:`execvpe`) will use the
    :envvar:`PATH` environment variable to locate the program *file*.  When the
-   environment is being replaced (using one of the :func:`exec\*e` variants,
+   environment is being replaced (using one of the :func:`exec\*e <execl>` variants,
    discussed in the next paragraph), the new environment is used as the source of
    the :envvar:`PATH` variable. The other variants, :func:`execl`, :func:`execle`,
    :func:`execv`, and :func:`execve`, will not use the :envvar:`PATH` variable to
@@ -1938,6 +1934,10 @@ written in Python, such as a mail server's external command delivery program.
    Note that some platforms including FreeBSD <= 6.3, Cygwin and OS/2 EMX have
    known issues when using fork() from a thread.
 
+   .. warning::
+
+      See :mod:`ssl` for applications that use the SSL module with fork().
+
    Availability: Unix.
 
 
@@ -2032,7 +2032,7 @@ written in Python, such as a mail server's external command delivery program.
    process.  On Windows, the process id will actually be the process handle, so can
    be used with the :func:`waitpid` function.
 
-   The "l" and "v" variants of the :func:`spawn\*` functions differ in how
+   The "l" and "v" variants of the :func:`spawn\* <spawnl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
    individual parameters simply become additional parameters to the
@@ -2044,7 +2044,7 @@ written in Python, such as a mail server's external command delivery program.
    The variants which include a second "p" near the end (:func:`spawnlp`,
    :func:`spawnlpe`, :func:`spawnvp`, and :func:`spawnvpe`) will use the
    :envvar:`PATH` environment variable to locate the program *file*.  When the
-   environment is being replaced (using one of the :func:`spawn\*e` variants,
+   environment is being replaced (using one of the :func:`spawn\*e <spawnl>` variants,
    discussed in the next paragraph), the new environment is used as the source of
    the :envvar:`PATH` variable.  The other variants, :func:`spawnl`,
    :func:`spawnle`, :func:`spawnv`, and :func:`spawnve`, will not use the
@@ -2080,7 +2080,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: P_NOWAIT
           P_NOWAITO
 
-   Possible values for the *mode* parameter to the :func:`spawn\*` family of
+   Possible values for the *mode* parameter to the :func:`spawn\* <spawnl>` family of
    functions.  If either of these values is given, the :func:`spawn\*` functions
    will return as soon as the new process has been created, with the process id as
    the return value.
@@ -2092,7 +2092,7 @@ written in Python, such as a mail server's external command delivery program.
 
 .. data:: P_WAIT
 
-   Possible value for the *mode* parameter to the :func:`spawn\*` family of
+   Possible value for the *mode* parameter to the :func:`spawn\* <spawnl>` family of
    functions.  If this is given as *mode*, the :func:`spawn\*` functions will not
    return until the new process has run to completion and will return the exit code
    of the process the run is successful, or ``-signal`` if a signal kills the
@@ -2106,7 +2106,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: P_DETACH
           P_OVERLAY
 
-   Possible values for the *mode* parameter to the :func:`spawn\*` family of
+   Possible values for the *mode* parameter to the :func:`spawn\* <spawnl>` family of
    functions.  These are less portable than those listed above. :const:`P_DETACH`
    is similar to :const:`P_NOWAIT`, but the new process is detached from the
    console of the calling process. If :const:`P_OVERLAY` is used, the current
@@ -2222,8 +2222,8 @@ written in Python, such as a mail server's external command delivery program.
    (shifting makes cross-platform use of the function easier). A *pid* less than or
    equal to ``0`` has no special meaning on Windows, and raises an exception. The
    value of integer *options* has no effect. *pid* can refer to any process whose
-   id is known, not necessarily a child process. The :func:`spawn` functions called
-   with :const:`P_NOWAIT` return suitable process handles.
+   id is known, not necessarily a child process. The :func:`spawn\* <spawnl>`
+   functions called with :const:`P_NOWAIT` return suitable process handles.
 
 
 .. function:: wait3(options)
@@ -2231,8 +2231,9 @@ written in Python, such as a mail server's external command delivery program.
    Similar to :func:`waitpid`, except no process id argument is given and a
    3-element tuple containing the child's process id, exit status indication, and
    resource usage information is returned.  Refer to :mod:`resource`.\
-   :func:`getrusage` for details on resource usage information.  The option
-   argument is the same as that provided to :func:`waitpid` and :func:`wait4`.
+   :func:`~resource.getrusage` for details on resource usage information.  The
+   option argument is the same as that provided to :func:`waitpid` and
+   :func:`wait4`.
 
    Availability: Unix.
 
@@ -2243,9 +2244,9 @@ written in Python, such as a mail server's external command delivery program.
 
    Similar to :func:`waitpid`, except a 3-element tuple, containing the child's
    process id, exit status indication, and resource usage information is returned.
-   Refer to :mod:`resource`.\ :func:`getrusage` for details on resource usage
-   information.  The arguments to :func:`wait4` are the same as those provided to
-   :func:`waitpid`.
+   Refer to :mod:`resource`.\ :func:`~resource.getrusage` for details on
+   resource usage information.  The arguments to :func:`wait4` are the same as
+   those provided to :func:`waitpid`.
 
    Availability: Unix.
 
@@ -2469,8 +2470,9 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
 
 .. data:: defpath
 
-   The default search path used by :func:`exec\*p\*` and :func:`spawn\*p\*` if the
-   environment doesn't have a ``'PATH'`` key. Also available via :mod:`os.path`.
+   The default search path used by :func:`exec\*p\* <execl>` and
+   :func:`spawn\*p\* <spawnl>` if the environment doesn't have a ``'PATH'``
+   key. Also available via :mod:`os.path`.
 
 
 .. data:: linesep
@@ -2503,8 +2505,9 @@ Miscellaneous Functions
    This function returns random bytes from an OS-specific randomness source.  The
    returned data should be unpredictable enough for cryptographic applications,
    though its exact quality depends on the OS implementation.  On a UNIX-like
-   system this will query /dev/urandom, and on Windows it will use CryptGenRandom.
-   If a randomness source is not found, :exc:`NotImplementedError` will be raised.
+   system this will query ``/dev/urandom``, and on Windows it will use
+   ``CryptGenRandom()``.  If a randomness source is not found,
+   :exc:`NotImplementedError` will be raised.
 
    For an easy-to-use interface to the random number generator
    provided by your platform, please see :class:`random.SystemRandom`.

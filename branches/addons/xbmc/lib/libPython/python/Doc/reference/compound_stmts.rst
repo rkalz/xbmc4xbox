@@ -296,14 +296,14 @@ is executed.  If there is a saved exception, it is re-raised at the end of the
 exception or executes a :keyword:`return` or :keyword:`break` statement, the
 saved exception is discarded::
 
-    def f():
-        try:
-            1/0
-        finally:
-            return 42
-
-    >>> f()
-    42
+   >>> def f():
+   ...     try:
+   ...         1/0
+   ...     finally:
+   ...         return 42
+   ...
+   >>> f()
+   42
 
 The exception information is not available to the program during execution of
 the :keyword:`finally` clause.
@@ -320,6 +320,20 @@ statement, the :keyword:`finally` clause is also executed 'on the way out.' A
 reason is a problem with the current implementation --- this restriction may be
 lifted in the future).
 
+The return value of a function is determined by the last :keyword:`return`
+statement executed.  Since the :keyword:`finally` clause always executes, a
+:keyword:`return` statement executed in the :keyword:`finally` clause will
+always be the last one executed::
+
+   >>> def foo():
+   ...     try:
+   ...         return 'try'
+   ...     finally:
+   ...         return 'finally'
+   ...
+   >>> foo()
+   'finally'
+
 Additional information on exceptions can be found in section :ref:`exceptions`,
 and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
@@ -331,7 +345,9 @@ may be found in section :ref:`raise`.
 The :keyword:`with` statement
 =============================
 
-.. index:: statement: with
+.. index::
+    statement: with
+    single: as; with statement
 
 .. versionadded:: 2.5
 
@@ -509,14 +525,14 @@ receiving any excess positional parameters, defaulting to the empty tuple.  If
 the form "``**identifier``" is present, it is initialized to a new dictionary
 receiving any excess keyword arguments, defaulting to a new empty dictionary.
 
-.. index:: pair: lambda; form
+.. index:: pair: lambda; expression
 
 It is also possible to create anonymous functions (functions not bound to a
-name), for immediate use in expressions.  This uses lambda forms, described in
-section :ref:`lambda`.  Note that the lambda form is merely a shorthand for a
+name), for immediate use in expressions.  This uses lambda expressions, described in
+section :ref:`lambda`.  Note that the lambda expression is merely a shorthand for a
 simplified function definition; a function defined in a ":keyword:`def`"
 statement can be passed around or assigned to another name just like a function
-defined by a lambda form.  The ":keyword:`def`" form is actually more powerful
+defined by a lambda expression.  The ":keyword:`def`" form is actually more powerful
 since it allows the execution of multiple statements.
 
 **Programmer's note:** Functions are first-class objects.  A "``def``" form

@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -43,6 +42,14 @@ namespace PYXBMC
 {
   int PyXBMCGetUnicodeString(string& buf, PyObject* pObject, int pos)
   {
+    // It's okay for a string to be "None". In this case the buf returned
+    // will be the emptyString.
+    if (pObject == Py_None)
+    {
+      buf = "";
+      return 1;
+    }
+
     // TODO: UTF-8: Does python use UTF-16?
     //              Do we need to convert from the string charset to UTF-8
     //              for non-unicode data?
@@ -60,7 +67,15 @@ namespace PYXBMC
       buf = utf8String;
       return 1;
     }
-    
+
+    PyObject* pyStrCast = PyObject_Str(pObject);
+    if (pyStrCast)
+    {
+       int ret = PyXBMCGetUnicodeString(buf, pyStrCast, pos);
+       Py_DECREF(pyStrCast);
+       return ret;
+    }
+
     // Object is not a unicode or a normal string.
     buf = "";
     if (pos != -1) PyErr_Format(PyExc_TypeError, "argument %.200i must be unicode or str", pos);
@@ -139,6 +154,20 @@ namespace PYXBMC
 
     memset(type_object, 0, sizeof(PyTypeObject));
     memcpy(type_object, &py_type_object_header, size);
+  }
+
+  long PyXBMCLongAsStringOrLong(PyObject *value)
+  {
+    if (PyString_Check(value) || PyUnicode_Check(value))
+    {
+      const char *s;
+      if ((s = PyString_AsString(value)) != NULL)
+        return atol(s);
+      else
+        return 0;
+    }
+    else
+      return PyLong_AsLong(value);
   }
 
 }

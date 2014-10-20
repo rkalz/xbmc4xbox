@@ -10,7 +10,7 @@
 
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,11 +23,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
+
+#include "utils/StdString.h"
 
 class CGUIListItem;
 
@@ -38,7 +39,8 @@ public:
   operator bool() const { return m_value; };
 
   void Update(int parentID = 0, const CGUIListItem *item = NULL);
-  void Parse(const CStdString &info);
+  void Parse(const CStdString &label);
+
 private:
   int m_info;
   bool m_value;
@@ -56,7 +58,7 @@ public:
   operator color_t() const { return m_color; };
 
   void Update();
-  void Parse(const CStdString &label);
+  void Parse(const CStdString &label, int context);
 
 private:
   color_t GetColor() const;
@@ -68,9 +70,9 @@ class CGUIInfoLabel
 {
 public:
   CGUIInfoLabel();
-  CGUIInfoLabel(const CStdString &label, const CStdString &fallback = "");
+  CGUIInfoLabel(const CStdString &label, const CStdString &fallback = "", int context = 0);
 
-  void SetLabel(const CStdString &label, const CStdString &fallback);
+  void SetLabel(const CStdString &label, const CStdString &fallback, int context = 0);
   CStdString GetLabel(int contextWindow, bool preferImage = false) const;
   CStdString GetItemLabel(const CGUIListItem *item, bool preferImage = false) const;
   bool IsConstant() const;
@@ -95,7 +97,7 @@ public:
   static CStdString ReplaceAddonStrings(const CStdString &label);
 
 private:
-  void Parse(const CStdString &label);
+  void Parse(const CStdString &label, int context);
 
   class CInfoPortion
   {

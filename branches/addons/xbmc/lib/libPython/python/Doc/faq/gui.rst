@@ -21,15 +21,15 @@ Tkinter
 Standard builds of Python include an object-oriented interface to the Tcl/Tk
 widget set, called Tkinter.  This is probably the easiest to install and use.
 For more info about Tk, including pointers to the source, see the Tcl/Tk home
-page at http://www.tcl.tk.  Tcl/Tk is fully portable to the MacOS, Windows, and
-Unix platforms.
+page at http://www.tcl.tk.  Tcl/Tk is fully portable to the Mac OS X, Windows,
+and Unix platforms.
 
 wxWidgets
 ---------
 
 wxWidgets (http://www.wxwidgets.org) is a free, portable GUI class
 library written in C++ that provides a native look and feel on a
-number of platforms, with Windows, MacOS X, GTK, X11, all listed as
+number of platforms, with Windows, Mac OS X, GTK, X11, all listed as
 current stable targets.  Language bindings are available for a number
 of languages including Python, Perl, Ruby, etc.
 
@@ -47,13 +47,15 @@ well as in freeware or shareware.
 Qt
 ---
 
-There are bindings available for the Qt toolkit (`PyQt
-<http://www.riverbankcomputing.co.uk/software/pyqt/>`_) and for KDE (`PyKDE <http://www.riverbankcomputing.co.uk/software/pykde/intro>`__).  If
-you're writing open source software, you don't need to pay for PyQt, but if you
-want to write proprietary applications, you must buy a PyQt license from
-`Riverbank Computing <http://www.riverbankcomputing.co.uk>`_ and (up to Qt 4.4;
-Qt 4.5 upwards is licensed under the LGPL license) a Qt license from `Trolltech
-<http://www.trolltech.com>`_.
+There are bindings available for the Qt toolkit (using either `PyQt
+<http://www.riverbankcomputing.co.uk/software/pyqt/>`_ or `PySide
+<http://www.pyside.org/>`_) and for KDE (`PyKDE <http://www.riverbankcomputing.co.uk/software/pykde/intro>`_).
+PyQt is currently more mature than PySide, but you must buy a PyQt license from
+`Riverbank Computing <http://www.riverbankcomputing.co.uk/software/pyqt/license>`_
+if you want to write proprietary applications.  PySide is free for all applications.
+
+Qt 4.5 upwards is licensed under the LGPL license; also, commercial licenses
+are available from `Nokia <http://qt.nokia.com/>`_.
 
 Gtk+
 ----
@@ -86,13 +88,9 @@ For OpenGL bindings, see `PyOpenGL <http://pyopengl.sourceforge.net>`_.
 What platform-specific GUI toolkits exist for Python?
 ========================================================
 
-`The Mac port <http://python.org/download/mac>`_ by Jack Jansen has a rich and
-ever-growing set of modules that support the native Mac toolbox calls.  The port
-supports MacOS X's Carbon libraries.
-
 By installing the `PyObjc Objective-C bridge
-<http://pyobjc.sourceforge.net>`_, Python programs can use MacOS X's
-Cocoa libraries. See the documentation that comes with the Mac port.
+<http://pyobjc.sourceforge.net>`_, Python programs can use Mac OS X's
+Cocoa libraries.
 
 :ref:`Pythonwin <windows-faq>` by Mark Hammond includes an interface to the
 Microsoft Foundation Classes and a Python programming environment

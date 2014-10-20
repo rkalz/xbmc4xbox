@@ -19,7 +19,7 @@ is maintained at ActiveState.)
 
 .. seealso::
 
-   `Python Tkinter Resources <http://www.python.org/topics/tkinter/>`_
+   `Python Tkinter Resources <https://wiki.python.org/moin/TkInter>`_
       The Python Tkinter Topic Guide provides a great deal of information on using Tk
       from Python and links to other sources of information on Tk.
 
@@ -40,9 +40,6 @@ is maintained at ActiveState.)
 
    `Modern Tkinter for Busy Python Developers <http://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
       Book by Mark Rozerman about building attractive and modern graphical user interfaces with Python and Tkinter.
-
-   `An Introduction to Tkinter <http://www.pythonware.com/library/an-introduction-to-tkinter.htm>`_
-      Fredrik Lundh's on-line reference material.
 
    `Python and Tkinter Programming <http://www.amazon.com/exec/obidos/ASIN/1884777813>`_
       The book by John Grayson (ISBN 1-884777-81-3).
@@ -191,7 +188,7 @@ documentation that exists. Here are some hints:
       The Tk/Tcl development is largely taking place at ActiveState.
 
    `Tcl and the Tk Toolkit <http://www.amazon.com/exec/obidos/ASIN/020163337X>`_
-      The book by John Ousterhout, the inventor of Tcl .
+      The book by John Ousterhout, the inventor of Tcl.
 
    `Practical Programming in Tcl and Tk <http://www.amazon.com/exec/obidos/ASIN/0130220280>`_
       Brent Welch's encyclopedic book.
@@ -455,7 +452,7 @@ back will contain the name of the synonym and the "real" option (such as
 Example::
 
    >>> print fred.config()
-   {'relief' : ('relief', 'relief', 'Relief', 'raised', 'groove')}
+   {'relief': ('relief', 'relief', 'Relief', 'raised', 'groove')}
 
 Of course, the dictionary printed will include all the options available and
 their values.  This is meant only as an example.
@@ -628,7 +625,7 @@ bitmap
    preceded with an ``@``, as in ``"@/usr/contrib/bitmap/gumby.bit"``.
 
 boolean
-   You can pass integers 0 or 1 or the strings ``"yes"`` or ``"no"`` .
+   You can pass integers 0 or 1 or the strings ``"yes"`` or ``"no"``.
 
 callback
    This is any Python function that takes no arguments.  For example::

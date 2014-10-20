@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
  
@@ -24,8 +23,9 @@
 
 CDVDAudioCodecLPcm::CDVDAudioCodecLPcm() : CDVDAudioCodecPcm()
 {
-  m_codecID = CODEC_ID_NONE;
+  m_codecID = AV_CODEC_ID_NONE;
   m_bufferSize = LPCM_BUFFER_SIZE;
+  memset(m_buffer, 0, sizeof(m_buffer));
 }
 
 bool CDVDAudioCodecLPcm::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
@@ -33,11 +33,11 @@ bool CDVDAudioCodecLPcm::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
   m_codecID = hints.codec;
 
   CDVDStreamInfo hints2(hints, true);
-  hints2.codec = CODEC_ID_NONE;
+  hints2.codec = AV_CODEC_ID_NONE;
 #if 0  
-  if (hints.codecID = CODEC_ID_LPCM_S24BE) hints2.codec = CODEC_ID_PCM_S24BE;
+  if (hints.codecID = AV_CODEC_ID_LPCM_S24BE) hints2.codec = AV_CODEC_ID_PCM_S24BE;
 #endif
-  if (hints2.codec != CODEC_ID_NONE)
+  if (hints2.codec != AV_CODEC_ID_NONE)
     return CDVDAudioCodecPcm::Open(hints2, options);
   
   return false;
@@ -54,7 +54,7 @@ int CDVDAudioCodecLPcm::Decode(BYTE* pData, int iSize)
   if (iSize >= 12)
   {
 #if 0
-    if (m_codecID == CODEC_ID_LPCM_S24BE)
+    if (m_codecID == AV_CODEC_ID_LPCM_S24BE)
 #endif
     {
       for (iDecoded = 0; iDecoded <= (iSize - 12); iDecoded += 12)

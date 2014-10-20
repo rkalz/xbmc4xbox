@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
  
@@ -610,28 +609,28 @@ PyDoc_STRVAR(addItems__doc__,
   }
 
   // getItemHeight() Method
-	PyDoc_STRVAR(getItemHeight__doc__,
-		"getItemHeight() -- Returns the control's current item height as an integer.\n"
-		"\n"
-		"example:\n"
-		"  - item_height = self.cList.getItemHeight()\n");
+    PyDoc_STRVAR(getItemHeight__doc__,
+        "getItemHeight() -- Returns the control's current item height as an integer.\n"
+        "\n"
+        "example:\n"
+        "  - item_height = self.cList.getItemHeight()\n");
 
   PyObject* ControlList_GetItemHeight(ControlList *self)
-	{
-		return Py_BuildValue((char*)"l", self->itemHeight);
-	}
+    {
+        return Py_BuildValue((char*)"l", self->itemHeight);
+    }
 
   // getSpace() Method
-	PyDoc_STRVAR(getSpace__doc__,
-		"getSpace() -- Returns the control's space between items as an integer.\n"
-		"\n"
-		"example:\n"
-		"  - gap = self.cList.getSpace()\n");
+    PyDoc_STRVAR(getSpace__doc__,
+        "getSpace() -- Returns the control's space between items as an integer.\n"
+        "\n"
+        "example:\n"
+        "  - gap = self.cList.getSpace()\n");
 
   PyObject* ControlList_GetSpace(ControlList *self)
-	{
-		return Py_BuildValue((char*)"l", self->space);
-	}
+    {
+        return Py_BuildValue((char*)"l", self->space);
+    }
 
 PyDoc_STRVAR(setStaticContent__doc__,
     "setStaticContent(items) -- Fills a static list with a list of listitems.\n"

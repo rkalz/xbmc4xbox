@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -140,7 +139,7 @@ bool CDVDAudioCodecPassthroughFFmpeg::SetupMuxer(CDVDStreamInfo &hints, CStdStri
 
   /* set the stream's parameters */
   m_SampleRate = hints.samplerate;
-  if(!m_SampleRate && hints.codec == CODEC_ID_AC3)
+  if(!m_SampleRate && hints.codec == AV_CODEC_ID_AC3)
     m_SampleRate = 48000;
 
   AVCodecContext *codec = muxer.m_pStream->codec;
@@ -278,9 +277,9 @@ bool CDVDAudioCodecPassthroughFFmpeg::SupportsFormat(CDVDStreamInfo &hints)
 {
   m_pSyncFrame = NULL;
 
-       if (m_bSupportsAC3Out && hints.codec == CODEC_ID_AC3) m_pSyncFrame = &CDVDAudioCodecPassthroughFFmpeg::SyncAC3;
-  else if (m_bSupportsDTSOut && hints.codec == CODEC_ID_DTS) m_pSyncFrame = &CDVDAudioCodecPassthroughFFmpeg::SyncDTS;
-  else if (m_bSupportsAACOut && hints.codec == CODEC_ID_AAC) m_pSyncFrame = &CDVDAudioCodecPassthroughFFmpeg::SyncAAC;
+       if (m_bSupportsAC3Out && hints.codec == AV_CODEC_ID_AC3) m_pSyncFrame = &CDVDAudioCodecPassthroughFFmpeg::SyncAC3;
+  else if (m_bSupportsDTSOut && hints.codec == AV_CODEC_ID_DTS) m_pSyncFrame = &CDVDAudioCodecPassthroughFFmpeg::SyncDTS;
+  else if (m_bSupportsAACOut && hints.codec == AV_CODEC_ID_AAC) m_pSyncFrame = &CDVDAudioCodecPassthroughFFmpeg::SyncAAC;
   else return false;
 
   return true;
@@ -327,7 +326,7 @@ bool CDVDAudioCodecPassthroughFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptio
   else
   {
     /* aac needs to be wrapped into ADTS frames */
-    if (hints.codec == CODEC_ID_AAC)
+    if (hints.codec == AV_CODEC_ID_AAC)
       if (!SetupMuxer(hints, "adts", m_ADTS))
       {
         CLog::Log(LOGERROR, "CDVDAudioCodecPassthroughFFmpeg::Open - Unable to setup ADTS muxer");

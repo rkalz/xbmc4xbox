@@ -47,6 +47,7 @@ typedef struct {
     int fd;
     unsigned int readable : 1;
     unsigned int writable : 1;
+    unsigned int appending : 1;
     signed int seekable : 2; /* -1 means unknown */
     unsigned int closefd : 1;
     PyObject *weakreflist;
@@ -124,6 +125,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->fd = -1;
         self->readable = 0;
         self->writable = 0;
+        self->appending = 0;
         self->seekable = -1;
         self->closefd = 1;
         self->weakreflist = NULL;
@@ -184,7 +186,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     Py_UNICODE *widename = NULL;
 #endif
     int ret = 0;
-    int rwa = 0, plus = 0, append = 0;
+    int rwa = 0, plus = 0;
     int flags = 0;
     int fd = -1;
     int closefd = 1;
@@ -279,8 +281,8 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
                 goto bad_mode;
             rwa = 1;
             self->writable = 1;
-            flags |= O_CREAT;
-            append = 1;
+            self->appending = 1;
+            flags |= O_APPEND | O_CREAT;
             break;
         case 'b':
             break;
@@ -309,11 +311,6 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 
 #ifdef O_BINARY
     flags |= O_BINARY;
-#endif
-
-#ifdef O_APPEND
-    if (append)
-        flags |= O_APPEND;
 #endif
 
     if (fd >= 0) {
@@ -356,7 +353,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     if (PyObject_SetAttrString((PyObject *)self, "name", nameobj) < 0)
         goto error;
 
-    if (append) {
+    if (self->appending) {
         /* For consistent behaviour, we explicitly seek to the
            end of file (otherwise, it might be done only on the
            first write()). */
@@ -552,14 +549,8 @@ fileio_readall(fileio *self)
         }
 
         if (PyBytes_GET_SIZE(result) < (Py_ssize_t)newsize) {
-            if (_PyBytes_Resize(&result, newsize) < 0) {
-                if (total == 0) {
-                    Py_DECREF(result);
-                    return NULL;
-                }
-                PyErr_Clear();
-                break;
-            }
+            if (_PyBytes_Resize(&result, newsize) < 0)
+                return NULL; /* result has been freed */
         }
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
@@ -602,7 +593,6 @@ fileio_readall(fileio *self)
     if (PyBytes_GET_SIZE(result) > total) {
         if (_PyBytes_Resize(&result, total) < 0) {
             /* This should never happen, but just in case */
-            Py_DECREF(result);
             return NULL;
         }
     }
@@ -659,10 +649,8 @@ fileio_read(fileio *self, PyObject *args)
     }
 
     if (n != size) {
-        if (_PyBytes_Resize(&bytes, n) < 0) {
-            Py_DECREF(bytes);
+        if (_PyBytes_Resize(&bytes, n) < 0)
             return NULL;
-        }
     }
 
     return (PyObject *) bytes;
@@ -898,7 +886,13 @@ fileio_truncate(fileio *self, PyObject *args)
 static char *
 mode_string(fileio *self)
 {
-    if (self->readable) {
+    if (self->appending) {
+        if (self->readable)
+            return "ab+";
+        else
+            return "ab";
+    }
+    else if (self->readable) {
         if (self->writable)
             return "rb+";
         else

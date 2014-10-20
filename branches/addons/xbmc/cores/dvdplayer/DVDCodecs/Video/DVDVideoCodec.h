@@ -2,7 +2,7 @@
 
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,9 +15,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -47,7 +46,6 @@ struct DVDVideoPicture
   unsigned int iFrameType         : 4; // see defines above // 1->I, 2->P, 3->B, 0->Undef
   unsigned int color_matrix       : 4;
   unsigned int color_range        : 1; // 1 indicate if we have a full range of color
-  int iGroupId;
 
   int8_t* qscale_table; // Quantization parameters, primarily used by filters
   int qscale_stride;
@@ -77,7 +75,6 @@ struct DVDVideoUserData
 
 #define DVP_FLAG_NOSKIP             0x00000010 // indicate this picture should never be dropped
 #define DVP_FLAG_DROPPED            0x00000020 // indicate that this picture has been dropped in decoder stage, will have no data
-#define DVP_FLAG_NOAUTOSYNC         0x00000040 // disregard any smooth syncing on this picture
 
 // DVP_FLAG 0x00000100 - 0x00000f00 is in use by libmpeg2!
 
@@ -154,6 +151,12 @@ public:
    * should return codecs name
    */
   virtual const char* GetName() = 0;
+
+  /*
+   * will be called by video player indicating the playback speed. see DVD_PLAYSPEED_NORMAL,
+   * DVD_PLAYSPEED_PAUSE and friends.
+   */
+  virtual void SetSpeed(int iSpeed) {};
 
   /*
    * returns the number of demuxer bytes in any internal buffers

@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -753,6 +752,7 @@ void CMusicDatabase::GetFileItemFromDataset(CFileItem* item, const CStdString& s
   item->GetMusicInfoTag()->SetRating(m_pDS->fv(song_rating).get_asChar());
   item->GetMusicInfoTag()->SetComment(m_pDS->fv(song_comment).get_asString());
   item->GetMusicInfoTag()->SetPlayCount(m_pDS->fv(song_iTimesPlayed).get_asInt());
+  item->GetMusicInfoTag()->SetLastPlayed(m_pDS->fv(song_lastplayed).get_asString());
   CStdString strRealPath;
   URIUtils::AddFileToFolder(m_pDS->fv(song_strPath).get_asString(), m_pDS->fv(song_strFileName).get_asString(), strRealPath);
   item->GetMusicInfoTag()->SetURL(strRealPath);

@@ -302,18 +302,6 @@
 						Name="Audio"
 						Filter="">
 						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DllLiba52.h">
-						</File>
-						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DllLibDts.h">
-						</File>
-						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DllLibFaad.h">
-						</File>
-						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DllLibMad.h">
-						</File>
-						<File
 							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodec.h">
 						</File>
 						<File
@@ -323,40 +311,10 @@
 							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecFFmpeg.h">
 						</File>
 						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecLiba52.cpp">
-						</File>
-						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecLiba52.h">
-						</File>
-						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecLibDts.cpp">
-						</File>
-						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecLibDts.h">
-						</File>
-						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecLibFaad.cpp">
-						</File>
-						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecLibFaad.h">
-						</File>
-						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecLibMad.cpp">
-						</File>
-						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecLibMad.h">
-						</File>
-						<File
 							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecLPcm.cpp">
 						</File>
 						<File
 							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecLPcm.h">
-						</File>
-						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecPassthrough.cpp">
-						</File>
-						<File
-							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecPassthrough.h">
 						</File>
 						<File
 							RelativePath="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecPassthroughFFmpeg.cpp">
@@ -690,24 +648,6 @@
 				Name="paplayer"
 				Filter="">
 				<File
-					RelativePath="..\..\xbmc\cores\paplayer\AACcodec.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\paplayer\AACcodec.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\paplayer\AC3CDDACodec.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\paplayer\AC3CDDACodec.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\paplayer\AC3Codec.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\paplayer\AC3Codec.h">
-				</File>
-				<File
 					RelativePath="..\..\xbmc\cores\paplayer\ADPCMCodec.cpp">
 				</File>
 				<File
@@ -808,18 +748,6 @@
 				</File>
 				<File
 					RelativePath="..\..\xbmc\cores\paplayer\DllWMA.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\paplayer\DTSCDDACodec.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\paplayer\DTSCDDACodec.h">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\paplayer\DTSCodec.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\cores\paplayer\DTSCodec.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\cores\paplayer\DVDPlayerCodec.cpp">
@@ -1268,6 +1196,9 @@
 				Name="GUI Music"
 				Filter="">
 				<File
+					RelativePath="..\..\xbmc\\music\dialogs\GUIDialogMusicInfo.cpp">
+				</File>
+				<File
 					RelativePath="..\..\xbmc\music\dialogs\GUIDialogMusicScan.cpp">
 				</File>
 				<File
@@ -1310,9 +1241,6 @@
 					RelativePath="..\..\xbmc\music\windows\GUIWindowMusicBase.cpp">
 				</File>
 				<File
-					RelativePath="..\..\xbmc\\music\dialogs\GUIDialogMusicInfo.cpp">
-				</File>
-				<File
 					RelativePath="..\..\xbmc\music\windows\GUIWindowMusicNav.cpp">
 				</File>
 				<File
@@ -1344,6 +1272,9 @@
 				Name="GUI Video"
 				Filter="">
 				<File
+					RelativePath="..\..\xbmc\\video\dialogs\GUIDialogVideoInfo.cpp">
+				</File>
+				<File
 					RelativePath="..\..\xbmc\video\dialogs\GUIDialogVideoScan.cpp">
 				</File>
 				<File
@@ -1360,9 +1291,6 @@
 				</File>
 				<File
 					RelativePath="..\..\xbmc\\video\windows\GUIWindowVideoFiles.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\\video\dialogs\GUIDialogVideoInfo.cpp">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\video\windows\GUIWindowVideoNav.cpp">
@@ -1801,6 +1729,12 @@
 					RelativePath="..\..\xbmc\pictures\Picture.cpp">
 				</File>
 				<File
+					RelativePath="..\..\xbmc\utils\POUtils.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\utils\POUtils.h">
+				</File>
+				<File
 					RelativePath="..\..\xbmc\settings\Profile.cpp">
 				</File>
 				<File
@@ -1969,6 +1903,12 @@
 			<Filter
 				Name="Database"
 				Filter="">
+				<File
+					RelativePath="..\..\xbmc\AddonDatabase.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\AddonDatabase.h">
+				</File>
 				<File
 					RelativePath="..\..\xbmc\music\Album.cpp">
 				</File>
@@ -2370,10 +2310,22 @@
 					RelativePath="..\..\xbmc\FileSystem\CurlFile.h">
 				</File>
 				<File
+					RelativePath="..\..\xbmc\FileSystem\DAVCommon.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\FileSystem\DAVCommon.h">
+				</File>
+				<File
 					RelativePath="..\..\xbmc\FileSystem\DAVDirectory.cpp">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\FileSystem\DAVDirectory.h">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\FileSystem\DAVFile.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\FileSystem\DAVFile.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\FileSystem\Directory.cpp">
@@ -2461,6 +2413,12 @@
 				</File>
 				<File
 					RelativePath="..\..\xbmc\FileSystem\HTTPDirectory.h">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\FileSystem\HTTPFile.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\FileSystem\HTTPFile.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\FileSystem\IDirectory.cpp">
@@ -2668,12 +2626,6 @@
 				</File>
 				<File
 					RelativePath="..\..\xbmc\FileSystem\VirtualDirectory.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\FileSystem\VirtualPathDirectory.cpp">
-				</File>
-				<File
-					RelativePath="..\..\xbmc\FileSystem\VirtualPathDirectory.h">
 				</File>
 				<File
 					RelativePath="..\..\xbmc\FileSystem\ZipDirectory.cpp">
@@ -3100,6 +3052,12 @@
 				<File
 					RelativePath="..\..\xbmc\interfaces\info\InfoBool.h">
 				</File>
+				<File
+					RelativePath="..\..\xbmc\interfaces\info\SkinVariable.cpp">
+				</File>
+				<File
+					RelativePath="..\..\xbmc\interfaces\info\SkinVariable.h">
+				</File>
 			</Filter>
 		</Filter>
 		<Filter
@@ -3223,6 +3181,9 @@
 				RelativePath="..\..\xbmc\dialogs\GUIDialogKeyboard.h">
 			</File>
 			<File
+				RelativePath="..\..\xbmc\\music\dialogs\GUIDialogMusicInfo.h">
+			</File>
+			<File
 				RelativePath="..\..\xbmc\music\dialogs\GUIDialogMusicScan.h">
 			</File>
 			<File
@@ -3242,6 +3203,9 @@
 			</File>
 			<File
 				RelativePath="..\..\xbmc\dialogs\GUIDialogSubMenu.h">
+			</File>
+			<File
+				RelativePath="..\..\xbmc\\video\dialogs\GUIDialogVideoInfo.h">
 			</File>
 			<File
 				RelativePath="..\..\xbmc\dialogs\GUIDialogVolumeBar.h">
@@ -3272,9 +3236,6 @@
 			</File>
 			<File
 				RelativePath="..\..\xbmc\music\windows\GUIWindowMusicBase.h">
-			</File>
-			<File
-				RelativePath="..\..\xbmc\\music\dialogs\GUIDialogMusicInfo.h">
 			</File>
 			<File
 				RelativePath="..\..\xbmc\GuiWindowMusicOverlay.h">
@@ -3329,9 +3290,6 @@
 			</File>
 			<File
 				RelativePath="..\..\xbmc\\video\windows\GUIWindowVideoFiles.h">
-			</File>
-			<File
-				RelativePath="..\..\xbmc\\video\dialogs\GUIDialogVideoInfo.h">
 			</File>
 			<File
 				RelativePath="..\..\xbmc\GuiWindowVideoOverlay.h">

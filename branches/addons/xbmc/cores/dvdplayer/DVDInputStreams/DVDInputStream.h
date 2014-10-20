@@ -2,7 +2,7 @@
 
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,9 +15,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -58,6 +57,8 @@ public:
     virtual bool PrevChannel() = 0;
     virtual bool SelectChannel(unsigned int channel) = 0;
     virtual bool UpdateItem(CFileItem& item) = 0;
+    virtual bool CanPause() = 0;
+    virtual bool CanSeek() = 0;
   };
 
   class IDisplayTime
@@ -104,7 +105,19 @@ public:
     virtual bool OnMouseMove(const CPoint &point) = 0;
     virtual bool OnMouseClick(const CPoint &point) = 0;
     virtual bool IsInMenu() = 0;
+    virtual void SkipStill() = 0;
     virtual double GetTimeStampCorrection() = 0;
+    virtual bool GetState(std::string &xmlstate) = 0;
+    virtual bool SetState(const std::string &xmlstate) = 0;
+
+  };
+
+  class ISeekable
+  {
+    public:
+    virtual ~ISeekable() {};
+    virtual bool CanSeek()  = 0;
+    virtual bool CanPause() = 0;
   };
 
   enum ENextStream
@@ -140,8 +153,7 @@ public:
   virtual bool GetCacheStatus(XFILE::SCacheStatus *status) { return false; }
 
   bool IsStreamType(DVDStreamType type) const { return m_streamType == type; }
-  virtual bool IsEOF() = 0;  
-  virtual int GetCurrentGroupId() { return 0; }
+  virtual bool IsEOF() = 0;
   virtual BitstreamStats GetBitstreamStats() const { return m_stats; }
 
   void SetFileItem(const CFileItem& item);

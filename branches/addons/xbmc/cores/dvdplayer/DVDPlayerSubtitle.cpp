@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
  
@@ -75,19 +74,17 @@ void CDVDPlayerSubtitle::SendMessage(CDVDMsg* pMsg)
 
         while((overlay = m_pOverlayCodec->GetOverlay()) != NULL)
         {
-          overlay->iGroupId = pPacket->iGroupId;
           m_pOverlayContainer->Add(overlay);
           overlay->Release();
         }
       }
     } 
-    else if (m_streaminfo.codec == CODEC_ID_DVD_SUBTITLE)
+    else if (m_streaminfo.codec == AV_CODEC_ID_DVD_SUBTITLE)
     {
       CDVDOverlaySpu* pSPUInfo = m_dvdspus.AddData(pPacket->pData, pPacket->iSize, pPacket->pts);
       if (pSPUInfo)
       {
         CLog::Log(LOGDEBUG, "CDVDPlayer::ProcessSubData: Got complete SPU packet");
-        pSPUInfo->iGroupId = pPacket->iGroupId;
         m_pOverlayContainer->Add(pSPUInfo);
         pSPUInfo->Release();
       }
@@ -156,7 +153,7 @@ bool CDVDPlayerSubtitle::OpenStream(CDVDStreamInfo &hints, string &filename)
   }
 
   // dvd's use special subtitle decoder
-  if(hints.codec == CODEC_ID_DVD_SUBTITLE && filename == "dvd")
+  if(hints.codec == AV_CODEC_ID_DVD_SUBTITLE && filename == "dvd")
     return true;
 
   m_pOverlayCodec = CDVDFactoryCodec::CreateOverlayCodec(hints);

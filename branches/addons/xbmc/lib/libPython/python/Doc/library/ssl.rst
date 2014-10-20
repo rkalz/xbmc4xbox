@@ -30,6 +30,18 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
    operating system socket APIs.  The installed version of OpenSSL may also
    cause variations in behavior.
 
+.. warning::
+   The ssl module won't validate certificates by default.  When used in
+   client mode, this means you are vulnerable to man-in-the-middle attacks.
+
+.. warning::
+
+   OpenSSL's internal random number generator does not properly handle fork.
+   Applications must change the PRNG state of the parent process if they use
+   any SSL feature with :func:`os.fork`. Any successful call of
+   :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
+   :func:`~ssl.RAND_pseudo_bytes` is sufficient.
+
 This section documents the objects and functions in the ``ssl`` module; for more
 general information about TLS, SSL, and certificates, the reader is referred to
 the documents in the "See Also" section at the bottom.
@@ -57,13 +69,16 @@ Functions, Constants, and Exceptions
 
    Takes an instance ``sock`` of :class:`socket.socket`, and returns an instance
    of :class:`ssl.SSLSocket`, a subtype of :class:`socket.socket`, which wraps
-   the underlying socket in an SSL context.  For client-side sockets, the
-   context construction is lazy; if the underlying socket isn't connected yet,
-   the context construction will be performed after :meth:`connect` is called on
-   the socket.  For server-side sockets, if the socket has no remote peer, it is
-   assumed to be a listening socket, and the server-side SSL wrapping is
-   automatically performed on client connections accepted via the :meth:`accept`
-   method.  :func:`wrap_socket` may raise :exc:`SSLError`.
+   the underlying socket in an SSL context.  ``sock`` must be a
+   :data:`~socket.SOCK_STREAM` socket; other socket types are unsupported.
+
+   For client-side sockets, the context construction is lazy; if the
+   underlying socket isn't connected yet, the context construction will be
+   performed after :meth:`connect` is called on the socket.  For
+   server-side sockets, if the socket has no remote peer, it is assumed
+   to be a listening socket, and the server-side SSL wrapping is
+   automatically performed on client connections accepted via the
+   :meth:`accept` method.  :func:`wrap_socket` may raise :exc:`SSLError`.
 
    The ``keyfile`` and ``certfile`` parameters specify optional files which
    contain a certificate to be used to identify the local side of the
@@ -154,7 +169,7 @@ Functions, Constants, and Exceptions
 
 .. function:: RAND_status()
 
-   Returns True if the SSL pseudo-random number generator has been seeded with
+   Returns ``True`` if the SSL pseudo-random number generator has been seeded with
    'enough' randomness, and False otherwise.  You can use :func:`ssl.RAND_egd`
    and :func:`ssl.RAND_add` to increase the randomness of the pseudo-random
    number generator.
@@ -475,8 +490,7 @@ these chains concatenated together.  For validation, Python will use the first
 chain it finds in the file which matches.
 
 Some "standard" root certificates are available from various certification
-authorities: `CACert.org <http://www.cacert.org/index.php?id=3>`_, `Thawte
-<http://www.thawte.com/roots/>`_, `Verisign
+authorities: `Thawte <http://www.thawte.com/roots/>`_, `Verisign
 <http://www.verisign.com/support/roots.html>`_, `Positive SSL
 <http://www.PositiveSSL.com/ssl-certificate-support/cert_installation/UTN-USERFirst-Hardware.crt>`_
 (used by python.org), `Equifax and GeoTrust
@@ -641,10 +655,10 @@ And go back to listening for new client connections.
 .. seealso::
 
    Class :class:`socket.socket`
-            Documentation of underlying :mod:`socket` class
+       Documentation of underlying :mod:`socket` class
 
-   `TLS (Transport Layer Security) and SSL (Secure Socket Layer) <http://www3.rad.com/networks/applications/secure/tls.htm>`_
-      Debby Koren
+   `SSL/TLS Strong Encryption: An Introduction <http://httpd.apache.org/docs/trunk/en/ssl/ssl_intro.html>`_
+       Intro from the Apache webserver documentation
 
    `RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <http://www.ietf.org/rfc/rfc1422>`_
        Steve Kent

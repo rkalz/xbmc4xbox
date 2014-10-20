@@ -242,6 +242,10 @@ def _mkstemp_inner(dir, pre, suf, flags):
         except OSError, e:
             if e.errno == _errno.EEXIST:
                 continue # try again
+            if _os.name == 'nt' and e.errno == _errno.EACCES:
+                # On windows, when a directory with the chosen name already
+                # exists, EACCES error code is returned instead of EEXIST.
+                continue
             raise
 
     raise IOError, (_errno.EEXIST, "No usable temporary file name found")
@@ -456,8 +460,12 @@ def NamedTemporaryFile(mode='w+b', bufsize=-1, suffix="",
         flags |= _os.O_TEMPORARY
 
     (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags)
-    file = _os.fdopen(fd, mode, bufsize)
-    return _TemporaryFileWrapper(file, name, delete)
+    try:
+        file = _os.fdopen(fd, mode, bufsize)
+        return _TemporaryFileWrapper(file, name, delete)
+    except:
+        _os.close(fd)
+        raise
 
 if _os.name != 'posix' or _os.sys.platform == 'cygwin':
     # On non-POSIX and Cygwin systems, assume that we cannot unlink a file
@@ -612,7 +620,7 @@ class SpooledTemporaryFile:
         return rv
 
     def xreadlines(self, *args):
-        try:
-            return self._file.xreadlines(*args)
-        except AttributeError:
+        if hasattr(self._file, 'xreadlines'):  # real file
+            return iter(self._file)
+        else:  # StringIO()
             return iter(self._file.readlines(*args))

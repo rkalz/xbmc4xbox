@@ -15,9 +15,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -102,7 +101,7 @@ public:
   void PrintXBEToLCD(const char* xbePath);
   void CheckDate();
   DWORD GetThreadId() const { return m_threadID; };
-  void Stop();
+  void Stop(bool bLCDStop = true);
   void RestartApp();
   void UnloadSkin();
   bool LoadUserWindows();
@@ -211,6 +210,7 @@ public:
   unsigned int m_skinReloadTime;
   bool m_bIsPaused;
   bool m_bPlaybackStarting;
+  bool m_128MBHack;
 
   CCdgParser* m_pCdgParser;
 
@@ -273,7 +273,7 @@ protected:
   bool ProcessGamepad(float frameTime);
   bool ProcessEventServer(float frameTime);
 
-  bool ProcessJoystickEvent(const std::string& joystickName, int button, bool isAxis, float fAmount);
+  bool ProcessJoystickEvent(const std::string& joystickName, int button, bool isAxis, float fAmount, unsigned int holdTime = 0);
 
   void CheckForDebugButtonCombo();
   void StartFtpEmergencyRecoveryMode();

@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -37,10 +36,10 @@ CGUIStaticItem::CGUIStaticItem(const TiXmlElement *item, int parentID) : CFileIt
   if (click && click->FirstChild())
   {
     CGUIInfoLabel label, label2, thumb, icon;
-    CGUIControlFactory::GetInfoLabel(item, "label", label);
-    CGUIControlFactory::GetInfoLabel(item, "label2", label2);
-    CGUIControlFactory::GetInfoLabel(item, "thumb", thumb);
-    CGUIControlFactory::GetInfoLabel(item, "icon", icon);
+    CGUIControlFactory::GetInfoLabel(item, "label", label, parentID);
+    CGUIControlFactory::GetInfoLabel(item, "label2", label2, parentID);
+    CGUIControlFactory::GetInfoLabel(item, "thumb", thumb, parentID);
+    CGUIControlFactory::GetInfoLabel(item, "icon", icon, parentID);
     const char *id = item->Attribute("id");
     int visibleCondition = 0;
     CGUIControlFactory::GetConditionalVisibility(item, visibleCondition);
@@ -61,7 +60,7 @@ CGUIStaticItem::CGUIStaticItem(const TiXmlElement *item, int parentID) : CFileIt
     {
       CStdString name = property->Attribute("name");
       CGUIInfoLabel prop;
-      if (!name.IsEmpty() && CGUIControlFactory::GetInfoLabelFromElement(property, prop))
+      if (!name.IsEmpty() && CGUIControlFactory::GetInfoLabelFromElement(property, prop, parentID))
       {
         SetProperty(name, prop.GetLabel(parentID, true));
         if (!prop.IsConstant())

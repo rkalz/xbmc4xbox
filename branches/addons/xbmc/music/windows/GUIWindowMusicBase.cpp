@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -264,7 +263,7 @@ void CGUIWindowMusicBase::OnInfoAll(int iItem, bool bCurrent)
     musicScan->StartArtistScan(strPath);
 }
 
-/// \brief Retrieves music info for albums from allmusic.com and displays them in CGUIWindowMusicInfo
+/// \brief Retrieves music info for albums from theaudiodb.com and displays them in CGUIWindowMusicInfo
 /// \param iItem Item in list/thumb control
 void CGUIWindowMusicBase::OnInfo(int iItem, bool bShowInfo)
 {
@@ -535,7 +534,7 @@ void CGUIWindowMusicBase::ShowAlbumInfo(const CAlbum& album, const CStdString& p
     // download the album info
     if ( info.Loaded() )
     {
-      // set album title from musicinfotag, not the one we got from allmusic.com
+      // set album title from musicinfotag, not the one we got from theaudiodb.com
       info.SetTitle(album.strAlbum);
 
       if (saveDb)

@@ -819,7 +819,10 @@ def thishost():
     """Return the IP address of the current host."""
     global _thishost
     if _thishost is None:
-        _thishost = socket.gethostbyname(socket.gethostname())
+        try:
+            _thishost = socket.gethostbyname(socket.gethostname())
+        except socket.gaierror:
+            _thishost = socket.gethostbyname('localhost')
     return _thishost
 
 _ftperrors = None
@@ -870,8 +873,8 @@ class ftpwrapper:
         self.ftp = ftplib.FTP()
         self.ftp.connect(self.host, self.port, self.timeout)
         self.ftp.login(self.user, self.passwd)
-        for dir in self.dirs:
-            self.ftp.cwd(dir)
+        _target = '/'.join(self.dirs)
+        self.ftp.cwd(_target)
 
     def retrfile(self, file, type):
         import ftplib
@@ -1122,10 +1125,13 @@ def splitport(host):
     global _portprog
     if _portprog is None:
         import re
-        _portprog = re.compile('^(.*):([0-9]+)$')
+        _portprog = re.compile('^(.*):([0-9]*)$')
 
     match = _portprog.match(host)
-    if match: return match.group(1, 2)
+    if match:
+        host, port = match.groups()
+        if port:
+            return host, port
     return host, None
 
 _nportprog = None
@@ -1142,12 +1148,12 @@ def splitnport(host, defport=-1):
     match = _nportprog.match(host)
     if match:
         host, port = match.group(1, 2)
-        try:
-            if not port: raise ValueError, "no digits"
-            nport = int(port)
-        except ValueError:
-            nport = None
-        return host, nport
+        if port:
+            try:
+                nport = int(port)
+            except ValueError:
+                nport = None
+            return host, nport
     return host, defport
 
 _queryprog = None

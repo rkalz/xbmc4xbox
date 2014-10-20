@@ -1,7 +1,7 @@
 #pragma once
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,9 +14,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -42,6 +41,7 @@ namespace XFILE
       CCurlFile();
       virtual ~CCurlFile();
       virtual bool Open(const CURL& url);
+      virtual bool OpenForWrite(const CURL& url, bool bOverWrite = false);
       virtual bool Exists(const CURL& url);
       virtual int64_t  Seek(int64_t iFilePosition, int iWhence=SEEK_SET);
       virtual int64_t  GetPosition();
@@ -50,6 +50,7 @@ namespace XFILE
 	    virtual void Close();
       virtual bool ReadString(char *szLine, int iLineLength)     { return m_state->ReadString(szLine, iLineLength); }
       virtual unsigned int Read(void* lpBuf, int64_t uiBufSize)  { return m_state->Read(lpBuf, uiBufSize); }
+      virtual int Write(const void* lpBuf, int64_t uiBufSize);
       virtual CStdString GetMimeType()                           { return m_state->m_httpheader.GetMimeType(); }
       virtual int IoControl(EIoControl request, void* param);
 
@@ -71,7 +72,7 @@ namespace XFILE
       void SetPostData(CStdString postdata)                      { m_postdata = postdata; }
       void SetReferer(CStdString referer)                        { m_referer = referer; }
       void SetCookie(CStdString cookie)                          { m_cookie = cookie; }
-      void SetMimeType(CStdString mimetype)                      { SetRequestHeader("Content-Type", m_mimetype); }
+      void SetMimeType(CStdString mimetype)                      { SetRequestHeader("Content-Type", mimetype); }
       void SetRequestHeader(CStdString header, CStdString value);
       void SetRequestHeader(CStdString header, long value);
 
@@ -102,11 +103,16 @@ namespace XFILE
           int64_t         m_fileSize;
           int64_t         m_filePos;
           bool            m_bFirstLoop;
+          bool            m_isPaused;
+          bool            m_sendRange;
+
+          char*           m_readBuffer;
 
           /* returned http header */
           CHttpHeader m_httpheader;
           bool        m_headerdone;
 
+          size_t ReadCallback(char *buffer, size_t size, size_t nitems);
           size_t WriteCallback(char *buffer, size_t size, size_t nitems);
           size_t HeaderCallback(void *ptr, size_t size, size_t nmemb);
 
@@ -114,7 +120,9 @@ namespace XFILE
           unsigned int Read(void* lpBuf, int64_t uiBufSize);
           bool         ReadString(char *szLine, int iLineLength);
           bool         FillBuffer(unsigned int want);
+          void         SetReadBuffer(const void* lpBuf, int64_t uiBufSize);
 
+          void         SetResume(void);
           long         Connect(unsigned int size);
           void         Disconnect();
       };
@@ -124,11 +132,12 @@ namespace XFILE
       void SetCommonOptions(CReadState* state);
       void SetRequestHeaders(CReadState* state);
       void SetCorrectHeaders(CReadState* state);
-      bool Service(const CStdString& strURL, const CStdString& strPostData, CStdString& strHTML);
+      bool Service(const CStdString& strURL, CStdString& strHTML);
 
-    private:
+    protected:
       CReadState*     m_state;
       unsigned int    m_bufferSize;
+      int64_t         m_writeOffset;
 
       CStdString      m_url;
       CStdString      m_userAgent;
@@ -142,7 +151,6 @@ namespace XFILE
       CStdString      m_postdata;
       CStdString      m_referer;
       CStdString      m_cookie;
-      CStdString      m_mimetype;
       CStdString      m_username;
       CStdString      m_password;
       CStdString      m_httpauth;
@@ -150,10 +158,13 @@ namespace XFILE
       int             m_connecttimeout;
       int             m_lowspeedtime;
       bool            m_opened;
+      bool            m_forWrite;
+      bool            m_inError;
       bool            m_useOldHttpVersion;
       bool            m_seekable;
       bool            m_multisession;
       bool            m_skipshout;
+      bool            m_postdataset;
 
       CRingBuffer     m_buffer;           // our ringhold buffer
       char *          m_overflowBuffer;   // in the rare case we would overflow the above buffer
@@ -166,6 +177,8 @@ namespace XFILE
 
       typedef std::map<CStdString, CStdString> MAPHTTPHEADERS;
       MAPHTTPHEADERS m_requestheaders;
+
+      long            m_httpresponse;
   };
 }
 

@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -27,13 +26,8 @@
 #include "OGGcodec.h"
 #include "FLACcodec.h"
 #include "WAVcodec.h"
-#include "AACcodec.h"
 #include "ModuleCodec.h"
 #include "NSFCodec.h"
-#include "DTSCodec.h"
-#include "DTSCDDACodec.h"
-#include "AC3Codec.h"
-#include "AC3CDDACodec.h"
 #include "SPCCodec.h"
 #include "GYMCodec.h"
 #include "SIDCodec.h"
@@ -64,16 +58,9 @@ ICodec* CodecFactory::CreateCodec(const CStdString& strFileType)
     return new FLACCodec();
   else if (strFileType.Equals("wav"))
     return new DVDPlayerCodec();
-#ifdef HAS_DTS_CODEC
-  else if (strFileType.Equals("dts"))
-    return new DTSCodec();
-#endif
-#ifdef HAS_AC3_CODEC
-  else if (strFileType.Equals("ac3"))
-    return new AC3Codec();
-#endif
-  else if (strFileType.Equals("m4a") || strFileType.Equals("aac"))
-    return new AACCodec();
+  else if (strFileType.Equals("dts") || strFileType.Equals("ac3") ||
+           strFileType.Equals("m4a") || strFileType.Equals("aac"))
+    return new DVDPlayerCodec();
   else if (strFileType.Equals("wv"))
     return new DVDPlayerCodec();
   else if (ModuleCodec::IsSupportedFormat(strFileType))
@@ -135,27 +122,25 @@ ICodec* CodecFactory::CreateCodecDemux(const CStdString& strFile, const CStdStri
   if (urlFile.GetFileType().Equals("wav"))
   {
     ICodec* codec;
-#ifdef HAS_DTS_CODEC
     //lets see what it contains...
     //this kinda sucks 'cause if it's a plain wav file the file
     //will be opened, sniffed and closed 2 times before it is opened *again* for wav
     //would be better if the papcodecs could work with bitstreams instead of filenames.
-    codec = new DTSCodec();
-    if (codec->Init(strFile, filecache))
+    DVDPlayerCodec *dvdcodec = new DVDPlayerCodec();
+    dvdcodec->SetContentType("audio/x-spdif-compressed");
+    if (dvdcodec->Init(strFile, filecache))
     {
-      return codec;
+      return dvdcodec;
     }
-    delete codec;
-#endif
-#ifdef HAS_AC3_CODEC
-    codec = new AC3Codec();
-    if (codec->Init(strFile, filecache))
-    {
-      return codec;
-    }
-    delete codec;
-#endif
+    delete dvdcodec;
     codec = new ADPCMCodec();
+    if (codec->Init(strFile, filecache))
+    {
+      return codec;
+    }
+    delete codec;
+
+    codec = new WAVCodec();
     if (codec->Init(strFile, filecache))
     {
       return codec;
@@ -164,29 +149,18 @@ ICodec* CodecFactory::CreateCodecDemux(const CStdString& strFile, const CStdStri
   }
   if (urlFile.GetFileType().Equals("cdda"))
   {
-#ifdef HAS_DTS_CDDA_CODEC
     //lets see what it contains...
     //this kinda sucks 'cause if it's plain cdda the file
-    //will be opened, sniffed and closed 2 times before it is opened *again* for cdda
+    //will be opened, sniffed and closed before it is opened *again* for cdda
     //would be better if the papcodecs could work with bitstreams instead of filenames.
-    ICodec* codec = new DTSCDDACodec();
-    if (codec->Init(strFile, filecache))
+    DVDPlayerCodec *dvdcodec = new DVDPlayerCodec();
+    dvdcodec->SetContentType("audio/x-spdif-compressed");
+    if (dvdcodec->Init(strFile, filecache))
     {
-      return codec;
+      return dvdcodec;
     }
-    delete codec;
-#endif
-#ifdef HAS_AC3_CDDA_CODEC
-    codec = new AC3CDDACodec();
-    if (codec->Init(strFile, filecache))
-    {
-      return codec;
-    }
-    delete codec;
-#endif
-  }
-
-  if (urlFile.GetFileType().Equals("ogg") || urlFile.GetFileType().Equals("oggstream") || urlFile.GetFileType().Equals("oga"))
+    delete dvdcodec;
+  } else if (urlFile.GetFileType().Equals("ogg") || urlFile.GetFileType().Equals("oggstream") || urlFile.GetFileType().Equals("oga"))
     return CreateOGGCodec(strFile,filecache);
 
   //default

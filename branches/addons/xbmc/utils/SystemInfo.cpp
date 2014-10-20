@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -1741,15 +1740,22 @@ CStdString CSysInfo::GetSystemUpTime(bool bTotalUptime)
 
 CStdString CSysInfo::GetInternetState()
 {
-  // Internet connection state!
-  XFILE::CCurlFile http;
-  m_bInternetState = http.IsInternet();
-  if (m_bInternetState)
-    return g_localizeStrings.Get(13296);
-  else if (http.IsInternet(false))
-    return g_localizeStrings.Get(13274);
-  else // NOT Connected to the Internet!
-    return g_localizeStrings.Get(13297);
+  CStdString status;
+  // check for ethernet link before checking for internet access
+  if (XNetGetEthernetLinkStatus() & XNET_ETHERNET_LINK_ACTIVE)
+  {
+    XFILE::CCurlFile http;
+    m_bInternetState = http.IsInternet();
+    if (m_bInternetState)
+      status = g_localizeStrings.Get(13296);
+    else if (http.IsInternet(false))
+      status = g_localizeStrings.Get(13274);
+    else
+      status = g_localizeStrings.Get(13297);
+  }
+  else
+    status = g_localizeStrings.Get(159);
+  return status;
 }
 
 CStdString CSysInfo::GetUserAgent()

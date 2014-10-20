@@ -68,10 +68,11 @@ objects:
    Return the number of times *x* appears in the list.
 
 
-.. method:: list.sort()
+.. method:: list.sort(cmp=None, key=None, reverse=False)
    :noindex:
 
-   Sort the items of the list, in place.
+   Sort the items of the list in place (the arguments can be used for sort
+   customization, see :func:`sorted` for their explanation).
 
 
 .. method:: list.reverse()
@@ -99,6 +100,15 @@ An example that uses most of the list methods::
    >>> a.sort()
    >>> a
    [-1, 1, 66.25, 333, 333, 1234.5]
+   >>> a.pop()
+   1234.5
+   >>> a
+   [-1, 1, 66.25, 333, 333]
+
+You might have noticed that methods like ``insert``, ``remove`` or ``sort`` that
+only modify the list have no return value printed -- they return the default
+``None``. [1]_  This is a design principle for all mutable data structures in
+Python.
 
 
 .. _tut-lists-as-stacks:
@@ -171,7 +181,7 @@ There are three built-in functions that are very useful when used with lists:
 the sequence for which ``function(item)`` is true. If *sequence* is a
 :class:`string` or :class:`tuple`, the result will be of the same type;
 otherwise, it is always a :class:`list`. For example, to compute a sequence of
-numbers not divisible by 2 and 3::
+numbers not divisible by 2 or 3::
 
    >>> def f(x): return x % 2 != 0 and x % 3 != 0
    ...

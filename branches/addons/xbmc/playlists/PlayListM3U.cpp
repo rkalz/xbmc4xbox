@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -111,6 +110,13 @@ bool CPlayListM3U::Load(const CStdString& strFileName)
     else if (strLine != M3U_START_MARKER && strLine.Left(strlen(M3U_ARTIST_MARKER)) != M3U_ARTIST_MARKER && strLine.Left(strlen(M3U_ALBUM_MARKER)) != M3U_ALBUM_MARKER )
     {
       CStdString strFileName = strLine;
+
+      if (strFileName.size() > 0 && strFileName[0] == '#')
+        continue; // assume a comment or something else we don't support
+
+      // Skip self - do not load playlist recursively
+      if (URIUtils::GetFileName(strFileName).Equals(m_strPlayListName))
+        continue;
 
       if (strFileName.length() > 0)
       {

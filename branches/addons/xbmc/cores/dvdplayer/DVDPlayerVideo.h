@@ -2,7 +2,7 @@
 
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,9 +15,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -31,7 +30,7 @@
 #include "cores/VideoRenderers/RenderManager.h"
 #endif
 
-enum CodecID;
+enum AVCodecID;
 class CDemuxStreamVideo;
 class CDVDOverlayCodecCC;
 
@@ -159,11 +158,6 @@ protected:
   bool m_stalled;
   bool m_started;
   std::string m_codecname;
-
-  /* autosync decides on how much of clock we should use when deciding sleep time */
-  /* the value is the same as 63% timeconstant, ie that the step response of */
-  /* iSleepTime will be at 63% of iClockSleep after autosync frames */
-  unsigned int m_autosync;
 
   BitstreamStats m_videoStats;
   

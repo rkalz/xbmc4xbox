@@ -1,5 +1,6 @@
 import sys
 import os
+from platform import python_version
 import re
 import imp
 from Tkinter import *
@@ -107,6 +108,8 @@ class HelpDialog(object):
         self.parent = None
 
 helpDialog = HelpDialog()  # singleton instance
+def _help_dialog(parent):  # wrapper for htest
+    helpDialog.show_dialog(parent)
 
 
 class EditorWindow(object):
@@ -137,8 +140,8 @@ class EditorWindow(object):
                                        'Python%s.chm' % _sphinx_version())
                 if os.path.isfile(chmfile):
                     dochome = chmfile
-            elif macosxSupport.runningAsOSXApp():
-                # documentation is stored inside the python framework
+            elif sys.platform == 'darwin':
+                # documentation may be stored inside a python framework
                 dochome = os.path.join(sys.prefix,
                         'Resources/English.lproj/Documentation/index.html')
             dochome = os.path.normpath(dochome)
@@ -192,7 +195,7 @@ class EditorWindow(object):
 
         self.top.protocol("WM_DELETE_WINDOW", self.close)
         self.top.bind("<<close-window>>", self.close_event)
-        if macosxSupport.runningAsOSXApp():
+        if macosxSupport.isAquaTk():
             # Command-W on editorwindows doesn't work without this.
             text.bind('<<close-window>>', self.close_event)
             # Some OS X systems have only one mouse button,
@@ -346,6 +349,36 @@ class EditorWindow(object):
         self.askinteger = tkSimpleDialog.askinteger
         self.showerror = tkMessageBox.showerror
 
+        self._highlight_workaround()  # Fix selection tags on Windows
+
+    def _highlight_workaround(self):
+        # On Windows, Tk removes painting of the selection
+        # tags which is different behavior than on Linux and Mac.
+        # See issue14146 for more information.
+        if not sys.platform.startswith('win'):
+            return
+
+        text = self.text
+        text.event_add("<<Highlight-FocusOut>>", "<FocusOut>")
+        text.event_add("<<Highlight-FocusIn>>", "<FocusIn>")
+        def highlight_fix(focus):
+            sel_range = text.tag_ranges("sel")
+            if sel_range:
+                if focus == 'out':
+                    HILITE_CONFIG = idleConf.GetHighlight(
+                            idleConf.CurrentTheme(), 'hilite')
+                    text.tag_config("sel_fix", HILITE_CONFIG)
+                    text.tag_raise("sel_fix")
+                    text.tag_add("sel_fix", *sel_range)
+                elif focus == 'in':
+                    text.tag_remove("sel_fix", "1.0", "end")
+
+        text.bind("<<Highlight-FocusOut>>",
+                lambda ev: highlight_fix("out"))
+        text.bind("<<Highlight-FocusIn>>",
+                lambda ev: highlight_fix("in"))
+
+
     def _filename_to_unicode(self, filename):
         """convert filename to unicode in order to display it in Tk"""
         if isinstance(filename, unicode) or not filename:
@@ -409,7 +442,7 @@ class EditorWindow(object):
 
     def set_status_bar(self):
         self.status_bar = self.MultiStatusBar(self.top)
-        if macosxSupport.runningAsOSXApp():
+        if sys.platform == "darwin":
             # Insert some padding to avoid obscuring some of the statusbar
             # by the resize widget.
             self.status_bar.set_label('_padding1', '    ', side=RIGHT)
@@ -436,8 +469,7 @@ class EditorWindow(object):
         ("help", "_Help"),
     ]
 
-    if macosxSupport.runningAsOSXApp():
-        del menu_specs[-3]
+    if sys.platform == "darwin":
         menu_specs[-2] = ("windows", "_Window")
 
 
@@ -449,7 +481,7 @@ class EditorWindow(object):
             menudict[name] = menu = Menu(mbar, name=name)
             mbar.add_cascade(label=label, menu=menu, underline=underline)
 
-        if macosxSupport.isCarbonAquaTk(self.root):
+        if macosxSupport.isCarbonTk():
             # Insert the application menu
             menudict['application'] = menu = Menu(mbar, name='apple')
             mbar.add_cascade(label='IDLE', menu=menu)
@@ -660,7 +692,7 @@ class EditorWindow(object):
         # XXX Ought to insert current file's directory in front of path
         try:
             (f, file, (suffix, mode, type)) = _find_module(name)
-        except (NameError, ImportError), msg:
+        except (NameError, ImportError) as msg:
             tkMessageBox.showerror("Import error", str(msg), parent=self.text)
             return
         if type != imp.PY_SOURCE:
@@ -804,7 +836,11 @@ class EditorWindow(object):
                     menuEventDict[menu[0]][prepstr(item[0])[1]] = item[1]
         for menubarItem in self.menudict.keys():
             menu = self.menudict[menubarItem]
-            end = menu.index(END) + 1
+            end = menu.index(END)
+            if end is None:
+                # Skip empty menus
+                continue
+            end += 1
             for index in range(0, end):
                 if menu.type(index) == 'command':
                     accel = menu.entrycget(index, 'accelerator')
@@ -861,11 +897,8 @@ class EditorWindow(object):
         "Load and update the recent files list and menus"
         rf_list = []
         if os.path.exists(self.recent_files_path):
-            rf_list_file = open(self.recent_files_path,'r')
-            try:
+            with  open(self.recent_files_path, 'r') as rf_list_file:
                 rf_list = rf_list_file.readlines()
-            finally:
-                rf_list_file.close()
         if new_file:
             new_file = os.path.abspath(new_file) + '\n'
             if new_file in rf_list:
@@ -935,11 +968,14 @@ class EditorWindow(object):
         self.undo.reset_undo()
 
     def short_title(self):
+        pyversion = "Python " + python_version() + ": "
         filename = self.io.filename
         if filename:
             filename = os.path.basename(filename)
+        else:
+            filename = "Untitled"
         # return unicode string to display non-ASCII chars correctly
-        return self._filename_to_unicode(filename)
+        return pyversion + self._filename_to_unicode(filename)
 
     def long_title(self):
         # return unicode string to display non-ASCII chars correctly
@@ -1648,7 +1684,7 @@ def get_accelerator(keydefs, eventname):
     keylist = keydefs.get(eventname)
     # issue10940: temporary workaround to prevent hang with OS X Cocoa Tk 8.5
     # if not keylist:
-    if (not keylist) or (macosxSupport.runningAsOSXApp() and eventname in {
+    if (not keylist) or (macosxSupport.isCocoaTk() and eventname in {
                             "<<open-module>>",
                             "<<goto-line>>",
                             "<<change-indentwidth>>"}):
@@ -1675,19 +1711,19 @@ def fixwordbreaks(root):
     tk.call('set', 'tcl_nonwordchars', '[^a-zA-Z0-9_]')
 
 
-def test():
-    root = Tk()
+def _editor_window(parent):
+    root = parent
     fixwordbreaks(root)
-    root.withdraw()
     if sys.argv[1:]:
         filename = sys.argv[1]
     else:
         filename = None
+    macosxSupport.setupApp(root, None)
     edit = EditorWindow(root=root, filename=filename)
-    edit.set_close_hook(root.quit)
     edit.text.bind("<<close-all-windows>>", edit.close_event)
-    root.mainloop()
-    root.destroy()
+    parent.mainloop()
+
 
 if __name__ == '__main__':
-    test()
+    from idlelib.idle_test.htest import run
+    run(_help_dialog, _editor_window)

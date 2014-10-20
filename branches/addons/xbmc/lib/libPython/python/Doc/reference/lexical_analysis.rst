@@ -104,9 +104,7 @@ are ignored by the syntax; they are not tokens.
 Encoding declarations
 ---------------------
 
-.. index::
-   single: source character set
-   single: encodings
+.. index:: source character set, encoding declarations (source file)
 
 If a comment in the first or second line of the Python script matches the
 regular expression ``coding[=:]\s*([-\w.]+)``, this comment is processed as an
@@ -529,8 +527,7 @@ Notes:
 (2)
    Any Unicode character can be encoded this way, but characters outside the Basic
    Multilingual Plane (BMP) will be encoded using a surrogate pair if Python is
-   compiled to use 16-bit code units (the default).  Individual code units which
-   form parts of a surrogate pair can be encoded using this escape sequence.
+   compiled to use 16-bit code units (the default).
 
 (3)
    As in Standard C, up to three octal digits are accepted.

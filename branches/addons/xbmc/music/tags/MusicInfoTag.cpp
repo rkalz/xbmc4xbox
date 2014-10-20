@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -57,10 +56,12 @@ const CMusicInfoTag& CMusicInfoTag::operator =(const CMusicInfoTag& tag)
   m_strMusicBrainzTRMID = tag.m_strMusicBrainzTRMID;
   m_strComment = tag.m_strComment;
   m_strLyrics = tag.m_strLyrics;
+  m_strLastPlayed = tag.m_strLastPlayed;
   m_iDuration = tag.m_iDuration;
   m_iTrack = tag.m_iTrack;
   m_bLoaded = tag.m_bLoaded;
   m_rating = tag.m_rating;
+  m_listeners = tag.m_listeners;
   m_iTimesPlayed = tag.m_iTimesPlayed;
   m_iDbId = tag.m_iDbId;
   memcpy(&m_dwReleaseDate, &tag.m_dwReleaseDate, sizeof(m_dwReleaseDate) );
@@ -172,6 +173,16 @@ int CMusicInfoTag::GetPlayCount() const
   return m_iTimesPlayed;
 }
 
+int CMusicInfoTag::GetListeners() const
+{
+ return m_listeners;
+}
+
+const CStdString &CMusicInfoTag::GetLastPlayed() const
+{
+  return m_strLastPlayed;
+}
+
 void CMusicInfoTag::SetURL(const CStdString& strURL)
 {
   m_strURL = strURL;
@@ -256,6 +267,16 @@ void CMusicInfoTag::SetRating(char rating)
 void CMusicInfoTag::SetPlayCount(int playcount)
 {
   m_iTimesPlayed = playcount;
+}
+
+void CMusicInfoTag::SetListeners(int listeners)
+{
+ m_listeners = listeners;
+}
+
+void CMusicInfoTag::SetLastPlayed(const CStdString& lastplayed)
+{
+  m_strLastPlayed = lastplayed;
 }
 
 void CMusicInfoTag::SetLoaded(bool bOnOff)
@@ -346,6 +367,7 @@ void CMusicInfoTag::SetSong(const CSong& song)
   SetMusicBrainzTRMID(song.strMusicBrainzTRMID);
   SetComment(song.strComment);
   SetPlayCount(song.iTimesPlayed);
+  SetLastPlayed(song.lastPlayed);
   m_rating = song.rating;
   m_strURL = song.strFileName;
   SYSTEMTIME stTime;
@@ -398,6 +420,7 @@ void CMusicInfoTag::Archive(CArchive& ar)
     ar << m_strMusicBrainzAlbumID;
     ar << m_strMusicBrainzAlbumArtistID;
     ar << m_strMusicBrainzTRMID;
+    ar << m_strLastPlayed;
     ar << m_strComment;
     ar << m_rating;
     ar << m_iTimesPlayed;
@@ -419,6 +442,7 @@ void CMusicInfoTag::Archive(CArchive& ar)
     ar >> m_strMusicBrainzAlbumID;
     ar >> m_strMusicBrainzAlbumArtistID;
     ar >> m_strMusicBrainzTRMID;
+    ar >> m_strLastPlayed;
     ar >> m_strComment;
     ar >> m_rating;
     ar >> m_iTimesPlayed;
@@ -441,6 +465,7 @@ void CMusicInfoTag::Clear()
   m_iDuration = 0;
   m_iTrack = 0;
   m_bLoaded = false;
+  m_strLastPlayed.Empty();
   m_strComment.Empty();
   m_rating = '0';
   m_iDbId = -1;

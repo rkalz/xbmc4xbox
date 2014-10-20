@@ -269,6 +269,7 @@ GOTO:EOF
   
 :VIEWLOG
   SET /P XBMC_BUILD_ANSWER=View the build log in your HTML browser? [y/n]
-  if /I %XBMC_BUILD_ANSWER% NEQ y GOTO:EOF
-  start /D"%~dp0%VS_PATH%\%VS_CONF%" BuildLog.htm"
+  if /I "%XBMC_BUILD_ANSWER%" EQU "y" (
+    start /D"%~dp0%VS_PATH%\%VS_CONF%" BuildLog.htm"
+  )
   GOTO:EOF

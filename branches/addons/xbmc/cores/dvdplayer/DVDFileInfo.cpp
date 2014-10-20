@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -137,7 +136,7 @@ bool CDVDFileInfo::ExtractThumb(const CStdString &strPath, const CStdString &str
 
     CDVDStreamInfo hint(*pDemuxer->GetStream(nVideoStream), true);
     
-    if (hint.codec == CODEC_ID_MPEG2VIDEO || hint.codec == CODEC_ID_MPEG1VIDEO)
+    if (hint.codec == AV_CODEC_ID_MPEG2VIDEO || hint.codec == AV_CODEC_ID_MPEG1VIDEO)
     {
       // libmpeg2 is not thread safe so use ffmepg for mpeg2/mpeg1 thumb extraction 
     CDVDCodecOptions dvdOptions;
@@ -159,6 +158,8 @@ bool CDVDFileInfo::ExtractThumb(const CStdString &strPath, const CStdString &str
         DemuxPacket* pPacket = NULL;
         int iDecoderState = VC_ERROR;
         DVDVideoPicture picture;
+        
+        memset(&picture, 0, sizeof(picture));
 
         // num streams * 40 frames, should get a valid frame, if not abort.
         int abort_index = pDemuxer->GetNrOfStreams() * 40;
@@ -208,7 +209,7 @@ bool CDVDFileInfo::ExtractThumb(const CStdString &strPath, const CStdString &str
             uint8_t *src[] = { picture.data[0], picture.data[1], picture.data[2], 0 };
             int     srcStride[] = { picture.iLineSize[0], picture.iLineSize[1], picture.iLineSize[2], 0 };
             uint8_t *dst[] = { pOutBuf, 0, 0, 0 };
-            int     dstStride[] = { nWidth*4, 0, 0, 0 };
+            int     dstStride[] = { (int)nWidth*4, 0, 0, 0 };
 
             if (context)
             {
@@ -342,8 +343,7 @@ bool CDVDFileInfo::DemuxerToStreamDetails(CDVDDemux *pDemux, CStreamDetails &det
     {
       CStreamDetailAudio *p = new CStreamDetailAudio();
       p->m_iChannels = ((CDemuxStreamAudio *)stream)->iChannels;
-      if (stream->language)
-        p->m_strLanguage = stream->language;
+      p->m_strLanguage = stream->language;
       pDemux->GetStreamCodecName(iStream, p->m_strCodec);
       details.AddStream(p);
       retVal = true;

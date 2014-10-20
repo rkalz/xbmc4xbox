@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -80,6 +79,7 @@
 #endif
 
 #include <vector>
+#include "settings/AdvancedSettings.h"
 
 using namespace std;
 using namespace XFILE;
@@ -174,7 +174,8 @@ const BUILT_IN commands[] = {
   { "PlayWith",                   true,   "Play the selected item with the specified core" },
   { "WakeOnLan",                  true,   "Sends the wake-up packet to the broadcast address for the specified MAC address" },
   { "Addon.Default.OpenSettings", true,   "Open a settings dialog for the default addon of the given type" },
-  { "Addon.Default.Set",          true,   "Open a select dialog to allow choosing the default addon of the given type" }
+  { "Addon.Default.Set",          true,   "Open a select dialog to allow choosing the default addon of the given type" },
+  { "toggledebug",                false,  "Enables/disables debug mode" },
 };
 
 bool CBuiltins::HasCommand(const CStdString& execString)
@@ -1368,6 +1369,12 @@ int CBuiltins::Execute(const CStdString& execString)
       if (type == ADDON_VIZ)
         g_windowManager.SendMessage(GUI_MSG_VISUALISATION_RELOAD, 0, 0);
     }
+  }
+  else if (execute.Equals("toggledebug"))
+  {
+    bool debug = g_guiSettings.GetBool("debug.showloginfo");
+    g_guiSettings.SetBool("debug.showloginfo", !debug);
+    g_advancedSettings.SetDebugMode(!debug);
   }
   else
     return -1;

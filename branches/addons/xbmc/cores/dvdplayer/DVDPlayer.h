@@ -2,7 +2,7 @@
 
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,9 +15,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -59,6 +58,7 @@ public:
   int              source;
   double           dts;    // last dts from demuxer, used to find disncontinuities
   double           dur;    // last frame expected duration
+  double           dts_state; // when did we last send a playback state update
   CDVDStreamInfo   hint;   // stream hints, used to notice stream changes
   void*            stream; // pointer or integer, identifying stream playing. if it changes stream changed
   int              changes; // remembered counter from stream to track codec changes
@@ -81,6 +81,7 @@ public:
     id     = -1;
     source = STREAM_SOURCE_NONE;
     dts    = DVD_NOPTS_VALUE;
+    dts_state = DVD_NOPTS_VALUE;
     dur    = DVD_NOPTS_VALUE;
     hint.Clear();
     stream = NULL;
@@ -186,6 +187,7 @@ public:
   virtual void GetVideoAspectRatio(float& fAR)                  { fAR = m_dvdPlayerVideo.GetAspectRatio(); }
   virtual bool CanRecord();
   virtual bool IsRecording();
+  virtual bool CanPause();
   virtual bool Record(bool bOnOff);
   virtual void SetAVDelay(float fValue = 0.0f);
   virtual float GetAVDelay();
@@ -373,11 +375,15 @@ protected:
     ETIMESOURCE_MENU,
   };
 
+  friend class CDVDPlayerVideo;
+  friend class CDVDPlayerAudio;
+
   struct SPlayerState
   {
     SPlayerState() { Clear(); }
     void Clear()
     {
+      player        = 0;
       timestamp     = 0;
       time          = 0;
       time_total    = 0;
@@ -389,6 +395,8 @@ protected:
       chapter_count = 0;
       canrecord     = false;
       recording     = false;
+      canpause      = false;
+      canseek       = false;
       demux_video   = "";
       demux_audio   = "";
       cache_bytes   = 0;
@@ -396,6 +404,8 @@ protected:
       cache_delay   = 0.0;
       cache_offset  = 0.0;
     }
+
+    int    player;            // source of this data
 
     double timestamp;         // last time of update
     double time_offset;       // difference between time and pts
@@ -414,6 +424,9 @@ protected:
     bool canrecord;           // can input stream record
     bool recording;           // are we currently recording
 
+    bool canpause;            // pvr: can pause the current playing item
+    bool canseek;             // pvr: can seek in the current playing item
+
     std::string demux_video;
     std::string demux_audio;
 
@@ -421,7 +434,7 @@ protected:
     double  cache_level;   // current estimated required cache level
     double  cache_delay;   // time until cache is expected to reach estimated level
     double  cache_offset;  // percentage of file ahead of current position
-  } m_State;
+  } m_State, m_StateInput;
   CCriticalSection m_StateSection;
 
   HANDLE m_hReadyEvent;
@@ -449,4 +462,8 @@ protected:
   } m_EdlAutoSkipMarkers;
 
   CPlayerOptions m_PlayerOptions;
+  
+  bool m_HasVideo;
+  
+  bool m_DemuxerPausePending;
 };

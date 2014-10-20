@@ -277,8 +277,11 @@ check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
                     tok->encoding = cs;
                     tok->decoding_state = -1;
                 }
-                else
+                else {
+                    PyErr_Format(PyExc_SyntaxError,
+                                 "encoding problem: %s", cs);
                     PyMem_FREE(cs);
+                }
 #else
                 /* Without Unicode support, we cannot
                    process the coding spec. Since there
@@ -289,14 +292,11 @@ check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
             }
         } else {                /* then, compare cs with BOM */
             r = (strcmp(tok->encoding, cs) == 0);
+            if (!r)
+                PyErr_Format(PyExc_SyntaxError,
+                             "encoding problem: %s with BOM", cs);
             PyMem_FREE(cs);
         }
-    }
-    if (!r) {
-        cs = tok->encoding;
-        if (!cs)
-            cs = "with BOM";
-        PyErr_Format(PyExc_SyntaxError, "encoding problem: %s", cs);
     }
     return r;
 }
@@ -400,6 +400,12 @@ fp_readl(char *s, int size, struct tok_state *tok)
         buf = PyObject_CallObject(tok->decoding_readline, NULL);
         if (buf == NULL)
             return error_ret(tok);
+        if (!PyUnicode_Check(buf)) {
+            Py_DECREF(buf);
+            PyErr_SetString(PyExc_SyntaxError,
+                            "codec did not return a unicode object");
+            return error_ret(tok);
+        }
     } else {
         tok->decoding_buffer = NULL;
         if (PyString_CheckExact(buf))
@@ -528,7 +534,7 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
             "Non-ASCII character '\\x%.2x' "
             "in file %.200s on line %i, "
             "but no encoding declared; "
-            "see http://www.python.org/peps/pep-0263.html for details",
+            "see http://python.org/dev/peps/pep-0263/ for details",
             badchar, tok->filename, tok->lineno + 1);
         PyErr_SetString(PyExc_SyntaxError, buf);
         return error_ret(tok);
@@ -1494,15 +1500,24 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
                     } while (isdigit(c));
                 }
                 if (c == 'e' || c == 'E') {
-        exponent:
+                    int e;
+                  exponent:
+                    e = c;
                     /* Exponent part */
                     c = tok_nextc(tok);
-                    if (c == '+' || c == '-')
+                    if (c == '+' || c == '-') {
                         c = tok_nextc(tok);
-                    if (!isdigit(c)) {
-                        tok->done = E_TOKEN;
+                        if (!isdigit(c)) {
+                            tok->done = E_TOKEN;
+                            tok_backup(tok, c);
+                            return ERRORTOKEN;
+                        }
+                    } else if (!isdigit(c)) {
                         tok_backup(tok, c);
-                        return ERRORTOKEN;
+                        tok_backup(tok, e);
+                        *p_start = tok->start;
+                        *p_end = tok->cur;
+                        return NUMBER;
                     }
                     do {
                         c = tok_nextc(tok);

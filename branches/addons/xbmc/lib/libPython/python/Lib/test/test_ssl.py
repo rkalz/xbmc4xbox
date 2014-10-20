@@ -25,6 +25,7 @@ ssl = test_support.import_module("ssl")
 HOST = test_support.HOST
 CERTFILE = None
 SVN_PYTHON_ORG_ROOT_CERT = None
+NULLBYTECERT = None
 
 def handle_error(prefix):
     exc_format = ' '.join(traceback.format_exception(*sys.exc_info()))
@@ -123,6 +124,35 @@ class BasicSocketTests(unittest.TestCase):
                           ('DNS', 'projects.forum.nokia.com'))
                         )
 
+    def test_parse_cert_CVE_2013_4238(self):
+        p = ssl._ssl._test_decode_cert(NULLBYTECERT)
+        if test_support.verbose:
+            sys.stdout.write("\n" + pprint.pformat(p) + "\n")
+        subject = ((('countryName', 'US'),),
+                   (('stateOrProvinceName', 'Oregon'),),
+                   (('localityName', 'Beaverton'),),
+                   (('organizationName', 'Python Software Foundation'),),
+                   (('organizationalUnitName', 'Python Core Development'),),
+                   (('commonName', 'null.python.org\x00example.org'),),
+                   (('emailAddress', 'python-dev@python.org'),))
+        self.assertEqual(p['subject'], subject)
+        self.assertEqual(p['issuer'], subject)
+        if ssl.OPENSSL_VERSION_INFO >= (0, 9, 8):
+            san = (('DNS', 'altnull.python.org\x00example.com'),
+                   ('email', 'null@python.org\x00user@example.org'),
+                   ('URI', 'http://null.python.org\x00http://example.org'),
+                   ('IP Address', '192.0.2.1'),
+                   ('IP Address', '2001:DB8:0:0:0:0:0:1\n'))
+        else:
+            # OpenSSL 0.9.7 doesn't support IPv6 addresses in subjectAltName
+            san = (('DNS', 'altnull.python.org\x00example.com'),
+                   ('email', 'null@python.org\x00user@example.org'),
+                   ('URI', 'http://null.python.org\x00http://example.org'),
+                   ('IP Address', '192.0.2.1'),
+                   ('IP Address', '<invalid>'))
+
+        self.assertEqual(p['subjectAltName'], san)
+
     def test_DER_to_PEM(self):
         with open(SVN_PYTHON_ORG_ROOT_CERT, 'r') as f:
             pem = f.read()
@@ -162,9 +192,8 @@ class BasicSocketTests(unittest.TestCase):
         self.assertTrue(s.startswith("OpenSSL {:d}.{:d}.{:d}".format(major, minor, fix)),
                         (s, t))
 
+    @test_support.requires_resource('network')
     def test_ciphers(self):
-        if not test_support.is_resource_enabled('network'):
-            return
         remote = ("svn.python.org", 443)
         with test_support.transient_internet(remote[0]):
             s = ssl.wrap_socket(socket.socket(socket.AF_INET),
@@ -202,6 +231,13 @@ class BasicSocketTests(unittest.TestCase):
         self.assertRaises(socket.error, ss.recvfrom_into, bytearray(b'x'), 1)
         self.assertRaises(socket.error, ss.send, b'x')
         self.assertRaises(socket.error, ss.sendto, b'x', ('0.0.0.0', 0))
+
+    def test_unsupported_dtls(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(s.close)
+        with self.assertRaises(NotImplementedError) as cx:
+            ssl.wrap_socket(s, cert_reqs=ssl.CERT_NONE)
+        self.assertEqual(str(cx.exception), "only stream sockets are supported")
 
 
 class NetworkedTests(unittest.TestCase):
@@ -354,19 +390,24 @@ class NetworkedTests(unittest.TestCase):
 
     def test_get_server_certificate(self):
         with test_support.transient_internet("svn.python.org"):
-            pem = ssl.get_server_certificate(("svn.python.org", 443))
+            pem = ssl.get_server_certificate(("svn.python.org", 443),
+                                             ssl.PROTOCOL_SSLv23)
             if not pem:
                 self.fail("No server certificate on svn.python.org:443!")
 
             try:
-                pem = ssl.get_server_certificate(("svn.python.org", 443), ca_certs=CERTFILE)
+                pem = ssl.get_server_certificate(("svn.python.org", 443),
+                                                 ssl.PROTOCOL_SSLv23,
+                                                 ca_certs=CERTFILE)
             except ssl.SSLError:
                 #should fail
                 pass
             else:
                 self.fail("Got server certificate %s for svn.python.org!" % pem)
 
-            pem = ssl.get_server_certificate(("svn.python.org", 443), ca_certs=SVN_PYTHON_ORG_ROOT_CERT)
+            pem = ssl.get_server_certificate(("svn.python.org", 443),
+                                             ssl.PROTOCOL_SSLv23,
+                                             ca_certs=SVN_PYTHON_ORG_ROOT_CERT)
             if not pem:
                 self.fail("No server certificate on svn.python.org:443!")
             if test_support.verbose:
@@ -1016,7 +1057,7 @@ else:
             try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv2, True)
             try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv2, True, ssl.CERT_OPTIONAL)
             try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv2, True, ssl.CERT_REQUIRED)
-            try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, True)
+            try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv23, False)
             try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_SSLv3, False)
             try_protocol_combo(ssl.PROTOCOL_SSLv2, ssl.PROTOCOL_TLSv1, False)
 
@@ -1360,7 +1401,7 @@ else:
 
 
 def test_main(verbose=False):
-    global CERTFILE, SVN_PYTHON_ORG_ROOT_CERT, NOKIACERT
+    global CERTFILE, SVN_PYTHON_ORG_ROOT_CERT, NOKIACERT, NULLBYTECERT
     CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir,
                             "keycert.pem")
     SVN_PYTHON_ORG_ROOT_CERT = os.path.join(
@@ -1368,10 +1409,13 @@ def test_main(verbose=False):
         "https_svn_python_org_root.pem")
     NOKIACERT = os.path.join(os.path.dirname(__file__) or os.curdir,
                              "nokia.pem")
+    NULLBYTECERT = os.path.join(os.path.dirname(__file__) or os.curdir,
+                                "nullbytecert.pem")
 
     if (not os.path.exists(CERTFILE) or
         not os.path.exists(SVN_PYTHON_ORG_ROOT_CERT) or
-        not os.path.exists(NOKIACERT)):
+        not os.path.exists(NOKIACERT) or
+        not os.path.exists(NULLBYTECERT)):
         raise test_support.TestFailed("Can't read certificate files!")
 
     tests = [BasicTests, BasicSocketTests]

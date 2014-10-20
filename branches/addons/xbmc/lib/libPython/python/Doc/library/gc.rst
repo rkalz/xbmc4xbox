@@ -132,8 +132,8 @@ The :mod:`gc` module provides the following functions:
 
    Return a list of objects directly referred to by any of the arguments. The
    referents returned are those objects visited by the arguments' C-level
-   :attr:`tp_traverse` methods (if any), and may not be all objects actually
-   directly reachable.  :attr:`tp_traverse` methods are supported only by objects
+   :c:member:`~PyTypeObject.tp_traverse` methods (if any), and may not be all objects actually
+   directly reachable.  :c:member:`~PyTypeObject.tp_traverse` methods are supported only by objects
    that support garbage collection, and are only required to visit objects that may
    be involved in a cycle.  So, for example, if an integer is directly reachable
    from an argument, that integer object may or may not appear in the result list.
@@ -142,8 +142,8 @@ The :mod:`gc` module provides the following functions:
 
 .. function:: is_tracked(obj)
 
-   Returns True if the object is currently tracked by the garbage collector,
-   False otherwise.  As a general rule, instances of atomic types aren't
+   Returns ``True`` if the object is currently tracked by the garbage collector,
+   ``False`` otherwise.  As a general rule, instances of atomic types aren't
    tracked and instances of non-atomic types (containers, user-defined
    objects...) are.  However, some type-specific optimizations can be present
    in order to suppress the garbage collector footprint of simple instances

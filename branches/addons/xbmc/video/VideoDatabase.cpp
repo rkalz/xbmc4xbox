@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -4330,6 +4329,7 @@ bool CVideoDatabase::GetSetsNav(const CStdString& strBaseDir, CFileItemList& ite
         strDir.Format("%ld/", it->first);
         pItem->SetPath(strBaseDir + strDir);
         pItem->m_bIsFolder=true;
+        pItem->GetVideoInfoTag()->m_strPath = pItem->GetPath();
         if (idContent == VIDEODB_CONTENT_MOVIES || idContent == VIDEODB_CONTENT_MUSICVIDEOS)
         {
           pItem->GetVideoInfoTag()->m_playCount = it->second.second;
@@ -4351,6 +4351,7 @@ bool CVideoDatabase::GetSetsNav(const CStdString& strBaseDir, CFileItemList& ite
         strDir.Format("%ld/", m_pDS->fv("sets.idSet").get_asInt());
         pItem->SetPath(strBaseDir + strDir);
         pItem->m_bIsFolder=true;
+        pItem->GetVideoInfoTag()->m_strPath = pItem->GetPath();
         pItem->SetLabelPreformated(true);
         if (idContent == VIDEODB_CONTENT_MOVIES || idContent==VIDEODB_CONTENT_MUSICVIDEOS)
         {
@@ -5034,7 +5035,7 @@ bool CVideoDatabase::GetMoviesByWhere(const CStdString& strBaseDir, const CStdSt
     if (NULL == m_pDS.get()) return false;
 
     CStdString strSQL = "select * from movieview ";
-    if (fetchSets)
+    if (fetchSets && g_guiSettings.GetBool("videolibrary.groupmoviesets"))
     {
       // not getting a set, so grab all sets that match this where clause first
       CStdString setsWhere;

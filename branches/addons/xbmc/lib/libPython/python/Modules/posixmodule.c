@@ -4109,6 +4109,34 @@ posix_getgroups(PyObject *self, PyObject *noargs)
     gid_t* alt_grouplist = grouplist;
     int n;
 
+#ifdef __APPLE__
+    /* Issue #17557: As of OS X 10.8, getgroups(2) no longer raises EINVAL if
+     * there are more groups than can fit in grouplist.  Therefore, on OS X
+     * always first call getgroups with length 0 to get the actual number
+     * of groups.
+     */
+    n = getgroups(0, NULL);
+    if (n < 0) {
+        return posix_error();
+    } else if (n <= MAX_GROUPS) {
+        /* groups will fit in existing array */
+        alt_grouplist = grouplist;
+    } else {
+        alt_grouplist = PyMem_Malloc(n * sizeof(gid_t));
+        if (alt_grouplist == NULL) {
+            errno = EINVAL;
+            return posix_error();
+        }
+    }
+
+    n = getgroups(n, alt_grouplist);
+    if (n == -1) {
+        if (alt_grouplist != grouplist) {
+            PyMem_Free(alt_grouplist);
+        }
+        return posix_error();
+    }
+#else
     n = getgroups(MAX_GROUPS, grouplist);
     if (n < 0) {
         if (errno == EINVAL) {
@@ -4135,6 +4163,8 @@ posix_getgroups(PyObject *self, PyObject *noargs)
             return posix_error();
         }
     }
+#endif
+
     result = PyList_New(n);
     if (result != NULL) {
         int i;
@@ -6607,8 +6637,12 @@ PyDoc_STRVAR(posix_close__doc__,
 "close(fd)\n\n\
 Close a file descriptor (for low level IO).");
 
+/*
+The underscore at end of function name avoids a name clash with the libc
+function posix_close.
+*/
 static PyObject *
-posix_close(PyObject *self, PyObject *args)
+posix_close_(PyObject *self, PyObject *args)
 {
     int fd, res;
     if (!PyArg_ParseTuple(args, "i:close", &fd))
@@ -6689,7 +6723,8 @@ posix_dup2(PyObject *self, PyObject *args)
 
 PyDoc_STRVAR(posix_lseek__doc__,
 "lseek(fd, pos, how) -> newpos\n\n\
-Set the current position of a file descriptor.");
+Set the current position of a file descriptor.\n\
+Return the new cursor position in bytes, starting from the beginning.");
 
 static PyObject *
 posix_lseek(PyObject *self, PyObject *args)
@@ -6870,8 +6905,35 @@ posix_fdopen(PyObject *self, PyObject *args)
         PyMem_FREE(mode);
         return NULL;
     }
-    if (!_PyVerify_fd(fd))
+    if (!_PyVerify_fd(fd)) {
+        PyMem_FREE(mode);
         return posix_error();
+    }
+#if defined(HAVE_FSTAT) && defined(S_IFDIR) && defined(EISDIR)
+    {
+        struct stat buf;
+        const char *msg;
+        PyObject *exc;
+        if (fstat(fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
+            PyMem_FREE(mode);
+            msg = strerror(EISDIR);
+            exc = PyObject_CallFunction(PyExc_IOError, "(isO)",
+                                        EISDIR, msg, "<fdopen>");
+            if (exc) {
+                PyErr_SetObject(PyExc_IOError, exc);
+                Py_DECREF(exc);
+            }
+            return NULL;
+        }
+    }
+#endif
+    /* The dummy filename used here must be kept in sync with the value
+       tested against in gzip.GzipFile.__init__() - see issue #13781. */
+    f = PyFile_FromFile(NULL, "<fdopen>", orgmode, fclose);
+    if (f == NULL) {
+        PyMem_FREE(mode);
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
 #if !defined(MS_WINDOWS) && defined(HAVE_FCNTL_H)
     if (mode[0] == 'a') {
@@ -6894,11 +6956,9 @@ posix_fdopen(PyObject *self, PyObject *args)
     PyMem_FREE(mode);
     if (fp == NULL)
         return posix_error();
-    /* The dummy filename used here must be kept in sync with the value
-       tested against in gzip.GzipFile.__init__() - see issue #13781. */
-    f = PyFile_FromFile(fp, "<fdopen>", orgmode, fclose);
-    if (f != NULL)
-        PyFile_SetBufSize(f, bufsize);
+    /* We now know we will succeed, so initialize the file object. */
+    ((PyFileObject *)f)->f_fp = fp;
+    PyFile_SetBufSize(f, bufsize);
     return f;
 }
 
@@ -8990,7 +9050,7 @@ static PyMethodDef posix_methods[] = {
     {"tcsetpgrp",       posix_tcsetpgrp, METH_VARARGS, posix_tcsetpgrp__doc__},
 #endif /* HAVE_TCSETPGRP */
     {"open",            posix_open, METH_VARARGS, posix_open__doc__},
-    {"close",           posix_close, METH_VARARGS, posix_close__doc__},
+    {"close",           posix_close_, METH_VARARGS, posix_close__doc__},
     {"closerange",      posix_closerange, METH_VARARGS, posix_closerange__doc__},
     {"dup",             posix_dup, METH_VARARGS, posix_dup__doc__},
     {"dup2",            posix_dup2, METH_VARARGS, posix_dup2__doc__},

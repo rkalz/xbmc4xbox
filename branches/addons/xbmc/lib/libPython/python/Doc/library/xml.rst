@@ -28,11 +28,12 @@ definition of the Python bindings for the DOM and SAX interfaces.
 The XML handling submodules are:
 
 * :mod:`xml.etree.ElementTree`: the ElementTree API, a simple and lightweight
+  XML processor
 
 ..
 
 * :mod:`xml.dom`: the DOM API definition
-* :mod:`xml.dom.minidom`: a lightweight DOM implementation
+* :mod:`xml.dom.minidom`: a minimal DOM implementation
 * :mod:`xml.dom.pulldom`: support for building partial DOM trees
 
 ..
@@ -52,15 +53,17 @@ access local files, to generate network connections to other machines, or
 to or circumvent firewalls. The attacks on XML abuse unfamiliar features
 like inline `DTD`_ (document type definition) with entities.
 
+The following table gives an overview of the known attacks and if the various
+modules are vulnerable to them.
 
 =========================  ========  =========  =========  ========  =========
 kind                       sax       etree      minidom    pulldom   xmlrpc
 =========================  ========  =========  =========  ========  =========
-billion laughs             **True**  **True**   **True**   **True**  **True**
-quadratic blowup           **True**  **True**   **True**   **True**  **True**
-external entity expansion  **True**  False (1)  False (2)  **True**  False (3)
-DTD retrieval              **True**  False      False      **True**  False
-decompression bomb         False     False      False      False     **True**
+billion laughs             **Yes**   **Yes**    **Yes**    **Yes**   **Yes**
+quadratic blowup           **Yes**   **Yes**    **Yes**    **Yes**   **Yes**
+external entity expansion  **Yes**   No    (1)  No    (2)  **Yes**   No    (3)
+DTD retrieval              **Yes**   No         No         **Yes**   No
+decompression bomb         No        No         No         No        **Yes**
 =========================  ========  =========  =========  ========  =========
 
 1. :mod:`xml.etree.ElementTree` doesn't expand external entities and raises a
@@ -92,7 +95,7 @@ external entity expansion
   content into the XML document.
 
 DTD retrieval
-  Some XML libraries like Python's mod:'xml.dom.pulldom' retrieve document type
+  Some XML libraries like Python's :mod:`xml.dom.pulldom` retrieve document type
   definitions from remote or local locations. The feature has similar
   implications as the external entity expansion issue.
 

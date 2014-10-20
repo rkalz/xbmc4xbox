@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -54,6 +53,10 @@ CDVDInputStreamNavigator::CDVDInputStreamNavigator(IDVDPlayer* player) : CDVDInp
   m_iTitle = m_iTitleCount = 0;
   m_iPart = m_iPartCount = 0;
   m_iTime = m_iTotalTime = 0;
+  m_bEOF = false;
+  m_lastevent = DVDNAV_NOP;
+
+  memset(m_lastblock, 0, sizeof(m_lastblock));
 }
 
 CDVDInputStreamNavigator::~CDVDInputStreamNavigator()
@@ -64,7 +67,6 @@ CDVDInputStreamNavigator::~CDVDInputStreamNavigator()
 bool CDVDInputStreamNavigator::Open(const char* strFile, const std::string& content)
 {
   char* strDVDFile;
-  m_icurrentGroupId = 0;
   if (!CDVDInputStream::Open(strFile, "video/x-dvd-mpeg")) 
     return false;
   
@@ -179,8 +181,14 @@ bool CDVDInputStreamNavigator::Open(const char* strFile, const std::string& cont
     m_dll.dvdnav_get_next_cache_block(m_dvdnav,&buf_ptr,&event,&len);
     m_dll.dvdnav_sector_search(m_dvdnav, 0, SEEK_SET);
 
+    // first try title menu
     if(m_dll.dvdnav_menu_call(m_dvdnav, DVD_MENU_Title) != DVDNAV_STATUS_OK)
+    {
       CLog::Log(LOGERROR,"Error on dvdnav_menu_call(Title): %s\n", m_dll.dvdnav_err_to_string(m_dvdnav));
+      // next try root menu
+      if(m_dll.dvdnav_menu_call(m_dvdnav, DVD_MENU_Root) != DVDNAV_STATUS_OK )
+        CLog::Log(LOGERROR,"Error on dvdnav_menu_call(Root): %s\n", m_dll.dvdnav_err_to_string(m_dvdnav));
+    }
   }
 
   m_bEOF = false;
@@ -226,11 +234,23 @@ int CDVDInputStreamNavigator::Read(BYTE* buf, int buf_size)
   int navresult;
   int iBytesRead;
 
+  int NOPcount = 0;
   while(true) {
     navresult = ProcessBlock(buf, &iBytesRead);
     if (navresult == NAVRESULT_HOLD)       return 0; // return 0 bytes read;
     else if (navresult == NAVRESULT_ERROR) return -1;
     else if (navresult == NAVRESULT_DATA)  return iBytesRead;
+    else if (navresult == NAVRESULT_NOP)
+    {
+      NOPcount++;
+      if (NOPcount == 1000) 
+      {
+        m_bEOF = true;
+        CLog::Log(LOGERROR,"CDVDInputStreamNavigator: Stopping playback due to infinite loop, caused by badly authored DVD navigation structure. Try enabling 'Attempt to skip introduction before DVD menu'.");
+        m_pDVDPlayer->OnDVDNavResult(NULL, DVDNAV_STOP);
+        return -1; // fail and stop playback.
+      }
+    }
   }
 
   return iBytesRead;
@@ -461,7 +481,6 @@ int CDVDInputStreamNavigator::ProcessBlock(BYTE* dest_buffer, int* read)
         m_iCellStart = cell_change_event->cell_start; // store cell time as we need that for time later
         m_iTime      = (int) (m_iCellStart / 90);
         m_iTotalTime = (int) (cell_change_event->pgc_length / 90);
-        m_icurrentGroupId = cell_change_event->pgN * 1000 + cell_change_event->cellN;
         
         iNavresult = m_pDVDPlayer->OnDVDNavResult(buf, DVDNAV_CELL_CHANGE);
       }
@@ -1041,7 +1060,7 @@ int CDVDInputStreamNavigator::GetTime()
 
 bool CDVDInputStreamNavigator::SeekTime(int iTimeInMsec)
 {
-  if( m_dll.dvdnav_time_search(m_dvdnav, iTimeInMsec * 90) == DVDNAV_STATUS_ERR )
+  if( m_dll.dvdnav_jump_to_sector_by_time(m_dvdnav, iTimeInMsec * 90, 0) == DVDNAV_STATUS_ERR )
   {
     CLog::Log(LOGDEBUG, "dvdnav: dvdnav_time_search failed( %s )", m_dll.dvdnav_err_to_string(m_dvdnav));
     return false;
@@ -1150,7 +1169,7 @@ bool CDVDInputStreamNavigator::IsSubtitleStreamEnabled()
     return false;
 }
 
-bool CDVDInputStreamNavigator::GetNavigatorState(std::string &xmlstate)
+bool CDVDInputStreamNavigator::GetState(std::string &xmlstate)
 {
   if( !m_dvdnav ) 
     return false;
@@ -1171,7 +1190,7 @@ bool CDVDInputStreamNavigator::GetNavigatorState(std::string &xmlstate)
   return true;
 }
 
-bool CDVDInputStreamNavigator::SetNavigatorState(std::string &xmlstate)
+bool CDVDInputStreamNavigator::SetState(const std::string &xmlstate)
 {
   if( !m_dvdnav ) 
     return false;
@@ -1271,9 +1290,6 @@ int CDVDInputStreamNavigator::ConvertAudioStreamId_ExternalToXBMC(int id)
     // non VTS_DOMAIN, only one stream is available
     return 0;
   }
-  
-  CLog::Log(LOGWARNING, "%s - no stream found %d", __FUNCTION__, id);
-  return -1;
 }
 
 int CDVDInputStreamNavigator::ConvertSubtitleStreamId_XBMCToExternal(int id)
@@ -1345,7 +1361,4 @@ int CDVDInputStreamNavigator::ConvertSubtitleStreamId_ExternalToXBMC(int id)
     // non VTS_DOMAIN, only one stream is available
     return 0;
   }
-  
-  CLog::Log(LOGWARNING, "%s - no stream found %d", __FUNCTION__, id);
-  return -1;
 }

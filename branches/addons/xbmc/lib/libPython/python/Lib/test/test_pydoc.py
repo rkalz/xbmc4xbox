@@ -4,15 +4,18 @@ import difflib
 import __builtin__
 import re
 import pydoc
+import contextlib
 import inspect
 import keyword
+import pkgutil
 import unittest
 import xml.etree
+import types
 import test.test_support
 from collections import namedtuple
 from test.script_helper import assert_python_ok
-from test.test_support import (
-    TESTFN, rmtree, reap_children, captured_stdout)
+from test.test_support import (TESTFN, rmtree, reap_children, captured_stdout,
+                               captured_stderr, requires_docstrings)
 
 from test import pydoc_mod
 
@@ -35,6 +38,7 @@ FILE
 CLASSES
     __builtin__.object
         B
+        C
     A
 \x20\x20\x20\x20
     class A
@@ -56,6 +60,26 @@ CLASSES
      |  Data and other attributes defined here:
      |\x20\x20
      |  NO_MEANING = 'eggs'
+\x20\x20\x20\x20
+    class C(__builtin__.object)
+     |  Methods defined here:
+     |\x20\x20
+     |  get_answer(self)
+     |      Return say_no()
+     |\x20\x20
+     |  is_it_true(self)
+     |      Return self.get_answer()
+     |\x20\x20
+     |  say_no(self)
+     |\x20\x20
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |\x20\x20
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |\x20\x20
+     |  __weakref__
+     |      list of weak references to the object (if defined)
 
 FUNCTIONS
     doc_func()
@@ -105,6 +129,7 @@ expected_html_pattern = \
 </font></dt><dd>
 <dl>
 <dt><font face="helvetica, arial"><a href="test.pydoc_mod.html#B">B</a>
+</font></dt><dt><font face="helvetica, arial"><a href="test.pydoc_mod.html#C">C</a>
 </font></dt></dl>
 </dd>
 <dt><font face="helvetica, arial"><a href="test.pydoc_mod.html#A">A</a>
@@ -139,6 +164,28 @@ expected_html_pattern = \
 Data and other attributes defined here:<br>
 <dl><dt><strong>NO_MEANING</strong> = 'eggs'</dl>
 
+</td></tr></table> <p>
+<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="C">class <strong>C</strong></a>(<a href="__builtin__.html#object">__builtin__.object</a>)</font></td></tr>
+\x20\x20\x20\x20
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%%">Methods defined here:<br>
+<dl><dt><a name="C-get_answer"><strong>get_answer</strong></a>(self)</dt><dd><tt>Return&nbsp;<a href="#C-say_no">say_no</a>()</tt></dd></dl>
+
+<dl><dt><a name="C-is_it_true"><strong>is_it_true</strong></a>(self)</dt><dd><tt>Return&nbsp;self.<a href="#C-get_answer">get_answer</a>()</tt></dd></dl>
+
+<dl><dt><a name="C-say_no"><strong>say_no</strong></a>(self)</dt></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
 </td></tr></table></td></tr></table><p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#eeaa77">
@@ -228,8 +275,32 @@ def print_diffs(text1, text2):
     print '\n' + ''.join(diffs)
 
 
-class PyDocDocTest(unittest.TestCase):
+class PydocBaseTest(unittest.TestCase):
 
+    def _restricted_walk_packages(self, walk_packages, path=None):
+        """
+        A version of pkgutil.walk_packages() that will restrict itself to
+        a given path.
+        """
+        default_path = path or [os.path.dirname(__file__)]
+        def wrapper(path=None, prefix='', onerror=None):
+            return walk_packages(path or default_path, prefix, onerror)
+        return wrapper
+
+    @contextlib.contextmanager
+    def restrict_walk_packages(self, path=None):
+        walk_packages = pkgutil.walk_packages
+        pkgutil.walk_packages = self._restricted_walk_packages(walk_packages,
+                                                               path)
+        try:
+            yield
+        finally:
+            pkgutil.walk_packages = walk_packages
+
+
+class PydocDocTest(unittest.TestCase):
+
+    @requires_docstrings
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_html_doc(self):
@@ -247,6 +318,7 @@ class PyDocDocTest(unittest.TestCase):
             print_diffs(expected_html, result)
             self.fail("outputs are not equal, see diff above")
 
+    @requires_docstrings
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_text_doc(self):
@@ -262,6 +334,14 @@ class PyDocDocTest(unittest.TestCase):
         # Test issue8225 to ensure no doc link appears for xml.etree
         result, doc_loc = get_pydoc_text(xml.etree)
         self.assertEqual(doc_loc, "", "MODULE DOCS incorrectly includes a link")
+
+    def test_getpager_with_stdin_none(self):
+        previous_stdin = sys.stdin
+        try:
+            sys.stdin = None
+            pydoc.getpager() # Shouldn't fail.
+        finally:
+            sys.stdin = previous_stdin
 
     def test_non_str_name(self):
         # issue14638
@@ -303,7 +383,7 @@ class PyDocDocTest(unittest.TestCase):
                          "<type 'exceptions.Exception'>")
 
 
-class PydocImportTest(unittest.TestCase):
+class PydocImportTest(PydocBaseTest):
 
     def setUp(self):
         self.test_dir = os.mkdir(TESTFN)
@@ -338,8 +418,19 @@ class PydocImportTest(unittest.TestCase):
         badsyntax = os.path.join(pkgdir, "__init__") + os.extsep + "py"
         with open(badsyntax, 'w') as f:
             f.write("invalid python syntax = $1\n")
-        result = run_pydoc('zqwykjv', '-k', PYTHONPATH=TESTFN)
-        self.assertEqual('', result)
+        with self.restrict_walk_packages(path=[TESTFN]):
+            with captured_stdout() as out:
+                with captured_stderr() as err:
+                    pydoc.apropos('xyzzy')
+            # No result, no error
+            self.assertEqual(out.getvalue(), '')
+            self.assertEqual(err.getvalue(), '')
+            # The package name is still matched
+            with captured_stdout() as out:
+                with captured_stderr() as err:
+                    pydoc.apropos('syntaxerr')
+            self.assertEqual(out.getvalue().strip(), 'syntaxerr')
+            self.assertEqual(err.getvalue(), '')
 
     def test_apropos_with_unreadable_dir(self):
         # Issue 7367 - pydoc -k failed when unreadable dir on path
@@ -348,8 +439,13 @@ class PydocImportTest(unittest.TestCase):
         self.addCleanup(os.rmdir, self.unreadable_dir)
         # Note, on Windows the directory appears to be still
         #   readable so this is not really testing the issue there
-        result = run_pydoc('zqwykjv', '-k', PYTHONPATH=TESTFN)
-        self.assertEqual('', result)
+        with self.restrict_walk_packages(path=[TESTFN]):
+            with captured_stdout() as out:
+                with captured_stderr() as err:
+                    pydoc.apropos('SOMEKEY')
+        # No result, no error
+        self.assertEqual(out.getvalue(), '')
+        self.assertEqual(err.getvalue(), '')
 
 
 class TestDescriptions(unittest.TestCase):
@@ -380,12 +476,102 @@ class TestDescriptions(unittest.TestCase):
     def test_namedtuple_public_underscore(self):
         NT = namedtuple('NT', ['abc', 'def'], rename=True)
         with captured_stdout() as help_io:
-            help(NT)
+            pydoc.help(NT)
         helptext = help_io.getvalue()
         self.assertIn('_1', helptext)
         self.assertIn('_replace', helptext)
         self.assertIn('_asdict', helptext)
 
+
+@unittest.skipUnless(test.test_support.have_unicode,
+                     "test requires unicode support")
+class TestUnicode(unittest.TestCase):
+
+    def setUp(self):
+        # Better not to use unicode escapes in literals, lest the
+        # parser choke on it if Python has been built without
+        # unicode support.
+        self.Q  = types.ModuleType(
+            'Q', 'Rational numbers: \xe2\x84\x9a'.decode('utf8'))
+        self.Q.__version__ = '\xe2\x84\x9a'.decode('utf8')
+        self.Q.__date__ = '\xe2\x84\x9a'.decode('utf8')
+        self.Q.__author__ = '\xe2\x84\x9a'.decode('utf8')
+        self.Q.__credits__ = '\xe2\x84\x9a'.decode('utf8')
+
+        self.assertIsInstance(self.Q.__doc__, unicode)
+
+    def test_render_doc(self):
+        # render_doc is robust against unicode in docstrings
+        doc = pydoc.render_doc(self.Q)
+        self.assertIsInstance(doc, str)
+
+    def test_encode(self):
+        # _encode is robust against characters out the specified encoding
+        self.assertEqual(pydoc._encode(self.Q.__doc__, 'ascii'), 'Rational numbers: &#8474;')
+
+    def test_pipepager(self):
+        # pipepager does not choke on unicode
+        doc = pydoc.render_doc(self.Q)
+
+        saved, os.popen = os.popen, open
+        try:
+            with test.test_support.temp_cwd():
+                pydoc.pipepager(doc, 'pipe')
+                self.assertEqual(open('pipe').read(), pydoc._encode(doc))
+        finally:
+            os.popen = saved
+
+    def test_tempfilepager(self):
+        # tempfilepager does not choke on unicode
+        doc = pydoc.render_doc(self.Q)
+
+        output = {}
+        def mock_system(cmd):
+            filename = cmd.strip()[1:-1]
+            self.assertEqual('"' + filename + '"', cmd.strip())
+            output['content'] = open(filename).read()
+        saved, os.system = os.system, mock_system
+        try:
+            pydoc.tempfilepager(doc, '')
+            self.assertEqual(output['content'], pydoc._encode(doc))
+        finally:
+            os.system = saved
+
+    def test_plainpager(self):
+        # plainpager does not choke on unicode
+        doc = pydoc.render_doc(self.Q)
+
+        # Note: captured_stdout is too permissive when it comes to
+        # unicode, and using it here would make the test always
+        # pass.
+        with test.test_support.temp_cwd():
+            with open('output', 'w') as f:
+                saved, sys.stdout = sys.stdout, f
+                try:
+                    pydoc.plainpager(doc)
+                finally:
+                    sys.stdout = saved
+            self.assertIn('Rational numbers:', open('output').read())
+
+    def test_ttypager(self):
+        # ttypager does not choke on unicode
+        doc = pydoc.render_doc(self.Q)
+        # Test ttypager
+        with test.test_support.temp_cwd(), test.test_support.captured_stdin():
+            with open('output', 'w') as f:
+                saved, sys.stdout = sys.stdout, f
+                try:
+                    pydoc.ttypager(doc)
+                finally:
+                    sys.stdout = saved
+            self.assertIn('Rational numbers:', open('output').read())
+
+    def test_htmlpage(self):
+        # html.page does not choke on unicode
+        with test.test_support.temp_cwd():
+            with captured_stdout() as output:
+                pydoc.writedoc(self.Q)
+        self.assertEqual(output.getvalue(), 'wrote Q.html\n')
 
 class TestHelper(unittest.TestCase):
     def test_keywords(self):
@@ -401,7 +587,7 @@ class TestHelper(unittest.TestCase):
             try:
                 pydoc.render_doc(name)
             except ImportError:
-                self.fail('finding the doc of {!r} failed'.format(o))
+                self.fail('finding the doc of {!r} failed'.format(name))
 
         for name in ('not__builtin__', 'strrr', 'strr.translate',
                      'str.trrrranslate', '__builtin__.strrr',
@@ -412,9 +598,10 @@ class TestHelper(unittest.TestCase):
 
 def test_main():
     try:
-        test.test_support.run_unittest(PyDocDocTest,
+        test.test_support.run_unittest(PydocDocTest,
                                        PydocImportTest,
                                        TestDescriptions,
+                                       TestUnicode,
                                        TestHelper)
     finally:
         reap_children()

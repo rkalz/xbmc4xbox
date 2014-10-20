@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -92,9 +91,10 @@ using namespace MUSIC_INFO;
  *  %Q - file time
  *  %U - studio
  *  %X - Bitrate
+ *  %W - Listeners
  */
 
-#define MASK_CHARS "NSATBGYFLDIJRCKMEPHZOQUX"
+#define MASK_CHARS "NSATBGYFLDIJRCKMEPHZOQUXW"
 
 CLabelFormatter::CLabelFormatter(const CStdString &mask, const CStdString &mask2)
 {
@@ -294,7 +294,11 @@ CStdString CLabelFormatter::GetMaskContent(const CMaskString &mask, const CFileI
   case 'X': // Bitrate
     if( !item->m_bIsFolder && item->m_dwSize != 0 )
       value.Format("%i kbps", item->m_dwSize);
-    break;           
+    break;
+   case 'W': // Listeners
+    if( !item->m_bIsFolder && music->GetListeners() != 0 )
+     value.Format("%i %s", music->GetListeners(), g_localizeStrings.Get(music->GetListeners() == 1 ? 20454 : 20455));
+    break;    
   }
   if (!value.IsEmpty())
     return mask.m_prefix + value + mask.m_postfix;

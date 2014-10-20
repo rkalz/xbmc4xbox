@@ -1,7 +1,7 @@
 #pragma once
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,9 +14,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -60,7 +59,9 @@ public:
   const CStdString& GetMusicBrainzTRMID() const;
   const CStdString& GetComment() const;
   const CStdString& GetLyrics() const;
+  const CStdString& GetLastPlayed() const;
   char  GetRating() const;
+  int  GetListeners() const;
   int  GetPlayCount() const;
 
   void SetURL(const CStdString& strURL);
@@ -87,7 +88,9 @@ public:
   void SetComment(const CStdString& comment);
   void SetLyrics(const CStdString& lyrics);
   void SetRating(char rating);
+  void SetListeners(int listeners);
   void SetPlayCount(int playcount);
+  void SetLastPlayed(const CStdString& strLastPlayed);
 
   /*! \brief Append a unique artist to the artist list
    Checks if we have this artist already added, and if not adds it to the songs artist list.
@@ -131,11 +134,13 @@ protected:
   CStdString m_strMusicBrainzTRMID;
   CStdString m_strComment;
   CStdString m_strLyrics;
+  CStdString m_strLastPlayed;
   int m_iDuration;
   int m_iTrack;     // consists of the disk number in the high 16 bits, the track number in the low 16bits
   long m_iDbId;
   bool m_bLoaded;
   char m_rating;
+  int m_listeners;
   int m_iTimesPlayed;
   SYSTEMTIME m_dwReleaseDate;
 };

@@ -10,7 +10,7 @@
 
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,9 +23,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -77,7 +76,7 @@ public:
   static bool GetDimension(const TiXmlNode* pRootNode, const char* strTag, float &value, float &min);
   static bool GetUnsigned(const TiXmlNode* pRootNode, const char* strTag, unsigned int& value);
   static bool GetAspectRatio(const TiXmlNode* pRootNode, const char* strTag, CAspectRatio &aspectRatio);
-  static bool GetInfoTexture(const TiXmlNode* pRootNode, const char* strTag, CTextureInfo &image, CGUIInfoLabel &info);
+  static bool GetInfoTexture(const TiXmlNode* pRootNode, const char* strTag, CTextureInfo &image, CGUIInfoLabel &info, int parentID);
   static bool GetTexture(const TiXmlNode* pRootNode, const char* strTag, CTextureInfo &image);
   static bool GetAlignment(const TiXmlNode* pRootNode, const char* strTag, uint32_t& dwAlignment);
   static bool GetAlignmentY(const TiXmlNode* pRootNode, const char* strTag, uint32_t& dwAlignment);
@@ -93,11 +92,11 @@ public:
    \param infoLabel returned infoLabel
    \return true if a valid info label was read, false otherwise
    */
-  static bool GetInfoLabelFromElement(const TiXmlElement *element, CGUIInfoLabel &infoLabel);
-  static void GetInfoLabel(const TiXmlNode *pControlNode, const CStdString &labelTag, CGUIInfoLabel &infoLabel);
-  static void GetInfoLabels(const TiXmlNode *pControlNode, const CStdString &labelTag, std::vector<CGUIInfoLabel> &infoLabels);
+  static bool GetInfoLabelFromElement(const TiXmlElement *element, CGUIInfoLabel &infoLabel, int parentID);
+  static void GetInfoLabel(const TiXmlNode *pControlNode, const CStdString &labelTag, CGUIInfoLabel &infoLabel, int parentID);
+  static void GetInfoLabels(const TiXmlNode *pControlNode, const CStdString &labelTag, std::vector<CGUIInfoLabel> &infoLabels, int parentID);
   static bool GetColor(const TiXmlNode* pRootNode, const char* strTag, color_t &value);
-  static bool GetInfoColor(const TiXmlNode* pRootNode, const char* strTag, CGUIInfoColor &value);
+  static bool GetInfoColor(const TiXmlNode* pRootNode, const char* strTag, CGUIInfoColor &value, int parentID);
   static CStdString FilterLabel(const CStdString &label);
   static bool GetConditionalVisibility(const TiXmlNode* control, int &condition);
   static bool GetActions(const TiXmlNode* pRootNode, const char* strTag, CGUIAction& actions);

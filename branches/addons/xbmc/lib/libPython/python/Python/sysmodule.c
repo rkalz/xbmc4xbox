@@ -219,7 +219,7 @@ PyDoc_STRVAR(exit_doc,
 \n\
 Exit the interpreter by raising SystemExit(status).\n\
 If the status is omitted or None, it defaults to zero (i.e., success).\n\
-If the status is numeric, it will be used as the system exit status.\n\
+If the status is an integer, it will be used as the system exit status.\n\
 If it is another kind of object, it will be printed and the system\n\
 exit status will be one (i.e., failure)."
 );
@@ -367,8 +367,7 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
     result = call_trampoline(tstate, callback, frame, what, arg);
     if (result == NULL) {
         PyEval_SetTrace(NULL, NULL);
-        Py_XDECREF(frame->f_trace);
-        frame->f_trace = NULL;
+        Py_CLEAR(frame->f_trace);
         return -1;
     }
     if (result != Py_None) {
@@ -616,6 +615,10 @@ sys_getwindowsversion(PyObject *self)
     PyStructSequence_SET_ITEM(version, pos++, PyInt_FromLong(ver.wSuiteMask));
     PyStructSequence_SET_ITEM(version, pos++, PyInt_FromLong(ver.wProductType));
 
+    if (PyErr_Occurred()) {
+        Py_DECREF(version);
+        return NULL;
+    }
     return version;
 }
 
@@ -1261,6 +1264,7 @@ make_flags(void)
 #undef SetFlag
 
     if (PyErr_Occurred()) {
+        Py_DECREF(seq);
         return NULL;
     }
     return seq;

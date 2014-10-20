@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -217,9 +216,7 @@ bool CGUIWindowSettingsCategory::OnMessage(CGUIMessage &message)
         CLog::Log(LOGINFO, "load keyboard layout configuration info file: %s", strKeyboardLayoutConfigurationPath.c_str());
         g_keyboardLayoutConfiguration.Load(strKeyboardLayoutConfigurationPath);
 
-        CStdString strLanguagePath;
-        strLanguagePath.Format("special://xbmc/language/%s/strings.xml", m_strNewLanguage.c_str());
-        g_localizeStrings.Load(strLanguagePath);
+        g_localizeStrings.Load("special://xbmc/language/", m_strNewLanguage);
 
         // also tell our weather to reload, as this must be localized
         g_weatherManager.Refresh();
@@ -1274,16 +1271,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
   }
   else if (strSetting.Equals("debug.showloginfo"))
   {
-    if (g_guiSettings.GetBool("debug.showloginfo") && g_advancedSettings.m_logLevel < LOG_LEVEL_DEBUG_FREEMEM)
-    {
-      g_advancedSettings.m_logLevel = LOG_LEVEL_DEBUG_FREEMEM;
-      CLog::Log(LOGNOTICE, "Enabled debug logging due to GUI setting");
-    }
-    else if (!g_guiSettings.GetBool("debug.showloginfo") && g_advancedSettings.m_logLevel == LOG_LEVEL_DEBUG_FREEMEM)
-    {
-      CLog::Log(LOGNOTICE, "Disabled debug logging due to GUI setting");
-      g_advancedSettings.m_logLevel = LOG_LEVEL_NORMAL;
-    }
+    g_advancedSettings.SetDebugMode(g_guiSettings.GetBool("debug.showloginfo"));
   }
   /*else if (strSetting.Equals("musicfiles.repeat"))
   {

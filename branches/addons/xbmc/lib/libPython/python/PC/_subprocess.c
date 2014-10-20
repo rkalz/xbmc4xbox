@@ -331,7 +331,7 @@ getenvironment(PyObject* environment)
     PyObject* values;
     char* p;
 
-    /* convert environment dictionary to windows enviroment string */
+    /* convert environment dictionary to windows environment string */
     if (! PyMapping_Check(environment)) {
         PyErr_SetString(
             PyExc_TypeError, "environment must be dictionary or None");
@@ -367,7 +367,8 @@ getenvironment(PyObject* environment)
                                                      vsize + 1 + 1;
         if (totalsize > PyString_GET_SIZE(out)) {
             int offset = p - PyString_AS_STRING(out);
-            _PyString_Resize(&out, totalsize + 1024);
+            if (_PyString_Resize(&out, totalsize + 1024))
+                goto exit;
             p = PyString_AS_STRING(out) + offset;
         }
         memcpy(p, PyString_AS_STRING(key), ksize);
@@ -383,7 +384,7 @@ getenvironment(PyObject* environment)
     _PyString_Resize(&out, p - PyString_AS_STRING(out));
 
     /* PyObject_Print(out, stdout, 0); */
-
+exit:
     Py_XDECREF(keys);
     Py_XDECREF(values);
 

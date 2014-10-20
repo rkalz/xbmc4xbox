@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -24,6 +23,7 @@
 #include "FileSystem/RarManager.h"
 #include "FileSystem/CurlFile.h"
 #include "XMLUtils.h"
+#include "utils/POUtils.h"
 #include "Temperature.h"
 #include "xbox/network.h"
 #include "Util.h"
@@ -113,7 +113,7 @@ bool CWeather::DoWork()
   CStdString strSetting;
   strSetting.Format("weather.areacode%i", GetArea() + 1);
   CStdString areaCode = GetAreaCode(g_guiSettings.GetString(strSetting));
-  strURL.Format("http://xml.weather.com/weather/local/%s?cc=*&unit=m&dayf=4&prod=xoap&link=xoap&par=%s&key=%s",
+  strURL.Format("http://xml.weather.com/weather/local/%s?cc=*&unit=m&dayf=7&prod=xoap&link=xoap&par=%s&key=%s",
                 areaCode.c_str(), PARTNER_ID, PARTNER_KEY);
   CStdString xml;
   if (httpUtil.Get(strURL, xml))
@@ -322,7 +322,7 @@ bool CWeather::LoadWeather(const CStdString &weatherXML)
     //GetString(pElement, "lsup", m_szLastUpdateTime, "");
 
     GetString(pElement, "icon", iTmpStr, ""); //string cause i've seen it return N/A
-    if (iTmpStr == "N/A")
+    if (iTmpStr == "")
       m_currentIcon.Format("%s128x128/na.png", WEATHER_BASE_PATH);
     else
       m_currentIcon.Format("%s128x128/%s.png", WEATHER_BASE_PATH, iTmpStr.c_str());
@@ -411,9 +411,6 @@ bool CWeather::LoadWeather(const CStdString &weatherXML)
         TiXmlElement *pDayTimeElement = pOneDayElement->FirstChildElement("part"); //grab the first day/night part (should be day)
         if (pDayTimeElement)
         {
-          if (i == 0 && (time.wHour < 7 || time.wHour >= 19)) //weather.com works on a 7am to 7pm basis so grab night if its late in the day
-            pDayTimeElement = pDayTimeElement->NextSiblingElement("part");
-
           GetString(pDayTimeElement, "icon", iTmpStr, ""); //string cause i've seen it return N/A
           if (iTmpStr == "N/A")
             m_dfForcast[i].m_icon.Format("%s128x128/na.png", WEATHER_BASE_PATH);
@@ -458,6 +455,42 @@ void CWeather::LocalizeDay(CStdString &day)
 void CWeather::LoadLocalizedToken()
 {
   // We load the english strings in to get our tokens
+
+  // Try the strings PO file first
+  CPODocument PODoc;
+  if (PODoc.LoadFile("special://xbmc/language/English/strings.po"))
+  {
+    int counter = 0;
+
+    while (PODoc.GetNextEntry())
+    {
+      if (PODoc.GetEntryType() != ID_FOUND)
+        continue;
+
+      uint32_t id = PODoc.GetEntryID();
+      PODoc.ParseEntry(ISSOURCELANG);
+
+      if (id > LOCALIZED_TOKEN_LASTID2) break;
+      if ((LOCALIZED_TOKEN_FIRSTID  <= id && id <= LOCALIZED_TOKEN_LASTID)  ||
+          (LOCALIZED_TOKEN_FIRSTID2 <= id && id <= LOCALIZED_TOKEN_LASTID2))
+      {
+        if (!PODoc.GetMsgid().empty())
+        {
+          m_localizedTokens.insert(make_pair(PODoc.GetMsgid(), id));
+          counter++;
+        }
+      }
+    }
+
+    CLog::Log(LOGDEBUG, "POParser: loaded %i weather tokens", counter);
+    return;
+  }
+
+  CLog::Log(LOGDEBUG,
+            "Weather: no PO string file available, to load English tokens, "
+            "fallback to strings.xml file");
+
+  // We load the tokens from the strings.xml file
   CStdString strLanguagePath = "special://xbmc/language/English/strings.xml";
   
   TiXmlDocument xmlDoc;

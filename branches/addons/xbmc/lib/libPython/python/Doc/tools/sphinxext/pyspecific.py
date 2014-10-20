@@ -5,7 +5,7 @@
 
     Sphinx extension with Python doc-specific markup.
 
-    :copyright: 2008, 2009, 2010 by Georg Brandl.
+    :copyright: 2008-2013 by Georg Brandl.
     :license: Python license.
 """
 
@@ -13,7 +13,12 @@ ISSUE_URI = 'http://bugs.python.org/issue%s'
 SOURCE_URI = 'http://hg.python.org/cpython/file/2.7/%s'
 
 from docutils import nodes, utils
+
+import sphinx
 from sphinx.util.nodes import split_explicit_title
+from sphinx.writers.html import HTMLTranslator
+from sphinx.writers.latex import LaTeXTranslator
+from sphinx.locale import versionlabels
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -22,21 +27,17 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
 
-# monkey-patch HTML translator to give versionmodified paragraphs a class
-def new_visit_versionmodified(self, node):
-    self.body.append(self.starttag(node, 'p', CLASS=node['type']))
-    text = versionlabels[node['type']] % node['version']
-    if len(node):
-        text += ': '
-    else:
-        text += '.'
-    self.body.append('<span class="versionmodified">%s</span>' % text)
-
-from sphinx.writers.html import HTMLTranslator
-from sphinx.writers.latex import LaTeXTranslator
-from sphinx.locale import versionlabels
-HTMLTranslator.visit_versionmodified = new_visit_versionmodified
-HTMLTranslator.visit_versionmodified = new_visit_versionmodified
+if sphinx.__version__[:3] < '1.2':
+    # monkey-patch HTML translator to give versionmodified paragraphs a class
+    def new_visit_versionmodified(self, node):
+        self.body.append(self.starttag(node, 'p', CLASS=node['type']))
+        text = versionlabels[node['type']] % node['version']
+        if len(node):
+            text += ': '
+        else:
+            text += '.'
+        self.body.append('<span class="versionmodified">%s</span>' % text)
+    HTMLTranslator.visit_versionmodified = new_visit_versionmodified
 
 # monkey-patch HTML and LaTeX translators to keep doctest blocks in the
 # doctest docs themselves
@@ -183,11 +184,11 @@ pydoc_topic_labels = [
     'bltin-null-object', 'bltin-type-objects', 'booleans',
     'break', 'callable-types', 'calls', 'class', 'comparisons', 'compound',
     'context-managers', 'continue', 'conversions', 'customization', 'debugger',
-    'del', 'dict', 'dynamic-features', 'else', 'exceptions', 'execmodel',
+    'del', 'dict', 'dynamic-features', 'else', 'exceptions', 'exec', 'execmodel',
     'exprlists', 'floating', 'for', 'formatstrings', 'function', 'global',
     'id-classes', 'identifiers', 'if', 'imaginary', 'import', 'in', 'integers',
     'lambda', 'lists', 'naming', 'numbers', 'numeric-types',
-    'objects', 'operator-summary', 'pass', 'power', 'raise', 'return',
+    'objects', 'operator-summary', 'pass', 'power', 'print', 'raise', 'return',
     'sequence-types', 'shifting', 'slicings', 'specialattrs', 'specialnames',
     'string-methods', 'strings', 'subscriptions', 'truth', 'try', 'types',
     'typesfunctions', 'typesmapping', 'typesmethods', 'typesmodules',

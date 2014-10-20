@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,13 +13,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
-// FileRTV.cpp: implementation of the CFileRTV class.
+// FileRTV.cpp: implementation of the CRTVFile class.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -41,7 +40,7 @@ using namespace XFILE;
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CFileRTV::CFileRTV()
+CRTVFile::CRTVFile()
 {
   CSectionLoader::Load("LIBRTV");
   m_filePos = 0;
@@ -50,14 +49,14 @@ CFileRTV::CFileRTV()
   m_rtvd = NULL;
 }
 
-CFileRTV::~CFileRTV()
+CRTVFile::~CRTVFile()
 {
   Close();
   CSectionLoader::Unload("LIBRTV");
 }
 
 //*********************************************************************************************
-bool CFileRTV::Open(const char* strHostName, const char* strFileName, int iport)
+bool CRTVFile::Open(const char* strHostName, const char* strFileName, int iport)
 {
   // Close any existing connection
   if (m_bOpened) Close();
@@ -105,14 +104,14 @@ bool CFileRTV::Open(const char* strHostName, const char* strFileName, int iport)
   return true;
 }
 
-bool CFileRTV::Open(const CURL& url)
+bool CRTVFile::Open(const CURL& url)
 {
   return Open(url.GetHostName(), url.GetFileName(), url.GetPort());
 }
 
 
 //*********************************************************************************************
-unsigned int CFileRTV::Read(void *lpBuf, int64_t uiBufSize)
+unsigned int CRTVFile::Read(void *lpBuf, int64_t uiBufSize)
 {
   size_t lenread;
 
@@ -141,7 +140,7 @@ unsigned int CFileRTV::Read(void *lpBuf, int64_t uiBufSize)
 }
 
 //*********************************************************************************************
-void CFileRTV::Close()
+void CRTVFile::Close()
 {
   m_bOpened = false;
 
@@ -154,7 +153,7 @@ void CFileRTV::Close()
 }
 
 //*********************************************************************************************
-int64_t CFileRTV::Seek(int64_t iFilePosition, int iWhence)
+int64_t CRTVFile::Seek(int64_t iFilePosition, int iWhence)
 {
   UINT64 newpos;
 
@@ -204,14 +203,14 @@ int64_t CFileRTV::Seek(int64_t iFilePosition, int iWhence)
 }
 
 //*********************************************************************************************
-int64_t CFileRTV::GetLength()
+int64_t CRTVFile::GetLength()
 {
   if (!m_bOpened) return 0;
   return m_fileSize;
 }
 
 //*********************************************************************************************
-int64_t CFileRTV::GetPosition()
+int64_t CRTVFile::GetPosition()
 {
   if (!m_bOpened) return 0;
   return m_filePos;

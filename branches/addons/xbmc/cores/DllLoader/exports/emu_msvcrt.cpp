@@ -1,6 +1,6 @@
 /*
  *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,9 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
+ *  along with XBMC; see the file COPYING.  If not, see
+ *  <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -130,9 +129,9 @@ extern "C" void __stdcall init_emu_environ()
 extern "C" void __stdcall update_emu_environ()
 {
   // Use a proxy, if the GUI was configured as such
-  if (g_guiSettings.GetBool("network.usehttpproxy") &&
-      g_guiSettings.GetString("network.httpproxyserver") &&
-      g_guiSettings.GetString("network.httpproxyport"))
+  if (g_guiSettings.GetBool("network.usehttpproxy")
+      && !g_guiSettings.GetString("network.httpproxyserver").empty()
+      && !g_guiSettings.GetString("network.httpproxyport").empty())
   {
     const CStdString &strProxyServer = g_guiSettings.GetString("network.httpproxyserver");
     const CStdString &strProxyPort = g_guiSettings.GetString("network.httpproxyport");
