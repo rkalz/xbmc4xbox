@@ -94,6 +94,10 @@ Local naming conventions:
 #include "structmember.h"
 #include "timefuncs.h"
 
+#ifndef INVALID_SOCKET /* MS defines this */
+#define INVALID_SOCKET (-1)
+#endif
+
 #undef MAX
 #define MAX(x, y) ((x) < (y) ? (y) : (x))
 
@@ -1705,11 +1709,7 @@ sock_accept(PySocketSockObject *s)
         return NULL;
     memset(&addrbuf, 0, addrlen);
 
-#ifdef MS_WINDOWS
     newfd = INVALID_SOCKET;
-#else
-    newfd = -1;
-#endif
 
     if (!IS_SELECTABLE(s))
         return select_error();
@@ -1727,11 +1727,7 @@ sock_accept(PySocketSockObject *s)
     }
     END_SELECT_LOOP(s)
 
-#ifdef MS_WINDOWS
     if (newfd == INVALID_SOCKET)
-#else
-    if (newfd < 0)
-#endif
         return s->errorhandler();
 
     /* Create the new object with unspecified family,
@@ -2905,7 +2901,8 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
     char *buf;
     Py_ssize_t len;
     sock_addr_t addrbuf;
-    int addrlen, n = -1, flags, timeout;
+    int addrlen, flags, timeout;
+    long n = -1;
     int arglen;
 
     flags = 0;
@@ -3119,6 +3116,8 @@ sock_dealloc(PySocketSockObject *s)
 {
     if (s->sock_fd != -1)
         (void) SOCKETCLOSE(s->sock_fd);
+    if (s->weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *)s);
     Py_TYPE(s)->tp_free((PyObject *)s);
 }
 
@@ -3127,8 +3126,13 @@ static PyObject *
 sock_repr(PySocketSockObject *s)
 {
     char buf[512];
+    long sock_fd;
+    /* On Windows, this test is needed because SOCKET_T is unsigned */
+    if (s->sock_fd == INVALID_SOCKET) {
+        sock_fd = -1;
+    }
 #if SIZEOF_SOCKET_T > SIZEOF_LONG
-    if (s->sock_fd > LONG_MAX) {
+    else if (s->sock_fd > LONG_MAX) {
         /* this can occur on Win64, and actually there is a special
            ugly printf formatter for decimal pointer length integer
            printing, only bother if necessary*/
@@ -3138,10 +3142,12 @@ sock_repr(PySocketSockObject *s)
         return NULL;
     }
 #endif
+    else
+        sock_fd = (long)s->sock_fd;
     PyOS_snprintf(
         buf, sizeof(buf),
         "<socket object, fd=%ld, family=%d, type=%d, protocol=%d>",
-        (long)s->sock_fd, s->sock_family,
+        sock_fd, s->sock_family,
         s->sock_type,
         s->sock_proto);
     return PyString_FromString(buf);
@@ -3160,6 +3166,7 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         ((PySocketSockObject *)new)->sock_fd = -1;
         ((PySocketSockObject *)new)->sock_timeout = -1.0;
         ((PySocketSockObject *)new)->errorhandler = &set_error;
+        ((PySocketSockObject *)new)->weakreflist = NULL;
     }
     return new;
 }
@@ -3185,12 +3192,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
     fd = socket(family, type, proto);
     Py_END_ALLOW_THREADS
 
-#ifdef MS_WINDOWS
-    if (fd == INVALID_SOCKET)
-#else
-    if (fd < 0)
-#endif
-    {
+    if (fd == INVALID_SOCKET) {
         set_error();
         return -1;
     }
@@ -3228,7 +3230,7 @@ static PyTypeObject sock_type = {
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
+    offsetof(PySocketSockObject, weakreflist),  /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
     sock_methods,                               /* tp_methods */
@@ -4206,7 +4208,8 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
         goto err;
     }
 
-    if ((all = PyList_New(0)) == NULL)
+    all = PyList_New(0);
+    if (all == NULL)
         goto err;
     for (res = res0; res; res = res->ai_next) {
         PyObject *addr =
