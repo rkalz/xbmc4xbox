@@ -689,8 +689,7 @@ read_other(Unpicklerobject *self, char **s, Py_ssize_t  n)
     }
     if (! str) return -1;
 
-    Py_XDECREF(self->last_string);
-    self->last_string = str;
+    Py_XSETREF(self->last_string, str);
 
     if (! (*s = PyString_AsString(str))) return -1;
 
@@ -716,8 +715,7 @@ readline_other(Unpicklerobject *self, char **s)
     if ((str_size = PyString_Size(str)) < 0)
         return -1;
 
-    Py_XDECREF(self->last_string);
-    self->last_string = str;
+    Py_XSETREF(self->last_string, str);
 
     if (! (*s = PyString_AsString(str)))
         return -1;
@@ -1325,71 +1323,71 @@ modified_EncodeRawUnicodeEscape(const Py_UNICODE *s, Py_ssize_t size)
 #endif
 
     if (size > PY_SSIZE_T_MAX / expandsize)
-    return PyErr_NoMemory();
+        return PyErr_NoMemory();
 
     repr = PyString_FromStringAndSize(NULL, expandsize * size);
     if (repr == NULL)
-    return NULL;
+        return NULL;
     if (size == 0)
-    return repr;
+        return repr;
 
     p = q = PyString_AS_STRING(repr);
     while (size-- > 0) {
-    Py_UNICODE ch = *s++;
+        Py_UNICODE ch = *s++;
 #ifdef Py_UNICODE_WIDE
-    /* Map 32-bit characters to '\Uxxxxxxxx' */
-    if (ch >= 0x10000) {
-        *p++ = '\\';
-        *p++ = 'U';
-        *p++ = hexdigit[(ch >> 28) & 0xf];
-        *p++ = hexdigit[(ch >> 24) & 0xf];
-        *p++ = hexdigit[(ch >> 20) & 0xf];
-        *p++ = hexdigit[(ch >> 16) & 0xf];
-        *p++ = hexdigit[(ch >> 12) & 0xf];
-        *p++ = hexdigit[(ch >> 8) & 0xf];
-        *p++ = hexdigit[(ch >> 4) & 0xf];
-        *p++ = hexdigit[ch & 15];
-    }
-    else
-#else
-    /* Map UTF-16 surrogate pairs to '\U00xxxxxx' */
-    if (ch >= 0xD800 && ch < 0xDC00) {
-        Py_UNICODE ch2;
-        Py_UCS4 ucs;
-
-        ch2 = *s++;
-        size--;
-        if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
-        ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
-        *p++ = '\\';
-        *p++ = 'U';
-        *p++ = hexdigit[(ucs >> 28) & 0xf];
-        *p++ = hexdigit[(ucs >> 24) & 0xf];
-        *p++ = hexdigit[(ucs >> 20) & 0xf];
-        *p++ = hexdigit[(ucs >> 16) & 0xf];
-        *p++ = hexdigit[(ucs >> 12) & 0xf];
-        *p++ = hexdigit[(ucs >> 8) & 0xf];
-        *p++ = hexdigit[(ucs >> 4) & 0xf];
-        *p++ = hexdigit[ucs & 0xf];
-        continue;
+        /* Map 32-bit characters to '\Uxxxxxxxx' */
+        if (ch >= 0x10000) {
+            *p++ = '\\';
+            *p++ = 'U';
+            *p++ = hexdigit[(ch >> 28) & 0xf];
+            *p++ = hexdigit[(ch >> 24) & 0xf];
+            *p++ = hexdigit[(ch >> 20) & 0xf];
+            *p++ = hexdigit[(ch >> 16) & 0xf];
+            *p++ = hexdigit[(ch >> 12) & 0xf];
+            *p++ = hexdigit[(ch >> 8) & 0xf];
+            *p++ = hexdigit[(ch >> 4) & 0xf];
+            *p++ = hexdigit[ch & 15];
         }
-        /* Fall through: isolated surrogates are copied as-is */
-        s--;
-        size++;
-    }
+        else
+#else
+        /* Map UTF-16 surrogate pairs to '\U00xxxxxx' */
+        if (ch >= 0xD800 && ch < 0xDC00) {
+            Py_UNICODE ch2;
+            Py_UCS4 ucs;
+
+            ch2 = *s++;
+            size--;
+            if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
+                ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
+                *p++ = '\\';
+                *p++ = 'U';
+                *p++ = hexdigit[(ucs >> 28) & 0xf];
+                *p++ = hexdigit[(ucs >> 24) & 0xf];
+                *p++ = hexdigit[(ucs >> 20) & 0xf];
+                *p++ = hexdigit[(ucs >> 16) & 0xf];
+                *p++ = hexdigit[(ucs >> 12) & 0xf];
+                *p++ = hexdigit[(ucs >> 8) & 0xf];
+                *p++ = hexdigit[(ucs >> 4) & 0xf];
+                *p++ = hexdigit[ucs & 0xf];
+                continue;
+            }
+            /* Fall through: isolated surrogates are copied as-is */
+            s--;
+            size++;
+        }
 #endif
-    /* Map 16-bit characters to '\uxxxx' */
-    if (ch >= 256 || ch == '\\' || ch == '\n') {
-        *p++ = '\\';
-        *p++ = 'u';
-        *p++ = hexdigit[(ch >> 12) & 0xf];
-        *p++ = hexdigit[(ch >> 8) & 0xf];
-        *p++ = hexdigit[(ch >> 4) & 0xf];
-        *p++ = hexdigit[ch & 15];
-    }
-    /* Copy everything else as-is */
-    else
-        *p++ = (char) ch;
+        /* Map 16-bit characters to '\uxxxx' */
+        if (ch >= 256 || ch == '\\' || ch == '\n') {
+            *p++ = '\\';
+            *p++ = 'u';
+            *p++ = hexdigit[(ch >> 12) & 0xf];
+            *p++ = hexdigit[(ch >> 8) & 0xf];
+            *p++ = hexdigit[(ch >> 4) & 0xf];
+            *p++ = hexdigit[ch & 15];
+        }
+        /* Copy everything else as-is */
+        else
+            *p++ = (char) ch;
     }
     *p = '\0';
     _PyString_Resize(&repr, p - q);
@@ -3228,9 +3226,8 @@ Pickler_set_pers_func(Picklerobject *p, PyObject *v)
                         "attribute deletion is not supported");
         return -1;
     }
-    Py_XDECREF(p->pers_func);
     Py_INCREF(v);
-    p->pers_func = v;
+    Py_XSETREF(p->pers_func, v);
     return 0;
 }
 
@@ -3242,9 +3239,8 @@ Pickler_set_inst_pers_func(Picklerobject *p, PyObject *v)
                         "attribute deletion is not supported");
         return -1;
     }
-    Py_XDECREF(p->inst_pers_func);
     Py_INCREF(v);
-    p->inst_pers_func = v;
+    Py_XSETREF(p->inst_pers_func, v);
     return 0;
 }
 
@@ -3270,9 +3266,8 @@ Pickler_set_memo(Picklerobject *p, PyObject *v)
         PyErr_SetString(PyExc_TypeError, "memo must be a dictionary");
         return -1;
     }
-    Py_XDECREF(p->memo);
     Py_INCREF(v);
-    p->memo = v;
+    Py_XSETREF(p->memo, v);
     return 0;
 }
 
@@ -3449,7 +3444,7 @@ load_bool(Unpicklerobject *self, PyObject *boolean)
 
 /* s contains x bytes of a little-endian integer.  Return its value as a
  * C int.  Obscure:  when x is 1 or 2, this is an unsigned little-endian
- * int, but when x is 4 it's a signed one.  This is an historical source
+ * int, but when x is 4 it's a signed one.  This is a historical source
  * of x-platform bugs.
  */
 static long
@@ -3798,35 +3793,26 @@ load_binunicode(Unpicklerobject *self)
 
 
 static int
-load_tuple(Unpicklerobject *self)
+load_counted_tuple(Unpicklerobject *self, int len)
 {
     PyObject *tup;
-    Py_ssize_t i;
 
-    if ((i = marker(self)) < 0) return -1;
-    if (!( tup=Pdata_popTuple(self->stack, i)))  return -1;
+    if (self->stack->length < len)
+        return stackUnderflow();
+
+    if (!(tup = Pdata_popTuple(self->stack, self->stack->length - len)))
+        return -1;
     PDATA_PUSH(self->stack, tup, -1);
     return 0;
 }
 
 static int
-load_counted_tuple(Unpicklerobject *self, int len)
+load_tuple(Unpicklerobject *self)
 {
-    PyObject *tup = PyTuple_New(len);
+    Py_ssize_t i;
 
-    if (tup == NULL)
-        return -1;
-
-    while (--len >= 0) {
-        PyObject *element;
-
-        PDATA_POP(self->stack, element);
-        if (element == NULL)
-            return -1;
-        PyTuple_SET_ITEM(tup, len, element);
-    }
-    PDATA_PUSH(self->stack, tup, -1);
-    return 0;
+    if ((i = marker(self)) < 0) return -1;
+    return load_counted_tuple(self, self->stack->length - i);
 }
 
 static int
@@ -3945,6 +3931,10 @@ load_obj(Unpicklerobject *self)
     Py_ssize_t i;
 
     if ((i = marker(self)) < 0) return -1;
+
+    if (self->stack->length - i < 1)
+        return stackUnderflow();
+
     if (!( tup=Pdata_popTuple(self->stack, i+1)))  return -1;
     PDATA_POP(self->stack, class);
     if (class) {
@@ -3974,7 +3964,10 @@ load_inst(Unpicklerobject *self)
     if (!module_name)  return -1;
 
     if ((len = self->readline_func(self, &s)) >= 0) {
-        if (len < 2) return bad_readline();
+        if (len < 2) {
+            Py_DECREF(module_name);
+            return bad_readline();
+        }
         if ((class_name = PyString_FromStringAndSize(s, len - 1))) {
             class = find_class(module_name, class_name,
                                self->find_class);
@@ -4496,6 +4489,8 @@ do_append(Unpicklerobject *self, Py_ssize_t  x)
 static int
 load_append(Unpicklerobject *self)
 {
+    if (self->stack->length - 1 <= 0)
+        return stackUnderflow();
     return do_append(self, self->stack->length - 1);
 }
 
@@ -4503,7 +4498,10 @@ load_append(Unpicklerobject *self)
 static int
 load_appends(Unpicklerobject *self)
 {
-    return do_append(self, marker(self));
+    Py_ssize_t i = marker(self);
+    if (i < 0)
+        return -1;
+    return do_append(self, i);
 }
 
 
@@ -4515,6 +4513,14 @@ do_setitems(Unpicklerobject *self, Py_ssize_t x)
 
     if (!( (len=self->stack->length) >= x
            && x > 0 ))  return stackUnderflow();
+    if (len == x)  /* nothing to do */
+        return 0;
+    if ((len - x) % 2 != 0) {
+        /* Currupt or hostile pickle -- we never write one like this. */
+        PyErr_SetString(UnpicklingError,
+                        "odd number of items for SETITEMS");
+        return -1;
+    }
 
     dict=self->stack->data[x-1];
 
@@ -4542,7 +4548,10 @@ load_setitem(Unpicklerobject *self)
 static int
 load_setitems(Unpicklerobject *self)
 {
-    return do_setitems(self, marker(self));
+    Py_ssize_t i = marker(self);
+    if (i < 0)
+        return -1;
+    return do_setitems(self, i);
 }
 
 
@@ -5653,16 +5662,14 @@ Unpickler_setattr(Unpicklerobject *self, char *name, PyObject *value)
 {
 
     if (!strcmp(name, "persistent_load")) {
-        Py_XDECREF(self->pers_func);
-        self->pers_func = value;
         Py_XINCREF(value);
+        Py_XSETREF(self->pers_func, value);
         return 0;
     }
 
     if (!strcmp(name, "find_global")) {
-        Py_XDECREF(self->find_class);
-        self->find_class = value;
         Py_XINCREF(value);
+        Py_XSETREF(self->find_class, value);
         return 0;
     }
 
@@ -5678,9 +5685,8 @@ Unpickler_setattr(Unpicklerobject *self, char *name, PyObject *value)
                             "memo must be a dictionary");
             return -1;
         }
-        Py_XDECREF(self->memo);
-        self->memo = value;
         Py_INCREF(value);
+        Py_XSETREF(self->memo, value);
         return 0;
     }
 

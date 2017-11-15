@@ -224,8 +224,13 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     }
 
 #ifdef MS_WINDOWS
-    if (PyUnicode_Check(nameobj))
+    if (PyUnicode_Check(nameobj)) {
         widename = PyUnicode_AS_UNICODE(nameobj);
+        if (wcslen(widename) != (size_t)PyUnicode_GET_SIZE(nameobj)) {
+            PyErr_SetString(PyExc_TypeError, "embedded NUL character");
+            return -1;
+        }
+    }
     if (widename == NULL)
 #endif
     if (fd < 0)
@@ -234,6 +239,10 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
             Py_ssize_t namelen;
             if (PyObject_AsCharBuffer(nameobj, &name, &namelen) < 0)
                 return -1;
+            if (strlen(name) != (size_t)namelen) {
+                PyErr_SetString(PyExc_TypeError, "embedded NUL character");
+                return -1;
+            }
         }
         else {
             PyObject *u = PyUnicode_FromObject(nameobj);
@@ -252,6 +261,10 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
                 goto error;
             }
             name = PyBytes_AS_STRING(stringobj);
+            if (strlen(name) != (size_t)PyBytes_GET_SIZE(stringobj)) {
+                PyErr_SetString(PyExc_TypeError, "embedded NUL character");
+                goto error;
+            }
         }
     }
 
@@ -969,7 +982,7 @@ PyDoc_STRVAR(readall_doc,
 "or None if no data is available.  On end-of-file, returns ''.");
 
 PyDoc_STRVAR(write_doc,
-"write(b: bytes) -> int.  Write bytes b to file, return number written.\n"
+"write(b) -> int.  Write array of bytes b, return number written.\n"
 "\n"
 "Only makes one system call, so not all of the data may be written.\n"
 "The number of bytes actually written is returned.  In non-blocking mode,\n"

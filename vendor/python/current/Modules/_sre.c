@@ -2054,8 +2054,7 @@ deepcopy(PyObject** object, PyObject* memo)
     if (!copy)
         return 0;
 
-    Py_DECREF(*object);
-    *object = copy;
+    Py_SETREF(*object, copy);
 
     return 1; /* success */
 }
@@ -3439,10 +3438,8 @@ match_groupdict(MatchObject* self, PyObject* args, PyObject* kw)
         if (!key)
             goto failed;
         value = match_getslice(self, key, def);
-        if (!value) {
-            Py_DECREF(key);
+        if (!value)
             goto failed;
-        }
         status = PyDict_SetItem(result, key, value);
         Py_DECREF(value);
         if (status < 0)

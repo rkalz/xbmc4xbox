@@ -149,7 +149,7 @@ PyFloat_FromDouble(double fval)
     /* Inline PyObject_New */
     op = free_list;
     free_list = (PyFloatObject *)Py_TYPE(op);
-    PyObject_INIT(op, &PyFloat_Type);
+    (void)PyObject_INIT(op, &PyFloat_Type);
     op->ob_fval = fval;
     return (PyObject *) op;
 }
@@ -407,7 +407,7 @@ float_str(PyFloatObject *v)
  * may lose info from fractional bits.  Converting the integer to a double
  * also has two failure modes:  (1) a long int may trigger overflow (too
  * large to fit in the dynamic range of a C double); (2) even a C long may have
- * more bits than fit in a C double (e.g., on a a 64-bit box long may have
+ * more bits than fit in a C double (e.g., on a 64-bit box long may have
  * 63 bits of precision, but a C double probably has only 53), and then
  * we can falsely claim equality when low-order integer bits are lost by
  * coercion to double.  So this part is painful too.
@@ -1839,7 +1839,7 @@ float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     tmp = float_new(&PyFloat_Type, args, kwds);
     if (tmp == NULL)
         return NULL;
-    assert(PyFloat_CheckExact(tmp));
+    assert(PyFloat_Check(tmp));
     newobj = type->tp_alloc(type, 0);
     if (newobj == NULL) {
         Py_DECREF(tmp);

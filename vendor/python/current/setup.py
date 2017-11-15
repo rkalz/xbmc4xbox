@@ -117,6 +117,22 @@ def find_library_file(compiler, libname, std_dirs, paths):
         p = p.rstrip(os.sep)
 
         if host_platform == 'darwin' and is_macosx_sdk_path(p):
+            # Note that, as of Xcode 7, Apple SDKs may contain textual stub
+            # libraries with .tbd extensions rather than the normal .dylib
+            # shared libraries installed in /.  The Apple compiler tool
+            # chain handles this transparently but it can cause problems
+            # for programs that are being built with an SDK and searching
+            # for specific libraries.  Distutils find_library_file() now
+            # knows to also search for and return .tbd files.  But callers
+            # of find_library_file need to keep in mind that the base filename
+            # of the returned SDK library file might have a different extension
+            # from that of the library file installed on the running system,
+            # for example:
+            #   /Applications/Xcode.app/Contents/Developer/Platforms/
+            #       MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/
+            #       usr/lib/libedit.tbd
+            # vs
+            #   /usr/lib/libedit.dylib
             if os.path.join(sysroot, p[1:]) == dirname:
                 return [ ]
 
@@ -568,13 +584,17 @@ class PyBuildExt(build_ext):
 
         # array objects
         exts.append( Extension('array', ['arraymodule.c']) )
+
+        shared_math = 'Modules/_math.o'
         # complex math library functions
-        exts.append( Extension('cmath', ['cmathmodule.c', '_math.c'],
-                               depends=['_math.h'],
+        exts.append( Extension('cmath', ['cmathmodule.c'],
+                               extra_objects=[shared_math],
+                               depends=['_math.h', shared_math],
                                libraries=math_libs) )
         # math library functions, e.g. sin()
-        exts.append( Extension('math',  ['mathmodule.c', '_math.c'],
-                               depends=['_math.h'],
+        exts.append( Extension('math',  ['mathmodule.c'],
+                               extra_objects=[shared_math],
+                               depends=['_math.h', shared_math],
                                libraries=math_libs) )
         # fast string operations implemented in C
         exts.append( Extension('strop', ['stropmodule.c']) )
@@ -749,8 +769,8 @@ class PyBuildExt(build_ext):
             if host_platform == 'darwin' and os_release < 9:
                 # In every directory on the search path search for a dynamic
                 # library and then a static library, instead of first looking
-                # for dynamic libraries on the entiry path.
-                # This way a staticly linked custom readline gets picked up
+                # for dynamic libraries on the entire path.
+                # This way a statically linked custom readline gets picked up
                 # before the (possibly broken) dynamic library in /usr/lib.
                 readline_extra_link_args = ('-Wl,-search_paths_first',)
             else:
@@ -1632,7 +1652,7 @@ class PyBuildExt(build_ext):
             if int(os.uname()[2].split('.')[0]) >= 8:
                 # We're on Mac OS X 10.4 or later, the compiler should
                 # support '-Wno-deprecated-declarations'. This will
-                # surpress deprecation warnings for the Carbon extensions,
+                # suppress deprecation warnings for the Carbon extensions,
                 # these extensions wrap the Carbon APIs and even those
                 # parts that are deprecated.
                 carbon_extra_compile_args = ['-Wno-deprecated-declarations']
@@ -1747,7 +1767,7 @@ class PyBuildExt(build_ext):
         #     --with-tcltk-libs="-L/path/to/tcllibs -ltclm.n \
         #                        -L/path/to/tklibs -ltkm.n"
         #
-        # These values can also be specified or overriden via make:
+        # These values can also be specified or overridden via make:
         #    make TCLTK_INCLUDES="..." TCLTK_LIBS="..."
         #
         # This can be useful for building and testing tkinter with multiple
@@ -2112,14 +2132,16 @@ class PyBuildExt(build_ext):
             ffi_inc = find_file('ffi.h', [], inc_dirs)
         if ffi_inc is not None:
             ffi_h = ffi_inc[0] + '/ffi.h'
-            fp = open(ffi_h)
-            while 1:
-                line = fp.readline()
-                if not line:
+            with open(ffi_h) as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith(('#define LIBFFI_H',
+                                        '#define ffi_wrapper_h')):
+                        break
+                else:
                     ffi_inc = None
-                    break
-                if line.startswith('#define LIBFFI_H'):
-                    break
+                    print('Header file {} does not define LIBFFI_H or '
+                          'ffi_wrapper_h'.format(ffi_h))
         ffi_lib = None
         if ffi_inc is not None:
             for lib_name in ('ffi_convenience', 'ffi_pic', 'ffi'):

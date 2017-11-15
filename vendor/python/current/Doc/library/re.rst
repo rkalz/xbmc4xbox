@@ -70,6 +70,12 @@ how the regular expressions around them are interpreted. Regular
 expression pattern strings may not contain null bytes, but can specify
 the null byte using the ``\number`` notation, e.g., ``'\x00'``.
 
+Repetition qualifiers (``*``, ``+``, ``?``, ``{m,n}``, etc) cannot be
+directly nested. This avoids ambiguity with the non-greedy modifier suffix
+``?``, and with other modifiers in other implementations. To apply a second
+repetition to an inner repetition, parentheses may be used. For example,
+the expression ``(?:a{6})*`` matches any multiple of six ``'a'`` characters.
+
 
 The special characters are:
 
@@ -108,11 +114,11 @@ The special characters are:
 ``*?``, ``+?``, ``??``
    The ``'*'``, ``'+'``, and ``'?'`` qualifiers are all :dfn:`greedy`; they match
    as much text as possible.  Sometimes this behaviour isn't desired; if the RE
-   ``<.*>`` is matched against ``'<H1>title</H1>'``, it will match the entire
-   string, and not just ``'<H1>'``.  Adding ``'?'`` after the qualifier makes it
+   ``<.*>`` is matched against ``<a> b <c>``, it will match the entire
+   string, and not just ``<a>``.  Adding ``?`` after the qualifier makes it
    perform the match in :dfn:`non-greedy` or :dfn:`minimal` fashion; as *few*
-   characters as possible will be matched.  Using ``.*?`` in the previous
-   expression will match only ``'<H1>'``.
+   characters as possible will be matched.  Using the RE ``<.*?>`` will match
+   only ``<a>``.
 
 ``{m}``
    Specifies that exactly *m* copies of the previous RE should be matched; fewer
@@ -1120,15 +1126,15 @@ does by default).
 
 For example::
 
-   >>> re.match("c", "abcdef")  # No match
-   >>> re.search("c", "abcdef") # Match
+   >>> re.match("c", "abcdef")    # No match
+   >>> re.search("c", "abcdef")   # Match
    <_sre.SRE_Match object at ...>
 
 Regular expressions beginning with ``'^'`` can be used with :func:`search` to
 restrict the match at the beginning of the string::
 
-   >>> re.match("c", "abcdef")  # No match
-   >>> re.search("^c", "abcdef") # No match
+   >>> re.match("c", "abcdef")    # No match
+   >>> re.search("^c", "abcdef")  # No match
    >>> re.search("^a", "abcdef")  # Match
    <_sre.SRE_Match object at ...>
 
@@ -1209,9 +1215,9 @@ a function to "munge" text, or randomize the order of all the characters
 in each word of a sentence except for the first and last characters::
 
    >>> def repl(m):
-   ...   inner_word = list(m.group(2))
-   ...   random.shuffle(inner_word)
-   ...   return m.group(1) + "".join(inner_word) + m.group(3)
+   ...     inner_word = list(m.group(2))
+   ...     random.shuffle(inner_word)
+   ...     return m.group(1) + "".join(inner_word) + m.group(3)
    >>> text = "Professor Abdolmalek, please report your absences promptly."
    >>> re.sub(r"(\w)(\w+)(\w)", repl, text)
    'Poefsrosr Aealmlobdk, pslaee reorpt your abnseces plmrptoy.'

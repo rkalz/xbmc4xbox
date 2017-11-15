@@ -16,7 +16,7 @@
 This module defines the class :class:`FTP` and a few related items. The
 :class:`FTP` class implements the client side of the FTP protocol.  You can use
 this to write Python programs that perform a variety of automated FTP jobs, such
-as mirroring other ftp servers.  It is also used by the module :mod:`urllib` to
+as mirroring other FTP servers.  It is also used by the module :mod:`urllib` to
 handle URLs that use FTP.  For more information on FTP (File Transfer Protocol),
 see Internet :rfc:`959`.
 
@@ -283,9 +283,9 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
 .. method:: FTP.transfercmd(cmd[, rest])
 
-   Initiate a transfer over the data connection.  If the transfer is active, send a
+   Initiate a transfer over the data connection.  If the transfer is active, send an
    ``EPRT`` or  ``PORT`` command and the transfer command specified by *cmd*, and
-   accept the connection.  If the server is passive, send a ``EPSV`` or ``PASV``
+   accept the connection.  If the server is passive, send an ``EPSV`` or ``PASV``
    command, connect to it, and start the transfer command.  Either way, return the
    socket for the connection.
 

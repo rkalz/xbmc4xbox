@@ -276,9 +276,8 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
             return -1;
         }
         else {
-            Py_XDECREF(*target);
             Py_INCREF(src);
-            *target = src;
+            Py_XSETREF(*target, src);
         }
     }
     return 0;
@@ -718,7 +717,7 @@ parse_process_char(ReaderObj *self, char c)
         break;
 
     case QUOTE_IN_QUOTED_FIELD:
-        /* doublequote - seen a quote in an quoted field */
+        /* doublequote - seen a quote in a quoted field */
         if (dialect->quoting != QUOTE_NONE &&
             c == dialect->quotechar) {
             /* save "" as " */
@@ -770,8 +769,7 @@ parse_process_char(ReaderObj *self, char c)
 static int
 parse_reset(ReaderObj *self)
 {
-    Py_XDECREF(self->fields);
-    self->fields = PyList_New(0);
+    Py_XSETREF(self->fields, PyList_New(0));
     if (self->fields == NULL)
         return -1;
     self->field_len = 0;
@@ -987,11 +985,19 @@ join_append_data(WriterObj *self, char *field, int quote_empty,
     int i, rec_len;
     char *lineterm;
 
-#define ADDCH(c) \
+#define INCLEN \
+    do {\
+        if (!copy_phase && rec_len == INT_MAX) { \
+            goto overflow; \
+        } \
+        rec_len++; \
+    } while(0)
+
+#define ADDCH(c)                                \
     do {\
         if (copy_phase) \
             self->rec[rec_len] = c;\
-        rec_len++;\
+        INCLEN;\
     } while(0)
 
     lineterm = PyString_AsString(dialect->lineterminator);
@@ -1061,11 +1067,18 @@ join_append_data(WriterObj *self, char *field, int quote_empty,
     if (*quoted) {
         if (copy_phase)
             ADDCH(dialect->quotechar);
-        else
-            rec_len += 2;
+        else {
+            INCLEN; /* starting quote */
+            INCLEN; /* ending quote */
+        }
     }
     return rec_len;
+
+  overflow:
+    PyErr_NoMemory();
+    return -1;
 #undef ADDCH
+#undef INCLEN
 }
 
 static int

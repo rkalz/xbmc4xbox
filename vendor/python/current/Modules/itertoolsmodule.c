@@ -4,8 +4,6 @@
 
 /* Itertools module written and maintained
    by Raymond D. Hettinger <python@rcn.com>
-   Copyright (c) 2003 Python Software Foundation.
-   All rights reserved.
 */
 
 
@@ -494,8 +492,7 @@ tee_next(teeobject *to)
         link = teedataobject_jumplink(to->dataobj);
         if (link == NULL)
             return NULL;
-        Py_DECREF(to->dataobj);
-        to->dataobj = (teedataobject *)link;
+        Py_SETREF(to->dataobj, (teedataobject *)link);
         to->index = 0;
     }
     value = teedataobject_getitem(to->dataobj, to->index);
@@ -1750,7 +1747,7 @@ iterable, until all of the iterables are exhausted.");
 PyDoc_STRVAR(chain_from_iterable_doc,
 "chain.from_iterable(iterable) --> chain object\n\
 \n\
-Alternate chain() contructor taking a single iterable argument\n\
+Alternate chain() constructor taking a single iterable argument\n\
 that evaluates lazily.");
 
 static PyMethodDef chain_methods[] = {

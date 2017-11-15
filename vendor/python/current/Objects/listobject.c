@@ -669,14 +669,17 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
     item = a->ob_item;
     /* recycle the items that we are about to remove */
     s = norig * sizeof(PyObject *);
-    if (s > sizeof(recycle_on_stack)) {
-        recycle = (PyObject **)PyMem_MALLOC(s);
-        if (recycle == NULL) {
-            PyErr_NoMemory();
-            goto Error;
+    /* If norig == 0, item might be NULL, in which case we may not memcpy from it. */
+    if (s) {
+        if (s > sizeof(recycle_on_stack)) {
+            recycle = (PyObject **)PyMem_MALLOC(s);
+            if (recycle == NULL) {
+                PyErr_NoMemory();
+                goto Error;
+            }
         }
+        memcpy(recycle, &item[ilow], s);
     }
-    memcpy(recycle, &item[ilow], s);
 
     if (d < 0) { /* Delete -d items */
         memmove(&item[ihigh+d], &item[ihigh],
@@ -2469,7 +2472,7 @@ list_sizeof(PyListObject *self)
 {
     Py_ssize_t res;
 
-    res = sizeof(PyListObject) + self->allocated * sizeof(void*);
+    res = _PyObject_SIZE(Py_TYPE(self)) + self->allocated * sizeof(void*);
     return PyInt_FromSsize_t(res);
 }
 
@@ -2915,8 +2918,8 @@ listiter_next(listiterobject *it)
         return item;
     }
 
-    Py_DECREF(seq);
     it->it_seq = NULL;
+    Py_DECREF(seq);
     return NULL;
 }
 
@@ -3018,9 +3021,17 @@ static PyObject *
 listreviter_next(listreviterobject *it)
 {
     PyObject *item;
-    Py_ssize_t index = it->it_index;
-    PyListObject *seq = it->it_seq;
+    Py_ssize_t index;
+    PyListObject *seq;
 
+    assert(it != NULL);
+    seq = it->it_seq;
+    if (seq == NULL) {
+        return NULL;
+    }
+    assert(PyList_Check(seq));
+
+    index = it->it_index;
     if (index>=0 && index < PyList_GET_SIZE(seq)) {
         item = PyList_GET_ITEM(seq, index);
         it->it_index--;
@@ -3028,10 +3039,8 @@ listreviter_next(listreviterobject *it)
         return item;
     }
     it->it_index = -1;
-    if (seq != NULL) {
-        it->it_seq = NULL;
-        Py_DECREF(seq);
-    }
+    it->it_seq = NULL;
+    Py_DECREF(seq);
     return NULL;
 }
 

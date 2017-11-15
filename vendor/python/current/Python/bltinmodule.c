@@ -625,7 +625,7 @@ builtin_divmod(PyObject *self, PyObject *args)
 PyDoc_STRVAR(divmod_doc,
 "divmod(x, y) -> (quotient, remainder)\n\
 \n\
-Return the tuple ((x-x%y)/y, x%y).  Invariant: div*y + mod == x.");
+Return the tuple (x//y, x%y).  Invariant: div*y + mod == x.");
 
 
 static PyObject *
@@ -2923,20 +2923,20 @@ filterstring(PyObject *func, PyObject *strobj)
 
                     if (need<2*outlen) {
                         need = 2*outlen;
-      }
-                                    if (_PyString_Resize(&result, need)) {
-                                            Py_DECREF(item);
-                                            return NULL;
-                                    }
-                                    outlen = need;
-                            }
-                            memcpy(
-                                    PyString_AS_STRING(result) + j,
-                                    PyString_AS_STRING(item),
-                                    reslen
-                            );
-                            j += reslen;
                     }
+                    if (_PyString_Resize(&result, need)) {
+                        Py_DECREF(item);
+                        return NULL;
+                    }
+                    outlen = need;
+                }
+                memcpy(
+                    PyString_AS_STRING(result) + j,
+                    PyString_AS_STRING(item),
+                    reslen
+                );
+                j += reslen;
+            }
         }
         Py_DECREF(item);
         if (ok < 0)
@@ -3031,29 +3031,27 @@ filterunicode(PyObject *func, PyObject *strobj)
                 assert(outlen >= 0);
 
                 if (need > outlen) {
-                    /* overallocate,
-                       to avoid reallocations */
+                    /* overallocate, to avoid reallocations */
                     if (need < 2 * outlen) {
-        if (outlen > PY_SSIZE_T_MAX / 2) {
-          Py_DECREF(item);
-          return NULL;
-                                            } else {
-                                                    need = 2 * outlen;
-                                }
-      }
-
-                                    if (PyUnicode_Resize(
-                                            &result, need) < 0) {
-                                            Py_DECREF(item);
-                                            goto Fail_1;
-                                    }
-                                    outlen = need;
-                            }
-                            memcpy(PyUnicode_AS_UNICODE(result) + j,
-                                   PyUnicode_AS_UNICODE(item),
-                                   reslen*sizeof(Py_UNICODE));
-                            j += reslen;
+                        if (outlen > PY_SSIZE_T_MAX / 2) {
+                            Py_DECREF(item);
+                            return NULL;
+                        } else {
+                            need = 2 * outlen;
+                        }
                     }
+
+                    if (PyUnicode_Resize(&result, need) < 0) {
+                        Py_DECREF(item);
+                        goto Fail_1;
+                    }
+                    outlen = need;
+                }
+                memcpy(PyUnicode_AS_UNICODE(result) + j,
+                   PyUnicode_AS_UNICODE(item),
+                   reslen*sizeof(Py_UNICODE));
+                j += reslen;
+            }
         }
         Py_DECREF(item);
         if (ok < 0)

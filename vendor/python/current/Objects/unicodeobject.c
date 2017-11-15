@@ -347,7 +347,7 @@ PyUnicodeObject *_PyUnicode_New(Py_ssize_t length)
             size_t new_size = sizeof(Py_UNICODE) * ((size_t)length + 1);
             unicode->str = (Py_UNICODE*) PyObject_MALLOC(new_size);
         }
-        PyObject_INIT(unicode, &PyUnicode_Type);
+        (void)PyObject_INIT(unicode, &PyUnicode_Type);
     }
     else {
         size_t new_size;
@@ -436,8 +436,7 @@ int _PyUnicode_Resize(PyUnicodeObject **unicode, Py_ssize_t length)
             return -1;
         Py_UNICODE_COPY(w->str, v->str,
                         length < v->length ? length : v->length);
-        Py_DECREF(*unicode);
-        *unicode = w;
+        Py_SETREF(*unicode, w);
         return 0;
     }
 
@@ -1287,6 +1286,9 @@ PyObject *PyUnicode_AsDecodedObject(PyObject *unicode,
         PyErr_BadArgument();
         goto onError;
     }
+
+    if (PyErr_WarnPy3k("decoding Unicode is not supported in 3.x", 1) < 0)
+        goto onError;
 
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
@@ -2306,7 +2308,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
        stream as-is (giving a ZWNBSP character). */
     if (bo == 0) {
         if (size >= 4) {
-            const Py_UCS4 bom = (q[iorder[3]] << 24) | (q[iorder[2]] << 16) |
+            const Py_UCS4 bom = ((unsigned int)q[iorder[3]] << 24) | (q[iorder[2]] << 16) |
                 (q[iorder[1]] << 8) | q[iorder[0]];
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN
             if (bom == 0x0000FEFF) {
@@ -2376,7 +2378,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
             /* The remaining input chars are ignored if the callback
                chooses to skip the input */
         }
-        ch = (q[iorder[3]] << 24) | (q[iorder[2]] << 16) |
+        ch = ((unsigned int)q[iorder[3]] << 24) | (q[iorder[2]] << 16) |
             (q[iorder[1]] << 8) | q[iorder[0]];
 
         if (ch >= 0x110000)
@@ -6376,6 +6378,12 @@ PyObject *PyUnicode_Concat(PyObject *left,
         return (PyObject *)v;
     }
 
+    if (u->length > PY_SSIZE_T_MAX - v->length) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "strings are too large to concat");
+        goto onError;
+    }
+
     /* Concat the two Unicode strings */
     w = _PyUnicode_New(u->length + v->length);
     if (w == NULL)
@@ -7221,17 +7229,17 @@ unicode_repeat(PyUnicodeObject *str, Py_ssize_t len)
         return (PyObject*) str;
     }
 
-    /* ensure # of chars needed doesn't overflow int and # of bytes
+    /* ensure # of chars needed doesn't overflow Py_ssize_t and # of bytes
      * needed doesn't overflow size_t
      */
-    nchars = len * str->length;
-    if (len && nchars / len != str->length) {
+    if (len && str->length > PY_SSIZE_T_MAX / len) {
         PyErr_SetString(PyExc_OverflowError,
                         "repeated string is too long");
         return NULL;
     }
-    nbytes = (nchars + 1) * sizeof(Py_UNICODE);
-    if (nbytes / sizeof(Py_UNICODE) != (size_t)(nchars + 1)) {
+    nchars = len * str->length;
+    nbytes = ((size_t)nchars + 1u) * sizeof(Py_UNICODE);
+    if (nbytes / sizeof(Py_UNICODE) != ((size_t)nchars + 1u)) {
         PyErr_SetString(PyExc_OverflowError,
                         "repeated string is too long");
         return NULL;
@@ -8630,7 +8638,10 @@ PyObject *PyUnicode_Format(PyObject *format,
                     }
                     else {
                         iobj = PyNumber_Int(v);
-                        if (iobj==NULL) iobj = PyNumber_Long(v);
+                        if (iobj==NULL) {
+                            PyErr_Clear();
+                            iobj = PyNumber_Long(v);
+                        }
                     }
                     if (iobj!=NULL) {
                         if (PyInt_Check(iobj)) {

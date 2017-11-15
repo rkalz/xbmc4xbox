@@ -82,6 +82,11 @@ Local naming conventions:
 */
 
 #ifdef __APPLE__
+#include <AvailabilityMacros.h>
+/* for getaddrinfo thread safety test on old versions of OS X */
+#ifndef MAC_OS_X_VERSION_10_5
+#define MAC_OS_X_VERSION_10_5 1050
+#endif
   /*
    * inet_aton is not available on OSX 10.3, yet we want to use a binary
    * that was build on 10.4 or later to work on that release, weak linking
@@ -162,12 +167,14 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #endif
 
 #ifdef HAVE_GETHOSTBYNAME_R
-# if defined(_AIX) || defined(__osf__)
+# if defined(_AIX) && !defined(_LINUX_SOURCE_COMPAT) || defined(__osf__)
 #  define HAVE_GETHOSTBYNAME_R_3_ARG
 # elif defined(__sun) || defined(__sgi)
 #  define HAVE_GETHOSTBYNAME_R_5_ARG
 # elif defined(linux)
 /* Rely on the configure script */
+# elif defined(_LINUX_SOURCE_COMPAT) /* Linux compatibility on AIX */
+#  define HAVE_GETHOSTBYNAME_R_6_ARG
 # else
 #  undef HAVE_GETHOSTBYNAME_R
 # endif
@@ -178,15 +185,32 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 # define USE_GETHOSTBYNAME_LOCK
 #endif
 
-/* To use __FreeBSD_version */
+/* To use __FreeBSD_version, __OpenBSD__, and __NetBSD_Version__ */
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 /* On systems on which getaddrinfo() is believed to not be thread-safe,
-   (this includes the getaddrinfo emulation) protect access with a lock. */
-#if defined(WITH_THREAD) && (defined(__APPLE__) || \
+   (this includes the getaddrinfo emulation) protect access with a lock.
+
+   getaddrinfo is thread-safe on Mac OS X 10.5 and later. Originally it was
+   a mix of code including an unsafe implementation from an old BSD's
+   libresolv. In 10.5 Apple reimplemented it as a safe IPC call to the
+   mDNSResponder process. 10.5 is the first be UNIX '03 certified, which
+   includes the requirement that getaddrinfo be thread-safe. See issue #25924.
+
+   It's thread-safe in OpenBSD starting with 5.4, released Nov 2013:
+   http://www.openbsd.org/plus54.html
+
+   It's thread-safe in NetBSD starting with 4.0, released Dec 2007:
+
+http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&r2=1.83
+*/
+#if defined(WITH_THREAD) && ( \
+    (defined(__APPLE__) && \
+        MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5) || \
     (defined(__FreeBSD__) && __FreeBSD_version+0 < 503000) || \
-    defined(__OpenBSD__) || defined(__NetBSD__) || \
+    (defined(__OpenBSD__) && OpenBSD+0 < 201311) || \
+    (defined(__NetBSD__) && __NetBSD_Version__+0 < 400000000) || \
     defined(__VMS) || !defined(HAVE_GETADDRINFO))
 #define USE_GETADDRINFO_LOCK
 #endif
@@ -758,7 +782,7 @@ internal_select(PySocketSockObject *s, int writing)
 */
 #define BEGIN_SELECT_LOOP(s) \
     { \
-        double deadline, interval = s->sock_timeout; \
+        double deadline = 0, interval = s->sock_timeout; \
         int has_timeout = s->sock_timeout > 0.0; \
         if (has_timeout) { \
             deadline = _PyTime_FloatTime() + s->sock_timeout; \
@@ -1615,12 +1639,13 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
         return 1;
     }
 #endif /* AF_UNIX */
+
 #if defined(AF_NETLINK)
-       case AF_NETLINK:
-       {
-           *len_ret = sizeof (struct sockaddr_nl);
-           return 1;
-       }
+    case AF_NETLINK:
+    {
+        *len_ret = sizeof (struct sockaddr_nl);
+        return 1;
+    }
 #endif
 
     case AF_INET:
@@ -3449,7 +3474,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     int buf_len = (sizeof buf) - 1;
     int errnop;
 #endif
-#if defined(HAVE_GETHOSTBYNAME_R_3_ARG) || defined(HAVE_GETHOSTBYNAME_R_6_ARG)
+#ifdef HAVE_GETHOSTBYNAME_R_3_ARG
     int result;
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
@@ -3461,7 +3486,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
-    result = gethostbyname_r(name, &hp_allocated, buf, buf_len,
+    gethostbyname_r(name, &hp_allocated, buf, buf_len,
                              &h, &errnop);
 #elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)
     h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
@@ -3525,7 +3550,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     int buf_len = (sizeof buf) - 1;
     int errnop;
 #endif
-#if defined(HAVE_GETHOSTBYNAME_R_3_ARG) || defined(HAVE_GETHOSTBYNAME_R_6_ARG)
+#ifdef HAVE_GETHOSTBYNAME_R_3_ARG
     int result;
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
@@ -3558,7 +3583,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
-    result = gethostbyaddr_r(ap, al, af,
+    gethostbyaddr_r(ap, al, af,
         &hp_allocated, buf, buf_len,
         &h, &errnop);
 #elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)

@@ -574,10 +574,8 @@ PyFile_SetEncodingAndErrors(PyObject *f, const char *enc, char* errors)
         oerrors = Py_None;
         Py_INCREF(Py_None);
     }
-    Py_DECREF(file->f_encoding);
-    file->f_encoding = str;
-    Py_DECREF(file->f_errors);
-    file->f_errors = oerrors;
+    Py_SETREF(file->f_encoding, str);
+    Py_SETREF(file->f_errors, oerrors);
     return 1;
 }
 
@@ -837,7 +835,7 @@ file_truncate(PyFileObject *f, PyObject *args)
     if (initialpos == -1)
         goto onioerror;
 
-    /* Set newsize to current postion if newsizeobj NULL, else to the
+    /* Set newsize to current position if newsizeobj NULL, else to the
      * specified value.
      */
     if (newsizeobj != NULL) {
@@ -2396,7 +2394,8 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 #ifdef MS_WINDOWS
     if (PyArg_ParseTupleAndKeywords(args, kwds, "U|si:file",
-                                    kwlist, &po, &mode, &bufsize)) {
+                                    kwlist, &po, &mode, &bufsize) &&
+        wcslen(PyUnicode_AS_UNICODE(po)) == (size_t)PyUnicode_GET_SIZE(po)) {
         wideargument = 1;
         if (fill_file_fields(foself, NULL, po, mode,
                              fclose) == NULL)

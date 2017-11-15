@@ -3,6 +3,9 @@
 #include <windows.h>
 #else
 #include <fcntl.h>
+#if defined(HAVE_GETRANDOM) || defined(HAVE_GETENTROPY)
+#include <sys/random.h>
+#endif
 #endif
 
 #ifdef Py_DEBUG
@@ -93,7 +96,7 @@ win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
     return 0;
 }
 
-/* Issue #25003: Don' use getentropy() on Solaris (available since
+/* Issue #25003: Don't use getentropy() on Solaris (available since
  * Solaris 11.3), it is blocking whereas os.urandom() should not block. */
 #elif defined(HAVE_GETENTROPY) && !defined(sun)
 #define PY_GETENTROPY 1
